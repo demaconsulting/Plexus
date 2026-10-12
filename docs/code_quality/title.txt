@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Code Quality Report
+title: Plexus Code Quality Report
 subtitle: Code Quality Analysis Report
 author: DEMA Consulting
-description: Code Quality Analysis Report for Template DotNet Library
+description: Code Quality Analysis Report for Plexus
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - Plexus
   - Code Quality
   - Analysis
   - .NET
