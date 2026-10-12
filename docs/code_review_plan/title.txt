@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Review Plan
-subtitle: File Review Plan for the Template DotNet Library
+title: Plexus Review Plan
+subtitle: File Review Plan for the Plexus
 author: DEMA Consulting
-description: File Review Plan for the Template DotNet Library
+description: File Review Plan for the Plexus
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - Plexus
   - Review Plan
   - File Reviews
   - .NET

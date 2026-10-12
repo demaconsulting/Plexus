@@ -1,11 +1,11 @@
 ---
-title: Template DotNet Library Requirements
-subtitle: Requirements Specification for the Template DotNet Library
+title: Plexus Requirements
+subtitle: Requirements Specification for the Plexus
 author: DEMA Consulting
-description: Requirements Specification for the Template DotNet Library
+description: Requirements Specification for the Plexus
 lang: en-US
 keywords:
-  - Template DotNet Library
+  - Plexus
   - Requirements
   - Specification
   - .NET

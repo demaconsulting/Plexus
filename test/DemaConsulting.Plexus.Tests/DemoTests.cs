@@ -1,6 +1,6 @@
-using TemplateDotNetLibrary;
+using DemaConsulting.Plexus;
 
-namespace DemaConsulting.TemplateDotNetLibrary.Tests;
+namespace DemaConsulting.Plexus.Tests;
 
 /// <summary>
 ///     Unit tests for the Demo class.
