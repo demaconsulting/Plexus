@@ -65,6 +65,17 @@ changes: element presence, group membership and layout. Duplicating elements is 
   `ComputeRoute` adds, per wire, every frame whose group contains neither end node at any depth (`GroupObstacles`,
   internal). Hypothetical node bounds are not applied to the frames: a frame that would change contains a moved node,
   whose wires are exempt from it anyway. Moving a group re-routes nothing unrelated; `RerouteAll` does.
+- **Routing caches** (internal): the obstacle boxes and group frames of the current layout and the traffic of every
+  visible wire (in page order) are cached per page, so routing many wires does not rebuild them for each wire.
+  `OnElementChanging` runs before any notification of a change, attach or detach: a change of a node, annotation or
+  group discards all three, a change of a wire discards the traffic, and a wire attached at the end of the page is
+  added to the cached traffic exactly as a fresh build would add it. A diagram setting (such as the theme) discards
+  the caches of every page, and a page discards its caches when it is removed from or put back into the diagram, so a
+  page restored by undo never routes with a theme that changed while it was out. A re-routed wire, and a new wire that
+  would merge two nets at a fan-in input, route against a fresh traffic so the cache never holds a merge for a wire
+  that does not exist. `WireTraffic.Segments` returns a snapshot view of an append-only list, rebuilt only after a
+  merge, and `GroupObstacles.For` returns the obstacles followed by the applicable frames as a view instead of a copy.
+  Results are identical to building everything for each wire.
 - **RerouteAll()**: within one transaction sets the route of every wire to a freshly computed route, routing the wires
   in page order and adding each new route to the traffic the next wire keeps clear of (stale old routes never count);
   unchanged routes record nothing and an unchanged page creates no entry.

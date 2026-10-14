@@ -145,6 +145,34 @@ public class WireCrossingTests
     }
 
     /// <summary>
+    ///     Validates that every crossing of a lattice of many wires is reported, in the order of the crossed wires rather than of their positions.
+    /// </summary>
+    [Fact]
+    public void WireCrossings_Find_ManyWires_ReportsEveryCrossingInWireOrder()
+    {
+        // Arrange: thirty vertical wires listed from right to left, then thirty horizontal wires crossing all of them
+        const int count = 30;
+        var runs = new List<WireRun>();
+        for (var j = count; j >= 1; j--)
+        {
+            runs.Add(Run($"v{j}", 2, new Point(j * 10, -50), new Point(j * 10, 400)));
+        }
+
+        for (var i = 1; i <= count; i++)
+        {
+            runs.Add(Run($"h{i}", 2, new Point(0, i * 10), new Point(400, i * 10)));
+        }
+
+        // Act
+        var hops = WireCrossings.Find(runs, 4, 2, 6, 3);
+
+        // Assert: no vertical wire hops; each horizontal wire hops every vertical one, right to left as they were listed
+        var expected = Enumerable.Range(1, count).Reverse().Select(j => (double)(j * 10)).ToList();
+        Assert.All(hops.Take(count), Assert.Empty);
+        Assert.All(hops.Skip(count), h => Assert.Equal(expected, h.Select(hop => hop.X)));
+    }
+
+    /// <summary>
     ///     Validates the shape of a single hop: a semicircle of the hop radius, as two cubic quarter arcs, over the crossing.
     /// </summary>
     [Fact]

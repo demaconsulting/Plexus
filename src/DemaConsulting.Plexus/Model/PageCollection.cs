@@ -249,6 +249,8 @@ public sealed class PageCollection : IReadOnlyList<DiagramPage>, IList, INotifyC
     /// <param name="page">The page to attach.</param>
     private void InsertCore(int index, DiagramPage page)
     {
+        // The diagram's settings may have changed while the page was out of the list, so its routing caches start over
+        page.InvalidateRoutingCaches();
         page.IsAttached = true;
         foreach (var element in page.Elements)
         {
@@ -272,6 +274,7 @@ public sealed class PageCollection : IReadOnlyList<DiagramPage>, IList, INotifyC
         }
 
         page.IsAttached = false;
+        page.InvalidateRoutingCaches();
         _pages.Remove(page);
         _diagram.RaiseChanged(DiagramChangeKind.PageRemoved, page, null, null);
     }

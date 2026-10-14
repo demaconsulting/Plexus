@@ -408,6 +408,15 @@ public sealed partial class Diagram
     /// <param name="propertyName">The changed property, if any.</param>
     internal void RaiseChanged(DiagramChangeKind kind, DiagramPage? page, DiagramElement? element, string? propertyName)
     {
+        // A diagram setting such as the theme changes the obstacles and anchors of every page
+        if (kind == DiagramChangeKind.SettingsChanged)
+        {
+            foreach (var each in Pages)
+            {
+                each.InvalidateRoutingCaches();
+            }
+        }
+
         // The version moves before any handler runs, so a handler that rebuilds a scene already sees the new number
         Version++;
         Changed?.Invoke(this, new DiagramChangedEventArgs(kind, page, element, propertyName));

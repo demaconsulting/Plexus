@@ -119,6 +119,7 @@ public abstract class DiagramElement : INotifyPropertyChanged
     /// <param name="propertyName">The changed property.</param>
     internal void NotifyChanged(string propertyName)
     {
+        Page?.OnElementChanging(this);
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         Page?.Diagram.RaiseChanged(DiagramChangeKind.ElementChanged, Page, this, propertyName);
     }

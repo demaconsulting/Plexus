@@ -52,12 +52,12 @@ internal sealed class GroupObstacles
     /// <param name="first">One end node of the wire.</param>
     /// <param name="second">The other end node of the wire.</param>
     /// <returns>
-    ///     <paramref name="obstacles"/> itself when no frame applies, otherwise a new list holding
-    ///     the node obstacles followed by the applicable frames.
+    ///     <paramref name="obstacles"/> itself when no frame applies, otherwise a read-only view of
+    ///     the node obstacles followed by the applicable frames (the obstacles are not copied).
     /// </returns>
     public IReadOnlyList<Rect> For(IReadOnlyList<Rect> obstacles, Node first, Node second)
     {
-        List<Rect>? result = null;
+        List<Rect>? frames = null;
         foreach (var (group, box) in _frames)
         {
             if (IsInside(first, group) || IsInside(second, group))
@@ -65,11 +65,11 @@ internal sealed class GroupObstacles
                 continue;
             }
 
-            result ??= [.. obstacles];
-            result.Add(box);
+            frames ??= [];
+            frames.Add(box);
         }
 
-        return result ?? obstacles;
+        return frames is null ? obstacles : new ExtendedObstacles(obstacles, frames);
     }
 
     /// <summary>
@@ -90,4 +90,24 @@ internal sealed class GroupObstacles
 
         return false;
     }
+}
+
+/// <summary>
+///     A read-only view of a list of obstacles followed by extra boxes, without copying the obstacles.
+/// </summary>
+/// <param name="obstacles">The shared obstacles.</param>
+/// <param name="extra">The boxes that follow them.</param>
+internal sealed class ExtendedObstacles(IReadOnlyList<Rect> obstacles, List<Rect> extra) : IReadOnlyList<Rect>
+{
+    /// <inheritdoc/>
+    public int Count => obstacles.Count + extra.Count;
+
+    /// <inheritdoc/>
+    public Rect this[int index] => index < obstacles.Count ? obstacles[index] : extra[index - obstacles.Count];
+
+    /// <inheritdoc/>
+    public IEnumerator<Rect> GetEnumerator() => obstacles.Concat(extra).GetEnumerator();
+
+    /// <inheritdoc/>
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 }

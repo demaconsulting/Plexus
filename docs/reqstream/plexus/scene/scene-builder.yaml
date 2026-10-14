@@ -395,6 +395,7 @@ sections:
                   - WireCrossings_Find_CrossingNearVerticalCorner_HasNoHop
                   - WireCrossings_Find_JunctionAtCrossing_HasNoHop
                   - WireCrossings_Find_ThickWires_GrowTheRadius
+                  - WireCrossings_Find_ManyWires_ReportsEveryCrossingInWireOrder
                   - WirePaths_Rounded_SingleHop_IsASemicircleOverTheCrossing
                   - WirePaths_Rounded_RightToLeftWire_HopsOverTheCrossing
                   - WirePaths_Rounded_CloseCrossings_MergeIntoOneWiderHop

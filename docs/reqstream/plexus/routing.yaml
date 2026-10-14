@@ -33,7 +33,7 @@ sections:
             title: >-
               The default router shall route a wire around the boxes of the nodes on its page so that no segment
               passes through the interior of a node box, including when nodes are closer together than the routing
-              clearance.
+              clearance and when nodes were added or moved, or the theme changed, after other wires were routed.
             justification: |
               Wires that run through nodes hide the diagram structure and are indistinguishable from connections to
               the node they cross. Dense diagrams routinely place nodes closer together than the clearance, and
@@ -43,6 +43,8 @@ sections:
               - Plexus-Routing-OrthogonalRouter-OverlappingMargins
             tests:
               - DiagramPage_Connect_NodeBetweenPorts_RoutesAroundIt
+              - DiagramPage_Connect_NodeMovedOrAddedAfterEarlierWires_IsAvoided
+              - DiagramPage_Connect_PageRestoredAfterThemeChange_UsesTheNewTheme
 
           - id: Plexus-Routing-PortStubs
             title: >-
@@ -132,7 +134,8 @@ sections:
               The default router shall keep a new wire off the segments of wires of other nets by using a parallel
               track, while wires of one net (every wire from the same output port) may share a trunk, and the page
               shall give each routed wire the segments of the wires already on the page, so that wires of different
-              nets are not routed on top of each other when connecting, re-routing and moving nodes.
+              nets are not routed on top of each other when connecting, re-routing and moving nodes; connecting the
+              wires of a page one by one shall give the routes that re-routing the whole page gives.
             justification: |
               Signals that overlap cannot be told apart; separate tracks make the connections readable while shared
               trunks keep branches of one signal compact.
@@ -142,6 +145,7 @@ sections:
             tests:
               - DiagramPage_Connect_TwoNetsToAdjacentInputs_DoNotRunAlongEachOther
               - DiagramPage_RerouteAll_TwoNets_KeepsNetsApartAndIsRepeatable
+              - DiagramPage_ConnectWireByWire_MatchesRerouteAll
 
           - id: Plexus-Routing-RouteCleaning
             title: >-

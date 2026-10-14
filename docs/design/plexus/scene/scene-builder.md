@@ -106,6 +106,9 @@ to cross, when its span plus a one unit margin does not fit inside the straight 
 start
 or the arrowhead clearance before the tip). The vertical wire, the polyline, the hit targets and the handles are not
 affected. Hops are cubics in the ordinary path commands, so both painters draw them the same and dashes follow them.
+Detection sorts the vertical segments of all wires by X once, so each horizontal segment visits only the verticals within
+its span instead of every segment of every wire; the candidates are then visited in wire and segment order, which keeps
+the result identical to a full scan.
 
 `AddJunctions`: draws, above the wires and below the nodes, a filled `RectPrimitive` circle at every junction point found
 by `AnalyzeWires`, in the color of the owner wire. `WireJunctions.Find` (internal static) collects every vertex of every
