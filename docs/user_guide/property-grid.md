@@ -344,6 +344,64 @@ if (!result.Succeeded)
 
 Messages are clean text for the user: the framework's "(Parameter 'value')" suffix is removed from error messages.
 
+### A Live Preview Next to the Grid
+
+A custom node inspector is the properties dialog with a picture of what the settings do: a waveform, a curve, a
+response plot. Give `NodePropertiesDialog.ShowAsync` a `NodePropertiesDialogOptions` with a `Preview` factory. The
+factory receives a `NodePreviewContext` and returns the control to show next to the grid:
+
+```csharp
+using Avalonia.Controls;
+using DemaConsulting.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+
+public static class Inspectors
+{
+    public static Task<bool> InspectAsync(Window owner, Node node)
+    {
+        var options = new NodePropertiesDialogOptions
+        {
+            Preview = context =>
+            {
+                var label = new TextBlock();
+                void Redraw() => label.Text = $"{context.GetPropertyValue("Frequency")} Hz";
+                context.Changed += (_, _) => Redraw();
+                Redraw();
+                return label;
+            },
+        };
+        return NodePropertiesDialog.ShowAsync(owner, node, options);
+    }
+}
+```
+
+- **Effective values.** `context.GetValue(path)` returns the value OK would apply: the pending edit when there is one,
+  otherwise the node's current value. It accepts any row path (`Node.Name`, `Property.<name>`, `Data.<path>`);
+  `GetPropertyValue(name)` is the short form for a declared property. An unknown path returns `null`.
+- **Notifications.** `Changed` is raised when an edit is staged, reset or discarded, when the edits are cancelled or
+  committed, and when the grid replaces its session. It is not raised for a validation error alone. Text fields stage
+  their value on Enter or when they lose focus. Drop-downs, check boxes and sliders stage at once. The preview therefore
+  redraws when a field is committed, not on every keystroke.
+- **OK and Cancel are unchanged.** The context has no write path, so the preview never changes the node: OK is still one
+  undo entry and Cancel still changes nothing. The dialog disposes the context when it closes, so no notification
+  arrives after that.
+- **Placement and size.** The preview is to the right of the grid (`NodePreviewPlacement.Side`, 400 pixels wide, dialog
+  880 by 640) or above it (`NodePreviewPlacement.Top`, 220 pixels high, dialog 480 by 860). `Title`, `Width` and
+  `Height` override the defaults. The panel that holds the preview has the automation id `PropertyGridDialog_Preview`.
+
+A host that builds its own window creates the context over its own staged grid, or over a `PropertyEditSession` it
+drives itself, and disposes it when the window closes:
+
+```csharp
+var grid = new PropertyGrid { EditMode = PropertyEditMode.Staged, SelectedObject = node };
+var context = new NodePreviewContext(grid);        // follows grid.Session when the grid replaces it
+context.Changed += (_, _) => preview.Redraw(context);
+window.Closed += (_, _) => context.Dispose();
+```
+
+The demo uses this for its oscillator, envelope and filter nodes: double-click one to see its waveform, ADSR curve or
+frequency response change while you edit.
+
 ### Who Disposes the Source
 
 A grid that is given `SelectedObject` creates the source itself (for a node a `NodePropertySource`, which listens to the
@@ -356,8 +414,9 @@ disposes it, so dispose it yourself when the grid no longer shows it.
 
 The grid and its dialogs carry automation ids so tests and scripts can drive them: `PropertyGrid`, one
 `PropertyGrid_Row_<path>` and `PropertyGrid_Editor_<path>` per row, `PropertyGrid_Category_<category>`,
-`PropertyGridDialog`, `PropertyGridDialog_OK`, `PropertyGridDialog_Cancel` and
-`PropertyGridDialog_Status` (why OK was refused), and `CollectionEditorDialog_OK` and `CollectionEditorDialog_Cancel`.
+`PropertyGridDialog`, `PropertyGridDialog_OK`, `PropertyGridDialog_Cancel`,
+`PropertyGridDialog_Status` (why OK was refused), `PropertyGridDialog_Preview` (the live preview panel of a node
+dialog, when it has one), and `CollectionEditorDialog_OK` and `CollectionEditorDialog_Cancel`.
 
 The path of a node row never collides with another row: the name row is `Node.Name`, a declared property is
 `Property.<name>`, and a host data property is `Data.<path>`, with `.Name` and `[index]` appended for nested objects and

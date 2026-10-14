@@ -414,6 +414,76 @@ public class DemoModelTests
     }
 
     /// <summary>
+    ///     Validates that the oscillator has amplitude, phase and DC offset properties with their categories, units,
+    ///     descriptions and defaults, outside the node summary so the node keeps its look.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_Oscillator_HasAmplitudePhaseAndOffsetProperties()
+    {
+        // Arrange
+        var type = DemoNodeTypes.CreateRegistry().Get(DemoNodeTypes.Oscillator);
+
+        // Act
+        var amplitude = type.FindProperty(DemoNodeTypes.AmplitudeProperty)!;
+        var phase = type.FindProperty(DemoNodeTypes.PhaseProperty)!;
+        var offset = type.FindProperty(DemoNodeTypes.DcOffsetProperty)!;
+
+        // Assert
+        Assert.Equal(1.0, amplitude.DefaultValue);
+        Assert.Equal("Level", amplitude.Category);
+        Assert.False(string.IsNullOrEmpty(amplitude.Description));
+        Assert.Equal(0.0, phase.DefaultValue);
+        Assert.Equal("°", phase.Unit);
+        Assert.Equal("Signal", phase.Category);
+        Assert.False(string.IsNullOrEmpty(phase.Description));
+        Assert.Equal(0.0, offset.DefaultValue);
+        Assert.Equal("DC Offset", offset.DisplayName);
+        Assert.Equal("Level", offset.Category);
+        Assert.False(string.IsNullOrEmpty(offset.Description));
+        Assert.All([amplitude, phase, offset], p => Assert.False(p.ShowInSummary));
+    }
+
+    /// <summary>
+    ///     Validates that an oscillator saved before it had amplitude, phase and DC offset loads with their defaults and
+    ///     keeps its saved waveform and frequency.
+    /// </summary>
+    [Fact]
+    public void DemoDocument_Load_OldOscillatorFile_AppliesNewPropertyDefaults()
+    {
+        // Arrange: an oscillator saved without the new properties (as older versions wrote it)
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        var osc = page.AddNode(DemoNodeTypes.Oscillator, 0, 0, "Osc");
+        osc.Properties[DemoNodeTypes.WaveformProperty] = "Saw";
+        osc.Properties[DemoNodeTypes.FrequencyProperty] = 220.0;
+        var root = System.Text.Json.Nodes.JsonNode.Parse(diagram.ToJson())!;
+        foreach (var node in root["pages"]![0]!["nodes"]!.AsArray())
+        {
+            if (node!["properties"] is System.Text.Json.Nodes.JsonObject properties)
+            {
+                properties.Remove(DemoNodeTypes.AmplitudeProperty);
+                properties.Remove(DemoNodeTypes.PhaseProperty);
+                properties.Remove(DemoNodeTypes.DcOffsetProperty);
+            }
+        }
+
+        using var temp = new TempDirectory();
+        var path = Path.Combine(temp.Create(), "old.json");
+        File.WriteAllText(path, root.ToJsonString());
+
+        // Act
+        var loaded = DemoDocument.Load(path).FindNode("Osc")!;
+
+        // Assert
+        Assert.Equal("Saw", loaded.Properties[DemoNodeTypes.WaveformProperty]);
+        Assert.Equal(220.0, loaded.Properties[DemoNodeTypes.FrequencyProperty]);
+        Assert.Equal(1.0, loaded.Properties[DemoNodeTypes.AmplitudeProperty]);
+        Assert.Equal(0.0, loaded.Properties[DemoNodeTypes.PhaseProperty]);
+        Assert.Equal(0.0, loaded.Properties[DemoNodeTypes.DcOffsetProperty]);
+        Assert.Equal(new OscillatorSettings("Saw", 220.0, 1.0, 0.0, 0.0), OscillatorSettings.FromNode(loaded));
+    }
+
+    /// <summary>
     ///     Validates the live tooltips of the logic node types and the descriptions of their ports.
     /// </summary>
     [Fact]

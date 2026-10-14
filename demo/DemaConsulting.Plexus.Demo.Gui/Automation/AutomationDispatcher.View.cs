@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.LogicalTree;
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Scene;
 using AvaloniaPoint = global::Avalonia.Point;
@@ -80,8 +81,29 @@ internal sealed partial class AutomationDispatcher
                 content = Session.Editor.GetToolTipContent(ResolveElement(reference));
             }
 
-            return new JsonObject { ["text"] = content?.ToString() };
+            return DescribeToolTip(content);
         });
+    }
+
+    /// <summary>
+    ///     Describes tooltip content for the <c>tooltip</c> command: its text, and whether it shows a waveform preview.
+    /// </summary>
+    /// <remarks>
+    ///     Most tooltips are text. An oscillator's tooltip is a control (a waveform thumbnail above text), so its text is the
+    ///     texts of its text blocks, one per line, rather than the control's type name.
+    /// </remarks>
+    /// <param name="content">The tooltip content, or <see langword="null"/> for none.</param>
+    /// <returns><c>{text, preview}</c>: the text (null for no tooltip) and true when the content contains a plot.</returns>
+    internal static JsonObject DescribeToolTip(object? content)
+    {
+        if (content is not Control control)
+        {
+            return new JsonObject { ["text"] = content?.ToString(), ["preview"] = false };
+        }
+
+        var parts = control.GetSelfAndLogicalDescendants().ToList();
+        var text = string.Join("\n", parts.OfType<TextBlock>().Select(t => t.Text).Where(t => !string.IsNullOrEmpty(t)));
+        return new JsonObject { ["text"] = text, ["preview"] = parts.OfType<Inspectors.SignalPlot>().Any() };
     }
 
     /// <summary>

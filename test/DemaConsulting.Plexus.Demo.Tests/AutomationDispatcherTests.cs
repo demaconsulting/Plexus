@@ -641,6 +641,29 @@ public class AutomationDispatcherTests
     });
 
     /// <summary>
+    ///     Validates that the tooltip command of the real window reports an oscillator's thumbnail tooltip as its text and a
+    ///     preview flag, and other tooltips as text without one.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task AutomationDispatcher_TooltipCommand_OscillatorReportsTextAndPreview() => GuiTest.RunAsync(async () =>
+    {
+        // Arrange: the real window, whose tooltip handler gives oscillators a waveform thumbnail
+        using var host = new MainWindowHost(MainWindowHost.Options("--sample", "audio"));
+        var commands = new Gui.Automation.AutomationDispatcher(host.Session);
+
+        // Act
+        var osc = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","node":"Osc1"}""")).Json)!["result"]!;
+        var port = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","port":"Osc1.out"}""")).Json)!["result"]!;
+
+        // Assert
+        Assert.Equal("Osc1\nSaw, 220 Hz", osc["text"]!.GetValue<string>());
+        Assert.True(osc["preview"]!.GetValue<bool>());
+        Assert.Equal("out (Audio)", port["text"]!.GetValue<string>());
+        Assert.False(port["preview"]!.GetValue<bool>());
+    });
+
+    /// <summary>
     ///     Validates that setting a gate's Inputs property through automation changes the ports list-nodes reports.
     /// </summary>
     /// <returns>A task for xUnit to await.</returns>

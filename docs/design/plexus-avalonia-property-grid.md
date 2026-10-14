@@ -47,7 +47,8 @@ when the package loads.
   sources that show a Plexus node (name, declared properties, host data on a working copy), annotation or group, each
   commit being one undo entry of the diagram; plus the registration with `PropertySourceFactory`.
 - **NodePropertiesDialog** (unit, public) — a one-call modal dialog for a node: a `PropertyGridDialog` over a
-  `NodePropertySource`.
+  `NodePropertySource`, with optional `NodePropertiesDialogOptions` that add a live preview next to the grid (a custom
+  node inspector) through a read-only `NodePreviewContext`, which hosts can also create over their own grid or session.
 
 Collaboration for one edit:
 
@@ -88,6 +89,8 @@ sequenceDiagram
 | `PropertyGridDialog.ShowAsync`     | In / Out  | Owner, object, title, scope     | UI thread only               |
 | `NodePropertySource(Node)`         | In / Out  | Node; rows, commits, changes    | Node attached; UI thread     |
 | `NodePropertiesDialog.ShowAsync`   | In / Out  | Owner, node; true on OK         | UI thread only               |
+| `NodePropertiesDialogOptions`      | In        | Preview factory, title, size    | Size positive and finite     |
+| `NodePreviewContext`               | Out       | Staged values; change events    | Read-only; UI thread only    |
 | `IPropertyCommitScope.RunCommit`   | Out       | Source hook around each commit  | Runs the action exactly once |
 
 Errors from user code (accessors, converters, validation attributes) are reported as `PropertyResult` values, never as

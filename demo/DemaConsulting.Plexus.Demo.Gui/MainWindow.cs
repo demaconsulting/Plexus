@@ -373,11 +373,14 @@ internal sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    ///     Adds the live logic value to the tooltip of a boolean wire, for example <c>SwitchA.out → Sum.a = on</c>.
+    ///     Customizes tooltips: adds the live logic value to the tooltip of a boolean wire, for example
+    ///     <c>SwitchA.out → Sum.a = on</c>, and gives an oscillator a waveform thumbnail with a short description such as
+    ///     <c>Sine, 440 Hz</c>.
     /// </summary>
     /// <remarks>
-    ///     Node and port tooltips come from the node types (descriptions and live <c>NodeType.ToolTip</c> functions); this
-    ///     handler shows the other way a host customizes tooltips: overriding the editor's default text in the event.
+    ///     Other node and port tooltips come from the node types (descriptions and live <c>NodeType.ToolTip</c> functions); this
+    ///     handler shows the other way a host customizes tooltips: overriding the editor's default content in the event, with
+    ///     text or with a control.
     /// </remarks>
     /// <param name="sender">The editor.</param>
     /// <param name="e">The tooltip request.</param>
@@ -386,6 +389,10 @@ internal sealed partial class MainWindow : Window
         if (e.Element is Wire wire && e.Content is string text && DescribeLogicValue(wire) is { } value)
         {
             e.Content = $"{text} = {value}";
+        }
+        else if (e.Element is Node { Type.Key: Model.DemoNodeTypes.Oscillator } node && e.Port is null)
+        {
+            e.Content = Inspectors.AudioInspectors.CreateOscillatorToolTip(node);
         }
     }
 

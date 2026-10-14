@@ -2,7 +2,8 @@
 # Software Unit requirements for PlexusAvaloniaPropertyGrid NodePropertiesDialog.
 #
 # Each requirement decomposes a system requirement into the behavior of the node properties dialog. Tests are the
-# headless tests in NodePropertiesDialogTests.cs.
+# headless tests in NodePropertiesDialogTests.cs and, for the live preview and its context,
+# NodePropertiesDialogPreviewTests.cs.
 
 sections:
   - title: PlexusAvaloniaPropertyGrid Requirements
@@ -38,3 +39,72 @@ sections:
             tests:
               - NodePropertiesDialog_Ok_InvalidNameShowsTheReasonAndStaysOpen
               - NodePropertiesDialog_Ok_VetoedRenameShowsTheReasonOnTheNameRow
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Preview
+            title: >-
+              When a preview factory is given, the dialog shall show the factory's control next to the grid (to the
+              right by default, above it when requested) in a panel with the automation id PropertyGridDialog_Preview,
+              and widen the default dialog (or make it taller) to fit it.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; the preview must be visible beside the
+              settings it explains and findable by UI automation.
+            tests:
+              - NodePropertiesDialog_Preview_IsShownBesideTheGridAndWidensTheDialog
+              - NodePropertiesDialog_Preview_TopPlacementIsAboveTheGrid
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewValues
+            title: >-
+              The preview context shall return, for any row path, the effective value: the pending edit when there is
+              one, otherwise the node's current value, and null for an unknown path, without changing the node.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; the preview must show what OK would apply.
+            tests:
+              - NodePropertiesDialog_Preview_SeesStagedValues
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewNotifications
+            title: >-
+              The preview context shall raise its change notification when pending edits are made, reset or cancelled,
+              after a commit and when the grid replaces its session, but not for a validation error alone, and never
+              after it is disposed.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; the preview redraws live while the user
+              edits and stops when the dialog closes.
+            tests:
+              - NodePropertiesDialog_Preview_IsNotifiedOnEditResetAndCancel
+              - NodePropertiesDialog_PreviewOk_IsNotifiedAfterCommit
+              - NodePreviewContext_FromGrid_FollowsANewSession
+              - NodePropertiesDialog_PreviewCancel_ChangesNothing
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCommit
+            title: >-
+              With a preview, OK shall still apply all edits as one undo entry and complete with true, and Cancel
+              shall still change nothing and complete with false.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; a preview must not change the dialog's
+              commit semantics.
+            tests:
+              - NodePropertiesDialog_PreviewOk_CommitsOneUndoEntry
+              - NodePropertiesDialog_PreviewCancel_ChangesNothing
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewContext
+            title: >-
+              The preview context shall be constructible over a host's own property grid or edit session that shows a
+              node, and shall reject a null argument or content that is not a node.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; hosts that build their own inspector window
+              reuse the same context.
+            tests:
+              - NodePreviewContext_Constructors_ValidateArguments
+              - NodePreviewContext_FromSession_ReadsAndNotifies
+              - NodePreviewContext_FromGrid_FollowsANewSession
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Options
+            title: >-
+              The dialog options shall apply the title, width and height when given, keep the plain dialog without a
+              preview, and reject a size that is not a positive finite number and a factory that returns null.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; hosts size and title their inspector, and
+              mistakes surface at once.
+            tests:
+              - NodePropertiesDialog_Options_TitleAndSizeAreApplied
+              - NodePropertiesDialog_Options_ArgumentsAreValidated

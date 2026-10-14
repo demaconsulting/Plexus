@@ -286,6 +286,26 @@ sections:
         tests:
           - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_CommitsOrDiscardsAsOneUndoEntry
 
+      - id: PlexusAvaloniaPropertyGrid-Plexus-DialogPreview
+        title: >-
+          The system shall let a host add a live preview to the node properties dialog that reads the staged values
+          and redraws on every edit, reset and cancel before OK, without changing the dialog's one-undo-entry OK or
+          its Cancel, and shall let hosts that build their own window use the same preview context over their own
+          grid or session.
+        justification: |
+          Hosts migrating custom node inspectors (for example from WinForms) want a nicer properties dialog that
+          visualizes what the settings do while the user edits, without rebuilding staging, validation and undo.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Preview
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewValues
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewNotifications
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCommit
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewContext
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Options
+        tests:
+          - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce
+
       - id: PlexusAvaloniaPropertyGrid-Independent
         title: >-
           The system shall not depend on Plexus types in its generic layers: only the Plexus adapter layer may use

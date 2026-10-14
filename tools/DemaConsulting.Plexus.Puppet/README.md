@@ -75,7 +75,9 @@ plexus-puppet place [--instance <alias>] --work-area [--left-gap <px>] [--margin
 - `menu` walks the real menu bar by header text or by AutomationId parts, for example `menu Edit/Undo`,
   `menu "Page/Move Selection To/1"` (the last segment of a dynamic entry is its page index) or `menu View/ZoomToFit`.
   Access-key underscores, spaces, case and a trailing `...` are ignored.
-- `dialogs` lists open dialogs and their buttons, edits, check boxes and combo boxes; the exit code is 10 while one is open.
+- `dialogs` lists open dialogs and their buttons, edits, check boxes and combo boxes, plus a `preview` entry (id
+  `PropertyGridDialog_Preview`) when a properties dialog shows a live preview (an oscillator, envelope or filter
+  inspector); the exit code is 10 while one is open.
 - `shot` renders the main window **and any open dialogs and pop-ups** with `PrintWindow`
   (so a window in front does not end up in the picture) and saves a PNG. It works on a locked desktop as well.
   `--screen` copies the screen pixels of the window's frame instead, which also shows what only the compositor draws

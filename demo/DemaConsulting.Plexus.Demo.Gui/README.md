@@ -37,8 +37,18 @@ Features each domain shows off:
 - Tooltips: rest the pointer on a node, a port or a wire. Ports show their label, type (`Boolean`, `Number`, ...) and
   description; logic nodes show their live state (a switch on or off, a gate's output, a lamp lit or dark) from their
   `NodeType.ToolTip`; other nodes show their `NodeType.Description`; wires show `source → target`, and the window's
-  `DiagramEditor.ToolTipRequested` handler adds `= on` or `= off` to boolean wires. View > Show Tooltips turns
-  them off.
+  `DiagramEditor.ToolTipRequested` handler adds `= on` or `= off` to boolean wires and gives an oscillator a control
+  as its tooltip: a small waveform thumbnail of its current settings above its name and a short description such as
+  `Sine, 440 Hz`. View > Show Tooltips turns them off.
+- Audio inspectors: the oscillator (Waveform, Frequency, Phase in degrees, and Amplitude 0 to 1 and DC Offset under
+  Level), the envelope and the filter open a custom inspector: the library's properties dialog with a live preview next
+  to the grid. The oscillator shows two cycles of its signal against time (ms) with amplitude grid lines, the envelope its
+  ADSR curve with the A, D, S and R phases (an illustrative 200 ms sustain hold), and the filter its magnitude response
+  (a second-order model) from 20 Hz to 20 kHz on a logarithmic axis with the cutoff marked and a dB axis. The previews
+  redraw on every committed edit, reset and cancel, before OK. The math is in the model (`AudioPreview`,
+  `OscillatorSettings`, `EnvelopeSettings`, `FilterSettings`) and the plots are drawn by a small theme-aware control
+  (`Inspectors/SignalPlot.cs`) that follows light and dark mode. Files saved before the new oscillator properties
+  existed load with their defaults.
 - Workflow: `Task` nodes carry a `TaskDetails` host data object whose annotations show off the property grid (see
   Host data and the property grid below), edited in the properties dialog and in the properties panel.
 - Samples: `math`, `plumbing` (a water circuit plus an oil and a steam circuit), `logic`, `audio`, `workflow`,
@@ -150,7 +160,10 @@ paste in the basic one: nothing is pasted and the status bar reports
   annotated `TaskDetails` host data. OK applies everything as one undo entry; Cancel changes nothing; a rejected or
   vetoed rename keeps the dialog open with the reason. The whole integration is one line:
   `Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(this, e.Node);` (the demo also
-  flips switches on double-click, hence `ActivateNodeAsync`).
+  flips switches on double-click, hence `ActivateNodeAsync`). For oscillators, envelopes and filters `ShowPropertiesAsync`
+  passes `new NodePropertiesDialogOptions { Preview = ... }` from `Inspectors/AudioInspectors.cs`, which shows the live
+  preview to the right of the grid in a wider dialog; the preview reads the staged values through `NodePreviewContext`
+  and never writes, so OK and Cancel behave exactly as in the plain dialog.
 - **Properties panel** (View > Properties Panel, F4; hidden at start): a second, docked way to show the same grid. The
   panel is a live `PropertyGrid` (`EditMode = Live`) on the right of the window, between a `GridSplitter` and the
   window edge, and follows the selection: one node, annotation or group is shown (the whole integration is
@@ -226,8 +239,10 @@ across the five demo domains) in the menu ids; `<index>` is zero-based.
 - Page tabs: `Pages_Tabs`, `Page_Tab_<index>` (current order; renumbered when pages move).
 - Status bar: `Status_Text`, `Status_Selection`, `Status_Zoom`, `Status_Dirty`.
 - Properties dialog (the library's `PropertyGridDialog`): `PropertyGridDialog` (the window), `PropertyGridDialog_OK`,
-  `PropertyGridDialog_Cancel`, `PropertyGridDialog_Status` (why OK was refused). It replaces the former `Properties_Dialog`,
-  `Properties_Name`, `Properties_Prop_<name>`, `Properties_Details_*`, `Properties_Ok` and `Properties_Cancel` ids.
+  `PropertyGridDialog_Cancel`, `PropertyGridDialog_Status` (why OK was refused), `PropertyGridDialog_Preview` (the live
+  preview panel of an oscillator, envelope or filter dialog) and `Inspector_Plot` (the plot inside it). It replaces
+  the former `Properties_Dialog`, `Properties_Name`, `Properties_Prop_<name>`, `Properties_Details_*`, `Properties_Ok`
+  and `Properties_Cancel` ids.
 - Property grid rows (in the dialog and in the panel; the library assigns them): `PropertyGrid` (the grid),
   `PropertyGrid_Row_<path>` (a row; node rows are `Node.Name`, `Property.<name>` for a declared property such as
   `Property.Capacity` and `Data.<path>` for host data such as `Data.Priority`, `Data.Contact.Email` or
@@ -308,8 +323,10 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
   `DiagramEditor.BringIntoView`: switches to the element's page and centers it without zooming in.
 - `zoom-to` (`ids` or `names`, `margin?` default 30) -> `{page,zoom,offsetX,offsetY}`; `DiagramEditor.ZoomToFit` of
   the elements (the first element's page is shown).
-- `tooltip` (`element` or `node`, or `port` + optional `direction`) -> `{text}`: the tooltip the editor would show
-  (`DiagramEditor.GetToolTipContent`), or null when there is none.
+- `tooltip` (`element` or `node`, or `port` + optional `direction`) -> `{text,preview}`: the tooltip the editor would
+  show (`DiagramEditor.GetToolTipContent`), or a null `text` when there is none. When the tooltip is a control (an
+  oscillator's waveform thumbnail), `text` is the texts of its text blocks, one per line (for example
+  `Osc1\nSaw, 220 Hz`), and `preview` is true; for text tooltips `preview` is false.
 - `save` (`path?`, default the current file) -> `{path}`; `open` (`path`) -> like `info`, without an unsaved-changes
   prompt; `new` -> like `info`.
 - `render` (`path`, `page?`, `scale?`) -> `{path,page,bytes}`; writes a PNG through `PlexusRenderer`.
@@ -346,6 +363,7 @@ element is scrolled out of the editor; `view` with `fit` or an offset brings it 
 ## Tests
 
 `test/DemaConsulting.Plexus.Demo.Tests` covers the command line (`GuiOptions`), the properties dialog and panel (the
-library grid in the demo, the host data annotations, the collection editor and the slider editor), the automation
-dispatcher (headless Avalonia, no pipe), the pipe transport (with a fake executor) and the real main window (menus,
-AutomationIds, status bar, context menu, dialogs) on the headless platform.
+library grid in the demo, the host data annotations, the collection editor, the slider editor and the audio inspectors
+with their live previews, the oscillator tooltip and the plot control), the audio preview math (`AudioPreviewTests`),
+the automation dispatcher (headless Avalonia, no pipe), the pipe transport (with a fake executor) and the real main
+window (menus, AutomationIds, status bar, context menu, dialogs) on the headless platform.

@@ -3,6 +3,7 @@ using Avalonia.Platform.Storage;
 using DemaConsulting.Plexus.Avalonia;
 using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using DemaConsulting.Plexus.Demo.Gui.Dialogs;
+using DemaConsulting.Plexus.Demo.Gui.Inspectors;
 using DemaConsulting.Plexus.Demo.Model;
 
 namespace DemaConsulting.Plexus.Demo.Gui;
@@ -284,12 +285,20 @@ internal sealed partial class MainWindow
     /// <summary>
     ///     Opens the properties dialog for a node; OK applies everything as one undo entry.
     /// </summary>
+    /// <remarks>
+    ///     Oscillators, envelopes and filters get a custom inspector: the same dialog with a live preview of what their
+    ///     settings do (see <see cref="AudioInspectors"/>). Every other node gets the plain dialog.
+    /// </remarks>
     /// <param name="node">The node.</param>
     /// <returns>A task that completes when the dialog is closed.</returns>
     private async Task ShowPropertiesAsync(Node node)
     {
-        // The library's dialog does everything: the staged property grid, validation and one undo entry on OK
-        if (await NodePropertiesDialog.ShowAsync(this, node).ConfigureAwait(true))
+        // The library's dialog does everything: the staged property grid, validation and one undo entry on OK;
+        // the demo only supplies the preview of the audio nodes
+        var dialog = AudioInspectors.GetPreview(node) is { } preview
+            ? NodePropertiesDialog.ShowAsync(this, node, new NodePropertiesDialogOptions { Preview = preview })
+            : NodePropertiesDialog.ShowAsync(this, node);
+        if (await dialog.ConfigureAwait(true))
         {
             Session.SetMessage($"Edited {node.Name}");
         }

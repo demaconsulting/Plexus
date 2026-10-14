@@ -61,6 +61,9 @@ All system tests must pass on every supported platform for the platform requirem
   two entries; the previous data object is never mutated.
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_CommitsOrDiscardsAsOneUndoEntry**: a node dialog cancelled changes
   nothing; a second one commits a rename and a data edit with OK as one undo entry.
+- **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce**: a node dialog with a live
+  preview shows a staged frequency in the preview before OK, Cancel leaves the node unchanged, and a second dialog commits
+  a frequency and a rename with OK as one undo entry.
 - **PlexusAvaloniaPropertyGrid_Dependencies_GenericLayers_UseNoPlexusTypes**: no type outside the Plexus adapter
   namespace has a field, property, method, constructor or base type from a Plexus namespace.
 - **PlexusAvaloniaPropertyGrid_HeadlessHost_RunsOnTheUiThread**: the headless Avalonia host used by the control tests starts

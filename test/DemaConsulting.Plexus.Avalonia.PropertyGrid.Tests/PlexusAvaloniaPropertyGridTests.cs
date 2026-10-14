@@ -329,6 +329,63 @@ public class PlexusAvaloniaPropertyGridTests
         Assert.Equal(before + 1, diagram.History.UndoCount);
         owner.Close();
     });
+
+    /// <summary>
+    ///     The node properties dialog with a live preview: the preview follows the staged edits before OK and is notified
+    ///     of them, Cancel changes nothing and OK commits everything as one undo entry.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce() => UiTest.Run(() =>
+    {
+        // Arrange: a preview that shows the staged frequency
+        var (diagram, node) = NodeFixture.Create();
+        var before = diagram.History.UndoCount;
+        var owner = GridHarness.Host(new global::Avalonia.Controls.TextBlock { Text = "owner" });
+        var options = new NodePropertiesDialogOptions
+        {
+            Preview = context =>
+            {
+                var text = new global::Avalonia.Controls.TextBlock();
+                void Redraw() => text.Text = $"{context.GetPropertyValue("Frequency")}";
+                context.Changed += (_, _) => Redraw();
+                Redraw();
+                return text;
+            },
+        };
+        var frequency = NodePropertySource.PropertyPath("Frequency");
+
+        // Act: stage an edit and cancel
+        var cancelled = NodePropertiesDialog.ShowAsync(owner, node, options);
+        GridHarness.Pump(owner);
+        var first = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
+        first.Grid.Session!.SetText(first.Grid.Session.FindItem(frequency)!, "880");
+        var firstPreview = GridHarness.Get<global::Avalonia.Controls.Border>(first, "PropertyGridDialog_Preview");
+        var stagedText = ((global::Avalonia.Controls.TextBlock)firstPreview.Child!).Text;
+        GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(first, "PropertyGridDialog_Cancel"));
+        GridHarness.Pump(owner);
+        var afterCancel = (double)node.Properties["Frequency"];
+
+        // Act: stage edits and accept
+        var accepted = NodePropertiesDialog.ShowAsync(owner, node, options);
+        GridHarness.Pump(owner);
+        var second = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
+        second.Grid.Session!.SetText(second.Grid.Session.FindItem(frequency)!, "660");
+        second.Grid.Session.SetText(second.Grid.Session.FindItem(NodePropertySource.NamePath)!, "Kept");
+        GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(second, "PropertyGridDialog_OK"));
+        GridHarness.Pump(owner);
+
+        // Assert
+        Assert.Equal("880", stagedText);
+        Assert.Equal(440.0, afterCancel);
+        Assert.False(cancelled.Result);
+        Assert.True(accepted.Result);
+        Assert.Equal(660.0, node.Properties["Frequency"]);
+        Assert.Equal("Kept", node.Name);
+        Assert.Equal(before + 1, diagram.History.UndoCount);
+        owner.Close();
+    });
+
     /// <summary>
     ///     The headless Avalonia session used by the UI phase starts and runs a body on the UI thread.
     /// </summary>
