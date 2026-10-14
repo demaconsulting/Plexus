@@ -1,0 +1,46 @@
+---
+# Software Unit requirements for PlexusAvalonia AvaloniaTextMeasurer.
+#
+# Decomposes the PlexusAvalonia system requirements into the responsibility of the unit that measures text with
+# Avalonia's text services for the core layout. Tests are the unit tests in AvaloniaTextMeasurerTests.cs.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: AvaloniaTextMeasurer Requirements
+        requirements:
+          - id: PlexusAvalonia-AvaloniaTextMeasurer-Monotonic
+            title: >-
+              The measured width of a text shall grow with its length, and its height shall be the height of a line
+              regardless of length.
+            justification: |
+              Decomposes PlexusAvalonia-TextLayout; node boxes are sized from measured widths and would otherwise
+              clip or waste space.
+            tests:
+              - AvaloniaTextMeasurer_Measure_LongerText_IsWider
+
+          - id: PlexusAvalonia-AvaloniaTextMeasurer-StyleDependence
+            title: >-
+              The measured size shall follow the font size and shall not depend on the text color.
+            justification: |
+              Decomposes PlexusAvalonia-TextLayout; layout must react to the theme's fonts but stay stable when only
+              colors change.
+            tests:
+              - AvaloniaTextMeasurer_Measure_FontSizeAndColor_AffectSizeCorrectly
+
+          - id: PlexusAvalonia-AvaloniaTextMeasurer-EmptyText
+            title: >-
+              Empty text shall measure with zero width and the height of a line.
+            justification: |
+              Decomposes PlexusAvalonia-TextLayout; empty labels still occupy a line in the layout.
+            tests:
+              - AvaloniaTextMeasurer_Measure_EmptyText_HasLineHeightOnly
+
+          - id: PlexusAvalonia-AvaloniaTextMeasurer-NullArguments
+            title: >-
+              The measurer shall reject a null text or a null style.
+            justification: |
+              Decomposes PlexusAvalonia-TextLayout; programming errors are reported at the call, not later in
+              layout.
+            tests:
+              - AvaloniaTextMeasurer_Measure_NullArguments_Throw

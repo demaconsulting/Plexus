@@ -1,0 +1,270 @@
+---
+# Software Unit requirements for Plexus PlexusClipboard.
+#
+# Unit requirements decompose the Serialization subsystem requirements (which link down to these IDs as children) and
+# are proven by the unit tests in ClipboardTests, ClipboardSecurityTests and DuplicateTests. The unit also owns the
+# duplicate operation of a page, which shares its clone path with copy and paste.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Serialization Requirements
+        sections:
+          - title: PlexusClipboard Requirements
+            requirements:
+              - id: Plexus-Serialization-PlexusClipboard-FormatMarker
+                title: Copied clipboard text shall carry the format identifier plexus.clipboard and the format version.
+                justification: |
+                  Hosts register the identifier as the clipboard format and the paste side recognizes its own data
+                  by it.
+                tests:
+                  - PlexusClipboard_Copy_WritesFormatIdAndVersion
+
+              - id: Plexus-Serialization-PlexusClipboard-CopySelection
+                title: >-
+                  Copying shall include the members of a selected group recursively and a wire whenever both of its
+                  nodes are copied, shall exclude a wire with only one copied end, and shall not change the diagram.
+                justification: |
+                  A copy must be self-contained and must not contain dangling wires.
+                tests:
+                  - PlexusClipboard_Copy_Group_CopiesMembersRecursively
+                  - PlexusClipboard_Copy_WireBetweenCopiedNodes_IsIncludedImplicitly
+                  - PlexusClipboard_Copy_WireWithOneEndCopied_IsExcluded
+
+              - id: Plexus-Serialization-PlexusClipboard-OpaquePayloadOmitted
+                title: Copying shall omit node payloads whose node type declares no data type or serializer.
+                justification: |
+                  Undeclared payloads cannot be read back safely.
+                tests:
+                  - PlexusClipboard_Copy_OpaqueData_IsOmitted
+
+              - id: Plexus-Serialization-PlexusClipboard-PasteCopies
+                title: >-
+                  Pasting shall create copies with new, distinct element ids, offset by one grid step from the
+                  originals by default, and shall make node names unique with an increasing numeric suffix when the
+                  diagram requires unique names (and keep them otherwise).
+                justification: |
+                  Pasted elements must not collide with existing ones, and repeated pastes must stay
+                  distinguishable.
+                tests:
+                  - PlexusClipboard_Paste_WithinPage_CreatesOffsetCopiesWithNewIdsAndNames
+                  - PlexusClipboard_Paste_Twice_GeneratesDistinctIds
+                  - PlexusClipboard_Paste_RepeatedPaste_AppendsIncreasingNumericSuffix
+                  - PlexusClipboard_Paste_UniqueNamesNotRequired_KeepsNames
+                  - PlexusClipboard_Paste_NameUsedOnOtherPage_IsMadeUnique
+
+              - id: Plexus-Serialization-PlexusClipboard-PastePosition
+                title: >-
+                  Pasting at a given position shall place the top-left corner of the pasted content's bounds there
+                  and keep the relative layout of the content.
+                justification: |
+                  Pasting at the pointer must keep the selection's shape.
+                tests:
+                  - PlexusClipboard_Paste_AtPosition_PlacesTopLeftOfContent
+
+              - id: Plexus-Serialization-PlexusClipboard-PasteUndo
+                title: >-
+                  A successful paste shall be one undoable and redoable step that restores the exact earlier state,
+                  and pasting an empty selection shall succeed without a history entry.
+                justification: |
+                  Users expect to undo a paste in one step.
+                tests:
+                  - PlexusClipboard_Paste_UndoAndRedo_RestoreExactState
+                  - PlexusClipboard_Paste_EmptySelection_SucceedsWithoutHistoryEntry
+
+              - id: Plexus-Serialization-PlexusClipboard-PasteAcross
+                title: >-
+                  Pasting shall work on another page of the same diagram, adding only to the target page, and into
+                  another diagram with an equivalent registry, restoring properties, node payloads and groups.
+                justification: |
+                  Clipboard content travels between pages, diagrams and applications.
+                tests:
+                  - PlexusClipboard_Paste_AcrossPages_AddsToTargetPageOnly
+                  - PlexusClipboard_Paste_AcrossDiagrams_RestoresPropertiesDataAndGroups
+
+              - id: Plexus-Serialization-PlexusClipboard-PasteWarnings
+                title: >-
+                  When pasting content that does not fit the target definitions, the paste shall succeed with a
+                  warning and the default value for a property of the wrong kind or an unavailable choice, shall
+                  convert compatible numeric kinds without warning, shall skip a wire that the connection rules
+                  reject with a warning, and shall paste a node without data when its payload cannot be read.
+                justification: |
+                  Diagrams from other versions or hosts should paste as far as they can, telling the user what was
+                  not carried over.
+                tests:
+                  - PlexusClipboard_Paste_PropertyKindMismatch_UsesDefaultAndWarns
+                  - PlexusClipboard_Paste_ChoiceNotInTargetOptions_UsesDefaultAndWarns
+                  - PlexusClipboard_Paste_CompatibleNumericKind_ConvertsWithoutWarning
+                  - PlexusClipboard_Paste_WireDeniedByHostRule_IsSkippedWithWarning
+                  - PlexusClipboard_Paste_UnreadablePayload_WarnsAndPastesWithoutData
+
+              - id: Plexus-Serialization-PlexusClipboard-ArgumentValidation
+                title: >-
+                  Copy and paste shall throw argument exceptions for null arguments, elements that are not on a
+                  page, and elements from different pages, and an invalid-operation exception for a removed
+                  target page.
+                justification: |
+                  These are caller errors, as opposed to bad clipboard text, which is a failed result.
+                tests:
+                  - PlexusClipboard_InvalidArguments_Throw
+
+              - id: Plexus-Serialization-PlexusClipboard-MissingTypes
+                title: >-
+                  Pasting content with node types the target diagram does not know shall fail, change nothing and
+                  list every missing type key, also when the rest of the content is hostile.
+                justification: |
+                  Users resolve all missing types at once, and the type check must not depend on the rest of the
+                  content being valid.
+                tests:
+                  - PlexusClipboard_Paste_MissingNodeTypes_FailsAtomicallyListingAllKeys
+                  - PlexusClipboard_Paste_UnknownTypeInHostileContent_ListsMissingKeys
+
+              - id: Plexus-Serialization-PlexusClipboard-RejectForeignContent
+                title: >-
+                  Pasting text that is empty, is not JSON, is not a clipboard object, lacks the format marker, has
+                  another format marker or an unsupported version shall return a failed result with an error message
+                  and change nothing.
+                justification: |
+                  The clipboard may hold anything; text that is not ours must never be interpreted.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_NotPlexusData_IsRejected
+
+              - id: Plexus-Serialization-PlexusClipboard-SizeLimit
+                title: >-
+                  Pasting shall reject text larger than 8 MiB of UTF-8, measured in bytes and not only in
+                  characters, with a failed result.
+                justification: |
+                  Bounds the memory and time an untrusted clipboard can cost.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_Oversize_IsRejected
+                  - PlexusClipboard_Paste_OversizeInBytes_IsRejected
+
+              - id: Plexus-Serialization-PlexusClipboard-ElementLimit
+                title: >-
+                  Pasting shall reject content of more than 10,000 elements with a failed result and shall accept
+                  content of exactly 10,000 elements.
+                justification: |
+                  Bounds the work and memory an untrusted clipboard can cost while still allowing very large
+                  legitimate selections.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_TooManyElements_IsRejected
+                  - PlexusClipboard_Paste_MaximumElements_IsAccepted
+
+              - id: Plexus-Serialization-PlexusClipboard-DepthLimit
+                title: >-
+                  Pasting shall reject JSON nested deeper than 64 levels, and groups nested deeper than 64 levels
+                  or containing a cycle, with a failed result.
+                justification: |
+                  Prevents stack exhaustion and endless loops in recursive code from crafted nesting.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_TooDeep_IsRejected
+                  - PlexusClipboard_Paste_DeeplyNestedGroups_AreRejected
+
+              - id: Plexus-Serialization-PlexusClipboard-GeometryValidation
+                title: >-
+                  Pasting shall reject content whose bounds, positions or route points are missing, not finite,
+                  larger than 1e9 in magnitude, or (for sizes) negative, with a failed result.
+                justification: |
+                  Absurd geometry would overflow later arithmetic and make the diagram unusable.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_BadGeometry_IsRejected
+                  - PlexusClipboard_Paste_BadRoute_IsRejected
+
+              - id: Plexus-Serialization-PlexusClipboard-ConsistencyValidation
+                title: >-
+                  Pasting shall reject content with missing, duplicate or unknown ids, empty names, wires to unknown
+                  nodes or ports, groups with unknown or shared members or cycles, incomplete z-orders, invalid
+                  colors and malformed property values, with a failed result.
+                justification: |
+                  Inconsistent references would produce a corrupt diagram.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_InconsistentContent_IsRejected
+
+              - id: Plexus-Serialization-PlexusClipboard-NoTypeNames
+                title: >-
+                  Pasting shall ignore members that look like type names at every level and create only nodes of
+                  registered node types.
+                justification: |
+                  Type names from untrusted text must never select what is instantiated.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_TypeNameMembers_AreIgnored
+
+              - id: Plexus-Serialization-PlexusClipboard-HostilePayload
+                title: >-
+                  A node payload in pasted text that cannot be read as the node type's declared data shall not fail
+                  the paste but produce a warning and a node without data.
+                justification: |
+                  A bad payload of one node must not take the rest of a legitimate paste with it, nor crash the host.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_HostilePayload_BecomesWarning
+
+              - id: Plexus-Serialization-PlexusClipboard-AtomicOnFailure
+                title: >-
+                  A paste that fails during validation, even at its last element, shall leave the page, the
+                  diagram and the undo history exactly as they were.
+                justification: |
+                  Validation completes before anything is changed, so that a rejected paste has no effect.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_LateFailure_LeavesNothingBehind
+
+              - id: Plexus-Serialization-PlexusClipboard-Duplicate
+                title: >-
+                  Duplicating elements shall clone them at the given offset as one undoable step, create wires only
+                  between duplicated nodes, return the created elements, do nothing for an empty selection, and
+                  reject null arguments, elements of other pages and non-finite or huge offsets.
+                justification: |
+                  Ctrl-drag duplication needs a single undo step and must not touch other elements.
+                tests:
+                  - DiagramPage_Duplicate_NodesAndWire_ClonesAtOffsetAsOneUndoEntry
+                  - DiagramPage_Duplicate_EmptySelection_DoesNothing
+                  - DiagramPage_Duplicate_InvalidArguments_Throw
+
+              - id: Plexus-Serialization-PlexusClipboard-DuplicateGroups
+                title: Duplicating a group shall duplicate its members and nesting structure.
+                justification: |
+                  A duplicate group that shared members with the original would make both groups unusable.
+                tests:
+                  - DiagramPage_Duplicate_Group_ClonesMembersAndStructure
+
+              - id: Plexus-Serialization-PlexusClipboard-DuplicatePayloads
+                title: >-
+                  Duplicating shall copy property values independently of the originals and deep-copy node payloads
+                  through the declared data type or serializer, sharing by reference only payloads of types that
+                  declare neither.
+                justification: |
+                  Editing a duplicate must not change the original.
+                tests:
+                  - DiagramPage_Duplicate_Data_DeepCopiedWhenSerializableOtherwiseShared
+                  - DiagramPage_Duplicate_Properties_AreCopiedIndependently
+
+              - id: Plexus-Serialization-PlexusClipboard-PasteMessage
+                title: >-
+                  A paste result shall carry a ready-to-show sentence that summarizes a successful paste (including
+                  its warnings), names the missing node types of a refused paste, or gives the reason of any other
+                  failure.
+                justification: |
+                  Every host reports pastes to the user; one sentence from the library avoids each host formatting
+                  the same information.
+                tests:
+                  - PasteResult_Message_Success_SummarizesElements
+                  - PasteResult_Message_SuccessWithWarnings_IncludesThem
+                  - PasteResult_Message_MissingNodeTypes_NamesThem
+                  - PasteResult_Message_OtherFailure_UsesTheError

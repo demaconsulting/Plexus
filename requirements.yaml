@@ -9,8 +9,66 @@ root-tags: [system, quality]
 includes:
   - docs/reqstream/quality.yaml
   - docs/reqstream/plexus.yaml
-  - docs/reqstream/plexus/demo.yaml
   - docs/reqstream/plexus/platform-requirements.yaml
+  - docs/reqstream/plexus/geometry.yaml
+  - docs/reqstream/plexus/connection-rules.yaml
+  - docs/reqstream/plexus/model.yaml
+  - docs/reqstream/plexus/model/diagram.yaml
+  - docs/reqstream/plexus/model/page-collection.yaml
+  - docs/reqstream/plexus/model/diagram-page.yaml
+  - docs/reqstream/plexus/model/node.yaml
+  - docs/reqstream/plexus/model/wire.yaml
+  - docs/reqstream/plexus/model/annotation.yaml
+  - docs/reqstream/plexus/model/group.yaml
+  - docs/reqstream/plexus/history.yaml
+  - docs/reqstream/plexus/history/undo-history.yaml
+  - docs/reqstream/plexus/types.yaml
+  - docs/reqstream/plexus/types/node-type-registry.yaml
+  - docs/reqstream/plexus/types/icon-source.yaml
+  - docs/reqstream/plexus/properties.yaml
+  - docs/reqstream/plexus/properties/property-definition.yaml
+  - docs/reqstream/plexus/properties/property-bag.yaml
+  - docs/reqstream/plexus/routing.yaml
+  - docs/reqstream/plexus/routing/orthogonal-router.yaml
+  - docs/reqstream/plexus/routing/simple-router.yaml
+  - docs/reqstream/plexus/scene.yaml
+  - docs/reqstream/plexus/scene/diagram-theme.yaml
+  - docs/reqstream/plexus/scene/node-layout.yaml
+  - docs/reqstream/plexus/scene/text-measurement.yaml
+  - docs/reqstream/plexus/scene/scene-builder.yaml
+  - docs/reqstream/plexus/scene/diagram-scene.yaml
+  - docs/reqstream/plexus/serialization.yaml
+  - docs/reqstream/plexus/serialization/snapshot.yaml
+  - docs/reqstream/plexus/serialization/plexus-clipboard.yaml
+  - docs/reqstream/plexus-rendering.yaml
+  - docs/reqstream/plexus-rendering/platform-requirements.yaml
+  - docs/reqstream/plexus-rendering/plexus-renderer.yaml
+  - docs/reqstream/plexus-rendering/scene-painter.yaml
+  - docs/reqstream/plexus-rendering/canvas-text-measurer.yaml
+  - docs/reqstream/plexus-rendering/icon-cache.yaml
+  - docs/reqstream/plexus-avalonia.yaml
+  - docs/reqstream/plexus-avalonia/platform-requirements.yaml
+  - docs/reqstream/plexus-avalonia/editor.yaml
+  - docs/reqstream/plexus-avalonia/editor/diagram-editor.yaml
+  - docs/reqstream/plexus-avalonia/editor/gestures.yaml
+  - docs/reqstream/plexus-avalonia/editor/diagram-clipboard.yaml
+  - docs/reqstream/plexus-avalonia/editor/node-type-drag-source.yaml
+  - docs/reqstream/plexus-avalonia/editor/node-palette.yaml
+  - docs/reqstream/plexus-avalonia/scene-painter.yaml
+  - docs/reqstream/plexus-avalonia/avalonia-text-measurer.yaml
+  - docs/reqstream/plexus-avalonia/plexus-icons.yaml
+  - docs/reqstream/plexus-avalonia-property-grid.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/platform-requirements.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/property-model.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/property-sources.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/edit-session.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/editor-registry.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/property-grid-control.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/property-editors.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/collection-editor-ui.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/property-grid-dialog.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/plexus-node-source.yaml
+  - docs/reqstream/plexus-avalonia-property-grid/node-properties-dialog.yaml
   - docs/reqstream/ots/xunit.yaml
   - docs/reqstream/ots/reqstream.yaml
   - docs/reqstream/ots/buildmark.yaml
@@ -22,3 +80,7 @@ includes:
   - docs/reqstream/ots/pandoc.yaml
   - docs/reqstream/ots/weasyprint.yaml
   - docs/reqstream/ots/fileassert.yaml
+  - docs/reqstream/ots/apimark.yaml
+  - docs/reqstream/ots/canvasnet.yaml
+  - docs/reqstream/ots/avalonia.yaml
+  - docs/reqstream/ots/svg-skia.yaml

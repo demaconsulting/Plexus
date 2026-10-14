@@ -1,0 +1,65 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid CollectionEditorUi.
+#
+# Each requirement decomposes a system requirement into the behavior of the collection editor view and dialog. Tests
+# are the headless tests in CollectionEditorUiTests.cs.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: CollectionEditorUi Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-CollectionEditorUi-WorkingList
+            title: >-
+              The collection editor shall add, remove and reorder members on its own working list, creating new
+              members with the session's element factory or the default constructor, and shall write the list to
+              the owning session only when applied.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-CollectionEditor; cancel must leave the collection alone.
+            tests:
+              - CollectionEditorView_AddRemoveMove_ChangeWorkingListUntilApplied
+              - CollectionEditorView_Buttons_EnableByCapabilityAndSelection
+              - CollectionEditorView_Add_UsesCollectionItemFactory
+
+          - id: PlexusAvaloniaPropertyGrid-CollectionEditorUi-Members
+            title: >-
+              The collection editor shall show each member as text (from a configurable formatter, else its text,
+              default property, display name or type name) and edit the selected member in a nested grid: an
+              object shows its properties, a value shows a Value row.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-CollectionEditor; members are edited where they are listed.
+            tests:
+              - CollectionEditorView_NestedGrid_EditsSelectedMember
+              - CollectionEditorView_ValueElements_UseValueRowAndFormatter
+              - CollectionEditorView_FormatItem_UsesToStringThenFallbacks
+              - CollectionEditorView_StructElements_ExpandInValueRow
+
+          - id: PlexusAvaloniaPropertyGrid-CollectionEditorUi-Capabilities
+            title: >-
+              The collection editor shall refuse to add or remove members of a collection that cannot be resized,
+              explain why, still allow reordering, and reject a property that is not a collection.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-CollectionEditor; arrays and read-only collections exist.
+            tests:
+              - CollectionEditorView_FixedArray_RefusesResizeButAllowsReorder
+              - CollectionEditorView_NotACollection_Throws
+
+          - id: PlexusAvaloniaPropertyGrid-CollectionEditorUi-Dialog
+            title: >-
+              The collection editor dialog shall apply the arranged list into the owning session on OK (written at
+              once in a live session, a pending edit in a staged session) and leave the collection untouched on
+              Cancel, and the grid's collection button shall open it.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-CollectionEditor; OK and Cancel are the dialog contract.
+            tests:
+              - CollectionEditorDialog_OkAndCancel_Live
+              - CollectionEditorDialog_Ok_Staged_RecordsPendingEdit
+              - PropertyGrid_CollectionButton_OpensDialogThatApplies
+
+          - id: PlexusAvaloniaPropertyGrid-CollectionEditorUi-Nested
+            title: >-
+              The collection editor shall edit collections of objects that hold collections recursively.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-CollectionEditor; object graphs nest collections.
+            tests:
+              - CollectionEditorView_NestedCollections_WorkRecursively

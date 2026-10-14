@@ -1,0 +1,322 @@
+---
+# Software Subsystem requirements for Plexus Scene.
+#
+# Subsystem requirements decompose the Plexus system requirements (which link down to these IDs as children) into
+# the responsibilities of the Scene subsystem; each links downward to the unit requirements that realize it and to
+# subsystem-level tests in SceneTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Scene Requirements
+        requirements:
+          - id: Plexus-Scene-PainterAgnosticPrimitives
+            title: >-
+              The scene builder shall turn a page into an ordered list of drawing primitives of a closed set of
+              kinds (rectangles, paths, text, icons and a background grid) that describe nodes, wires and
+              annotations without reference to any painting technology.
+            justification: |
+              Several painters (headless PNG rendering, an interactive editor, host-specific painters) must draw
+              the same diagram identically; a painter-neutral primitive list is the contract they share.
+            children:
+              - Plexus-Scene-SceneBuilder-Nodes
+              - Plexus-Scene-SceneBuilder-Wires
+              - Plexus-Scene-SceneBuilder-Annotations
+              - Plexus-Scene-SceneBuilder-Grid
+              - Plexus-Scene-NodeLayout-NodeText
+              - Plexus-Scene-NodeLayout-Icon
+              - Plexus-Scene-NodeLayout-DefaultWidth
+              - Plexus-Scene-NodeLayout-Bounds
+              - Plexus-Scene-NodeLayout-TextWrapping
+            tests:
+              - Scene_BuildPage_ProducesPrimitivesOfTheClosedKindsWithGridFirst
+
+          - id: Plexus-Scene-DrawingOrder
+            title: >-
+              The scene shall list the primitives in painting order: the grid first, then expanded group frames
+              (outermost first), then wires, then nodes, annotations and collapsed groups in the page's z-order.
+            justification: |
+              Painters draw primitives in list order, so the order alone decides what covers what; it must match
+              what users expect from the z-order of the diagram.
+            children:
+              - Plexus-Scene-SceneBuilder-DrawingOrder
+            tests:
+              - Scene_DrawingOrder_GridGroupFramesWiresThenElements
+
+          - id: Plexus-Scene-HitTestingMatchesDrawing
+            title: >-
+              Hit testing of a scene shall report the topmost element at a point from the same geometry that was
+              drawn, naming the node, node name, port, wire segment, annotation, annotation resize handle, group
+              border, group header, collapse toggle or collapsed group hit, with a tolerance for thin targets,
+              and shall report empty canvas elsewhere.
+            justification: |
+              Pointer handling must never disagree with the picture: what the user sees under the pointer is what
+              the editor acts on. Wires and group borders are thin, so a tolerance is needed to make them
+              reachable.
+            children:
+              - Plexus-Scene-NodeLayout-PortGeometry
+              - Plexus-Scene-DiagramScene-HitPriority
+              - Plexus-Scene-DiagramScene-WireHits
+              - Plexus-Scene-DiagramScene-AnnotationHits
+              - Plexus-Scene-DiagramScene-GroupHits
+              - Plexus-Scene-DiagramScene-EmptyCanvas
+              - Plexus-Scene-DiagramScene-RenderedGeometry
+            tests:
+              - Scene_HitTest_AgreesWithDrawnGeometry
+
+          - id: Plexus-Scene-WireJunctions
+            title: >-
+              The scene shall mark the points where wires of one net branch apart with junction dots in the wire
+              color, unless the theme switches them off, and shall let the last corner of a wire and its arrowhead
+              fit a short final segment without overlapping.
+            justification: |
+              Dots tell a branch from a crossing, and a clean arrowhead on short wires keeps dense diagrams
+              readable.
+            children:
+              - Plexus-Scene-SceneBuilder-WireJunctions
+              - Plexus-Scene-SceneBuilder-WireJunctionCorners
+              - Plexus-Scene-SceneBuilder-WireArrowheadFit
+            tests:
+              - SceneBuilder_Build_BranchingNet_DrawsJunctionDotOnBothWires
+              - SceneBuilder_Build_VeryShortFinalSegment_ShrinksArrowheadToFit
+
+          - id: Plexus-Scene-WireCrossingJumps
+            title: >-
+              The scene shall draw a small hop in a horizontal wire where it crosses a wire of a different net, unless
+              the theme switches crossing jumps off, so that wires that cross are not mistaken for connected ones.
+            justification: |
+              A junction dot says wires are connected; the hop says they merely pass each other.
+            children:
+              - Plexus-Scene-SceneBuilder-WireCrossingJumps
+              - Plexus-Scene-DiagramTheme-WireCrossingJumps
+            tests:
+              - SceneBuilder_Build_DifferentNetCrossing_HorizontalWireHopsByDefault
+
+          - id: Plexus-Scene-WireHandles
+            title: >-
+              The scene shall draw handles at the bends and ends of a selected wire and shall hit test them
+              before the wire's segments and the segments before nodes, naming the bend index or the end.
+            justification: |
+              Editors let users reshape a wire and move its ends through handles, which must be drawn and hit
+              tested from the same geometry like everything else in the scene.
+            children:
+              - Plexus-Scene-SceneBuilder-WireHandles
+              - Plexus-Scene-DiagramScene-WireHandleHits
+            tests:
+              - SceneBuilder_Build_SelectedWire_DrawsHandlesAtBendsAndEnds
+              - DiagramScene_HitTest_SelectedWireHandles_ReturnBendAndEndKinds
+
+          - id: Plexus-Scene-SelectionAndHover
+            title: >-
+              The scene shall highlight the selected and the hovered elements in the selection and hover colors,
+              and shall draw and hit-test the resize handle of a selected annotation only while it is selected.
+            justification: |
+              Editors show selection and hover feedback; it must be part of the shared scene so that every
+              painter shows it, and a handle that is hit-testable but not visible would confuse users.
+            children:
+              - Plexus-Scene-SceneBuilder-SelectionAndHover
+            tests:
+              - Scene_SelectedAnnotation_ShowsResizeHandleThatIsHittable
+
+          - id: Plexus-Scene-TextIndependentAnchors
+            title: >-
+              The attachment point of every port shall equal the anchor computed by the model and shall not
+              depend on the text measurer used to build the scene.
+            justification: |
+              Wires are routed and stored by the model without any painter; if the displayed anchors changed
+              with the font engine, wires would no longer meet their ports on some machines.
+            children:
+              - Plexus-Scene-NodeLayout-PortAnchorsMatchModel
+              - Plexus-Scene-NodeLayout-PortAnchorsTextIndependent
+            tests:
+              - Scene_PortAnchors_AreIdenticalForAnyTextMeasurer
+
+          - id: Plexus-Scene-WireStyling
+            title: >-
+              The scene shall draw each wire with the color, thickness, dash pattern and arrowhead that the
+              diagram's wire styler returns for it, falling back to the theme for anything unset or when the styler
+              fails, so that wire appearance follows what each wire is connected to, with the dashes cut in the
+              scene so that every painter draws them alike.
+            justification: |
+              A theme alone cannot make wires differ; hosts must be able to color, thicken, dash or de-arrow
+              individual wires from the model, without any painter-specific work.
+            children:
+              - Plexus-Scene-SceneBuilder-WireStyle
+              - Plexus-Scene-SceneBuilder-WireDashes
+              - Plexus-Scene-SceneBuilder-WireStylers
+              - Plexus-Scene-SceneBuilder-WireStylersPerPage
+              - Plexus-Scene-SceneBuilder-WireSmallJogs
+              - Plexus-Scene-DiagramTheme-WireSmoothSmallJogs
+            tests:
+              - Scene_WireStyling_StyleFollowsConnectionsAndFallsBackToTheme
+
+          - id: Plexus-Scene-NodeStyling
+            title: >-
+              The scene shall draw each node with the fill, border, border thickness, title color, icon tint, halo
+              and opacity that the diagram's node styler returns for it, falling back to the theme for anything
+              unset or when the styler fails, shall hand the resolved style to custom node visuals, and shall keep
+              the selection outline on top of the styled node.
+            justification: |
+              A theme alone cannot make nodes differ; hosts must be able to show state on individual nodes from the
+              model, without any painter-specific work, and custom visuals must be able to honor the same style.
+            children:
+              - Plexus-Scene-SceneBuilder-NodeStyle
+              - Plexus-Scene-SceneBuilder-NodeStylers
+              - Plexus-Scene-SceneBuilder-NodeStylersPerPage
+            tests:
+              - Scene_NodeStyling_StyleFollowsNodesAndFallsBackToTheme
+          - id: Plexus-Scene-PortPlacement
+            title: >-
+              The inputs and the outputs of a node, and the proxy ports of a collapsed group, shall by default be
+              placed as stacks vertically centered on the box, with the default node height growing to fit them, and
+              the theme shall let hosts opt back to stacks that start below the header.
+            justification: |
+              Centered ports look balanced and keep wires between aligned nodes straight, while hosts with layouts
+              built for the earlier arrangement need a switch; all consumers must read the same rule from the theme.
+            children:
+              - Plexus-Scene-NodeLayout-CenteredPorts
+              - Plexus-Scene-NodeLayout-TopPorts
+              - Plexus-Scene-NodeLayout-ProxyPortAlignment
+              - Plexus-Scene-DiagramTheme-PortAlignment
+            tests:
+              - NodeLayout_Compute_Center_StacksAreSymmetricAboutTheBoxCenter
+
+          - id: Plexus-Scene-Theming
+            title: >-
+              The scene shall take all colors, fonts and metrics from a theme (the diagram's theme unless the build
+              options name another), with a classic default look that hosts can customize without modifying the
+              shared default.
+            justification: |
+              Hosts need to match their application style, and the model, routers and painters must read the same
+              metrics so that boxes, anchors and obstacles agree.
+            children:
+              - Plexus-Scene-DiagramTheme-Classic
+              - Plexus-Scene-DiagramTheme-Dark
+              - Plexus-Scene-DiagramTheme-Customizable
+              - Plexus-Scene-DiagramTheme-TextStyles
+              - Plexus-Scene-DiagramTheme-WireMetrics
+              - Plexus-Scene-SceneBuilder-ThemeOption
+            tests:
+              - Scene_Theme_WireThickness_DrivesDrawingAndHitTesting
+              - Scene_Theme_DiagramThemeIsUsedUnlessTheOptionOverridesIt
+
+          - id: Plexus-Scene-Culling
+            title: >-
+              When visible bounds are given, the scene shall leave out the primitives, layouts and hit targets of
+              elements entirely outside them.
+            justification: |
+              Large diagrams are shown through a viewport; building and painting only what is visible keeps
+              interaction responsive.
+            children:
+              - Plexus-Scene-SceneBuilder-Culling
+            tests:
+              - Scene_VisibleBounds_OmitOutsideElementsEverywhere
+
+          - id: Plexus-Scene-GroupDisplay
+            title: >-
+              The scene shall draw expanded groups as frames with a title bar and collapse toggle behind their
+              members, and collapsed groups as boxes that hide their members and carry proxy ports for the wires
+              crossing their boundary, and shall publish the drawn geometry of every displayed group.
+            justification: |
+              Groups structure large diagrams; collapsed groups must remain connected to the rest of the diagram,
+              and hosts need the exact group rectangles for interaction without re-deriving them.
+            children:
+              - Plexus-Scene-SceneBuilder-ExpandedGroups
+              - Plexus-Scene-SceneBuilder-CollapsedBox
+              - Plexus-Scene-SceneBuilder-ProxyPorts
+              - Plexus-Scene-SceneBuilder-DisplayRouteNets
+              - Plexus-Scene-DiagramScene-GroupLayouts
+            tests:
+              - Scene_Groups_ExpandedAndCollapsed_AreDrawnPublishedAndHitConsistently
+
+          - id: Plexus-Scene-ReadOnly
+            title: >-
+              Building a scene, querying it and hit testing it shall not change the model, its stored wire routes
+              or its undo history.
+            justification: |
+              Painting and pointer movement happen constantly and are not user edits; any side effect on the model
+              would corrupt undo or dirty a document that nobody changed.
+            children:
+              - Plexus-Scene-SceneBuilder-DoesNotModifyModel
+            tests:
+              - Scene_BuildAndQuery_DoNotModifyTheModel
+
+          - id: Plexus-Scene-Extensibility
+            title: >-
+              The scene shall let hosts supply a text measurer for sizing text and a custom visual for a node type
+              (replacing or decorating the standard node look), while hit testing and port anchors keep using the
+              node layout.
+            justification: |
+              Painters have exact font metrics and hosts have domain-specific node looks; both must plug in
+              without forking the scene logic.
+            children:
+              - Plexus-Scene-SceneBuilder-MeasurerOption
+              - Plexus-Scene-SceneBuilder-CustomVisuals
+            tests:
+              - Scene_CustomMeasurerAndVisual_ArePluggable
+
+          - id: Plexus-Scene-HeadlessText
+            title: >-
+              The scene shall be buildable and hit-testable with no painter and no installed fonts, using a default
+              text measurer that returns deterministic size estimates growing with text length, font size and
+              weight.
+            justification: |
+              Servers, build pipelines and unit tests need scenes without a UI framework, and reproducible
+              estimates keep their results stable across machines.
+            children:
+              - Plexus-Scene-TextMeasurement-Estimates
+              - Plexus-Scene-TextMeasurement-LineHeight
+              - Plexus-Scene-TextMeasurement-Headless
+              - Plexus-Scene-TextMeasurement-Deterministic
+            tests:
+              - Scene_BuildPage_ProducesPrimitivesOfTheClosedKindsWithGridFirst
+
+          - id: Plexus-Scene-RegionQueries
+            title: >-
+              The scene shall return, for a region, the primitives whose bounds intersect it, each once and in
+              painting order.
+            justification: |
+              Painters repaint only the damaged region, and hosts select elements inside a rubber band; both need
+              exact, ordered results.
+            children:
+              - Plexus-Scene-DiagramScene-RegionQuery
+            tests:
+              - Scene_Query_ReturnsTheDrawnPrimitivesIntersectingTheRegionInOrder
+
+          - id: Plexus-Scene-LayoutLookup
+            title: >-
+              The scene shall expose the page and theme it was built from, the bounds of its content, and the layout
+              of every displayed node and the polyline of every displayed wire, and report elements that are not
+              displayed.
+            justification: |
+              Hosts overlay their own visuals (editors, automation, tooltips) and need the exact geometry the scene
+              drew instead of recomputing it.
+            children:
+              - Plexus-Scene-DiagramScene-LayoutLookup
+            tests:
+              - Scene_Lookups_ExposeLayoutsWirePointsAndContentBounds
+
+          - id: Plexus-Scene-Responsiveness
+            title: >-
+              Building the scene of a page with a thousand nodes and answering a thousand hit tests on it shall
+              complete within five seconds on a development workstation.
+            justification: |
+              Hit testing runs on every pointer move; its cost must follow the number of nearby targets rather
+              than the size of the diagram, or large diagrams become unusable to edit.
+            tags:
+              - performance
+            children:
+              - Plexus-Scene-DiagramScene-ScalableQueries
+            tests:
+              - Scene_LargePage_BuildAndHitTest_CompleteQuickly
+
+          - id: Plexus-Scene-InvalidArguments
+            title: Scene entry points shall reject null arguments with argument-null exceptions.
+            justification: |
+              Missing arguments are programming errors that should be reported at the call site.
+            children:
+              - Plexus-Scene-SceneBuilder-NullPage
+              - Plexus-Scene-NodeLayout-NullArguments
+              - Plexus-Scene-TextMeasurement-NullArguments
+            tests:
+              - Scene_NullArguments_AreRejected

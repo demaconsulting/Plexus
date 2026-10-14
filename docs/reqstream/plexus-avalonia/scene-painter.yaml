@@ -1,0 +1,77 @@
+---
+# Software Unit requirements for PlexusAvalonia ScenePainter.
+#
+# Decomposes the PlexusAvalonia system requirements into the responsibility of the unit that paints scene
+# primitives onto an Avalonia drawing context, and of the value conversions it uses. Tests are the unit tests in
+# ScenePainterTests.cs.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: ScenePainter Requirements
+        requirements:
+          - id: PlexusAvalonia-ScenePainter-Primitives
+            title: >-
+              The painter shall draw the rectangles, paths and text of a scene onto the drawing surface in the colors
+              of the diagram theme.
+            justification: |
+              Decomposes PlexusAvalonia-Display; node boxes, wires and labels are what the user sees.
+            tests:
+              - ScenePainter_Paint_NodesWiresAndText_DrawsThemeColors
+
+          - id: PlexusAvalonia-ScenePainter-Grid
+            title: >-
+              The painter shall draw the background grid as dots on multiples of the grid spacing and shall thin the
+              grid by powers of two when zoomed out so that dots never crowd each other.
+            justification: |
+              Decomposes PlexusAvalonia-Display; a grid that turns into a solid tint when zoomed out is unreadable.
+            tests:
+              - ScenePainter_Paint_Grid_DrawsDotsOnSpacingAndThinsWhenZoomedOut
+
+          - id: PlexusAvalonia-ScenePainter-VisibleAreaOnly
+            title: >-
+              The painter shall not draw primitives that lie outside the visible area.
+            justification: |
+              Decomposes PlexusAvalonia-Display; a scene is repainted for every frame of a drag or pan, so work for
+              invisible elements must be avoided.
+            tests:
+              - ScenePainter_Paint_VisibleAreaElsewhere_PaintsNothing
+
+          - id: PlexusAvalonia-ScenePainter-Icons
+            title: >-
+              The painter shall draw SVG icons inside their rectangle, and shall leave out an icon that cannot be
+              converted without failing.
+            justification: |
+              Decomposes PlexusAvalonia-Icons; a broken host icon must not stop the diagram from being drawn.
+            tests:
+              - ScenePainter_Paint_Icon_DrawsIconColors
+              - ScenePainter_Paint_BrokenIcon_LeavesIconOutWithoutThrowing
+
+          - id: PlexusAvalonia-ScenePainter-IconTint
+            title: >-
+              The painter shall draw a tinted icon as a silhouette in the tint color, using the icon's alpha as
+              coverage, and shall fade an icon by its opacity, so that a styled node looks like the headless
+              renderer's picture of it.
+            justification: |
+              Decomposes PlexusAvalonia-StyledNodes; the editor and the PNG renderer must agree on how a style looks.
+            tests:
+              - StyledNode_PaintsTheSameInTheEditorAndThePng
+          - id: PlexusAvalonia-ScenePainter-Caches
+            title: >-
+              The painter shall provide one shared brush for each color and one shared pen for each color and
+              thickness, with round caps and joins.
+            justification: |
+              Decomposes PlexusAvalonia-Display; the editor and its gestures draw with the same painter, and
+              sharing brushes and pens avoids allocating them for every frame.
+            tests:
+              - ScenePainter_GetBrush_SameColor_ReturnsCachedBrush
+              - ScenePainter_GetPen_SameColorAndThickness_ReturnsCachedPen
+
+          - id: PlexusAvalonia-ScenePainter-Conversions
+            title: >-
+              The conversions between Plexus and Avalonia points, rectangles and colors shall preserve every
+              component.
+            justification: |
+              Decomposes PlexusAvalonia-Display; an error in conversion would misplace or recolor everything drawn.
+            tests:
+              - PlexusAvaloniaExtensions_PointSizeRectAndColor_PreserveValues

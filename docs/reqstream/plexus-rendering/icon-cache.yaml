@@ -1,0 +1,47 @@
+---
+# Software Unit requirements for PlexusRendering IconCache.
+#
+# Decomposes the PlexusRendering icon requirement into the responsibility of the unit that rasterizes and caches
+# SVG icons. Tests are the IconCacheTests unit tests.
+
+sections:
+  - title: PlexusRendering Requirements
+    sections:
+      - title: IconCache Requirements
+        requirements:
+          - id: PlexusRendering-IconCache-SharedRasterization
+            title: >-
+              The cache shall rasterize an icon once per pixel size and return the same surface for every later
+              request of that icon at that size, and a separate surface of the requested size for another size.
+            justification: |
+              Decomposes PlexusRendering-Render-Icons; diagrams repeat the same few icons many times and
+              rasterizing SVG is the most expensive step of painting a node.
+            tests:
+              - IconCache_Get_SameKeyAndSize_ReturnsSharedSurface
+
+          - id: PlexusRendering-IconCache-MalformedSvg
+            title: >-
+              The cache shall report an icon that cannot be rasterized as missing, without throwing, and shall not
+              try to rasterize it again.
+            justification: |
+              Decomposes PlexusRendering-Render-Icons; a broken icon must not stop a render nor be re-parsed for
+              every node that uses it.
+            tests:
+              - IconCache_Get_MalformedSvg_ReturnsNull
+
+          - id: PlexusRendering-IconCache-BoundedMemory
+            title: The cache shall not grow without bound when many different icons or icon sizes are requested.
+            justification: |
+              Decomposes PlexusRendering-Render-Icons; hosts that animate zoom would otherwise accumulate one
+              bitmap per zoom step for the life of the process.
+            tests:
+              - IconCache_Get_ManyDistinctIcons_KeepsCacheBounded
+
+          - id: PlexusRendering-IconCache-ConcurrentUse
+            title: >-
+              The cache shall give every thread that requests the same icon at the same size at the same time the
+              same shared surface.
+            justification: |
+              Decomposes PlexusRendering-Render-Concurrency; renders on several threads share the cache.
+            tests:
+              - IconCache_Get_ConcurrentRequests_ReturnTheSameSurface

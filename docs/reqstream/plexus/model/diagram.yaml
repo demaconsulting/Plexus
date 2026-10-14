@@ -1,0 +1,257 @@
+---
+# Software Unit requirements for Plexus Diagram.
+#
+# The Diagram unit is the root of a document: it owns the node-type registry, the pages, the single undo history and
+# the diagram-wide settings, and it provides the cross-page operations (lookup, node rename, move to page) and the
+# Changed notification. Evidence is provided by the Diagram unit tests; JSON snapshots are covered by the Snapshot unit.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        sections:
+          - title: Diagram Requirements
+            requirements:
+              - id: Plexus-Model-Diagram-NodeTypes
+                title: >-
+                  The Diagram shall be created from a node-type registry, expose that registry, start with no pages
+                  and reject a missing registry.
+                justification: |
+                  Every node is created from a type declared by the host. Binding the registry to the diagram at
+                  construction guarantees that nodes can only be created from the types the host declared, and an
+                  empty starting state gives hosts a predictable base for building or loading content.
+                tests:
+                  - Diagram_Constructor_NullTypes_ThrowsArgumentNullException
+                  - Diagram_Constructor_Registry_IsExposedAndDiagramStartsEmpty
+
+              - id: Plexus-Model-Diagram-Lookup
+                title: >-
+                  The Diagram shall find an attached element by its id and a node by its exact name on any page, and
+                  report no match for unknown values.
+                justification: |
+                  Hosts and the editor refer to elements by id or by node name without knowing which page holds
+                  them. Only elements that are currently attached must be found, so that removed content cannot be
+                  reached through the diagram.
+                tests:
+                  - Diagram_FindNode_SearchesAllPages
+                  - DiagramPage_AddNode_ExplicitNameAndId_UsesThem
+                  - DiagramPage_Remove_Node_RemovesAttachedWiresAndRoundTrips
+
+              - id: Plexus-Model-Diagram-PortLookup
+                title: >-
+                  The Diagram shall find a port from a "Node.port" path whose node part is a node name or an element
+                  id, searching the pages in order, supporting dots in names, and requiring a direction when an
+                  input and an output share the port name.
+                justification: |
+                  Path-based lookup lets hosts write connections and queries as text instead of navigating node and
+                  port objects. Names may contain dots and an input may share its name with an output, so the
+                  lookup must resolve these cases deterministically and report real ambiguity instead of guessing.
+                tests:
+                  - Diagram_FindPort_NameOrId_ResolvesPort
+                  - Diagram_FindPort_UnknownOrMalformed_ReturnsNull
+                  - Diagram_FindPort_AmbiguousWithoutDirection_ThrowsWithHint
+                  - Diagram_FindPort_NodeNameWithDots_SplitsAtMatchingDot
+                  - Diagram_FindPort_SearchesAllPages_PageFindPortStaysLocal
+
+              - id: Plexus-Model-Diagram-ConnectionRulesSetting
+                title: >-
+                  The Diagram shall hold the host connection rule, defaulting to a rule that refuses a second
+                  wire into an input that does not allow fan-in and allows every other structurally valid
+                  connection, and shall present it with the output port as source and the input port as target.
+                justification: |
+                  Plexus enforces structural connection rules and, by default, single-wire inputs; the host adds
+                  domain policy, or replaces the default to allow fan-in everywhere, through one rule stored on the
+                  diagram. A fixed output-then-input argument order lets rules be written without handling both
+                  port orders.
+                tests:
+                  - ConnectionRules_Default_AllowsAndHostRuleReceivesOutputThenInput
+                  - Diagram_Settings_Default_AreClassicThemeOrthogonalRouterAndUniqueNames
+
+              - id: Plexus-Model-Diagram-Settings
+                title: >-
+                  The Diagram shall provide a theme, a wire router and a unique-node-name option with documented
+                  defaults, reject null theme and router values, raise a settings change notification naming the
+                  setting when one is assigned, and not record setting changes in the undo history.
+                justification: |
+                  Settings are configuration of how the diagram is measured, routed and validated rather than
+                  document content. Hosts and painters must learn about setting changes to refresh, but undoing a
+                  user's edit must never revert the host's configuration.
+                tests:
+                  - Diagram_Settings_Default_AreClassicThemeOrthogonalRouterAndUniqueNames
+                  - Diagram_Settings_Assigned_AreAppliedButNotUndoable
+                  - Diagram_Changed_SettingsChange_RaisesSettingsChanged
+                  - Diagram_Theme_CustomMetrics_AffectNewNodes
+
+              - id: Plexus-Model-Diagram-SharedHistory
+                title: >-
+                  The Diagram shall record the undoable edits of all its pages in a single shared undo history.
+                justification: |
+                  A document is edited as one whole. One history gives users a single, chronological undo and redo
+                  across pages, including edits that touch several pages such as moving elements between pages.
+                tests:
+                  - Diagram_History_EditsOnSeveralPages_ShareOneUndoStack
+                  - Diagram_Changed_MoveToPageAndUndo_RaisesRemovalAndAdditionEvents
+
+              - id: Plexus-Model-Diagram-ChangeNotification
+                title: >-
+                  The Diagram shall raise a Changed event for every page addition, removal, rename and reorder and
+                  for every element addition, removal and property change, including those caused by undo and redo,
+                  identifying the kind of change, the page, the element and the property.
+                justification: |
+                  Painters and editor controls refresh from one event. If any change, in particular an undo or redo,
+                  failed to raise it, the display would show stale content, so the event must cover every change
+                  with enough detail to update incrementally.
+                tests:
+                  - Diagram_Changed_PageAddRemoveUndoRedo_RaisesPageEvents
+                  - Diagram_Changed_PageRenameAndMove_RaiseDedicatedKinds
+                  - Diagram_Changed_AddAndRemoveElement_RaisesElementEvents
+                  - Diagram_Changed_UndoRedoOfPropertyChange_RaisesElementChanged
+                  - Diagram_Changed_NodeRename_RaisesNameChange
+                  - Diagram_Changed_MoveToPageAndUndo_RaisesRemovalAndAdditionEvents
+
+              - id: Plexus-Model-Diagram-RenameValidation
+                title: >-
+                  The Diagram shall trim a proposed node name, reject an empty name and, unless uniqueness is
+                  disabled, a name already used by another node, report the reason when asked to try a rename, and
+                  treat a rename to the current name as a successful change-free operation.
+                justification: |
+                  Node names are how users and hosts identify nodes, so they must be non-empty and, by default,
+                  unique across all pages. Returning the reason lets a UI explain a rejection without handling
+                  exceptions, and a no-op rename must not pollute the undo history.
+                tests:
+                  - Diagram_Rename_WhitespaceAroundName_IsTrimmed
+                  - Diagram_Rename_EmptyName_IsRejected
+                  - Diagram_Rename_DuplicateName_IsRejectedWithReason
+                  - Diagram_Rename_DuplicateWithUniquenessOff_Succeeds
+                  - Diagram_Rename_SameName_IsNoOp
+                  - Diagram_Rename_InvalidArguments_Throw
+                  - Node_Name_Set_OnRemovedNode_ThrowsInvalidOperationException
+
+              - id: Plexus-Model-Diagram-RenameHook
+                title: >-
+                  The Diagram shall raise a renaming event before a valid rename that lets the host see the old and
+                  proposed name, correct the name or cancel with a reason, and shall validate a corrected name with
+                  the default rules again.
+                justification: |
+                  Hosts have naming conventions that Plexus cannot know, such as required prefixes or reserved
+                  words. A hook before the change lets them correct or veto it, and re-validating the corrected name
+                  keeps a host handler from breaking the uniqueness and non-empty guarantees.
+                tests:
+                  - Diagram_Rename_HandlerCorrectsName_AppliesCorrection
+                  - Diagram_Rename_RenamingArgs_CarryOldAndProposedName
+                  - Diagram_Rename_HandlerCorrectionDuplicates_IsRejected
+                  - Diagram_Rename_HandlerCancels_RejectsWithReason
+                  - Diagram_Rename_CancelWithoutReason_ReportsDefaultReason
+
+              - id: Plexus-Model-Diagram-RenameUndo
+                title: >-
+                  The Diagram shall apply a node rename as one undoable history entry, raise a renamed event after
+                  the name changed, including on undo and redo, and release the old name for reuse.
+                justification: |
+                  Renaming is a user edit and must be undoable like any other. The renamed event lets hosts follow
+                  name changes however they happen, and a freed name must be available again so that undo and
+                  redo cannot create duplicates.
+                tests:
+                  - Node_Name_Set_RenamesAndRoundTripsThroughUndo
+                  - Diagram_Rename_Events_RenamedFiresOnUndoRedoButRenamingDoesNot
+                  - Diagram_Rename_FreesOldName_ForReuse
+
+              - id: Plexus-Model-Diagram-MoveToPage
+                title: >-
+                  The Diagram shall move nodes, annotations and groups, with the members of moved groups, to
+                  another page of the diagram as one undoable operation that keeps positions, ids and names, skips
+                  wires and elements already on the target page, releases elements from groups that stay behind,
+                  restores everything on undo, and rejects a target or element that does not belong to the diagram.
+                justification: |
+                  Users reorganize a diagram across pages. The move must preserve element identity so that the
+                  rest of the host's data stays valid, treat a group as a unit, and be a single undo step that
+                  returns every element, group membership and list position to its previous place.
+                tests:
+                  - Diagram_MoveToPage_Group_BringsMembersAndStructure
+                  - Diagram_MoveToPage_MemberOfStayingGroup_LeavesGroupAndUndoRestoresMembership
+                  - Diagram_MoveToPage_Annotation_MovesWithBounds
+                  - Diagram_MoveToPage_ElementsAlreadyOnTargetOrWires_AreIgnored
+                  - Diagram_MoveToPage_InvalidArguments_Throw
+                  - Diagram_MoveToPage_FromSeveralPages_IsOneEntryAndRoundTrips
+                  - Diagram_MoveToPage_KeepsNamesAndIdsFindable
+
+              - id: Plexus-Model-Diagram-MoveToPageWires
+                title: >-
+                  When moving elements to another page the Diagram shall carry along, with their routes, the wires
+                  whose two nodes both move, and remove the wires between a moved node and a node that stays
+                  behind, restoring those wires on undo.
+                justification: |
+                  A wire cannot span two pages. Keeping wires inside the moved set preserves the user's work, while
+                  removing wires that would be split keeps the model consistent; undo must bring the removed wires
+                  back so the move is fully reversible.
+                tests:
+                  - Diagram_MoveToPage_NodeWithOutsideWires_RemovesWiresAndUndoRestores
+                  - Diagram_MoveToPage_NodesTogether_CarryWiresWithRoutes
+
+              - id: Plexus-Model-Diagram-WireStyler
+                title: >-
+                  The Diagram shall have no wire styler by default, accept a host styler that is not undoable, and
+                  raise Changed with a settings change, without adding an undo entry, when the styler is assigned
+                  and when the host calls RefreshAppearance.
+                justification: |
+                  A styler that depends on host state outside the diagram can only repaint editors if the host can
+                  announce that the state changed, and because the styler is configuration it must not appear in
+                  the undo history.
+                tests:
+                  - Diagram_WireStyler_Default_IsNullAndWiresUseTheme
+                  - Diagram_WireStylerAndRefreshAppearance_RaiseChangedWithoutHistory
+
+              - id: Plexus-Model-Diagram-NodeStyler
+                title: >-
+                  The Diagram shall have no node styler by default, accept a host styler that is not undoable, raise
+                  Changed with a settings change, without adding an undo entry, when the styler is assigned, and
+                  treat a styler that throws as returning no style.
+                justification: |
+                  The node styler is host configuration: observers must be told when it changes, it must not appear
+                  in the undo history, and a faulty callback must never break rendering.
+                tests:
+                  - Diagram_NodeStyler_Default_IsNullAndNodesUseTheme
+                  - Diagram_NodeStyler_Assign_RaisesChangedWithoutHistory
+                  - SceneBuilder_Build_NodeStylerThrows_FallsBackToTheme
+              - id: Plexus-Model-Diagram-Version
+                title: >-
+                  The Diagram shall expose a version number that increases with every change notification, including
+                  undo, redo, settings changes and RefreshAppearance, that already has its new value when the
+                  Changed handlers run, and that does not change when the diagram is only read or drawn.
+                justification: |
+                  Hosts cache values computed from the diagram (a simulation, a graph analysis). A cheap number that
+                  moves exactly when the diagram may have changed lets them invalidate such a cache without
+                  subscribing to Changed and without depending on the order of subscribers.
+                tests:
+                  - Diagram_Version_AdvancesWithEveryChangeIncludingUndoRedoAndRefresh
+                  - Diagram_Version_IsCurrentInsideChangedHandlers
+
+              - id: Plexus-Model-Diagram-Options
+                title: >-
+                  A diagram shall accept its theme, router, connection rule, wire styler, node styler and name
+                  uniqueness setting as one options object, when it is created and for an existing diagram, shall
+                  install only the members that are set, and the loaders shall install the same options on the
+                  diagram they return.
+                justification: |
+                  Configuration is not saved in documents; one object that every creation, loading and import path
+                  passes along prevents a diagram that looks different after Open.
+                tests:
+                  - Diagram_Constructor_WithOptions_InstallsEverythingSilently
+                  - Diagram_Constructor_NullOrEmptyOptions_KeepsDefaults
+                  - Diagram_Loaders_WithOptions_InstallThemOnTheLoadedDiagram
+                  - Diagram_Apply_ReplacesOnlySetMembers_NotUndoable
+                  - Diagram_Apply_FullOptions_InstallsEveryMember
+
+              - id: Plexus-Model-Diagram-Initialize
+                title: >-
+                  The options object shall carry an initialize callback that is invoked with every diagram the options
+                  create or load, once the diagram is complete and (for a loaded diagram) has a clean history, and
+                  last when options are applied to an existing diagram.
+                justification: |
+                  Event handlers such as a rename veto belong to one diagram instance and are not saved in documents;
+                  a single place that runs for new and opened diagrams prevents a diagram that lacks the host's rules
+                  after Open.
+                tests:
+                  - Diagram_Constructor_WithInitialize_InvokesItOnceWithTheConfiguredDiagram
+                  - Diagram_Loaders_WithInitialize_InvokeItAfterTheLoadAndAttachPerInstanceHandlers
+                  - Diagram_Apply_WithInitialize_InvokesItAfterTheSettings

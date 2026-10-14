@@ -1,0 +1,80 @@
+---
+# Software Unit requirements for Plexus Annotation.
+#
+# An annotation is a free-floating, resizable text note on a page. Requirements describe its text, optional fill
+# color and bounds, which are all changed undoably, together with notification and rejection of changes while the
+# annotation is removed.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        sections:
+          - title: Annotation Requirements
+            requirements:
+              - id: Plexus-Model-Annotation-Initial
+                title: >-
+                  A new annotation shall carry the text and bounds it was created with and no fill color, so that
+                  the theme's annotation fill applies.
+                justification: |
+                  Hosts create notes with a text and a box and expect the default look unless they choose a color.
+                tests:
+                  - Annotation_Initial_NewAnnotation_HasTextBoundsAndNoFill
+                  - DiagramPage_AddAnnotation_CreatesAnnotationWithTextAndBounds
+
+              - id: Plexus-Model-Annotation-Text
+                title: >-
+                  An annotation shall change its text undoably, accepting an empty text, rejecting a null text and
+                  recording nothing when the text is unchanged.
+                justification: |
+                  Editing the note text is the main interaction with an annotation and must be undoable. Rejecting
+                  null keeps the text always drawable, and ignoring unchanged text keeps the history clean.
+                tests:
+                  - Annotation_TextAndFill_Set_UndoRedoRoundTrip
+                  - Annotation_Text_SameValue_RecordsNothing
+                  - Annotation_Text_EmptyString_IsAccepted
+
+              - id: Plexus-Model-Annotation-Fill
+                title: >-
+                  An annotation shall change its fill color undoably, where no color selects the theme's annotation
+                  fill, and record nothing when the fill is unchanged.
+                justification: |
+                  Users color notes to organize them. Allowing the color to be cleared lets a note return to the
+                  theme default, and the change must be undoable like every other edit.
+                tests:
+                  - Annotation_TextAndFill_Set_UndoRedoRoundTrip
+                  - Annotation_Fill_SameValue_RecordsNothing
+
+              - id: Plexus-Model-Annotation-Bounds
+                title: >-
+                  An annotation shall report its bounding box and change it undoably, as a move when only the
+                  position changes and as a resize otherwise, recording nothing for an unchanged box and rejecting
+                  invalid boxes.
+                justification: |
+                  Notes are resizable boxes. Distinguishing a move from a resize gives meaningful undo
+                  descriptions, and validation prevents boxes that cannot be drawn.
+                tests:
+                  - Annotation_Bounds_Set_UndoRedoRoundTrip
+                  - Annotation_Bounds_SameOrInvalid_NoEntryOrThrows
+                  - Annotation_Bounds_MoveOrResize_DescribedAndReported
+
+              - id: Plexus-Model-Annotation-Detached
+                title: >-
+                  An annotation shall reject changes to its text, fill and bounds while it is removed from its
+                  page.
+                justification: |
+                  Changes to a detached annotation would not be recorded in the history and could not be undone, so
+                  they are refused until an undo restores the annotation.
+                tests:
+                  - Annotation_Setters_RemovedAnnotation_ThrowInvalidOperationException
+                  - DiagramPage_Remove_Element_MutationRejectedUntilUndo
+
+              - id: Plexus-Model-Annotation-ChangeNotification
+                title: >-
+                  An annotation shall raise a property-changed notification for every change to its text, fill or
+                  bounds, including changes made by undo and redo.
+                justification: |
+                  Views redraw an annotation from change notifications. Notifying on undo and redo keeps the view
+                  in step with the model.
+                tests:
+                  - Annotation_PropertyChanged_TextFillAndBounds_RaisedForSetUndoAndRedo

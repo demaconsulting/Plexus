@@ -1,6 +1,6 @@
 ---
 title: Plexus Verification Design Document
-subtitle: A .NET Reference Implementation for Libraries
+subtitle: Node-based diagram editing for .NET
 author: DEMA Consulting
 description: Verification design document for the Plexus
 lang: en-US

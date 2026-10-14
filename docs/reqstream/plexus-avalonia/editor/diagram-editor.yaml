@@ -1,0 +1,513 @@
+---
+# Software Unit requirements for PlexusAvalonia DiagramEditor.
+#
+# Decomposes the PlexusAvalonia Editor subsystem requirements into the responsibility of the editor control itself:
+# view state, selection, routing of pointer and keyboard input, inline editing, history commands, clipboard and
+# drop commands, and the events and read-only policy offered to the host. Tests are the DiagramEditor unit tests
+# (DiagramEditor*Tests.cs), which drive the control in a headless Avalonia window.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: Editor Requirements
+        sections:
+          - title: DiagramEditor Requirements
+            requirements:
+              - id: PlexusAvalonia-Editor-DiagramEditor-Defaults
+                title: >-
+                  A new editor shall be usable without configuration: zoom 1, grid shown, snapping on, editable, an
+                  automation identifier of DiagramEditor, and usable from XAML through the Plexus namespace.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-SceneSync; hosts should get a working editor by binding a page,
+                  and automation tools need a stable identifier to find it.
+                tests:
+                  - DiagramEditor_Defaults_NewEditor_HasDocumentedValues
+                  - DiagramEditor_AutomationId_Default_IsDiagramEditor
+                  - DiagramEditor_Assembly_DeclaresPlexusXmlNamespace
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-ViewTransform
+                title: >-
+                  The editor shall clamp the zoom to its supported range, convert points between control and diagram
+                  coordinates in both directions, report element and port positions in control coordinates, and fit
+                  the whole diagram into view on request, remembering a request made before the editor has a size or
+                  a page and applying it once, when both exist.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-SceneSync; overlays, automation and tests rely on exact
+                  coordinate conversion, and users rely on zoom limits and fit-to-view. Hosts call fit-to-view from
+                  a window constructor, before the first layout, and must not have the request silently lost.
+                tests:
+                  - DiagramEditor_Zoom_OutOfRange_IsClamped
+                  - DiagramEditor_ScreenToDiagram_WithZoomAndOffset_RoundTrips
+                  - DiagramEditor_GetPortScreenPosition_ReturnsAnchorInScreenSpace
+                  - DiagramEditor_ZoomToFit_FarApartNodes_BringsBothIntoView
+                  - DiagramEditor_ZoomToFit_BeforeFirstLayout_AppliesAfterLayout
+                  - DiagramEditor_ZoomToFit_WithoutPage_AppliesWhenPageIsSet
+                  - DiagramEditor_ZoomToFit_Pending_IsAppliedOnlyOnce
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-SceneRefresh
+                title: >-
+                  The editor shall rebuild its picture of the page when the model changes, coalescing a burst of
+                  changes into one rebuild per frame, reflecting undo and redo, building only what is near the
+                  visible area, and using the theme assigned to it in place of the diagram's theme.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-SceneSync; the picture must follow the model without rebuilding
+                  for every small change, and large diagrams must stay responsive.
+                tests:
+                  - DiagramEditor_Scene_ModelChange_IsRebuilt
+                  - DiagramEditor_Scene_BurstOfChanges_RebuildsOnce
+                  - DiagramEditor_Scene_UndoAndRedo_AreReflected
+                  - DiagramEditor_Scene_FarAwayNode_IsCulled
+                  - DiagramEditor_Scene_ScrollToFarNode_BuildsIt
+                  - DiagramEditor_DiagramTheme_Override_IsUsedByScene
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Painting
+                title: >-
+                  The editor shall paint the page, including nodes, wires, text, icons, groups, selection highlights
+                  and the live connection preview, onto its drawing surface.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-SceneSync; the rendered frame is what the user sees.
+                tests:
+                  - DiagramEditor_Render_SmallDiagram_PaintsNodesWiresAndText
+                  - DiagramEditor_Render_GroupsAndConnectPreview_SavesPicture
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-SelectionHygiene
+                title: >-
+                  The editor shall drop from the selection elements that leave the page (including elements moved to
+                  another page), ignore elements of other pages, and clear the selection when the shown page changes.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-SceneSync; commands must never act on elements the user can no
+                  longer see.
+                tests:
+                  - DiagramEditor_Selection_ElementRemovedByUndo_IsDropped
+                  - DiagramEditor_Select_ElementOnOtherPage_IsIgnored
+                  - DiagramEditor_Page_Changed_ClearsSelection
+                  - DiagramEditor_MoveToPage_SelectedElements_LeaveSelection
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-PageFollow
+                title: >-
+                  While in the visual tree, the editor shall follow the removal of the page it shows, including the
+                  undo of adding that page, by switching to the page now at the same index (the last page when the
+                  index is past the end) or to no page when none is left, clearing the selection, writing the new
+                  page back through a two-way binding of its Page property, and leaving the shown page alone when
+                  another page is removed or when a page is added or returns through undo or redo.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-SceneSync; an editor that keeps showing a page that no longer
+                  belongs to the diagram shows an empty canvas and acts on nothing, and every host would have to
+                  repeat the same page-collection handling.
+                tests:
+                  - DiagramEditor_PageRemoved_ShownLastPage_ShowsPreviousPageAndClearsSelection
+                  - DiagramEditor_PageRemoved_ShownMiddlePage_ShowsPageAtSameIndex
+                  - DiagramEditor_PageRemoved_OtherPage_KeepsShownPageAndSelection
+                  - DiagramEditor_PageRemoved_OnlyPage_ShowsNothing
+                  - DiagramEditor_UndoAddPage_ShownPage_FollowsAndDoesNotJumpOnRedo
+                  - DiagramEditor_PageRemoved_BoundPage_WritesBackThroughTwoWayBinding
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Selection
+                title: >-
+                  A click shall select the element under the pointer and clear other selections, a click on empty
+                  canvas shall clear the selection, Shift or Ctrl shall add or toggle, a click on one selected
+                  element among several shall narrow the selection to it, and a wire shall be selectable by
+                  clicking it.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; these are the standard desktop selection rules
+                  users expect.
+                tests:
+                  - DiagramEditor_Click_OnNode_SelectsIt
+                  - DiagramEditor_Click_OtherNodeThenCanvas_ReplacesThenClears
+                  - DiagramEditor_ShiftAndCtrlClick_AddAndToggle
+                  - DiagramEditor_Click_OnSelectedNodeAmongSeveral_NarrowsSelection
+                  - DiagramEditor_Click_OnWire_SelectsWire
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-RubberBand
+                title: >-
+                  Dragging on the empty canvas shall select the nodes the dragged rectangle touches, add to the
+                  selection when Shift is held, and record no undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; selecting many elements at once is needed on large
+                  diagrams.
+                tests:
+                  - DiagramEditor_RubberBand_OverNodes_SelectsTouchedNodes
+                  - DiagramEditor_RubberBand_WithShift_AddsToSelection
+                  - DiagramEditor_RubberBand_DoesNotCreateUndoEntries
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-DragMove
+                title: >-
+                  Dragging a node, a selected set of nodes or a group header shall move them live with their wires,
+                  snapped to the grid unless snapping is off, as one undo entry; a click without dragging shall
+                  record nothing.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; wires must follow while dragging so users see the
+                  result, and a mere click must not dirty the document.
+                tests:
+                  - DiagramEditor_DragMove_Node_SnapsToGridWithOneUndoEntry
+                  - DiagramEditor_DragMove_SnapDisabled_MovesByExactDelta
+                  - DiagramEditor_DragMove_SelectedNodes_MoveTogether
+                  - DiagramEditor_DragMove_ConnectedNode_RewiresLive
+                  - DiagramEditor_DragMove_GroupHeader_MovesMembers
+                  - DiagramEditor_Click_WithoutDrag_RecordsNoUndoEntry
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-CtrlDrag
+                title: >-
+                  Ctrl-dragging a node shall leave the original in place and drag a copy with a unique name, as one
+                  undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; Ctrl-drag is the familiar way to copy.
+                tests:
+                  - DiagramEditor_CtrlDrag_Node_DuplicatesAndMovesCopy
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Connect
+                title: >-
+                  Dragging from an output to an input port, or from an input to an output port, shall connect them
+                  as one undo entry, shall not connect ports the connection rules reject, and shall do nothing when
+                  released on the canvas.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; users may start at either end, and the rules
+                  decide what is allowed.
+                tests:
+                  - DiagramEditor_PortDrag_OutputToInput_ConnectsWithOneUndoEntry
+                  - DiagramEditor_PortDrag_InputToOutput_ConnectsInCorrectOrder
+                  - DiagramEditor_PortDrag_IncompatibleTypes_IsRejected
+                  - DiagramEditor_PortDrag_ReleasedOnCanvas_DoesNothing
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-WireSegment
+                title: >-
+                  Dragging a wire segment shall move it perpendicular to itself as one undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; manual wire shaping.
+                tests:
+                  - DiagramEditor_WireSegmentDrag_MovesSegmentWithOneUndoEntry
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-WireHandles
+                title: >-
+                  A selected wire shall offer bend and end handles that hit testing reports with their bend index
+                  or end, winning over the wire's segments.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-WireEditing; handles are how users grab bends and ends.
+                tests:
+                  - DiagramEditor_HitTest_SelectedWire_ReportsBendAndEndHandles
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-WireBend
+                title: >-
+                  Dragging a bend handle shall move the bend and its two adjacent segments, snapped to the grid,
+                  keeping the wire orthogonal and attached to its ports, as one undo entry that Escape cancels, and
+                  shall do nothing in a read-only editor.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-WireEditing; corner dragging is the main way to reshape a wire.
+                tests:
+                  - DiagramEditor_DragBendHandle_MovesBendOrthogonallyAsOneUndoEntry
+                  - DiagramEditor_DragBendHandle_EscapeCancels
+                  - DiagramEditor_DragBendHandle_ReadOnly_DoesNothing
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-WireJog
+                title: >-
+                  Dragging a port stub, or double-clicking a wire segment, shall insert the bends needed to move it
+                  (a jog), as one undo entry, and a jog dragged back onto the wire's line shall disappear.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-WireEditing; straight wires and port stubs have no bend to grab,
+                  so the editor creates one on demand.
+                tests:
+                  - DiagramEditor_DragPortStub_InsertsJogAsOneUndoEntry
+                  - DiagramEditor_DoubleClickSegment_InsertsJogAsOneUndoEntry
+                  - DiagramEditor_DragJogSegment_ReshapesAndFlattens
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-WireEnds
+                title: >-
+                  Dragging an end handle of a selected wire onto a port that the connection rules allow shall
+                  reconnect the wire there, keeping its identity, as one undo entry; dropping it on a rejected port
+                  or on empty canvas shall change nothing.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-WireEditing; re-attaching a wire must be as easy as drawing one.
+                tests:
+                  - DiagramEditor_DragTargetHandle_OverValidPort_ReconnectsWire
+                  - DiagramEditor_DragEndHandle_OverInvalidPort_ChangesNothing
+                  - DiagramEditor_DragEndHandle_DroppedOnCanvas_Cancels
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-AnnotationResize
+                title: >-
+                  Dragging the corner handle of a selected annotation shall resize it, snapped to the grid, as one
+                  undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; notes need adjustable size.
+                tests:
+                  - DiagramEditor_ResizeHandleDrag_Annotation_ResizesWithOneUndoEntry
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-GroupToggle
+                title: >-
+                  Clicking a group's collapse toggle shall collapse or expand the group as one undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; the toggle is a button, not a drag.
+                tests:
+                  - DiagramEditor_Click_GroupCollapseToggle_CollapsesAndExpands
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Navigation
+                title: >-
+                  Ctrl plus the mouse wheel shall zoom around the cursor, the plain wheel shall scroll, and dragging
+                  with the middle button, or with the left button while Space is held, shall pan without moving
+                  nodes.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; zooming around the cursor keeps the user's point
+                  of interest in place.
+                tests:
+                  - DiagramEditor_CtrlWheel_ZoomsAroundCursor
+                  - DiagramEditor_Wheel_WithoutModifiers_Scrolls
+                  - DiagramEditor_MiddleDrag_PansView
+                  - DiagramEditor_SpaceDrag_PansView
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-GestureCancel
+                title: >-
+                  Escape during a drag shall restore the previous state and leave the history unchanged.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-GestureCancellation; Escape is the universal way to abandon a
+                  drag.
+                tests:
+                  - DiagramEditor_DragMove_EscapeCancels_RestoresPositionAndHistory
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-History
+                title: >-
+                  Undo and Redo shall report whether they acted, shall do nothing in a read-only editor, shall only
+                  cancel a drag or inline edit in progress without touching the history, and shall revert the
+                  previous entry when pressed again.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-GestureCancellation; undoing unrelated work while the user is in
+                  the middle of a drag would silently destroy it.
+                tests:
+                  - DiagramEditor_UndoAndRedo_ReturnWhetherTheyActed
+                  - DiagramEditor_UndoAndRedo_ReadOnlyEditor_ReturnFalse
+                  - DiagramEditor_Undo_DuringDrag_OnlyCancelsGesture
+                  - DiagramEditor_Undo_AfterCancelledDrag_UndoesPreviousEntry
+                  - DiagramEditor_Undo_DuringRename_OnlyCancelsRename
+                  - DiagramEditor_Redo_DuringAnnotationEdit_OnlyCancelsEdit
+                  - DiagramEditor_Redo_DuringDrag_OnlyCancelsGesture
+                  - DiagramEditor_CtrlZ_DuringDrag_OnlyCancelsTheDrag
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Rename
+                title: >-
+                  Double-clicking a node's name or pressing F2 on a selected node shall open an inline name editor;
+                  Enter shall commit through the diagram's rename rules, a rejected name shall keep the editor open
+                  with the reason, Escape shall cancel, and a committed rename shall be one undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-InlineEditing; the host's rename rules decide, and the user must
+                  see why a name was refused.
+                tests:
+                  - DiagramEditor_Rename_EnterWithValidName_CommitsAndCloses
+                  - DiagramEditor_Rename_EnterWithDuplicateName_StaysOpenWithReason
+                  - DiagramEditor_Rename_HostHandlerCancels_ShowsHostReason
+                  - DiagramEditor_Rename_Escape_CancelsWithoutChange
+                  - DiagramEditor_Rename_Committed_CanBeUndone
+                  - DiagramEditor_DoubleClick_NodeName_StartsRenameOnly
+                  - DiagramEditor_F2_SelectedNode_StartsRename
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-AnnotationEdit
+                title: >-
+                  Double-clicking an annotation or pressing F2 on a selected annotation shall open an inline
+                  multi-line editor over it; Ctrl+Enter, losing focus or clicking the canvas shall commit, plain
+                  Enter shall add a line, Escape shall cancel, unchanged text shall record nothing, a change shall
+                  be one undo entry, and the box shall follow the annotation as the view changes.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-InlineEditing; notes are multi-line text edited in place.
+                tests:
+                  - DiagramEditor_BeginEditAnnotation_OpensTextBoxOverAnnotation
+                  - DiagramEditor_AnnotationEdit_CtrlEnter_CommitsWithOneUndoEntry
+                  - DiagramEditor_AnnotationEdit_PlainEnter_DoesNotCommit
+                  - DiagramEditor_AnnotationEdit_Escape_CancelsWithoutChange
+                  - DiagramEditor_AnnotationEdit_FocusLoss_Commits
+                  - DiagramEditor_AnnotationEdit_ClickOnCanvas_Commits
+                  - DiagramEditor_AnnotationEdit_UnchangedText_RecordsNothing
+                  - DiagramEditor_AnnotationEdit_Commit_NormalizesLineBreaks
+                  - DiagramEditor_DoubleClick_Annotation_BeginsEdit
+                  - DiagramEditor_F2_SelectedAnnotation_BeginsEdit
+                  - DiagramEditor_AnnotationEdit_ViewChanges_BoxFollowsAnnotation
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-EditLifecycle
+                title: >-
+                  Only one inline editor shall be open at a time, an open editor shall be cancelled when the editor
+                  becomes read-only or its element is removed, the commit and cancel commands shall serve both
+                  kinds and be harmless when nothing is open, and invalid arguments shall be rejected.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-InlineEditing; stale editors over removed elements would corrupt
+                  the model or confuse the user.
+                tests:
+                  - DiagramEditor_BeginRename_WhileEditingAnnotation_ReplacesTheEdit
+                  - DiagramEditor_AnnotationEdit_EditorBecomesReadOnly_Cancels
+                  - DiagramEditor_AnnotationEdit_AnnotationRemoved_Cancels
+                  - DiagramEditor_CommitEditAndCancelEdit_WorkForRename
+                  - DiagramEditor_CommitEdit_RejectedRename_ReturnsFalse
+                  - DiagramEditor_CommitEditAndCancelEdit_NothingOpen_AreNoOps
+                  - DiagramEditor_F2_MultipleSelected_DoesNothing
+                  - DiagramEditor_BeginEditAnnotation_Null_Throws
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Keyboard
+                title: >-
+                  Delete, Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z, Ctrl+A, Ctrl+D and F2 shall run delete, undo, redo, select
+                  all, duplicate and rename, and Delete shall do nothing in a read-only editor.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Keyboard; the shortcut set users expect from diagram editors.
+                tests:
+                  - DiagramEditor_Delete_SelectedNode_RemovesNodeAndWires
+                  - DiagramEditor_CtrlZAndCtrlY_UndoAndRedo
+                  - DiagramEditor_CtrlShiftZ_Redoes
+                  - DiagramEditor_CtrlA_SelectsAllElements
+                  - DiagramEditor_CtrlD_DuplicatesSelection
+                  - DiagramEditor_F2_SelectedNode_StartsRename
+                  - DiagramEditor_Delete_ReadOnly_DoesNothing
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Delete
+                title: >-
+                  Deleting elements shall be one undo entry, remove the wires of deleted nodes, remove only the
+                  frame of an expanded group but a collapsed group with its hidden members, ignore elements that are
+                  not on the shown page, and drop deleted elements from the selection.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Keyboard; deleting a collapsed group box alone would silently
+                  resurrect elements the user could not see.
+                tests:
+                  - DiagramEditor_Delete_GivenElements_RemovesThemAndLeavesSelectionAlone
+                  - DiagramEditor_Delete_SelectedElement_DropsItFromSelection
+                  - DiagramEditor_Delete_Groups_FollowsCollapsedGroupRule
+                  - DiagramEditor_Delete_StaleOrForeignElements_AreIgnored
+                  - DiagramEditor_Delete_ReadOnlyOrNull_DoesNothingOrThrows
+                  - DiagramEditor_DeleteSelection_CollapsedGroup_RemovesMembers
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Duplicate
+                title: >-
+                  Duplicating shall copy the selection offset by one grid cell, select the copies, and do nothing
+                  for an empty selection.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Keyboard; the offset makes the copies visible.
+                tests:
+                  - DiagramEditor_CtrlD_DuplicatesSelection
+                  - DiagramEditor_DuplicateSelection_Empty_ReturnsNothing
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-Clipboard
+                title: >-
+                  Copy shall place the selection, with wires between selected nodes, on the clipboard; paste shall
+                  add it to the page as one undo entry at the pointer, at a given position, or at a default offset,
+                  and select it; cut shall copy then delete; and content copied in another editor instance shall
+                  paste.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Clipboard; the workflow users know from other editors.
+                tests:
+                  - DiagramEditor_CopyPaste_ConnectedPair_RoundTrips
+                  - DiagramEditor_Paste_PointerOverEditor_PlacesContentAtPointer
+                  - DiagramEditor_PasteAt_ExplicitPosition_PlacesContentThere
+                  - DiagramEditor_CutThenPaste_MovesNodes
+                  - DiagramEditor_Paste_FromOtherEditorInstance_Works
+                  - DiagramEditor_CtrlCAndCtrlV_CopyAndPasteViaKeyboard
+                  - DiagramEditor_CopyPaste_SystemClipboard_RoundTripsWhenAvailable
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-ClipboardFailures
+                title: >-
+                  Pasting content that is not usable (not Plexus data, unknown node types) shall change nothing and
+                  raise a paste-failed event with the reason, and a platform clipboard failure in a shortcut-started
+                  command shall raise a clipboard-failed event instead of being lost or crashing.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Clipboard; clipboard content is untrusted and shortcut commands
+                  have no caller to receive an exception.
+                tests:
+                  - DiagramEditor_Paste_NotPlexusData_RaisesPasteFailed
+                  - DiagramEditor_Paste_UnknownNodeType_ListsMissingTypes
+                  - DiagramEditor_CtrlC_ClipboardThrows_RaisesClipboardFailed
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-ReadOnly
+                title: >-
+                  A read-only editor shall select but not move, paste, cut, delete, rename or edit annotations.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-HostIntegration; read-only mode must hold for every entry point.
+                tests:
+                  - DiagramEditor_IsReadOnly_Drag_DoesNotMoveNodes
+                  - DiagramEditor_ReadOnly_PasteAndCut_DoNothing
+                  - DiagramEditor_DoubleClick_AnnotationInReadOnlyEditor_DoesNothing
+                  - DiagramEditor_BeginEditAnnotation_ReadOnlyEditor_DoesNothing
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-NodeDrop
+                title: >-
+                  A drop carrying a node type identifier shall add a node of that type centered at the drop point
+                  (snapped to the grid when snapping is on, honoring zoom and scroll), selected, as one undo entry,
+                  and shall be ignored for unknown types, read-only editors, foreign payloads and editors without a
+                  page.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodeDrop; the drop target half of palette dragging.
+                tests:
+                  - DiagramEditor_CreateNodeTypeDataTransfer_CarriesTheTypeKey
+                  - DiagramEditor_Drop_NodeType_CreatesCenteredSelectedNodeWithOneUndoEntry
+                  - DiagramEditor_Drop_NodeType_UsesViewTransform
+                  - DiagramEditor_Drop_NodeType_SnapsToGrid
+                  - DiagramEditor_Drop_UnknownKeyReadOnlyOrForeignPayload_CreatesNothing
+                  - DiagramEditor_Drop_NoPage_CreatesNothing
+                  - DiagramEditor_Drop_TwiceInARow_CreatesTwoDistinctNodes
+                  - DiagramEditor_EnableNodeTypeDrag_ArgumentsAndPlainClick
+                  - DiagramEditor_StartNodeTypeDragAsync_NullArguments_Throw
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-AddNodeAtCenter
+                title: >-
+                  The editor shall add a node of a given type at the center of the visible canvas (snapped to the
+                  grid when snapping is on), selected, as one undo entry, and shall add nothing and return null for
+                  a read-only editor, an editor without a page, or a type the diagram does not have.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; activating a palette entry and "insert node" menu
+                  entries need the same placement as a drop without a pointer position.
+                tests:
+                  - DiagramEditor_AddNodeAtCenter_AddsOrRefuses
+                  - NodePalette_Activate_WithEditor_AddsSelectedNodeAtCenterAsOneUndoEntry
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-DropGhost
+                title: >-
+                  While a node type drag is over an editor that would accept the drop, the editor shall show a
+                  translucent ghost of the node at the snapped position where a drop would create it, and shall remove
+                  the ghost when the drag leaves, is dropped or is not acceptable.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; seeing the node before releasing makes placement
+                  predictable, and the ghost and the created node share one position computation.
+                tests:
+                  - DiagramEditor_Ghost_DragEnterAndOver_ShowsGhostAtSnappedPosition
+                  - DiagramEditor_Ghost_DragLeave_RemovesGhost
+                  - DiagramEditor_Ghost_Drop_NodeLandsExactlyWhereGhostWas
+                  - DiagramEditor_Ghost_NotAcceptedPayloads_ShowNoGhost
+                  - DiagramEditor_Ghost_IsPaintedTranslucent_AndGoneAfterLeave
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-HostEvents
+                title: >-
+                  The editor shall raise an event with the node when a node body is double-clicked, and an event with
+                  the element and its position when the empty canvas or an element is right-clicked, and shall
+                  report what lies under a point on request.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-HostIntegration; the host owns dialogs and menus.
+                tests:
+                  - DiagramEditor_DoubleClick_NodeBody_RaisesNodeDoubleClicked
+                  - DiagramEditor_RightClick_OnNode_RaisesContextRequestedWithNode
+                  - DiagramEditor_RightClick_OnCanvas_RaisesContextRequestedWithPosition
+                  - DiagramEditor_HitTest_ReportsWhatIsUnderThePoint
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-SelectionCommands
+                title: >-
+                  The editor shall group the selected nodes, annotations and groups under a title, dissolve the
+                  selected groups, flip the groups of the selection (a selected member standing for its group), and
+                  move the selection to another page of the same diagram, each as one undo entry, doing nothing and
+                  reporting so (null, zero or false) when it is not applicable or the editor is read-only.
+                justification: |
+                  Every host menu needs these commands; the selection handling (copying the selection before
+                  modifying the model, ignoring wires, member-for-group) should not be reimplemented in each host.
+                tests:
+                  - DiagramEditor_GroupSelection_GroupsSelectionAsOneUndoEntry
+                  - DiagramEditor_GroupSelection_NothingToGroupOrReadOnly_ReturnsNull
+                  - DiagramEditor_UngroupSelection_DissolvesSelectedGroupsAsOneUndoEntry
+                  - DiagramEditor_UngroupSelection_NoGroupOrReadOnly_DoesNothing
+                  - DiagramEditor_ToggleCollapseSelection_MemberStandsForItsGroup
+                  - DiagramEditor_ToggleCollapseSelection_NoGroupOrReadOnly_ReturnsZero
+                  - DiagramEditor_MoveSelectionToPage_MovesAsOneUndoEntry
+                  - DiagramEditor_MoveSelectionToPage_NotApplicable_ReturnsFalse
+                  - DiagramEditor_SelectionCommands_WithoutPage_DoNothing
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-ViewCommands
+                title: >-
+                  The editor shall report the diagram point at the middle of the visible canvas, zoom in and out by
+                  one step around that point within the zoom limits, snap a diagram point to the grid while snapping
+                  is on, and add a selected annotation centered on the view as one undo entry.
+                justification: |
+                  Menu commands such as Zoom In, Add Annotation and Add Node Here need the view center and grid
+                  snapping, which depend on view state that only the editor knows.
+                tests:
+                  - DiagramEditor_ViewCenter_FollowsZoomAndOffset
+                  - DiagramEditor_ZoomInAndOut_StepAroundTheCenterAndClamp
+                  - DiagramEditor_SnapPoint_FollowsSnapToGrid
+                  - DiagramEditor_AddAnnotationAtCenter_AddsSelectedAnnotationAtTheViewCenter
+                  - DiagramEditor_AddAnnotationAtCenter_ReadOnly_ReturnsNull

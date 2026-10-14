@@ -1,0 +1,59 @@
+---
+# Software Unit requirements for PlexusAvalonia NodeTypeDragSource.
+#
+# Decomposes the PlexusAvalonia Editor subsystem requirements into the responsibility of the helper that turns a
+# palette control into a drag source for node types. The headless test platform has no operating-system drag
+# support, so the tests observe when the helper hands a pending press over to start a drag. Tests are the unit tests
+# in NodeTypeDragSourceTests.cs.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: Editor Requirements
+        sections:
+          - title: NodeTypeDragSource Requirements
+            requirements:
+              - id: PlexusAvalonia-Editor-NodeTypeDragSource-StartsDrag
+                title: >-
+                  Pressing the left button on the control and then moving the pointer beyond a small threshold shall
+                  start a drag of the node type, while a smaller movement shall not.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodeDrop; a plain click on a palette entry must stay a click.
+                tests:
+                  - NodeTypeDragSource_Move_PastThreshold_ConsumesPressToStartDrag
+
+              - id: PlexusAvalonia-Editor-NodeTypeDragSource-Abandon
+                title: >-
+                  Releasing the button before the threshold is passed shall abandon the pending drag, so that later
+                  movement starts nothing.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodeDrop; a stale press must not start a drag later.
+                tests:
+                  - NodeTypeDragSource_Release_AbandonsPendingPress
+
+              - id: PlexusAvalonia-Editor-NodeTypeDragSource-LeftButtonOnly
+                title: >-
+                  Only the left button shall arm a drag.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodeDrop; the right button belongs to context menus.
+                tests:
+                  - NodeTypeDragSource_Press_RightButton_DoesNotArm
+
+              - id: PlexusAvalonia-Editor-NodeTypeDragSource-Dispose
+                title: >-
+                  Disposing the helper shall stop it from reacting to the control.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodeDrop; hosts rebuild palettes and must be able to detach
+                  helpers without leaking handlers.
+                tests:
+                  - NodeTypeDragSource_Dispose_StopsListening
+
+              - id: PlexusAvalonia-Editor-NodeTypeDragSource-PlatformFailure
+                title: >-
+                  When the platform cannot start a drag, the helper shall ignore the failure and shall keep working
+                  for later presses.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodeDrop; platforms without drag support must still run the
+                  application, with double-click as the alternative way to add nodes.
+                tests:
+                  - NodeTypeDragSource_Move_PlatformCannotDrag_IsIgnoredAndStaysUsable

@@ -1,0 +1,242 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid EditSession.
+#
+# Each requirement decomposes a system requirement into the behavior of the edit session and the collection editor.
+# Tests are the EditSessionTests and EditSessionCollectionTests unit tests.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: EditSession Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-EditSession-Live
+            title: >-
+              In live mode the session shall write each edit to the target immediately, converting text with the
+              requested culture, without buffering it, and report the write through a change notification.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Live; simple property dialogs apply each edit as the
+              user makes it.
+            tests:
+              - PropertyEditSession_Live_SetValueWritesImmediately
+              - PropertyEditSession_Live_SetTextRecordsAndClearsErrors
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-Reset
+            title: >-
+              The session shall restore the default value of a property immediately in live mode, and buffer the
+              reset in staged mode, and refuse a property without a default.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Live; resetting a changed value is a normal edit that
+              must follow the session mode.
+            tests:
+              - PropertyEditSession_Live_ResetRestoresTheDefault
+              - PropertyEditSession_Staged_ResetIsBufferedAndApplied
+              - PropertyEditSession_Staged_ValueEditReplacesAPendingReset
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-Refresh
+            title: >-
+              The session shall tell the user interface to re-read every property when a property annotated to
+              refresh all others is written or committed.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Live; such a property changes what the other properties
+              show or allow.
+            tests:
+              - PropertyEditSession_Live_RefreshPropertiesAllRequestsRefresh
+              - PropertyEditSession_Staged_CommitOfRefreshPropertyRequestsRefresh
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-StagedBuffering
+            title: >-
+              In staged mode the session shall buffer each edit by property path, including nested and
+              collection element paths, without touching the target, show the pending value, replace an earlier
+              pending value of the same path, and drop a pending edit that sets the property back to its current
+              value.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Staged; dialogs with OK and Cancel must not change the
+              object until the user accepts.
+            tests:
+              - PropertyEditSession_Staged_SetValueBuffersWithoutTouchingTheTarget
+              - PropertyEditSession_Staged_SettingBackToTheCurrentValueRemovesTheEdit
+              - PropertyEditSession_Staged_NestedPropertyPathsAreBuffered
+              - PropertyEditSession_Staged_CollectionElementPathsAreBuffered
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-StagedCommit
+            title: >-
+              Commit shall apply the pending edits in the order they were first made and clear them, keep an
+              edit that fails pending with its error while the others are applied, and report the number applied
+              and the failures.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Staged; edits can depend on each other; a failing edit
+              must not lose the user's other edits.
+            tests:
+              - PropertyEditSession_Staged_CommitAppliesAndClearsTheEdits
+              - PropertyEditSession_Staged_CommitAppliesInFirstEditOrder
+              - PropertyEditSession_Staged_CommitFailureKeepsTheFailedEditPending
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-StagedCancel
+            title: >-
+              Cancel shall discard every pending edit and error without touching the target, and Discard shall
+              remove the edit and error of one property.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Staged; the user must be able to abandon or revert
+              edits.
+            tests:
+              - PropertyEditSession_Staged_CancelDiscardsEverything
+              - PropertyEditSession_Staged_DiscardRemovesOneItem
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-Paths
+            title: >-
+              The session shall find an item by property path through properties, nested properties and
+              collection elements and return nothing for a path that does not lead to an item.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Staged; edits and errors are keyed by path, and hosts
+              address properties by path.
+            tests:
+              - PropertyEditSession_FindItem_ResolvesPathsAndRejectsBadOnes
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CommitScope
+            title: >-
+              The session shall run its writes inside the host's commit scope (live: once per edit, staged: once
+              per commit), report a scope that fails or does not apply the writes as an error, and keep every
+              edit pending when the scope fails.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; hosts wrap the writes in an undo
+              transaction so that one commit is one undo step.
+            tests:
+              - PropertyEditSession_Live_CommitScopeWrapsEachWrite
+              - PropertyEditSession_Live_CommitScopeFailuresAreReported
+              - PropertyEditSession_Staged_CommitScopeIsCalledOnceForAllEdits
+              - PropertyEditSession_Staged_CommitScopeFailureKeepsAllEditsPending
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-Errors
+            title: >-
+              The session shall record a failed edit (read-only property, invalid value, invalid text or
+              throwing setter) as the error of its property until a later edit succeeds or it is discarded,
+              never buffer an invalid edit, and validate its arguments.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Validation; the user interface shows the error next to the
+              property; invalid edits must not be applied later by a commit.
+            tests:
+              - PropertyEditSession_Live_ReadOnlyInvalidAndThrowingSettersFail
+              - PropertyEditSession_Staged_ValidationErrorsAreNotBuffered
+              - PropertyEditSession_Arguments_AreValidated
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CollectionEditing
+            title: >-
+              The collection editor shall edit a working copy of a collection property (add, insert, remove,
+              replace, move) without touching the target in staged mode, record one pending collection edit,
+              drop it when the working copy equals the target again, and end when the session commits or
+              cancels.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Collections; collections are edited as a whole and
+              applied together with the other edits.
+            tests:
+              - CollectionEditor_Staged_ListEditsApplyInPlaceOnCommit
+              - CollectionEditor_Staged_SameEditorWhilePendingAndInactiveAfterCommit
+              - CollectionEditor_Staged_CancelEndsTheEditor
+              - CollectionEditor_Staged_BackToTheTargetRemovesThePendingEdit
+              - CollectionEditor_Staged_ValueEditReplacesThePendingCollectionEdit
+              - CollectionEditor_Staged_ElementEditsAndStructuralEditsCommitTogether
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CollectionElements
+            title: >-
+              The collection editor shall create new elements with the element type's public default-constructor
+              constructor (empty text, default value types) or the session's factory, report an element that
+              cannot be created, and reject invalid indices and elements of the wrong type.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Collections; new rows in a collection editor need an
+              element without the user supplying one.
+            tests:
+              - CollectionEditor_Add_CreatesDefaultElements
+              - CollectionEditor_Add_UsesTheFactoryWhenThereIsNoDefaultConstructor
+              - CollectionEditor_InvalidArguments_AreRejected
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CollectionCommit
+            title: >-
+              Committing a collection edit shall refill a resizable list or collection in place, update an array
+              of unchanged length in place, replace an array or null collection through the property setter, and
+              reject changes the collection or a read-only property does not allow.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Collections; get-only collection properties are common
+              and must keep their instance; arrays cannot grow; read-only collections cannot change.
+            tests:
+              - CollectionEditor_Array_ReadOnlyPropertyAllowsOnlyInPlaceChanges
+              - CollectionEditor_Array_SettablePropertyReceivesANewArray
+              - CollectionEditor_ReadOnlyList_RejectsEveryChange
+              - CollectionEditor_GenericCollection_IsRefilledInPlace
+              - CollectionEditor_NullCollection_IsReplacedByANewList
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CollectionLive
+            title: >-
+              In live mode the collection editor shall write each change to the target immediately and re-read
+              its working copy from the target, also when the write fails.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Collections; live sessions have no pending edits; the
+              editor must show what the target really holds.
+            tests:
+              - CollectionEditor_Live_ChangesApplyImmediately
+              - CollectionEditor_Live_FailureRestoresTheWorkingCopy
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CollectionReplace
+            title: >-
+              The collection editor shall replace its whole working copy in one step (one write in live mode, one
+              pending edit in staged mode), refuse a different number of elements for a collection that cannot be
+              resized, and reject elements of the wrong type.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Collections; a dialog arranges a list of its own and hands
+              the result over in one step so that Cancel leaves the target alone and OK is one undo step.
+            tests:
+              - CollectionEditor_SetItems_Live_WritesOnceInsideScope
+              - CollectionEditor_SetItems_Staged_RecordsPendingEdit
+              - CollectionEditor_SetItems_ValidatesSizeAndElementType
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-ReportError
+            title: >-
+              The session shall record an error reported by an editor for an item without changing its value, until
+              the item is edited successfully, discarded or cancelled.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Validation; an editor that cannot interpret its own input (for
+              example text that is not a color) must be able to show the same inline error as a rejected value.
+            tests:
+              - PropertyEditSession_ReportError_RecordsAndClearsError
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-SourceScope
+            title: >-
+              When the source of a session brackets commits itself, the session shall run the source's commit scope
+              around the host's commit scope, once per staged commit and once per live edit, and shall record a
+              refusal that names a property as that property's error, commit nothing and report the reason.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; a source that edits a working copy (such as a
+              Plexus node) makes every commit one undo step whatever host shows it, and a rule that can only be
+              checked at commit time (a vetoed rename) must be shown on its row.
+            tests:
+              - PropertyEditSession_Commit_SourceScopeIsOutsideTheHostScope
+              - PropertyEditSession_LiveEdit_RunsTheSourceScopePerEdit
+              - PropertyEditSession_Commit_RefusedExceptionMarksTheNamedProperty
+              - PropertyEditSession_LiveEdit_RefusedExceptionIsAnInlineError
+              - PropertyEditSession_Commit_SourceScopeThatSkipsTheActionFails
+              - PropertyCommitRefusedException_Constructor_KeepsPathAndMessage
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CommitFailures
+            title: >-
+              When a commit is refused because of one row, the commit result shall list the failing row with its path
+              and message, also when that row was not edited, as well as the edits that failed on their own, with
+              nothing
+              counted as applied; and error messages shall be clean user-facing text without the framework's parameter
+              name suffix.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; a host that commits through the session must be
+              able to select the failing row and show its reason without parsing a message.
+            tests:
+              - PropertyEditSession_Commit_RefusedExceptionMarksTheNamedProperty
+              - PropertyEditSession_Commit_RefusedExceptionForAnUneditedRowIsListedAsFailed
+              - PropertyEditSession_SetText_ArgumentExceptionMessage_HasNoParameterSuffix
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-PrefixedRoots
+            title: >-
+              The session shall find an item by the path of a top-level item even when that path contains dots, and
+              continue through nested properties and collection elements from there.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Staged; sources that prefix their row paths to keep groups of
+              rows apart rely on the lookup resolving whole root paths.
+            tests:
+              - PropertyEditSession_FindItem_PrefixedRootPaths_AreResolvedByTheirFullPath
+              - NodePropertySource_Paths_NameDeclaredAndDataRowsNeverCollide

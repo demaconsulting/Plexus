@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- NOT gate symbol: a triangle ending in an inversion bubble -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 32 H14 M54 32 H62" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M14 14 L46 32 L14 50 Z" stroke="#6FE39A" stroke-width="2.5"/>
+    <circle cx="50" cy="32" r="4" stroke="#6FE39A" stroke-width="2.5"/>
+  </g>
+</svg>

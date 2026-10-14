@@ -1,0 +1,233 @@
+---
+# Software Subsystem requirements for Plexus Model.
+#
+# The Model subsystem is the document model of Plexus: the diagram root, the ordered pages and the elements placed on
+# them. It decomposes the page, element, rename, wire, connection-rule, group, editing, undo/redo and change
+# notification system requirements. Evidence is provided by the Model subsystem tests, which exercise the units
+# working together.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        requirements:
+          - id: Plexus-Model-Pages
+            title: >-
+              The Model shall hold the pages of a diagram as an ordered list of named pages that can be added,
+              inserted, renamed, reordered and removed, with a removed page rejecting edits until its removal is
+              undone.
+            justification: |
+              Pages let a large diagram be split into manageable canvases. Page structure is part of the document, so
+              the list must stay ordered and consistent across all page operations, and a removed page must not be
+              editable while it is detached.
+            children:
+              - Plexus-Model-PageCollection-AddInsert
+              - Plexus-Model-PageCollection-Remove
+              - Plexus-Model-PageCollection-Move
+              - Plexus-Model-DiagramPage-Name
+              - Plexus-Model-DiagramPage-RemovedGuard
+            tests:
+              - Model_Pages_AddInsertRenameMoveRemove_KeepsOrderAndUndoes
+              - Model_Pages_RemovedPage_RejectsEditsUntilUndo
+
+          - id: Plexus-Model-Elements
+            title: >-
+              The Model shall add nodes by node-type key and annotations to a page, with unique generated or
+              explicit names and ids, and find them again from the diagram by id or node name.
+            justification: |
+              Building a diagram starts with adding elements. Hosts need predictable unique identities for nodes,
+              and need to find an element again without knowing which page holds it.
+            children:
+              - Plexus-Model-Diagram-NodeTypes
+              - Plexus-Model-Diagram-Lookup
+              - Plexus-Model-DiagramPage-AddNode
+              - Plexus-Model-DiagramPage-NodeIdentity
+              - Plexus-Model-DiagramPage-AddAnnotation
+              - Plexus-Model-Node-Ports
+              - Plexus-Model-Node-Data
+              - Plexus-Model-Node-DataTypeCheck
+              - Plexus-Model-Node-CloneData
+              - Plexus-Model-Annotation-Initial
+              - Plexus-Model-Annotation-Text
+              - Plexus-Model-Annotation-Fill
+            tests:
+              - Model_Elements_AddNodesAndAnnotation_UseUniqueNamesAndAreFindable
+
+          - id: Plexus-Model-Rename
+            title: >-
+              The Model shall rename a node through a pipeline that trims and validates the name, enforces
+              uniqueness, lets the host correct or cancel the change, and applies it as an undoable change.
+            justification: |
+              Node names are user-visible identifiers with host-specific conventions. A single pipeline gives every
+              rename path the same validation and the same host hook, and keeps renames in the undo history.
+            children:
+              - Plexus-Model-Diagram-RenameValidation
+              - Plexus-Model-Diagram-RenameHook
+              - Plexus-Model-Diagram-RenameUndo
+            tests:
+              - Model_Rename_ValidationHostHookAndUndo_AppliesCorrectionsAndRejects
+
+          - id: Plexus-Model-Wires
+            title: >-
+              The Model shall connect an output port to an input port, given as port objects or "Node.port" paths,
+              with a wire that is routed automatically or by a supplied route, and shall allow the wire route to be
+              edited and recomputed.
+            justification: |
+              Wires carry the data flow between nodes. Hosts need to wire nodes up either from objects or from
+              readable text paths, get a sensible route by default, and let users or code adjust or reset it.
+            children:
+              - Plexus-Model-DiagramPage-Connect
+              - Plexus-Model-DiagramPage-ConnectByPath
+              - Plexus-Model-DiagramPage-RerouteAll
+              - Plexus-Model-Diagram-PortLookup
+              - Plexus-Model-Node-PortLookup
+              - Plexus-Model-Node-SharedPortNames
+              - Plexus-Model-Node-ConnectedWires
+              - Plexus-Model-Wire-Endpoints
+              - Plexus-Model-Wire-Route
+              - Plexus-Model-Wire-Points
+              - Plexus-Model-Wire-Bounds
+              - Plexus-Model-Wire-SetRoute
+              - Plexus-Model-Wire-Reroute
+            tests:
+              - Model_Wires_ConnectByObjectsAndPath_RouteAndEdit
+
+          - id: Plexus-Model-WireEditing
+            title: >-
+              The Model shall keep stored wire routes normalized, route each new wire around the wires of other
+              nets already on the page, add draggable jogs to a wire, and move the ends of a wire to other ports
+              under the connection rules, each edit being one undo entry.
+            justification: |
+              Interactive editors reshape and re-attach wires; the model supplies these operations so that every
+              host gets the same validation, undo and routing behavior.
+            children:
+              - Plexus-Model-Wire-RouteNormalization
+              - Plexus-Model-Wire-Reconnect
+              - Plexus-Model-Wire-AddJog
+            tests:
+              - Plexus_WireNetsAndEditing_SeparateNetsJunctionsAndHandles_WorkThroughThePublicApi
+
+          - id: Plexus-Model-ConnectionRules
+            title: >-
+              The Model shall apply structural connection rules and the host connection rule to every connection,
+              and shall report whether two ports can be connected, with a denial reason, without changing the model.
+            justification: |
+              Invalid connections must never enter the model, and a UI needs to know in advance, and why, a
+              connection is denied so it can give feedback while the user is still dragging.
+            children:
+              - Plexus-Model-DiagramPage-CanConnect
+              - Plexus-Model-DiagramPage-ReconnectContext
+              - Plexus-Model-Diagram-ConnectionRulesSetting
+            tests:
+              - Model_ConnectionRules_StructureAndHostRule_DenyWithReasons
+
+          - id: Plexus-Model-Groups
+            title: >-
+              The Model shall group nodes, annotations and groups into nestable groups, dissolve groups, collapse
+              and expand them, and move a group together with all its members.
+            justification: |
+              Groups organize large diagrams. A group must behave as one unit when moved, keep a consistent
+              hierarchy, and hide its members when collapsed.
+            children:
+              - Plexus-Model-DiagramPage-CreateGroup
+              - Plexus-Model-DiagramPage-Ungroup
+              - Plexus-Model-DiagramPage-MoveGroup
+              - Plexus-Model-Node-Visibility
+              - Plexus-Model-Group-Members
+              - Plexus-Model-Group-MemberRules
+              - Plexus-Model-Group-Nesting
+              - Plexus-Model-Group-Bounds
+              - Plexus-Model-Group-Collapse
+              - Plexus-Model-Group-CollapseHidesMembers
+              - Plexus-Model-Group-Title
+            tests:
+              - Model_Groups_NestCollapseMoveAndUngroup_MembersFollow
+
+          - id: Plexus-Model-Editing
+            title: >-
+              The Model shall move elements with the wires following them, remove elements together with their
+              wires, and move elements between pages, removing wires that would span pages.
+            justification: |
+              Editing must always leave a consistent diagram: wires stay attached to their nodes, no wire is left
+              without an end and no wire connects nodes of different pages.
+            children:
+              - Plexus-Model-DiagramPage-Move
+              - Plexus-Model-DiagramPage-MoveWires
+              - Plexus-Model-DiagramPage-Remove
+              - Plexus-Model-Diagram-MoveToPage
+              - Plexus-Model-Diagram-MoveToPageWires
+              - Plexus-Model-Node-Bounds
+              - Plexus-Model-Node-Removal
+              - Plexus-Model-Annotation-Bounds
+              - Plexus-Model-Annotation-Detached
+              - Plexus-Model-Wire-Remove
+              - Plexus-Model-Group-Detached
+            tests:
+              - Model_Editing_MoveAndRemove_WiresFollowAndAreRemoved
+              - Model_Editing_MoveToPage_CarriesInternalWiresAndDropsOutsideWires
+
+          - id: Plexus-Model-UndoRedo
+            title: >-
+              The Model shall record every mutation of pages and elements in one shared undo history so that
+              undo and redo restore the exact model state step by step.
+            justification: |
+              Users expect to undo any edit. A single history covering all pages and element kinds, with exact
+              restoration, makes undo and redo reliable for the whole document.
+            children:
+              - Plexus-Model-Diagram-SharedHistory
+              - Plexus-Model-PageCollection-Undo
+              - Plexus-Model-DiagramPage-Undo
+            tests:
+              - Model_UndoRedo_MixedEditingSession_RestoresEveryStateExactly
+
+          - id: Plexus-Model-WireStyler
+            title: >-
+              The Model shall let the host assign a per-wire styler, evaluated on demand by scene builders, that is
+              not part of the undoable content, and shall raise a change notification, without an undo entry, when
+              the styler is assigned or when the host asks for a refresh because its styling inputs changed.
+            justification: |
+              Wire appearance that depends on what a wire connects, or on host state such as a simulation value, is
+              configuration rather than content: it must repaint editors when it changes but must never pollute
+              the undo history or the saved diagram.
+            children:
+              - Plexus-Model-Diagram-WireStyler
+              - Plexus-Model-Diagram-Version
+            tests:
+              - Model_WireStyler_AssignAndRefresh_NotifyWithoutUndoEntries
+
+          - id: Plexus-Model-NodeStyler
+            title: >-
+              The Model shall let the host assign a per-node styler, evaluated on demand by scene builders, that is
+              not part of the undoable content, and shall raise a change notification, without an undo entry, when
+              it is assigned.
+            justification: |
+              Like the wire styler, the node styler is configuration rather than content: it must repaint editors
+              when it changes but must never pollute the undo history or the saved diagram.
+            children:
+              - Plexus-Model-Diagram-NodeStyler
+            tests:
+              - Model_NodeStyler_Assign_NotifiesWithoutUndoEntries
+          - id: Plexus-Model-ChangeNotification
+            title: >-
+              The Model shall notify observers of every change, including undo and redo and setting changes, through
+              the diagram Changed event and through observable page and content collections that are consistent when
+              notified.
+            justification: |
+              Painters and editor controls stay correct only if they are told about every change. Notifications
+              must also describe a settled model so handlers never observe half-applied changes.
+            children:
+              - Plexus-Model-Diagram-ChangeNotification
+              - Plexus-Model-Diagram-Settings
+              - Plexus-Model-Diagram-Options
+              - Plexus-Model-Diagram-Initialize
+              - Plexus-Model-PageCollection-Notification
+              - Plexus-Model-PageCollection-NotificationOrder
+              - Plexus-Model-PageCollection-ListBinding
+              - Plexus-Model-DiagramPage-Notification
+              - Plexus-Model-Node-ChangeNotification
+              - Plexus-Model-Wire-ChangeNotification
+              - Plexus-Model-Annotation-ChangeNotification
+              - Plexus-Model-Group-ChangeNotification
+            tests:
+              - Model_ChangeNotification_EditsUndoAndRedo_RaiseChangedForEveryChange
+              - Model_ChangeNotification_ObservableCollections_ReportAddMoveRemove

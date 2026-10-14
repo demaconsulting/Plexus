@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <OutputType>Exe</OutputType>
+    <AssemblyName>plexus-puppet</AssemblyName>
+    <RootNamespace>DemaConsulting.Plexus.Puppet</RootNamespace>
+
+    <!-- The Puppet drives Windows UI Automation (FlaUI, which references the Windows Desktop framework), so it only
+         runs on Windows. EnableWindowsTargeting lets Linux and macOS builds (CI, CodeQL) still compile it. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!-- The Puppet is a development tool and is never published as a package -->
+    <IsPackable>false</IsPackable>
+
+    <!-- Code Quality Configuration (same gates as the shipped libraries) -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <!-- Code Analysis Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- UI Automation driver -->
+  <ItemGroup>
+    <PackageReference Include="FlaUI.Core" Version="5.0.0" />
+    <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+  </ItemGroup>
+
+  <!-- The unit tests cover argument, chord and geometry parsing directly -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemaConsulting.Plexus.Puppet.Tests" />
+  </ItemGroup>
+
+</Project>

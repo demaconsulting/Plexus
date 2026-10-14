@@ -1,0 +1,49 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid EditorRegistry.
+#
+# Each requirement decomposes the custom editor system requirement into the behavior of the editor annotation and the
+# editor registry. Tests are the EditorRegistryTests unit tests.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: EditorRegistry Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-EditorRegistry-Attribute
+            title: >-
+              The editor annotation shall name an editor by key or by editor type, using the type's full name as
+              the key, and reject an empty key or missing type.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Editors; authors request a custom editor with an annotation;
+              the UI layer cannot reuse WinForms type editors.
+            tests:
+              - PropertyEditorAttribute_KeyOrType_SetsTheEditorKey
+
+          - id: PlexusAvaloniaPropertyGrid-EditorRegistry-ResolveByKey
+            title: >-
+              The registry shall find the editor registered under a key regardless of case and allow a
+              registration to be removed.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Editors; annotations refer to editors by key.
+            tests:
+              - PropertyEditorRegistry_ResolveByKey_IsCaseInsensitiveAndRemovable
+
+          - id: PlexusAvaloniaPropertyGrid-EditorRegistry-ResolveByType
+            title: >-
+              The registry shall find the editor registered for a property type, its nearest base type, an
+              implemented interface, its open generic definition or its nullable underlying type, preferring the
+              exact registration.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Editors; one editor registration should serve all
+              enumerations, all lists and nullable variants.
+            tests:
+              - PropertyEditorRegistry_ResolveByType_WalksBasesInterfacesAndGenerics
+
+          - id: PlexusAvaloniaPropertyGrid-EditorRegistry-ResolveItem
+            title: >-
+              The registry shall resolve the editor of an item from its editor key first, then its property
+              type, then a fallback editor.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Editors; the grid asks the registry once per row.
+            tests:
+              - PropertyEditorRegistry_ResolveItem_KeyThenTypeThenFallback

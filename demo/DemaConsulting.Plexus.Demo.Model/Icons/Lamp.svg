@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Lamp: a bulb with a filament, a screw base and rays -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M24 38 C14 28 18 10 32 10 C46 10 50 28 40 38 V44 H24 Z" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M26 30 L32 22 L38 30" stroke="#6FE39A" stroke-width="2.5"/>
+    <path d="M26 50 H38 M28 56 H36" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M8 20 L13 23 M56 20 L51 23 M6 34 H12 M58 34 H52" stroke="#F2F2F2" stroke-width="1.5"/>
+  </g>
+</svg>

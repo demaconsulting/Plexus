@@ -1,0 +1,148 @@
+---
+# Software Unit requirements for Plexus Node.
+#
+# The Node unit covers the element base class shared by everything on a page, the node element itself and its
+# ports. Requirements describe the observable behavior of nodes: ports and port lookup, bounds, host data,
+# visibility, removal and change notification.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        sections:
+          - title: Node Requirements
+            requirements:
+              - id: Plexus-Model-Node-Ports
+                title: >-
+                  A node shall expose one port per declaration of its node type, inputs before outputs, each
+                  reporting its owning node, name, label, direction, data type key and row index.
+                justification: |
+                  Hosts and the connection logic address ports through the node. A stable, ordered port list that
+                  carries the declared name, label and type is required to draw, validate and connect ports.
+                tests:
+                  - Node_Ports_InputsThenOutputs_ReportOwnerDirectionAndIndex
+                  - Node_Port_ByName_ReturnsCachedPortWithDefinitionData
+                  - PortDefinition_Label_CustomLabelIsExposedOnPort
+                  - Port_Anchor_NodeMoved_AnchorFollowsNode
+
+              - id: Plexus-Model-Node-PortLookup
+                title: >-
+                  A node shall find a port by name, optionally restricted to an input or an output, either
+                  throwing or reporting failure when the port does not exist.
+                justification: |
+                  Scripts and file loaders refer to ports by name. Both a throwing lookup and a non-throwing
+                  lookup are needed so callers can choose between strict construction code and tolerant parsing.
+                tests:
+                  - Node_TryGetPort_UniqueName_FindsPort
+                  - Node_TryGetPort_MissingOrWrongDirection_ReturnsFalse
+                  - Node_InputAndOutput_WrongDirectionOrMissing_Throw
+
+              - id: Plexus-Model-Node-SharedPortNames
+                title: >-
+                  A node shall allow an input and an output to share one name, and shall refuse to resolve such a
+                  name without a direction by reporting an ambiguity that names the explicit lookups.
+                justification: |
+                  Node types commonly use the same name on both sides (for example a position that is both
+                  consumed and produced). Silently picking one side would create wrong connections, so the
+                  ambiguity must be reported while the direction-specific lookups keep working.
+                tests:
+                  - Node_InputAndOutput_SameName_ReturnPortsOfTheRequestedDirection
+                  - Node_Port_AmbiguousName_ThrowsInvalidOperationWithHint
+                  - Node_TryGetPort_AmbiguousName_NeedsDirection
+
+              - id: Plexus-Model-Node-ConnectedWires
+                title: >-
+                  A node and each of its ports shall list the wires connected to them in page order, and a port
+                  shall be able to create a wire to another port.
+                justification: |
+                  Hosts need to enumerate the wires of a node or port, for example to highlight or delete them, and
+                  to connect two ports directly from the port object.
+                tests:
+                  - Port_ConnectTo_OutputToInput_WireIsListedOnPortsAndNodes
+                  - Node_Wires_RemovedNode_IsEmptyUntilUndo
+
+              - id: Plexus-Model-Node-Bounds
+                title: >-
+                  A node shall report its bounding box and shall change it undoably through the bounds setter or a
+                  move, doing nothing for an unchanged box and rejecting invalid boxes.
+                justification: |
+                  Positioning and resizing nodes is the core editing action. Undo support, no history entry for a
+                  no-op and validation keep the model consistent and the history free of noise.
+                tests:
+                  - Node_MoveToAndBounds_MoveNodeAndRerouteWires
+                  - Node_Bounds_SameOrInvalid_NoEntryOrThrows
+                  - DiagramElement_GetBounds_NodeAnnotationGroup_ReturnTheirBounds
+
+              - id: Plexus-Model-Node-Data
+                title: >-
+                  A node shall carry a host-defined data payload that can be replaced undoably, recording nothing
+                  when the new value equals the current one.
+                justification: |
+                  Hosts attach their own objects to nodes. Treating the payload as an undoable value keeps host
+                  data consistent with the rest of the diagram across undo and redo.
+                tests:
+                  - Node_Data_Set_UndoRedoRoundTrip
+                  - Node_Data_SetEqualValue_RecordsNothing
+
+              - id: Plexus-Model-Node-Visibility
+                title: >-
+                  An element shall report itself as hidden when any group that contains it, at any nesting depth, is
+                  collapsed, and as visible otherwise.
+                justification: |
+                  Renderers and hit testing must skip elements that sit inside a collapsed group. A single rule on
+                  the element base class gives every element kind the same behavior.
+                tests:
+                  - DiagramElement_IsVisible_FalseWhenAnyAncestorGroupIsCollapsed
+
+              - id: Plexus-Model-Node-Removal
+                title: >-
+                  An element shall remove itself from its page undoably, shall keep its identifier across removal
+                  and undo, and shall reject changes while it is removed.
+                justification: |
+                  Removal must be undoable and must restore the same element object under the same identifier so
+                  host references stay valid. Rejecting changes to a detached element prevents edits that would be
+                  lost or would corrupt the history.
+                tests:
+                  - DiagramElement_Remove_RemovesFromPage
+                  - DiagramElement_Id_RemoveAndUndo_StaysTheSame
+                  - Node_BoundsAndData_Set_OnRemovedNode_ThrowsInvalidOperationException
+                  - DiagramPage_Remove_Element_MutationRejectedUntilUndo
+                  - Node_Name_Set_OnRemovedNode_ThrowsInvalidOperationException
+
+              - id: Plexus-Model-Node-ChangeNotification
+                title: >-
+                  An element shall raise a property-changed notification and report an element change to its diagram
+                  for every changed property, including changes made by undo and redo.
+                justification: |
+                  User interfaces bind to element properties and refresh from diagram change events. Notifying on
+                  undo and redo as well keeps views consistent without the host tracking history operations.
+                tests:
+                  - Node_PropertyChanged_NameBoundsAndData_RaisedForSetUndoAndRedo
+                  - Node_Changed_BoundsSet_DiagramReportsElementChanged
+
+              - id: Plexus-Model-Node-CloneData
+                title: >-
+                  A node shall provide an independent deep copy of its host data through the data type or serializer
+                  of its node type, return null when it has no data, and refuse with a clear message when the data
+                  cannot be copied; the copy and property changes shall be committable as one undo entry.
+                justification: |
+                  Editors modify a copy and commit it on OK; sharing the live object would change the document before
+                  the user confirmed.
+                tests:
+                  - Node_CloneData_ReturnsIndependentCopy
+                  - Node_CloneData_TypeWithoutSerializer_Throws
+                  - Node_CloneData_CommittedWithPropertiesInOneTransaction_IsOneUndoEntry
+
+              - id: Plexus-Model-Node-DataTypeCheck
+                title: >-
+                  Assigning a host payload to a node whose type declares a data type shall throw an argument
+                  exception at once, recording nothing, when the payload is not an instance of that type, while the
+                  declared type, a derived type and null are accepted; a type that declares only a serializer or
+                  nothing shall accept any payload.
+                justification: |
+                  A payload of the wrong type would otherwise fail much later, when the diagram is saved or copied,
+                  far from the code that caused it. Failing at the assignment names the mistake where it was made.
+                tests:
+                  - Node_Data_IncompatibleType_ThrowsArgumentException
+                  - Node_Data_DeclaredDerivedOrNull_IsAccepted
+                  - Node_Data_SerializerOnlyOrUndeclared_AcceptsAnyObject

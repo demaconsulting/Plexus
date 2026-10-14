@@ -1,8 +1,24 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/DemaConsulting.Plexus/DemaConsulting.Plexus.csproj" />
+    <Project Path="src/DemaConsulting.Plexus.Avalonia/DemaConsulting.Plexus.Avalonia.csproj" />
+    <Project Path="src/DemaConsulting.Plexus.Rendering/DemaConsulting.Plexus.Rendering.csproj" />
+    <Project Path="src/DemaConsulting.Plexus.Avalonia.PropertyGrid/DemaConsulting.Plexus.Avalonia.PropertyGrid.csproj" />
+  </Folder>
+  <Folder Name="/demo/">
+    <Project Path="demo/DemaConsulting.Plexus.Demo.Model/DemaConsulting.Plexus.Demo.Model.csproj" />
+    <Project Path="demo/DemaConsulting.Plexus.Demo.Cli/DemaConsulting.Plexus.Demo.Cli.csproj" />
+    <Project Path="demo/DemaConsulting.Plexus.Demo.Gui/DemaConsulting.Plexus.Demo.Gui.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/DemaConsulting.Plexus.Puppet/DemaConsulting.Plexus.Puppet.csproj" />
   </Folder>
   <Folder Name="/test/">
+    <Project Path="test/DemaConsulting.Plexus.Demo.Tests/DemaConsulting.Plexus.Demo.Tests.csproj" />
+    <Project Path="test/DemaConsulting.Plexus.Puppet.Tests/DemaConsulting.Plexus.Puppet.Tests.csproj" />
     <Project Path="test/DemaConsulting.Plexus.Tests/DemaConsulting.Plexus.Tests.csproj" />
+    <Project Path="test/DemaConsulting.Plexus.Avalonia.Tests/DemaConsulting.Plexus.Avalonia.Tests.csproj" />
+    <Project Path="test/DemaConsulting.Plexus.Rendering.Tests/DemaConsulting.Plexus.Rendering.Tests.csproj" />
+    <Project Path="test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests.csproj" />
   </Folder>
 </Solution>

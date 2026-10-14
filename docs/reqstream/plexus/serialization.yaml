@@ -1,0 +1,184 @@
+---
+# Software Subsystem requirements for Plexus Serialization.
+#
+# Subsystem requirements decompose the Plexus system requirements (which link down to these IDs as children) into
+# the responsibilities of the Serialization subsystem; each links downward to the unit requirements that realize it
+# and to subsystem-level tests in SerializationTests. The clipboard requirements treat clipboard text as untrusted
+# input and are tagged security.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Serialization Requirements
+        requirements:
+          - id: Plexus-Serialization-LosslessRoundTrip
+            title: >-
+              Saving a diagram as JSON text and loading it with an equivalent node type registry shall restore every
+              page with its element ids, names, bounds, wire routes, annotations, groups (nesting and collapsed
+              state), z-order, property values (with their kinds) and node payloads exactly.
+            justification: |
+              Hosts persist diagrams through this format; any loss or alteration of state on a save/load cycle would
+              corrupt the user's work.
+            children:
+              - Plexus-Serialization-Snapshot-Capture
+              - Plexus-Serialization-Snapshot-RoundTrip
+              - Plexus-Serialization-Snapshot-Tree
+              - Plexus-Serialization-Snapshot-Streams
+            tests:
+              - Serialization_DiagramJson_RichDiagram_RoundTripsExactly
+
+          - id: Plexus-Serialization-RestoredState
+            title: >-
+              A diagram loaded from a snapshot shall have an empty, clean undo history and shall keep the stored
+              wire routes instead of routing the wires again.
+            justification: |
+              A freshly opened document has nothing to undo, and routes the user adjusted by hand must survive a
+              save and load.
+            children:
+              - Plexus-Serialization-Snapshot-FreshHistory
+              - Plexus-Serialization-Snapshot-StoredRoutes
+            tests:
+              - Serialization_DiagramJson_RichDiagram_RoundTripsExactly
+
+          - id: Plexus-Serialization-VersionedFormat
+            title: >-
+              The snapshot JSON and the clipboard text shall carry a format version (and, for the clipboard, a
+              format marker) in stable JSON, and a reader shall reject a version it does not support.
+            justification: |
+              Documents outlive the software version that wrote them; explicit versions let future versions evolve
+              the format safely, and a stable shape lets other tools read it.
+            children:
+              - Plexus-Serialization-Snapshot-JsonShape
+              - Plexus-Serialization-Snapshot-UnsupportedVersion
+              - Plexus-Serialization-PlexusClipboard-FormatMarker
+            tests:
+              - Serialization_Json_IsVersionedAndContainsNoTypeNames
+              - Serialization_InvalidSnapshots_ThrowTheDocumentedExceptions
+
+          - id: Plexus-Serialization-NoTypeResolution
+            title: >-
+              Serialization shall neither write nor interpret type names: members of the JSON that look like type
+              names, or that are unknown, shall be ignored when reading, and node payloads shall be read only as
+              the type the node type declares.
+            justification: |
+              Reading type names from untrusted text enables deserialization attacks that instantiate arbitrary
+              types; ignoring unknown members also lets older readers read newer documents.
+            tags:
+              - security
+            children:
+              - Plexus-Serialization-Snapshot-UnknownMembersIgnored
+              - Plexus-Serialization-PlexusClipboard-NoTypeNames
+            tests:
+              - Serialization_TypeNameMembers_AreIgnoredWhenReading
+              - Serialization_Json_IsVersionedAndContainsNoTypeNames
+
+          - id: Plexus-Serialization-MissingTypes
+            title: >-
+              Loading a snapshot or pasting clipboard text that uses node types the registry does not contain shall
+              fail without changing anything and shall name every missing node type, not only the first.
+            justification: |
+              Users fix a missing plug-in in one go if they know all of the missing types; a partial load would
+              leave a silently incomplete diagram.
+            children:
+              - Plexus-Serialization-Snapshot-MissingTypes
+              - Plexus-Serialization-Snapshot-SkipUnknownTypes
+              - Plexus-Serialization-PlexusClipboard-MissingTypes
+            tests:
+              - Serialization_MissingNodeTypes_AreAllReportedByBothEntryPoints
+
+          - id: Plexus-Serialization-InvalidSnapshots
+            title: >-
+              Loading text that is not valid JSON of the snapshot shape shall throw a JSON exception, and loading a
+              snapshot with an unsupported version or inconsistent content (such as a wire to a node that does not
+              exist) shall throw a snapshot exception; neither shall produce a diagram.
+            justification: |
+              Corrupt files must be reported precisely so the host can tell the user, rather than yielding a
+              half-built diagram.
+            children:
+              - Plexus-Serialization-Snapshot-RejectInvalidContent
+              - Plexus-Serialization-Snapshot-RejectMalformedJson
+            tests:
+              - Serialization_InvalidSnapshots_ThrowTheDocumentedExceptions
+
+          - id: Plexus-Serialization-OpaquePayloads
+            title: >-
+              A node payload whose node type declares no data type or serializer shall be left out of snapshots and
+              clipboard text instead of being guessed at.
+            justification: |
+              Payloads that cannot be read back reliably must not produce documents that fail to load.
+            children:
+              - Plexus-Serialization-Snapshot-OpaquePayloadOmitted
+              - Plexus-Serialization-PlexusClipboard-OpaquePayloadOmitted
+            tests:
+              - Serialization_OpaquePayload_IsOmittedFromSnapshotAndClipboard
+
+          - id: Plexus-Serialization-ClipboardInterchange
+            title: >-
+              Copying elements shall produce portable text from which pasting creates copies with new ids on any
+              page of any diagram that knows the node types, placed as one undoable step, with a selected group
+              copied with its members and a wire copied only when both of its nodes are.
+            justification: |
+              Copy and paste between pages, diagrams and applications is a core editing feature, and an undoable
+              single step is what users expect from it.
+            children:
+              - Plexus-Serialization-PlexusClipboard-CopySelection
+              - Plexus-Serialization-PlexusClipboard-PasteCopies
+              - Plexus-Serialization-PlexusClipboard-PastePosition
+              - Plexus-Serialization-PlexusClipboard-PasteUndo
+              - Plexus-Serialization-PlexusClipboard-PasteAcross
+              - Plexus-Serialization-PlexusClipboard-PasteWarnings
+              - Plexus-Serialization-PlexusClipboard-PasteMessage
+              - Plexus-Serialization-PlexusClipboard-ArgumentValidation
+            tests:
+              - Serialization_CopyPaste_AcrossDiagrams_ReproducesContentAsOneUndoStep
+
+          - id: Plexus-Serialization-Duplicate
+            title: >-
+              Duplicating elements of a page shall clone them at an offset as one undoable step with the same
+              clone behavior as copy and paste (selected groups with their members, wires only between duplicated
+              nodes, new ids, unique names, translated routes, independent properties and payloads).
+            justification: |
+              Ctrl-drag duplication must give the same results as copy and paste, or users would see different
+              copies depending on how they made them.
+            children:
+              - Plexus-Serialization-PlexusClipboard-Duplicate
+              - Plexus-Serialization-PlexusClipboard-DuplicateGroups
+              - Plexus-Serialization-PlexusClipboard-DuplicatePayloads
+            tests:
+              - Serialization_Duplicate_AndCopyPaste_ShareTheCloneBehavior
+
+          - id: Plexus-Serialization-ClipboardValidation
+            title: >-
+              Pasting shall treat clipboard text as untrusted: text that is not Plexus clipboard data, uses unknown
+              node types, holds out-of-range geometry or references elements that do not exist shall be rejected
+              as a whole with a failed result instead of an exception, without any change to the diagram or its
+              undo history, and unreadable node payloads shall be reduced to warnings.
+            justification: |
+              Clipboard text can come from any application or attacker; a paste must not crash the host, corrupt
+              the diagram or leave it half-modified, whatever the text contains.
+            tags:
+              - security
+            children:
+              - Plexus-Serialization-PlexusClipboard-RejectForeignContent
+              - Plexus-Serialization-PlexusClipboard-GeometryValidation
+              - Plexus-Serialization-PlexusClipboard-ConsistencyValidation
+              - Plexus-Serialization-PlexusClipboard-HostilePayload
+              - Plexus-Serialization-PlexusClipboard-AtomicOnFailure
+            tests:
+              - Serialization_InvalidClipboardContent_FailsWithoutChangingTheDiagram
+
+          - id: Plexus-Serialization-ClipboardLimits
+            title: >-
+              Pasting shall reject clipboard text larger than 8 MiB, content of more than 10,000 elements and JSON
+              nested deeper than 64 levels as failed results instead of exceptions, without changing the diagram.
+            justification: |
+              Resource limits keep a hostile or accidental huge clipboard from exhausting memory or stack in the
+              host application.
+            tags:
+              - security
+            children:
+              - Plexus-Serialization-PlexusClipboard-SizeLimit
+              - Plexus-Serialization-PlexusClipboard-ElementLimit
+              - Plexus-Serialization-PlexusClipboard-DepthLimit
+            tests:
+              - Serialization_HostileClipboardLimits_AreRejectedWithoutExceptions

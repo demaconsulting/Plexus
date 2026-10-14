@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Filter: a frequency response that is flat, then rolls off -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 8 V54 H60" stroke="#F2F2F2" stroke-width="1.5"/>
+    <path d="M8 22 H32 C42 22 44 40 56 48" stroke="#D2A3FF" stroke-width="3"/>
+    <path d="M38 54 V46" stroke="#F2F2F2" stroke-width="1.5"/>
+  </g>
+</svg>

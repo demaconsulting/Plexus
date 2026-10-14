@@ -1,0 +1,455 @@
+using System.Text.Json;
+using DemaConsulting.Plexus.Geometry;
+
+namespace DemaConsulting.Plexus.Tests.Serialization;
+
+/// <summary>
+///     Tests for <see cref="Diagram.ToSnapshot"/>, <see cref="Diagram.FromSnapshot"/> and <see cref="PlexusJson"/>.
+/// </summary>
+public class SnapshotTests
+{
+    /// <summary>
+    ///     Validates that a snapshot of a rich two-page diagram restores to an identical model.
+    /// </summary>
+    [Fact]
+    public void Snapshot_RoundTrip_RichDiagram_RestoresEverythingExactly()
+    {
+        // Arrange: a diagram using every feature and a snapshot of it
+        var original = SerializationFixtures.CreateRichDiagram();
+        var snapshot = original.ToSnapshot();
+
+        // Act: restore into a new diagram with an equivalent registry
+        var restored = Diagram.FromSnapshot(snapshot, SerializationFixtures.CreateTypes());
+
+        // Assert: ids, order, z-order, bounds, routes, groups, properties and data all match
+        Assert.Equal(TestModel.Dump(original), TestModel.Dump(restored));
+    }
+
+    /// <summary>
+    ///     Validates that the full path through JSON text (indented and compact) restores an identical model.
+    /// </summary>
+    /// <param name="indented">Whether the JSON is indented.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Snapshot_RoundTrip_ThroughJson_RestoresEverythingExactly(bool indented)
+    {
+        // Arrange: serialize a rich diagram to text
+        var original = SerializationFixtures.CreateRichDiagram();
+        var json = PlexusJson.Serialize(original.ToSnapshot(), indented);
+
+        // Act: parse and load it back
+        var restored = Diagram.FromSnapshot(PlexusJson.Deserialize(json), SerializationFixtures.CreateTypes());
+
+        // Assert: nothing was lost, and serializing again is byte-for-byte stable
+        Assert.Equal(TestModel.Dump(original), TestModel.Dump(restored));
+        Assert.Equal(json, PlexusJson.Serialize(restored.ToSnapshot(), indented));
+    }
+
+    /// <summary>
+    ///     Validates that property values keep their exact kind and value, including ad-hoc and extreme ones.
+    /// </summary>
+    [Fact]
+    public void Snapshot_RoundTrip_PropertiesOfEveryKind_KeepKindAndValue()
+    {
+        // Arrange: a node with declared and ad-hoc properties of every portable kind
+        var original = SerializationFixtures.CreateRichDiagram();
+        var producer = original.FindNode("Producer1")!;
+
+        // Act: restore through JSON
+        var restored = Diagram.FromSnapshot(
+            PlexusJson.Deserialize(PlexusJson.Serialize(original.ToSnapshot())),
+            SerializationFixtures.CreateTypes());
+        var copy = restored.FindNode("Producer1")!;
+
+        // Assert: every value is equal and has the same CLR type (int stays int, long stays long)
+        Assert.Equal(producer.Properties.Count, copy.Properties.Count);
+        Assert.Equal(producer.Properties.Keys, copy.Properties.Keys);
+        foreach (var (name, value) in producer.Properties)
+        {
+            Assert.Equal(value, copy.Properties[name]);
+            Assert.Equal(value.GetType(), copy.Properties[name].GetType());
+        }
+
+        Assert.Equal(long.MaxValue, copy.Properties["Huge"]);
+        Assert.Equal(0.1, copy.Properties["Ratio"]);
+        Assert.Equal(Color.FromArgb(0x80, 0x11, 0x22, 0x33), copy.Properties["Tint"]);
+    }
+
+    /// <summary>
+    ///     Validates that payloads are restored through <see cref="NodeType.DataType"/> and through a custom serializer.
+    /// </summary>
+    [Fact]
+    public void Snapshot_RoundTrip_TypedAndCustomData_AreRestored()
+    {
+        // Arrange: one node per payload mechanism
+        var original = SerializationFixtures.CreateRichDiagram();
+
+        // Act
+        var restored = Diagram.FromSnapshot(
+            PlexusJson.Deserialize(PlexusJson.Serialize(original.ToSnapshot())),
+            SerializationFixtures.CreateTypes());
+
+        // Assert: equal values, but new instances
+        var sensor = restored.FindNode("Sensor1")!;
+        var custom = restored.FindNode("Custom1")!;
+        Assert.Equal(new SensorData("front \"left\"", 3), sensor.Data);
+        Assert.Equal(new CustomData("hello ünïcode"), custom.Data);
+        Assert.NotSame(original.FindNode("Sensor1")!.Data, sensor.Data);
+    }
+
+    /// <summary>
+    ///     Validates that payloads of types declaring no way to serialize them are omitted from the snapshot.
+    /// </summary>
+    [Fact]
+    public void Snapshot_ToSnapshot_OpaqueData_IsOmitted()
+    {
+        // Arrange: a node whose type declares neither DataType nor DataSerializer
+        var diagram = SerializationFixtures.CreateDiagram();
+        var node = diagram.Pages.Add("P").AddNode("acme.Opaque", 0, 0);
+        node.Data = new object();
+
+        // Act
+        var snapshot = diagram.ToSnapshot();
+        var restored = Diagram.FromSnapshot(snapshot, SerializationFixtures.CreateTypes());
+
+        // Assert: nothing is stored and nothing comes back
+        Assert.Null(snapshot.Pages[0].Nodes[0].Data);
+        Assert.Null(restored.FindNode(node.Name)!.Data);
+    }
+
+    /// <summary>
+    ///     Validates that a loaded diagram has an empty, clean history and that loading is not undoable.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_HistoryIsEmptyAndClean()
+    {
+        // Arrange / Act
+        var restored = Diagram.FromSnapshot(
+            SerializationFixtures.CreateRichDiagram().ToSnapshot(),
+            SerializationFixtures.CreateTypes());
+
+        // Assert
+        Assert.False(restored.History.CanUndo);
+        Assert.False(restored.History.CanRedo);
+        Assert.Equal(0, restored.History.UndoCount);
+        Assert.False(restored.History.IsDirty);
+    }
+
+    /// <summary>
+    ///     Validates that a restored diagram is fully functional: edits are undoable and the content is findable by id.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_RestoredDiagramIsEditable()
+    {
+        // Arrange
+        var original = SerializationFixtures.CreateRichDiagram();
+        var restored = Diagram.FromSnapshot(original.ToSnapshot(), SerializationFixtures.CreateTypes());
+        var node = restored.FindNode("Amplifier")!;
+        Assert.Same(node, restored.FindElement(node.Id));
+
+        // Act / Assert: an edit records and undoes exactly
+        TestModel.AssertRoundTrip(restored, () => node.Name = "Booster");
+    }
+
+    /// <summary>
+    ///     Validates that stored routes are restored without consulting the router.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_RoutesAreNotRerouted()
+    {
+        // Arrange: a route the router would never produce
+        var original = SerializationFixtures.CreateRichDiagram();
+        var route = original.Pages[0].Wires[0].Route;
+
+        // Act
+        var restored = Diagram.FromSnapshot(original.ToSnapshot(), SerializationFixtures.CreateTypes());
+
+        // Assert
+        Assert.Equal(route, restored.Pages[0].Wires[0].Route);
+        Assert.Equal(new Point(111.5, 7), restored.Pages[0].Wires[0].Route[0]);
+    }
+
+    /// <summary>
+    ///     Validates that nested groups and collapsed state are restored.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_NestedCollapsedGroups_AreRestored()
+    {
+        // Arrange / Act
+        var original = SerializationFixtures.CreateRichDiagram();
+        var restored = Diagram.FromSnapshot(original.ToSnapshot(), SerializationFixtures.CreateTypes());
+
+        // Assert
+        var inner = restored.Pages[0].Groups.Single(g => g.Title == "Inner");
+        var outer = restored.Pages[0].Groups.Single(g => g.Title == "Outer");
+        Assert.True(inner.IsCollapsed);
+        Assert.Same(outer, inner.Parent);
+        Assert.Equal(original.Pages[0].Groups.Single(g => g.Title == "Inner").CollapsedPosition, inner.CollapsedPosition);
+        Assert.Equal(2, inner.Members.Count);
+        Assert.Equal(original.Pages[0].Groups.Single(g => g.Title == "Outer").Bounds, outer.Bounds);
+    }
+
+    /// <summary>
+    ///     Validates that every missing node type across all pages is listed, not just the first.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_MissingNodeTypes_ListsAllOfThem()
+    {
+        // Arrange: a registry that lacks two of the types in use
+        var snapshot = SerializationFixtures.CreateRichDiagram().ToSnapshot();
+        var types = TestModel.CreateTypes();
+
+        // Act
+        var exception = Assert.Throws<SnapshotException>(() => Diagram.FromSnapshot(snapshot, types));
+
+        // Assert
+        Assert.Equal(["acme.Sensor", "acme.Custom", "acme.Opaque"], exception.MissingNodeTypes);
+        Assert.Contains("acme.Sensor", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("acme.Custom", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("acme.Opaque", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that an unsupported format version is rejected by both the reader and the loader.
+    /// </summary>
+    [Fact]
+    public void Snapshot_UnsupportedVersion_IsRejected()
+    {
+        // Arrange
+        var snapshot = new DiagramSnapshot { FormatVersion = 2 };
+
+        // Act / Assert
+        Assert.Throws<SnapshotException>(() => Diagram.FromSnapshot(snapshot, SerializationFixtures.CreateTypes()));
+        Assert.Throws<SnapshotException>(() => PlexusJson.Deserialize("""{"formatVersion":2,"pages":[]}"""));
+    }
+
+    /// <summary>
+    ///     Validates that structurally invalid snapshots fail with a clear <see cref="SnapshotException"/>.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_InvalidContent_ThrowsSnapshotException()
+    {
+        // Arrange: a wire that refers to a node that does not exist
+        var snapshot = new DiagramSnapshot
+        {
+            Pages =
+            [
+                new PageSnapshot
+                {
+                    Name = "P",
+                    Wires = [new WireSnapshot { Id = "w", SourceNodeId = "x", SourcePort = "value", TargetNodeId = "y", TargetPort = "in" }],
+                },
+            ],
+        };
+
+        // Act
+        var exception = Assert.Throws<SnapshotException>(() => Diagram.FromSnapshot(snapshot, SerializationFixtures.CreateTypes()));
+
+        // Assert
+        Assert.Contains("unknown node", exception.Message, StringComparison.Ordinal);
+        Assert.Empty(exception.MissingNodeTypes);
+    }
+
+    /// <summary>
+    ///     Validates that duplicate element ids across pages are rejected.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_DuplicateIdAcrossPages_Throws()
+    {
+        // Arrange: the same annotation id on two pages
+        var bounds = new RectSnapshot { X = 0, Y = 0, Width = 10, Height = 10 };
+        var snapshot = new DiagramSnapshot
+        {
+            Pages =
+            [
+                new PageSnapshot { Name = "A", Annotations = [new AnnotationSnapshot { Id = "dup", Text = "a", Bounds = bounds }] },
+                new PageSnapshot { Name = "B", Annotations = [new AnnotationSnapshot { Id = "dup", Text = "b", Bounds = bounds }] },
+            ],
+        };
+
+        // Act / Assert
+        Assert.Throws<SnapshotException>(() => Diagram.FromSnapshot(snapshot, SerializationFixtures.CreateTypes()));
+    }
+
+    /// <summary>
+    ///     Validates that a snapshot of a single page matches that page's entry in the diagram snapshot.
+    /// </summary>
+    [Fact]
+    public void Snapshot_PageToSnapshot_MatchesDiagramEntry()
+    {
+        // Arrange
+        var diagram = SerializationFixtures.CreateRichDiagram();
+
+        // Act
+        var pageJson = PlexusJson.Serialize(new DiagramSnapshot { Pages = [diagram.Pages[1].ToSnapshot()] });
+        var diagramJson = PlexusJson.Serialize(new DiagramSnapshot { Pages = [diagram.ToSnapshot().Pages[1]] });
+
+        // Assert
+        Assert.Equal(diagramJson, pageJson);
+    }
+
+    /// <summary>
+    ///     Validates that z-order is preserved even when it interleaves element kinds.
+    /// </summary>
+    [Fact]
+    public void Snapshot_RoundTrip_ZOrder_IsPreserved()
+    {
+        // Arrange: an annotation created between two nodes
+        var diagram = SerializationFixtures.CreateDiagram();
+        var page = diagram.Pages.Add("P");
+        page.AddNode("acme.Opaque", 0, 0);
+        page.AddAnnotation("middle", new Rect(0, 0, 10, 10));
+        page.AddNode("acme.Opaque", 50, 50);
+
+        // Act
+        var restored = Diagram.FromSnapshot(diagram.ToSnapshot(), SerializationFixtures.CreateTypes());
+
+        // Assert
+        Assert.Equal(page.Elements.Select(e => e.Id), restored.Pages[0].Elements.Select(e => e.Id));
+    }
+
+    /// <summary>
+    ///     Validates that the JSON shape is camelCase, free of type names, uses short kinds, #AARRGGBB colors and embedded data.
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Serialize_ProducesStableShape()
+    {
+        // Arrange
+        var diagram = SerializationFixtures.CreateRichDiagram();
+
+        // Act
+        var json = PlexusJson.Serialize(diagram.ToSnapshot());
+        using var document = JsonDocument.Parse(json);
+
+        // Assert: top-level and node shape
+        var root = document.RootElement;
+        Assert.Equal(1, root.GetProperty("formatVersion").GetInt32());
+        var main = root.GetProperty("pages")[0];
+        Assert.Equal("Main", main.GetProperty("name").GetString());
+        var producer = main.GetProperty("nodes")[0];
+        Assert.Equal("acme.Producer", producer.GetProperty("typeKey").GetString());
+        Assert.Equal(30, producer.GetProperty("bounds").GetProperty("x").GetDouble());
+        Assert.True(producer.GetProperty("bounds").TryGetProperty("width", out _));
+
+        // Assert: property values carry short kind names and portable values
+        var properties = producer.GetProperty("properties");
+        Assert.Equal("double", properties.GetProperty("Gain").GetProperty("kind").GetString());
+        Assert.Equal(2.5, properties.GetProperty("Gain").GetProperty("value").GetDouble());
+        Assert.Equal("int", properties.GetProperty("Count").GetProperty("kind").GetString());
+        Assert.Equal("long", properties.GetProperty("Big").GetProperty("kind").GetString());
+        Assert.Equal("bool", properties.GetProperty("Enabled").GetProperty("kind").GetString());
+        Assert.Equal("choice", properties.GetProperty("Mode").GetProperty("kind").GetString());
+        Assert.Equal("string", properties.GetProperty("Format").GetProperty("kind").GetString());
+        Assert.Equal("color", properties.GetProperty("Tint").GetProperty("kind").GetString());
+        Assert.Equal("#80112233", properties.GetProperty("Tint").GetProperty("value").GetString());
+        Assert.Equal("#FFFF0000", properties.GetProperty("Accent").GetProperty("value").GetString());
+
+        // Assert: payloads are embedded JSON values, not escaped strings; no type names anywhere
+        var sensor = main.GetProperty("nodes").EnumerateArray().First(n => n.GetProperty("typeKey").GetString() == "acme.Sensor");
+        Assert.Equal(JsonValueKind.Object, sensor.GetProperty("data").ValueKind);
+        Assert.Equal(3, sensor.GetProperty("data").GetProperty("Count").GetInt32());
+        Assert.DoesNotContain("$type", json, StringComparison.Ordinal);
+        Assert.False(producer.TryGetProperty("data", out _));
+
+        // Assert: wires, groups and annotations
+        var wire = main.GetProperty("wires")[0];
+        Assert.Equal("value", wire.GetProperty("sourcePort").GetString());
+        Assert.Equal("in", wire.GetProperty("targetPort").GetString());
+        Assert.Equal(111.5, wire.GetProperty("route")[0].GetProperty("x").GetDouble());
+        var group = main.GetProperty("groups").EnumerateArray().First(g => g.GetProperty("title").GetString() == "Inner");
+        Assert.True(group.GetProperty("isCollapsed").GetBoolean());
+        Assert.Equal(2, group.GetProperty("memberIds").GetArrayLength());
+        Assert.Equal("#7FFFFF00", main.GetProperty("annotations")[0].GetProperty("fill").GetString());
+        Assert.Equal(main.GetProperty("nodes").GetArrayLength() + 2 + 2 + 2, main.GetProperty("zOrder").GetArrayLength());
+    }
+
+    /// <summary>
+    ///     Validates that indented output spans lines and compact output does not.
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Serialize_IndentedOptionControlsWhitespace()
+    {
+        // Arrange
+        var snapshot = SerializationFixtures.CreateRichDiagram().ToSnapshot();
+
+        // Act
+        var indented = PlexusJson.Serialize(snapshot);
+        var compact = PlexusJson.Serialize(snapshot, indented: false);
+
+        // Assert
+        Assert.Contains('\n', indented);
+        Assert.DoesNotContain('\n', compact);
+        Assert.True(compact.Length < indented.Length);
+    }
+
+    /// <summary>
+    ///     Validates that malformed JSON, missing required members and absurd nesting are rejected by the reader.
+    /// </summary>
+    /// <param name="json">The text to parse.</param>
+    [Theory]
+    [InlineData("not json")]
+    [InlineData("null")]
+    [InlineData("""{"pages":[{"nodes":[]}]}""")]
+    [InlineData("""{"pages":[{"name":"P","nodes":[{"id":"n","typeKey":"t","name":"n"}]}]}""")]
+    [InlineData("""{"pages":[{"name":"P","nodes":[{"id":"n","typeKey":"t","name":"n","bounds":{"x":0,"y":0,"width":1,"height":1},"properties":{"a":{"kind":"decimal","value":1}}}]}]}""")]
+    public void PlexusJson_Deserialize_Malformed_ThrowsJsonException(string json)
+    {
+        // Act / Assert
+        Assert.ThrowsAny<JsonException>(() => PlexusJson.Deserialize(json));
+    }
+
+    /// <summary>
+    ///     Validates that documents nested deeper than the limit are rejected.
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Deserialize_TooDeep_ThrowsJsonException()
+    {
+        // Arrange: an unknown member holding 100 nested arrays
+        var json = "{\"unknown\":" + new string('[', 100) + new string(']', 100) + ",\"pages\":[]}";
+
+        // Act / Assert
+        Assert.ThrowsAny<JsonException>(() => PlexusJson.Deserialize(json));
+    }
+
+    /// <summary>
+    ///     Validates that property kind mismatches with the registry make loading fail.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_PropertyKindMismatch_Throws()
+    {
+        // Arrange: Count is an int property but the snapshot stores a string
+        var diagram = SerializationFixtures.CreateDiagram();
+        diagram.Pages.Add("P").AddNode("acme.Producer", 0, 0);
+        var snapshot = diagram.ToSnapshot();
+        var broken = snapshot.Pages[0].Nodes[0] with
+        {
+            Properties = new Dictionary<string, PropertySnapshot>
+            {
+                ["Count"] = new() { Kind = PropertyValueKind.String, Value = JsonSerializer.SerializeToElement("many") },
+            },
+        };
+        var tampered = new DiagramSnapshot { Pages = [snapshot.Pages[0] with { Nodes = [broken] }] };
+
+        // Act / Assert
+        var exception = Assert.Throws<SnapshotException>(() => Diagram.FromSnapshot(tampered, SerializationFixtures.CreateTypes()));
+        Assert.Contains("Count", exception.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that members the reader does not know are ignored, so newer additions do not break older readers.
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Deserialize_UnknownMembers_AreIgnored()
+    {
+        // Arrange: unknown members at the document and page level, including one that looks like a type name
+        const string json = """{"formatVersion":1,"$type":"System.Object","future":{"a":[1,2]},"pages":[{"name":"P","extra":true}]}""";
+
+        // Act
+        var snapshot = PlexusJson.Deserialize(json);
+
+        // Assert
+        Assert.Equal(DiagramSnapshot.CurrentFormatVersion, snapshot.FormatVersion);
+        Assert.Equal("P", Assert.Single(snapshot.Pages).Name);
+    }
+}

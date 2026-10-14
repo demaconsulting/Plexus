@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Oscillator: a circle containing a wave, with an output line -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="28" cy="32" r="22" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M12 32 C16 18 22 18 28 32 C34 46 40 46 44 32" stroke="#D2A3FF" stroke-width="3"/>
+    <path d="M50 32 H62" stroke="#F2F2F2" stroke-width="2"/>
+  </g>
+</svg>

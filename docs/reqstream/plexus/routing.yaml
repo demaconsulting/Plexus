@@ -1,0 +1,182 @@
+---
+# Software Subsystem requirements for Plexus Routing.
+#
+# Subsystem requirements decompose the Plexus system requirements (which link down to these IDs as children) into
+# the responsibilities of the Routing subsystem; each links downward to the unit requirements that realize it and to
+# subsystem-level tests in RoutingTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Routing Requirements
+        requirements:
+          - id: Plexus-Routing-OrthogonalWires
+            title: >-
+              Routing shall compute wire routes that consist only of horizontal and vertical segments between the
+              two ports of a wire, with no bend points when the ports are directly aligned.
+            justification: |
+              Orthogonal wires are the visual language of block diagrams; diagonal or free-form wires make diagrams
+              hard to read. Straight wires between aligned ports avoid pointless bends.
+            children:
+              - Plexus-Routing-OrthogonalRouter-Orthogonal
+              - Plexus-Routing-OrthogonalRouter-StraightWhenAligned
+              - Plexus-Routing-OrthogonalRouter-FewBends
+              - Plexus-Routing-OrthogonalRouter-StepInMiddleOfRun
+              - Plexus-Routing-SimpleRouter-Elbow
+              - Plexus-Routing-SimpleRouter-StraightWhenAligned
+              - Plexus-Routing-SimpleRouter-LoopWhenBehind
+            tests:
+              - Routing_ConnectedWires_UnderEitherRouter_AreOrthogonal
+
+          - id: Plexus-Routing-ObstacleAvoidance
+            title: >-
+              The default router shall route a wire around the boxes of the nodes on its page so that no segment
+              passes through the interior of a node box, including when nodes are closer together than the routing
+              clearance.
+            justification: |
+              Wires that run through nodes hide the diagram structure and are indistinguishable from connections to
+              the node they cross. Dense diagrams routinely place nodes closer together than the clearance, and
+              routing must not fail there.
+            children:
+              - Plexus-Routing-OrthogonalRouter-AvoidObstacles
+              - Plexus-Routing-OrthogonalRouter-OverlappingMargins
+            tests:
+              - DiagramPage_Connect_NodeBetweenPorts_RoutesAroundIt
+
+          - id: Plexus-Routing-PortStubs
+            title: >-
+              Routing shall make a wire leave an output port to the right and enter an input port from the left, each
+              through a straight horizontal stub of at least the requested stub length, unless the request names
+              another side.
+            justification: |
+              Ports are drawn as triangles pointing in the direction of flow, and their labels sit beside them; a wire
+              that arrives or leaves at an angle through the node or label would overlap them.
+            children:
+              - Plexus-Routing-OrthogonalRouter-Stubs
+            tests:
+              - Routing_ConnectedWires_LeaveAndEnterPortsHorizontallyThroughStubs
+
+          - id: Plexus-Routing-AlwaysRoutes
+            title: >-
+              Routing shall return an orthogonal route for every request, even when the obstacles leave no
+              obstacle-free path between the ports.
+            justification: |
+              Interactive editing must never fail because a diagram is crowded; a wire that crosses a node is
+              preferable to no wire, and the user can then rearrange the nodes.
+            children:
+              - Plexus-Routing-OrthogonalRouter-EnclosedFallback
+            tests:
+              - Routing_NoObstacleFreePath_StillReturnsAnOrthogonalRoute
+
+          - id: Plexus-Routing-Replaceable
+            title: >-
+              A new diagram shall route wires with the obstacle-avoiding router by default, and the host shall be
+              able to replace it with the obstacle-ignoring elbow router or with its own router that receives the
+              wire's end points, directions, stub length, grid size and node boxes.
+            justification: |
+              Hosts differ in how much routing they want: some prefer predictable minimal wires, others need domain
+              specific layouts. The router contract must therefore be a public extension point with all information
+              a router needs.
+            children:
+              - Plexus-Routing-SimpleRouter-IgnoresObstacles
+            tests:
+              - Diagram_Router_Default_IsOrthogonalRouter
+              - Routing_HostRouter_ReceivesRequestForNewWires
+
+          - id: Plexus-Routing-Determinism
+            title: >-
+              Each router shall return identical bend points for identical requests, independent of any earlier
+              request and of the router instance used.
+            justification: |
+              Reproducible routing makes diagrams, tests and rendered output stable: the same diagram loaded twice
+              or routed on two machines must look the same.
+            children:
+              - Plexus-Routing-OrthogonalRouter-Deterministic
+              - Plexus-Routing-SimpleRouter-Deterministic
+            tests:
+              - Routing_SameRequest_BothRouters_AreDeterministic
+
+          - id: Plexus-Routing-Performance
+            title: >-
+              Connecting every wire of a page of sixty nodes and ninety-five wires through the default router shall
+              complete within ten seconds on a development workstation, and the router shall route a wire among
+              hundreds of nodes without a noticeable delay.
+            justification: |
+              Routing runs on every connect, move and re-route of a wire while the user edits; slow routing makes
+              the editor feel sluggish on realistic diagrams with hundreds of nodes.
+            tags:
+              - performance
+            children:
+              - Plexus-Routing-OrthogonalRouter-Performance
+            tests:
+              - Routing_DenseConnectedPage_RoutesEveryWireQuickly
+
+          - id: Plexus-Routing-InvalidRequests
+            title: Each router shall reject a null route request with an argument exception.
+            justification: |
+              A missing request is a programming error of the host or of a calling unit and must be reported at the
+              call instead of surfacing later as an unrelated failure.
+            children:
+              - Plexus-Routing-OrthogonalRouter-NullRequest
+              - Plexus-Routing-SimpleRouter-NullRequest
+            tests:
+              - Routing_NullRequest_BothRouters_ThrowArgumentNullException
+
+          - id: Plexus-Routing-GroupObstacles
+            title: >-
+              Wires shall be routed around the frame of every visible group (an expanded group's whole frame
+              including its title bar, a collapsed group's box, each with the routing clearance) unless one of the
+              wire's two end nodes lies inside that group at any depth, in which case that group is not an
+              obstacle for the wire; the behavior shall be switchable through the theme and apply to the routes
+              the page stores and to the display routes of wires attached to collapsed groups.
+            justification: |
+              A wire that merely passes through the frame of a group it has nothing to do with looks as if it
+              belonged to the group; wires of the group's own members must still be able to leave and enter the
+              group. Routes are only computed on creation, endpoint moves and re-routing, so moving a group does
+              not re-route unrelated wires until the host re-routes them.
+            children:
+              - Plexus-Model-DiagramPage-GroupObstacles
+              - Plexus-Scene-DiagramTheme-GroupsAreObstacles
+              - Plexus-Scene-SceneBuilder-GroupObstacles
+            tests:
+              - DiagramPage_Connect_GroupBetweenPorts_RoutesAroundGroupFrame
+
+          - id: Plexus-Routing-NetSeparation
+            title: >-
+              The default router shall keep a new wire off the segments of wires of other nets by using a parallel
+              track, while wires of one net (every wire from the same output port) may share a trunk, and the page
+              shall give each routed wire the segments of the wires already on the page, so that wires of different
+              nets are not routed on top of each other when connecting, re-routing and moving nodes.
+            justification: |
+              Signals that overlap cannot be told apart; separate tracks make the connections readable while shared
+              trunks keep branches of one signal compact.
+            children:
+              - Plexus-Routing-OrthogonalRouter-NetSeparation
+              - Plexus-Routing-OrthogonalRouter-SameNetTrunk
+              - Plexus-Routing-OrthogonalRouter-NetPerformance
+            tests:
+              - DiagramPage_Connect_TwoNetsToAdjacentInputs_DoNotRunAlongEachOther
+              - DiagramPage_RerouteAll_TwoNets_KeepsNetsApartAndIsRepeatable
+
+          - id: Plexus-Routing-RouteCleaning
+            title: >-
+              Routing shall provide a normalization of a route that merges collinear bends and removes zero-length
+              segments without changing the drawn shape, which is applied to every stored route.
+            justification: |
+              A stored route that carries invisible bends confuses editing handles and comparisons of routes.
+            children:
+              - Plexus-Routing-OrthogonalRouter-RouteCleaning
+            tests:
+              - Wire_SetRoute_CollinearAndZeroLengthBends_AreNormalized
+
+          - id: Plexus-Routing-RouteEditing
+            title: >-
+              Routing shall provide pure editing operations on a route (move a segment, move a bend, add a jog)
+              that keep the route orthogonal and the ports where they are.
+            justification: |
+              Manual wire editing is a core capability of an editor; its geometry must be correct and reusable
+              independent of any user interface.
+            children:
+              - Plexus-Routing-OrthogonalRouter-RouteEditing
+            tests:
+              - Wire_AddJog_StraightSegment_AddsBumpAsOneUndoEntry

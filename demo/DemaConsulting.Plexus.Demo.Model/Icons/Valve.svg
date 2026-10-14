@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Valve: two triangles meeting point to point, with a stem and a hand wheel -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 28 L32 44 L10 60 Z M54 28 L32 44 L54 60 Z" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M32 44 V20" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M18 14 H46" stroke="#7FC4FF" stroke-width="3"/>
+    <path d="M2 44 H10 M54 44 H62" stroke="#F2F2F2" stroke-width="2"/>
+  </g>
+</svg>

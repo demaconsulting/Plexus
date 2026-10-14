@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Scope: a display screen with grid ticks and a waveform -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 10 H58 V50 H6 Z" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M6 30 H58 M32 10 V50" stroke="#F2F2F2" stroke-width="1"/>
+    <path d="M10 38 L18 22 L26 38 L34 22 L42 38 L50 22 L54 30" stroke="#FFB04D" stroke-width="2.5"/>
+    <path d="M24 57 H40" stroke="#F2F2F2" stroke-width="2"/>
+  </g>
+</svg>

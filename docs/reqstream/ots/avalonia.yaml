@@ -1,0 +1,69 @@
+---
+# Avalonia OTS Software Requirements
+#
+# Requirements for the Avalonia UI framework (including Avalonia.Headless for tests) used by the PlexusAvalonia
+# system. Evidence is provided by the PlexusAvalonia tests, which exercise the Avalonia functionality Plexus
+# relies on.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: Avalonia Requirements
+        requirements:
+          - id: Plexus-OTS-Avalonia-Render
+            title: >-
+              Avalonia shall let a custom control draw rectangles, paths, text and images through its drawing
+              context and shall allow the rendered result to be captured without a display.
+            justification: |
+              The editor control paints the diagram scene directly through the Avalonia drawing context. Correct
+              drawing and headless capture are required for the control to display diagrams and for automated tests
+              to inspect the result.
+            tags: [ots]
+            tests:
+              - DiagramEditor_Render_SmallDiagram_PaintsNodesWiresAndText
+              - DiagramEditor_Render_GroupsAndConnectPreview_SavesPicture
+
+          - id: Plexus-OTS-Avalonia-Input
+            title: Avalonia shall deliver pointer, mouse wheel and keyboard input to a focusable control.
+            justification: |
+              Selection, dragging, panning, zooming, keyboard shortcuts and inline rename are all driven by Avalonia
+              input events routed to the editor control.
+            tags: [ots]
+            tests:
+              - DiagramEditor_CtrlWheel_ZoomsAroundCursor
+              - DiagramEditor_Wheel_WithoutModifiers_Scrolls
+              - DiagramEditor_MiddleDrag_PansView
+              - DiagramEditor_CtrlZAndCtrlY_UndoAndRedo
+              - DiagramEditor_F2_SelectedNode_StartsRename
+
+          - id: Plexus-OTS-Avalonia-Text
+            title: >-
+              Avalonia shall measure formatted text so that measured sizes grow with text length and font size.
+            justification: |
+              Node sizing and label placement in the editor use Avalonia text measurement, so measurements must be
+              consistent and monotonic.
+            tags: [ots]
+            tests:
+              - AvaloniaTextMeasurer_Measure_LongerText_IsWider
+              - AvaloniaTextMeasurer_Measure_FontSizeAndColor_AffectSizeCorrectly
+              - AvaloniaTextMeasurer_Measure_EmptyText_HasLineHeightOnly
+
+          - id: Plexus-OTS-Avalonia-Clipboard
+            title: Avalonia shall provide access to the operating-system clipboard for text transfer.
+            justification: |
+              Copy and paste between Plexus applications travels through the operating-system clipboard as text,
+              using the Avalonia clipboard service.
+            tags: [ots]
+            tests:
+              - DiagramEditor_CopyPaste_ConnectedPair_RoundTrips
+              - DiagramEditor_CopyPaste_SystemClipboard_RoundTripsWhenAvailable
+
+          - id: Plexus-OTS-Avalonia-Headless
+            title: Avalonia.Headless shall host controls and dispatch input without a display for automated tests.
+            justification: |
+              The PlexusAvalonia tests run in CI without a display. They rely on the Avalonia headless platform to
+              create windows, lay out controls and simulate input.
+            tags: [ots]
+            tests:
+              - DiagramEditor_Defaults_NewEditor_HasDocumentedValues
+              - DiagramEditor_ZoomToFit_FarApartNodes_BringsBothIntoView

@@ -1,112 +1,432 @@
 ---
-# Software System Requirements for Plexus
+# Plexus system requirements.
 #
-# These requirements describe the externally visible behavior of the library
-# from the perspective of its consumers, without specifying implementation details.
+# These requirements describe the capabilities the DemaConsulting.Plexus core library offers to a host application,
+# independent of how the subsystems realize them. Every requirement is tagged `system` (a root of the traceability
+# tree) and is decomposed downward into subsystem requirements and, for the Geometry and ConnectionRules units that sit
+# directly under the system, unit requirements. Evidence is provided by the system tests in PlexusTests.cs, which use
+# the public API only (PlexusTests.cs, and PlexusWireStylingTests.cs for wire styling).
+#
+# Platform support requirements live in docs/reqstream/plexus/platform-requirements.yaml.
+#
+# ---------------------------------------------------------------------------------------------------------------
+# COORDINATION NOTE FOR THE ROUTING / SCENE / SERIALIZATION AUTHOR (children lists only)
+#
+# The following system requirements are realized by the Routing, Scene and Serialization subsystems. Their
+# `children:` lists are intentionally left out below and must be added by the author of those subsystems: add a
+# `children:` key (downward links to the subsystem requirement IDs, or direct unit requirement IDs) to each of:
+#
+#   Plexus-Core-Routing              <- Routing subsystem requirements (Plexus-Routing-...)
+#   Plexus-Core-Scene                <- Scene subsystem requirements (Plexus-Scene-...)
+#   Plexus-Core-SceneCustomization   <- Scene subsystem requirements (Plexus-Scene-...)
+#   Plexus-Core-HitTest              <- Scene subsystem requirements (Plexus-Scene-...)
+#   Plexus-Core-Snapshot             <- Serialization subsystem requirements (Plexus-Serialization-...)
+#   Plexus-Core-Duplicate            <- Serialization subsystem requirements (Plexus-Serialization-...)
+#   Plexus-Core-Clipboard            <- Serialization subsystem requirements (Plexus-Serialization-...)
+#   Plexus-Core-ClipboardSafety      <- Serialization subsystem requirements (Plexus-Serialization-...)
+#
+# Edit only those `children:` lists; every system requirement already has its system-level tests.
+# ---------------------------------------------------------------------------------------------------------------
 
 sections:
-  - title: Library API
+  - title: Plexus Requirements
     requirements:
-      - id: Plexus-Lib-Greeting
-        title: The library shall generate a greeting string when given a name.
-        tags: [system]
+      - id: Plexus-Core-NodeTypes
+        title: >-
+          The library shall let a host declare, in a registry, port types and node types (unique key, title, input
+          and output ports with port types, property definitions and an optional icon), and shall reject duplicate
+          keys and duplicate port or property names and prevent changes to registered node types.
         justification: |
-          Provides a simple demonstration of library functionality following
-          .NET library best practices for DEMA Consulting libraries.
+          Plexus is a general-purpose library: the host supplies the vocabulary of node types. A declared vocabulary
+          that is validated and frozen at registration gives every diagram, clipboard and snapshot a stable
+          definition to work against.
+        tags: [system]
         children:
-          - Plexus-Demo-Greeting
+          - Plexus-Types-Declaration
+          - Plexus-Types-Validation
+          - Plexus-Types-Icons
+          - Plexus-Properties-Declaration
+          - Plexus-Properties-Display
         tests:
-          - Plexus_SystemIntegration_DefaultConstruction_ReturnsExpectedGreeting
-          - Plexus_SystemCustomization_CustomPrefix_ReturnsExpectedGreeting
+          - Plexus_NodeTypes_DeclareAndRegister_RejectsInvalidDeclarationsAndFreezesTypes
+          - Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram
 
-      - id: Plexus-Lib-GreetingFormat
-        title: The library shall return a greeting string in the format "{prefix}, {name}!".
-        tags: [system]
+      - id: Plexus-Core-Properties
+        title: >-
+          The library shall give every node typed named properties (boolean, integer, double, string, choice and
+          color) that start at their declared defaults, accept only values compatible with their kind, and can be
+          read and reset.
         justification: |
-          The format is the core observable contract of the library: callers depend on this
-          specific structure in documentation examples and integration code.
+          Hosts configure nodes through properties. Kind checking at the model boundary keeps invalid values out of
+          the document and gives hosts typed access without casting errors.
+        tags: [system]
         children:
-          - Plexus-Demo-Greeting
+          - Plexus-Properties-Defaults
+          - Plexus-Properties-Validation
+          - Plexus-Properties-Access
+          - Plexus-Properties-UndoNotification
         tests:
-          - Plexus_SystemIntegration_DefaultConstruction_ReturnsExpectedGreeting
-          - Plexus_SystemCustomization_CustomPrefix_ReturnsExpectedGreeting
+          - Plexus_Properties_TypedValues_DefaultsValidationAndReset
 
-      - id: Plexus-Lib-DefaultPrefix
-        title: The library shall use "Hello" as the default greeting prefix.
-        tags: [system]
+      - id: Plexus-Core-Pages
+        title: >-
+          The library shall hold the content of a diagram on an ordered list of named pages that can be added,
+          inserted, renamed, reordered and removed.
         justification: |
-          Callers constructing the library without a prefix argument need a predictable default
-          greeting to rely on in documentation and examples.
+          Large diagrams are split into pages. Hosts need predictable page order and the ability to restructure
+          pages without losing the page content.
+        tags: [system]
         children:
-          - Plexus-Demo-DefaultPrefix
+          - Plexus-Model-Pages
         tests:
-          - Plexus_SystemIntegration_DefaultConstruction_ReturnsExpectedGreeting
+          - Plexus_Pages_AddInsertRenameMoveRemove_KeepsOrderAndUndoesRemoval
+          - Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram
 
-      - id: Plexus-Lib-CustomPrefix
-        title: The library shall support a customizable greeting prefix.
-        tags: [system]
+      - id: Plexus-Core-Elements
+        title: >-
+          The library shall add nodes by node-type key and annotations to a page, give them unique generated or
+          explicit names and ids, and find them again from the diagram.
         justification: |
-          Consumers may need to produce greetings with a prefix other than the
-          default, so the library must allow the prefix to be specified at
-          construction time.
+          Building a diagram starts with creating nodes and notes. Unique identities are required for referencing
+          elements from host code, wire paths, the clipboard and snapshots.
+        tags: [system]
         children:
-          - Plexus-Demo-AcceptCustomPrefix
-          - Plexus-Demo-Prefix
+          - Plexus-Model-Elements
+          - Plexus-Types-NodeDefaults
+          - Plexus-Types-Availability
         tests:
-          - Plexus_SystemCustomization_CustomPrefix_ReturnsExpectedGreeting
+          - Plexus_Elements_AddNodesAndAnnotations_UniqueNamesAndIdsAreFindable
+          - Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram
 
-      - id: Plexus-Lib-Prefix
-        title: The library shall expose the configured greeting prefix via a read-only property.
-        tags: [system]
+      - id: Plexus-Core-Rename
+        title: >-
+          The library shall rename a node through a pipeline that validates the new name, enforces name uniqueness
+          unless the host turns it off, lets the host correct or cancel the change, and applies it as an undoable
+          change.
         justification: |
-          Callers may need to inspect the prefix configured at construction time without
-          re-specifying it or relying on the greeting output format to infer it.
+          Node names are user-visible identifiers that follow host-specific conventions. One rename path with a host
+          hook makes those conventions enforceable wherever a rename originates.
+        tags: [system]
         children:
-          - Plexus-Demo-Prefix
+          - Plexus-Model-Rename
         tests:
-          - Plexus_SystemIntegration_CustomPrefix_ExposesPrefix
+          - Plexus_Rename_HostHookCorrectsOrCancels_AppliedRenameIsUndoable
 
-      - id: Plexus-Lib-ValidationNull-DemoMethod
-        title: The library shall reject a null name argument to DemoMethod with ArgumentNullException.
-        tags: [system]
+      - id: Plexus-Core-Wires
+        title: >-
+          The library shall connect an output port to an input port, given as port objects or as "Node.port" paths
+          in either order, with a wire that is routed automatically and whose route can be edited and recomputed.
         justification: |
-          Passing null to DemoMethod is a programming error. Throwing ArgumentNullException
-          immediately surfaces the mistake to callers and prevents obscure failures deeper in
-          the call stack.
+          Wires express the data flow between nodes. Hosts need to connect from objects or from readable text paths,
+          get a sensible route without effort and adjust it when needed.
+        tags: [system]
         children:
-          - Plexus-Demo-ValidationNull-DemoMethod
+          - Plexus-Model-Wires
         tests:
-          - Plexus_SystemValidation_DemoMethodNullInput_ThrowsArgumentNullException
+          - Plexus_Wires_ConnectByObjectsAndPaths_AreOrderedRoutedAndEditable
+          - Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram
 
-      - id: Plexus-Lib-ValidationNull-Constructor
-        title: The library shall reject a null prefix argument to the constructor with ArgumentNullException.
-        tags: [system]
+      - id: Plexus-Core-NetSeparation
+        title: >-
+          The library shall route wires of different nets (every wire from the same output port is one net) on
+          separate tracks while letting wires of one net share a trunk, and shall mark the points where wires of a
+          net branch apart with junction dots.
         justification: |
-          Passing null to the constructor is a programming error. Throwing ArgumentNullException
-          immediately surfaces the mistake and prevents invalid instances from being created.
+          Overlapping wires of different signals are ambiguous; separate tracks and junction dots make
+          the connections of a diagram readable without any effort of the host.
+        tags: [system]
         children:
-          - Plexus-Demo-ValidationNull-Constructor
+          - Plexus-Routing-NetSeparation
+          - Plexus-Scene-WireJunctions
+          - Plexus-Scene-WireCrossingJumps
         tests:
-          - Plexus_SystemValidation_ConstructorNullPrefix_ThrowsArgumentNullException
+          - Plexus_WireNetsAndEditing_SeparateNetsJunctionsAndHandles_WorkThroughThePublicApi
 
-      - id: Plexus-Lib-ValidationEmpty-DemoMethod
-        title: The library shall reject an empty-string name argument to DemoMethod with ArgumentException.
-        tags: [system]
+      - id: Plexus-Core-WireEditing
+        title: >-
+          The library shall keep wire routes normalized, let a wire be reshaped (move a segment or bend, add a jog)
+          while staying orthogonal, let a wire be moved to other ports under the connection rules keeping its
+          identity, and describe the handles of a selected wire for editors, each change being one undo entry.
         justification: |
-          Passing an empty string to DemoMethod is a programming error. Throwing ArgumentException
-          immediately surfaces the mistake and prevents malformed output such as "Hello, !".
+          Editors need ready-made, validated and undoable wire editing so that hosts do not write geometry code,
+          and so that every host behaves the same way.
+        tags: [system]
         children:
-          - Plexus-Demo-ValidationEmpty-DemoMethod
+          - Plexus-Model-WireEditing
+          - Plexus-Routing-RouteCleaning
+          - Plexus-Routing-RouteEditing
+          - Plexus-Scene-WireHandles
         tests:
-          - Plexus_SystemValidation_DemoMethodEmptyInput_ThrowsArgumentException
+          - Plexus_WireNetsAndEditing_SeparateNetsJunctionsAndHandles_WorkThroughThePublicApi
 
-      - id: Plexus-Lib-ValidationEmpty-Constructor
-        title: The library shall reject an empty-string prefix argument to the constructor with ArgumentException.
-        tags: [system]
+      - id: Plexus-Core-ConnectionRules
+        title: >-
+          The library shall apply structural connection rules and a connection rule (by default one that refuses
+          fan-in into inputs that do not opt in, replaceable by the host) to every connection, and shall report
+          whether two ports can be connected, with the reason for a denial, without
+          changing the model.
         justification: |
-          Passing an empty string to the constructor is a programming error. Throwing ArgumentException
-          immediately surfaces the mistake and prevents malformed output such as ", World!".
+          Invalid connections must never enter the model, and an editing UI needs to know in advance and why a
+          connection is denied so it can give feedback while the user is still dragging.
+        tags: [system]
         children:
-          - Plexus-Demo-ValidationEmpty-Constructor
+          - Plexus-Model-ConnectionRules
+          - Plexus-ConnectionRules-DefaultSingleInput
+          - Plexus-ConnectionRules-SameType
+          - Plexus-ConnectionRules-SingleInputWire
+          - Plexus-ConnectionRules-Combination
+          - Plexus-ConnectionRules-DenialReasons
+          - Plexus-ConnectionRules-HostRule
+          - Plexus-ConnectionRules-DegreeLimits
         tests:
-          - Plexus_SystemValidation_ConstructorEmptyPrefix_ThrowsArgumentException
+          - Plexus_ConnectionRules_StructuralAndHostRules_DenyWithReasonBeforeAndOnConnect
+
+      - id: Plexus-Core-Groups
+        title: >-
+          The library shall group nodes, annotations and groups into nestable groups, collapse and expand groups,
+          move a group together with its members, and dissolve a group while keeping its members.
+        justification: |
+          Groups let users organize large diagrams and hide detail. A group must behave as a single unit when moved
+          and must not endanger the content it frames when dissolved.
+        tags: [system]
+        children:
+          - Plexus-Model-Groups
+        tests:
+          - Plexus_Groups_NestCollapseMoveAndUngroup_MembersFollowTheGroup
+
+      - id: Plexus-Core-Editing
+        title: >-
+          The library shall move elements with their wires following, remove elements together with the wires
+          attached to them, and move elements between pages, removing wires that would span pages.
+        justification: |
+          Editing operations must always leave a consistent diagram: wires stay attached to their nodes, no wire is
+          left without an end, and no wire connects nodes on different pages.
+        tags: [system]
+        children:
+          - Plexus-Model-Editing
+        tests:
+          - Plexus_Editing_MoveRemoveAndMoveToPage_KeepsWiresConsistent
+
+      - id: Plexus-Core-UndoRedo
+        title: >-
+          The library shall record every mutation of a diagram in one undo history that supports undo and redo,
+          grouping several changes into one step, suspending recording while content is loaded, tracking unsaved
+          changes and limiting the number of remembered steps.
+        justification: |
+          Users expect to undo any edit and to see whether the document has unsaved changes. Transactions let one
+          user gesture be one undo step, and suspension lets a host load content without polluting the history.
+        tags: [system]
+        children:
+          - Plexus-Model-UndoRedo
+          - Plexus-History-UndoRedo
+          - Plexus-History-Transactions
+          - Plexus-History-Suspend
+          - Plexus-History-DirtyTracking
+          - Plexus-History-Capacity
+          - Plexus-History-StateNotification
+        tests:
+          - Plexus_EditingSession_UndoAllThenRedoAll_RestoresExactStates
+          - Plexus_Transaction_WholeGesture_UndoesAsOneStep
+          - Plexus_LoadingWithSuspendedHistory_LeavesCleanEmptyHistory
+
+      - id: Plexus-Core-ChangeNotification
+        title: >-
+          The library shall notify observers of every change to a diagram, including undo and redo, through a
+          Changed event that identifies the kind of change, and through observable collections for pages and page
+          content.
+        justification: |
+          Painters and editor controls stay correct only if they are told about every change, whether it originates
+          from host code, a user gesture, undo or redo.
+        tags: [system]
+        children:
+          - Plexus-Model-ChangeNotification
+        tests:
+          - Plexus_ChangeNotification_EditUndoRedo_RaisesChangedForEveryChange
+
+      - id: Plexus-Core-Geometry
+        title: >-
+          The library shall provide immutable value types for points, sizes, rectangles and RGBA colors, including
+          rectangle relations and transformations and parsing and formatting of hexadecimal color text.
+        justification: |
+          All positions, extents and colors in the model, the scene and the painters use one set of value types so
+          that hosts, painters and tests exchange geometry without conversion ambiguity.
+        tags: [system]
+        children:
+          - Plexus-Geometry-PointArithmetic
+          - Plexus-Geometry-RectMeasures
+          - Plexus-Geometry-RectFromCorners
+          - Plexus-Geometry-RectRelations
+          - Plexus-Geometry-RectTransforms
+          - Plexus-Geometry-ValueSemantics
+          - Plexus-Geometry-ColorParsing
+          - Plexus-Geometry-ColorParseErrors
+          - Plexus-Geometry-ColorFormatting
+        tests:
+          - Plexus_Geometry_ColorsRectsAndPoints_DescribeAndPositionElements
+
+      - id: Plexus-Core-Routing
+        title: >-
+          The library shall route new wires with a default router that produces horizontal and vertical wires
+          avoiding nodes, shall offer a simpler alternative router, and shall let the host supply its own router.
+        justification: |
+          Readable wires are central to a block diagram. A good default saves every host from writing routing code,
+          while a pluggable router lets hosts with special needs replace it.
+        tags: [system]
+        children:
+          - Plexus-Routing-OrthogonalWires
+          - Plexus-Routing-ObstacleAvoidance
+          - Plexus-Routing-GroupObstacles
+          - Plexus-Routing-PortStubs
+          - Plexus-Routing-AlwaysRoutes
+          - Plexus-Routing-Replaceable
+          - Plexus-Routing-Determinism
+          - Plexus-Routing-Performance
+          - Plexus-Routing-InvalidRequests
+        tests:
+          - Plexus_Routing_DefaultAvoidsNodesAndCustomRouterIsUsed
+
+      - id: Plexus-Core-Scene
+        title: >-
+          The library shall build, from a page, a painter-independent scene of drawing primitives (grid, nodes,
+          ports, wires, annotations and groups, including selection and hover state and collapsed groups) together
+          with its bounds, without referencing any UI or drawing framework.
+        justification: |
+          A single scene description lets different front ends (headless renderer, interactive editor, host code)
+          draw identical pictures and answer geometric questions from the same data.
+        tags: [system]
+        children:
+          - Plexus-Scene-PainterAgnosticPrimitives
+          - Plexus-Scene-DrawingOrder
+          - Plexus-Scene-SelectionAndHover
+          - Plexus-Scene-TextIndependentAnchors
+          - Plexus-Scene-Culling
+          - Plexus-Scene-GroupDisplay
+          - Plexus-Scene-ReadOnly
+          - Plexus-Scene-HeadlessText
+          - Plexus-Scene-RegionQueries
+          - Plexus-Scene-LayoutLookup
+          - Plexus-Scene-Responsiveness
+          - Plexus-Scene-InvalidArguments
+        tests:
+          - Plexus_Scene_BuildPage_ContainsGridNodesAndWires
+
+      - id: Plexus-Core-SceneCustomization
+        title: >-
+          The library shall let the host customize the look and layout of a scene through a theme, a text measurer
+          and custom node visuals.
+        justification: |
+          Hosts must be able to match their own look and to supply real font metrics without changing the model.
+        tags: [system]
+        children:
+          - Plexus-Scene-Theming
+          - Plexus-Scene-PortPlacement
+          - Plexus-Scene-Extensibility
+        tests:
+          - Plexus_SceneCustomization_ThemeMeasurerAndVisual_AreHonored
+
+      - id: Plexus-Core-WireStyling
+        title: >-
+          The library shall let the host style individual wires dynamically (color, thickness, dash pattern,
+          arrowhead) from what each wire is connected to, with ready-made stylers for common cases, an explicit
+          refresh for host state outside the diagram, theme fallback and no effect on rendering when the host's
+          styler fails.
+        justification: |
+          Diagrams convey meaning through wire appearance (data type, enabled state, signal level); a theme alone
+          cannot express that, and styling must follow the model dynamically without becoming undoable content.
+        tags: [system]
+        children:
+          - Plexus-Scene-WireStyling
+          - Plexus-Model-WireStyler
+        tests:
+          - Plexus_WireStyling_StylerFollowsConnectionsAndRefreshes
+
+      - id: Plexus-Core-NodeStyling
+        title: >-
+          The library shall let the host style individual nodes dynamically (fill, border, title color, icon
+          tint, halo and opacity) from what each node holds or is connected to, with ready-made stylers for
+          common cases, an explicit refresh for host state outside the diagram, theme fallback, selection
+          outlines still drawn on top, and no effect on rendering when the host's styler fails.
+        justification: |
+          Diagrams of running systems show state on the nodes themselves (a lamp that is lit, a tank that holds
+          a fluid); a theme alone cannot express that, and styling must follow the model dynamically without
+          becoming undoable content.
+        tags: [system]
+        children:
+          - Plexus-Scene-NodeStyling
+          - Plexus-Model-NodeStyler
+        tests:
+          - Plexus_NodeStyling_StylerFollowsPropertiesAndRefreshes
+      - id: Plexus-Core-HitTest
+        title: >-
+          The library shall identify, for a point in diagram coordinates, the topmost element under it (node, node
+          name, port, wire with segment, annotation, group parts) or report empty canvas, using the geometry of the
+          scene.
+        justification: |
+          Interactive editors translate pointer positions into model elements. Sharing the scene's geometry makes
+          what the user sees and what a click hits always agree.
+        tags: [system]
+        children:
+          - Plexus-Scene-HitTestingMatchesDrawing
+        tests:
+          - Plexus_HitTest_NodePortWireAndCanvas_AreIdentified
+
+      - id: Plexus-Core-Snapshot
+        title: >-
+          The library shall capture a diagram as versioned JSON text and restore it, given the same node types,
+          with identical content, no undo history and no unsaved-changes state, rejecting invalid or unsupported
+          documents.
+        justification: |
+          Hosts that want a ready-made file format need a faithful, versioned round trip, and must be protected from
+          corrupt documents.
+        tags: [system]
+        children:
+          - Plexus-Serialization-LosslessRoundTrip
+          - Plexus-Serialization-RestoredState
+          - Plexus-Serialization-VersionedFormat
+          - Plexus-Serialization-MissingTypes
+          - Plexus-Serialization-InvalidSnapshots
+          - Plexus-Serialization-OpaquePayloads
+        tests:
+          - Plexus_Snapshot_ToJsonFromJson_RestoresContentWithCleanHistory
+
+      - id: Plexus-Core-Duplicate
+        title: >-
+          The library shall duplicate a selection of elements on a page at an offset, keeping the wires and groups
+          inside the selection, as a single undo step.
+        justification: |
+          Duplicating is a common editing operation and must be as easy to undo as any other single user action.
+        tags: [system]
+        children:
+          - Plexus-Serialization-Duplicate
+        tests:
+          - Plexus_Duplicate_NodesAndWire_CloneAtOffsetAsOneUndoStep
+
+      - id: Plexus-Core-Clipboard
+        title: >-
+          The library shall copy a selection of elements to versioned text and paste it into any page whose diagram
+          knows the node types, within a page, between pages and between applications, keeping the wires inside the
+          selection, and shall paste atomically, reporting all missing node types if the paste cannot be completed.
+        justification: |
+          Copy and paste between diagrams and applications is expected editing behavior; an all-or-nothing paste
+          never leaves a half-pasted diagram.
+        tags: [system]
+        children:
+          - Plexus-Serialization-ClipboardInterchange
+          - Plexus-Serialization-MissingTypes
+        tests:
+          - Plexus_Clipboard_CopyPasteAcrossDiagrams_RecreatesElementsAtomically
+
+      - id: Plexus-Core-ClipboardSafety
+        title: >-
+          The library shall treat pasted text as untrusted input and shall reject oversized, too deeply nested,
+          malformed or inconsistent content with an error, without changing the target diagram.
+        justification: |
+          Clipboard text comes from outside the application and may be hostile. Rejecting it up front protects the
+          host from crashes, resource exhaustion and corrupted documents.
+        tags: [system]
+        children:
+          - Plexus-Serialization-ClipboardValidation
+          - Plexus-Serialization-ClipboardLimits
+          - Plexus-Serialization-NoTypeResolution
+        tests:
+          - Plexus_ClipboardSafety_HostileAndMalformedText_IsRejectedWithoutChange

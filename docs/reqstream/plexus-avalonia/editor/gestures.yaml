@@ -1,0 +1,208 @@
+---
+# Software Unit requirements for PlexusAvalonia Gestures.
+#
+# Decomposes the PlexusAvalonia Editor subsystem requirements into the responsibility of the pointer gesture state
+# machines (move, connect, resize, wire segment, pan and rubber band). Tests are the unit tests in GesturesTests.cs,
+# which create and drive each gesture directly.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: Editor Requirements
+        sections:
+          - title: Gestures Requirements
+            requirements:
+              - id: PlexusAvalonia-Editor-Gestures-Move
+                title: >-
+                  A move gesture shall change nothing until the pointer has traveled past a small threshold; after
+                  that it shall move the selection so that the pressed element's corner lands on the grid, and the
+                  whole drag shall commit as one undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; a click must not become a move, and snapping the
+                  pressed element itself keeps elements on the grid even if they started off it.
+                tests:
+                  - MoveGesture_Move_BelowThreshold_EditsNothing
+                  - MoveGesture_Complete_AfterDrag_SnapsAndRecordsOneUndoEntry
+
+              - id: PlexusAvalonia-Editor-Gestures-Duplicate
+                title: >-
+                  A move gesture that starts with Ctrl held shall first duplicate the selection in place and then
+                  move the copies, leaving the originals.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; Ctrl-drag copy.
+                tests:
+                  - MoveGesture_Move_ControlHeld_DuplicatesAndMovesCopy
+
+              - id: PlexusAvalonia-Editor-Gestures-MoveCancel
+                title: >-
+                  Cancelling a move gesture shall restore the positions, remove any copies, restore the previous
+                  selection and leave the history unchanged.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-GestureCancellation; Escape must undo a drag completely.
+                tests:
+                  - MoveGesture_Cancel_AfterDrag_RestoresPositionSelectionAndHistory
+
+              - id: PlexusAvalonia-Editor-Gestures-DeferredSelection
+                title: >-
+                  A press on an already selected element that never became a drag shall, on release, narrow the
+                  selection to that element, or remove it from the selection when Shift or Ctrl is held.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; the press must leave the selection alone so that
+                  a multi-element drag can start, so the click's effect is applied on release.
+                tests:
+                  - MoveGesture_Complete_ClickOnSelectedNode_FinishesDeferredSelectionChange
+
+              - id: PlexusAvalonia-Editor-Gestures-Connect
+                title: >-
+                  A connect gesture released over another port that the connection rules allow shall connect the two
+                  ports with a wire running from output to input and select the wire.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; connecting from either end must give the same
+                  result.
+                tests:
+                  - ConnectGesture_Complete_OverCompatiblePort_ConnectsAndSelectsWire
+
+              - id: PlexusAvalonia-Editor-Gestures-ConnectValidation
+                title: >-
+                  A connect gesture shall connect nothing when released over a port the rules reject (including a
+                  second wire into an input that does not allow fan-in, whose verdict carries the reason), over the
+                  port it started from, or over empty canvas, and shall connect when the input allows fan-in.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; invalid connections must never be made.
+                tests:
+                  - ConnectGesture_Complete_OverRejectedPort_ConnectsNothing
+                  - ConnectGesture_SecondWireIntoInput_RejectedUnlessInputAllowsFanIn
+                  - ConnectGesture_Complete_OverOwnPortOrCanvas_ConnectsNothing
+
+              - id: PlexusAvalonia-Editor-Gestures-ConnectCancel
+                title: >-
+                  Cancelling a connect gesture shall forget the port it hovered so that nothing is connected.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-GestureCancellation.
+                tests:
+                  - ConnectGesture_Cancel_AfterHoveringTarget_ConnectsNothing
+
+              - id: PlexusAvalonia-Editor-Gestures-Resize
+                title: >-
+                  A resize gesture shall keep the annotation's top-left corner, move its bottom-right corner to the
+                  pointer snapped to the grid, and commit as one undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing.
+                tests:
+                  - ResizeGesture_Complete_AfterDrag_ResizesWithOneUndoEntry
+
+              - id: PlexusAvalonia-Editor-Gestures-ResizeMinimum
+                title: >-
+                  A resize gesture shall never make an annotation smaller than its minimum size.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; an annotation shrunk to nothing could not be
+                  selected or edited again.
+                tests:
+                  - ResizeGesture_Move_PointerPastTopLeft_ClampsToMinimumSize
+
+              - id: PlexusAvalonia-Editor-Gestures-ResizeCancel
+                title: >-
+                  Cancelling a resize gesture shall restore the original bounds and leave the history unchanged.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-GestureCancellation.
+                tests:
+                  - ResizeGesture_Cancel_AfterDrag_RestoresBoundsAndHistory
+
+              - id: PlexusAvalonia-Editor-Gestures-WireSegmentLimits
+                title: >-
+                  A wire segment gesture shall be offered for every horizontal or vertical segment of a wire,
+                  including the port stubs at both ends (which get a jog when moved), and not for a segment that
+                  does not exist.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; the ports stay attached because moving a stub
+                  inserts a jog instead of moving the port.
+                tests:
+                  - WireSegmentGesture_TryCreate_PortStubOrOutOfRangeSegment_StubsDraggableOutOfRangeNull
+
+              - id: PlexusAvalonia-Editor-Gestures-WireSegmentMove
+                title: >-
+                  A wire segment gesture shall move an interior segment perpendicular to itself, moving both of its
+                  ends together, keep the ports where they are, and commit as one undo entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; keeping the wire orthogonal keeps diagrams tidy.
+                tests:
+                  - WireSegmentGesture_Complete_AfterDrag_MovesSegmentWithOneUndoEntry
+
+              - id: PlexusAvalonia-Editor-Gestures-WireSegmentCancel
+                title: >-
+                  Cancelling a wire segment gesture shall restore the original route and leave the history
+                  unchanged.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-GestureCancellation.
+                tests:
+                  - WireSegmentGesture_Cancel_AfterDrag_RestoresRoute
+
+              - id: PlexusAvalonia-Editor-Gestures-WireBend
+                title: >-
+                  A wire bend gesture shall be offered for an existing bend of a wire that is shown with its stored
+                  route, with a move cursor, and not for a bend that does not exist.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-WireEditing; the cursor tells the user the handle moves in
+                  every direction.
+                tests:
+                  - WireGestures_Cursor_BendMoveAndEndCross
+
+              - id: PlexusAvalonia-Editor-Gestures-WireEndReconnect
+                title: >-
+                  A wire end gesture shall keep the model unchanged while it runs, show a preview that follows the
+                  pointer, and on release over a port that the connection rules allow reconnect the wire there as
+                  one undo entry with the wire's identity kept, and otherwise (invalid port, wrong direction or empty
+                  canvas) leave the wire and the history unchanged; it shall show a cross cursor.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-WireEditing; the preview and the verdict are the user's only
+                  feedback before the drop.
+                tests:
+                  - DiagramEditor_DragTargetHandle_OverValidPort_ReconnectsWire
+                  - DiagramEditor_DragSourceHandle_OverValidPort_ReconnectsWire
+                  - DiagramEditor_DragEndHandle_OverInvalidPort_ChangesNothing
+                  - DiagramEditor_DragEndHandle_DroppedOnCanvas_Cancels
+                  - WireGestures_Cursor_BendMoveAndEndCross
+
+              - id: PlexusAvalonia-Editor-Gestures-Pan
+                title: >-
+                  A pan gesture shall keep the diagram point that was under the pointer at the press under the
+                  pointer at any zoom, without editing the model.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; panning should feel like grabbing the canvas.
+                tests:
+                  - PanGesture_Move_ZoomedView_KeepsPressedDiagramPointUnderPointer
+
+              - id: PlexusAvalonia-Editor-Gestures-RubberBand
+                title: >-
+                  A rubber band gesture shall ignore movement below the drag threshold and, beyond it, select the
+                  nodes the band touches, updating the selection live as the band grows and shrinks.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; live feedback shows what will be selected.
+                tests:
+                  - RubberBandGesture_Move_Band_SelectsTouchedNodesLive
+
+              - id: PlexusAvalonia-Editor-Gestures-RubberBandAdditive
+                title: >-
+                  A rubber band gesture started with Shift or Ctrl shall keep the previous selection.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; adding to a selection is a standard gesture.
+                tests:
+                  - RubberBandGesture_Move_Additive_KeepsPreviousSelection
+
+              - id: PlexusAvalonia-Editor-Gestures-RubberBandGroups
+                title: >-
+                  A rubber band shall select an expanded group only when it encloses the group completely, while
+                  nodes inside the group are selected when touched.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; otherwise any band started inside a group would
+                  grab the group.
+                tests:
+                  - RubberBandGesture_Move_ExpandedGroup_SelectedOnlyWhenEnclosed
+
+              - id: PlexusAvalonia-Editor-Gestures-RubberBandNoHistory
+                title: >-
+                  A rubber band gesture shall never record history, including when it is cancelled.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-PointerEditing; selection is view state.
+                tests:
+                  - RubberBandGesture_Cancel_AfterMove_RecordsNoHistory

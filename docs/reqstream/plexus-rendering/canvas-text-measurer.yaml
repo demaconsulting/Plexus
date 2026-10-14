@@ -1,0 +1,70 @@
+---
+# Software Unit requirements for PlexusRendering CanvasTextMeasurer.
+#
+# Decomposes the PlexusRendering text-layout requirement into the responsibility of the unit that measures text.
+# Tests are the CanvasTextMeasurerTests unit tests.
+
+sections:
+  - title: PlexusRendering Requirements
+    sections:
+      - title: CanvasTextMeasurer Requirements
+        requirements:
+          - id: PlexusRendering-CanvasTextMeasurer-Width
+            title: >-
+              The measurer shall report a text width that grows with the length of the text and is proportional to
+              the font size.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; node sizes and label wrapping are computed from widths.
+            tests:
+              - CanvasTextMeasurer_Measure_LongerText_IsWider
+              - CanvasTextMeasurer_Measure_DoubleFontSize_DoublesWidth
+
+          - id: PlexusRendering-CanvasTextMeasurer-Weight
+            title: The measurer shall report bold text as at least as wide as the same text in regular weight.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; group titles are bold and must not overflow their frames.
+            tests:
+              - CanvasTextMeasurer_Measure_Bold_IsAtLeastAsWide
+
+          - id: PlexusRendering-CanvasTextMeasurer-LineHeight
+            title: >-
+              The measurer shall report a line height between one and 1.25 times the font size, the same for every
+              text of one style.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; stacked lines keep a compact, uniform rhythm.
+            tests:
+              - CanvasTextMeasurer_Measure_LongerText_IsWider
+
+          - id: PlexusRendering-CanvasTextMeasurer-Degenerate
+            title: >-
+              The measurer shall report no width for empty text and an empty size for a font size that is zero,
+              negative or not finite.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; empty labels and degenerate styles must lay out as
+              nothing instead of failing the render.
+            tests:
+              - CanvasTextMeasurer_Measure_EmptyTextOrZeroSize_HasNoWidth
+
+          - id: PlexusRendering-CanvasTextMeasurer-FontFallback
+            title: The measurer shall measure with a bundled font when the requested font family is not installed.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; rendering must work on machines without the theme font.
+            tests:
+              - CanvasTextMeasurer_Measure_UnknownFamily_FallsBackToBundledFont
+
+          - id: PlexusRendering-CanvasTextMeasurer-Deterministic
+            title: >-
+              The measurer shall return the same size every time it measures the same text with the same style, and
+              shall resolve a font family name without regard to letter case.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; reproducible layout requires reproducible measurement,
+              which also makes sharing the measurer between threads safe.
+            tests:
+              - CanvasTextMeasurer_Measure_SameInput_IsDeterministic
+
+          - id: PlexusRendering-CanvasTextMeasurer-InvalidInput
+            title: The measurer shall throw an argument-null exception when given no text or no style.
+            justification: |
+              Decomposes PlexusRendering-Render-InvalidInput; missing arguments must fail early.
+            tests:
+              - CanvasTextMeasurer_Measure_NullArguments_Throw

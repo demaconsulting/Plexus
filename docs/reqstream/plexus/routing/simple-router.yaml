@@ -1,0 +1,68 @@
+---
+# Software Unit requirements for Plexus SimpleRouter.
+#
+# Unit requirements decompose the Routing subsystem requirements (which link down to these IDs as children) and are
+# proven by the unit tests in SimpleRouterTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Routing Requirements
+        sections:
+          - title: SimpleRouter Requirements
+            requirements:
+              - id: Plexus-Routing-SimpleRouter-Elbow
+                title: >-
+                  When the end port lies ahead of the start port, the router shall return the two bend points of a
+                  single vertical run between the two stubs, at the midpoint snapped to the grid, or exactly at
+                  the midpoint when snapping is disabled or would leave the stub range.
+                justification: |
+                  The three-segment elbow is the minimal orthogonal wire, and a run outside the stubs would fold
+                  the wire back through the node it leaves.
+                tests:
+                  - SimpleRouter_Route_TargetAhead_ProducesSnappedElbow
+                  - SimpleRouter_Route_GridSizeZero_DoesNotSnap
+                  - SimpleRouter_Route_SnappingWouldLeaveStubRange_KeepsUnsnappedMidpoint
+
+              - id: Plexus-Routing-SimpleRouter-StraightWhenAligned
+                title: >-
+                  The router shall return no bend points when the end port lies ahead of the start port on the
+                  same row.
+                justification: |
+                  Aligned ports are connected by a straight wire without bends.
+                tests:
+                  - SimpleRouter_Route_SameRowAhead_ReturnsNoBendPoints
+
+              - id: Plexus-Routing-SimpleRouter-LoopWhenBehind
+                title: >-
+                  When the end port lies behind the start port, the router shall return four bend points that
+                  leave through the start stub, run along a horizontal channel at the midpoint row (below the row
+                  when both ports share a row) and enter through the end stub.
+                justification: |
+                  Wires to targets behind the source must still leave and enter in the direction of flow, and a
+                  channel below a shared row keeps the wire from running through the nodes.
+                tests:
+                  - SimpleRouter_Route_TargetBehind_LoopsThroughBothStubs
+                  - SimpleRouter_Route_TargetBehindOnSameRow_UsesChannelBelowTheRow
+
+              - id: Plexus-Routing-SimpleRouter-IgnoresObstacles
+                title: The router shall return the same route for a request whatever obstacles it lists.
+                justification: |
+                  The router exists as the predictable, cheap alternative to obstacle avoidance; hosts choosing
+                  it rely on the route depending on the end points only.
+                tests:
+                  - SimpleRouter_Route_Obstacles_AreIgnored
+
+              - id: Plexus-Routing-SimpleRouter-Deterministic
+                title: Identical requests shall yield identical bend points, also from different router instances.
+                justification: |
+                  Reproducible routes keep diagrams stable across loads and make tests exact.
+                tests:
+                  - SimpleRouter_Route_SameRequest_IsDeterministic
+
+              - id: Plexus-Routing-SimpleRouter-NullRequest
+                title: The router shall throw an argument-null exception when the request is null.
+                justification: |
+                  A null request is a caller bug that should be reported at the call site.
+                tests:
+                  - SimpleRouter_Route_NullRequest_ThrowsArgumentNullException

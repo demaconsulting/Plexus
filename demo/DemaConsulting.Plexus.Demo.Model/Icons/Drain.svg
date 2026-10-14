@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Drain: a grated basin with a falling drop -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 10 H58 L46 34 H18 Z" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M22 20 H42 M26 27 H38" stroke="#F2F2F2" stroke-width="1.5"/>
+    <path d="M32 40 C26 48 26 54 32 56 C38 54 38 48 32 40 Z" stroke="#7FC4FF" stroke-width="2.5"/>
+  </g>
+</svg>

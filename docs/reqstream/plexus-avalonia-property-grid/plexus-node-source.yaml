@@ -1,0 +1,113 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid PlexusNodeSource (the Plexus adapter sources).
+#
+# Each requirement decomposes a system requirement into the behavior of the sources that show Plexus nodes, annotations
+# and groups in the property grid. Tests are in NodePropertySourceTests.cs (and the grid test in
+# NodePropertiesDialogTests.cs).
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: PlexusNodeSource Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Rows
+            title: >-
+              The node source shall list the node name first under General, the declared properties with the
+              presentation of their definitions (category, display name with the unit, description, read-only, default
+              and changed state, choices as a closed list, colors and the editor hint as the editor key), and the
+              browsable properties of the host data with their annotations; a node without copyable data shall list
+              no data rows, and a node that is not attached to a diagram shall be refused.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; the rows are what the user sees of a node.
+            tests:
+              - NodePropertySource_GetItems_ListsNameAndDeclaredPropertiesWithMetadata
+              - NodePropertySource_GetItems_ChoiceAndColorRowsUseTheMatchingEditorTypes
+              - NodePropertySource_GetItems_ListsHostDataProperties
+              - NodePropertySource_GetItems_NodeWithoutDataHasNoDataRows
+              - NodePropertySource_Constructor_DetachedNode_Throws
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Validation
+            title: >-
+              The node source shall validate typed values with the property definitions (invariant culture, units
+              accepted, the reason shown) and validate the name while it is typed (not empty, unique when the diagram
+              requires unique names).
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; invalid input must be refused inline with a reason.
+            tests:
+              - NodePropertySource_SetText_ValidatesWithThePropertyDefinition
+              - NodePropertySource_SetText_NameIsValidatedWhileTyping
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Commit
+            title: >-
+              A staged commit through the node source shall apply the rename, the changed properties and the edited
+              host data (a working copy that replaces the data) as one undo entry, leave the live data object
+              untouched, replace the data only when it was edited, and change nothing when the session is cancelled.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; the properties dialog of a node must be one undo step
+              and Cancel must change nothing.
+            tests:
+              - NodePropertySource_StagedCommit_IsOneUndoEntry
+              - NodePropertySource_StagedCancel_ChangesNothing
+              - NodePropertySource_StagedCommit_UneditedDataIsNotReplaced
+              - NodePropertySource_StagedCommit_CollectionEditsPersistAndUndo
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Refusal
+            title: >-
+              A rename that the rename pipeline refuses shall refuse the whole commit, show the reason on the name
+              row and change nothing.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; a host veto can only be known at commit time.
+            tests:
+              - NodePropertySource_StagedCommit_RenameVetoedRefusesTheCommitAndMarksTheNameRow
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Live
+            title: >-
+              In live mode each edit through the node source shall be its own undo entry and a data edit shall
+              publish a copy, and the source shall follow changes made from elsewhere (undo, redo) by raising a
+              change and showing the new values.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; a docked properties panel edits live and must stay in
+              step with the diagram.
+            tests:
+              - NodePropertySource_LiveEdits_EachEditIsItsOwnUndoEntry
+              - NodePropertySource_ExternalChange_RaisesChangedAndRereads
+              - NodePropertySource_ExternalChange_DataRemovedDropsTheDataRows
+              - PropertyGrid_SelectedObjectNode_LiveEditsAreUndoEntriesAndFollowUndo
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Elements
+            title: >-
+              The package shall register its sources with the source factory so that a grid given a node, an
+              annotation or a group uses them, and the annotation and group sources shall edit the text and fill
+              of an annotation and the title and collapsed state of a group as one undo entry per commit.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; selecting any element in a diagram editor can show it
+              in a grid with one assignment.
+            tests:
+              - PropertySourceFactory_Create_PlexusElements_UsesThePlexusSources
+              - AnnotationPropertySource_StagedCommit_IsOneUndoEntry
+              - GroupPropertySource_StagedCommit_IsOneUndoEntry
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-RowPaths
+            title: >-
+              The rows of a node shall have documented, collision-free paths: Node.Name for the name, Property.name
+              for each declared property and Data.path for the host data (nested members and collection elements
+              extending it), so that a data property can neither hide a declared property nor the name row, and a
+              property called Name is edited independently of the node name.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; automation ids, errors, pending edits and failed
+              rows are keyed by path, so equal bare names in different groups of rows must not collide.
+            tests:
+              - NodePropertySource_Paths_NameDeclaredAndDataRowsNeverCollide
+              - NodePropertySource_Paths_PropertyNamedNameDoesNotTouchTheNodeName
+              - PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-AtomicRefusal
+            title: >-
+              A commit through a node source in which one row is refused shall apply nothing and record no undo
+              entry, keep every edit pending, and list the refused row with its path in the commit result.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; a half-applied dialog would leave the node in a
+              state the user never confirmed.
+            tests:
+              - NodePropertySource_StagedCommit_RefusedRowIsListedWithItsPathAndNothingIsApplied
+              - NodePropertySource_StagedCommit_RenameVetoedRefusesTheCommitAndMarksTheNameRow

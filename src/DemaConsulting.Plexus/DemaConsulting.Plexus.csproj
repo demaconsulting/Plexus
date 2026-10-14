@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -11,13 +11,13 @@
     <Version>0.0.0</Version>
     <Authors>DEMA Consulting</Authors>
     <Company>DEMA Consulting</Company>
-    <Description>A .NET library demonstrating requirements traceability and continuous compliance.</Description>
+    <Description>A UI-free .NET library for building and editing node-based block diagrams with typed ports, routed wires, annotations, nestable collapsible groups, multiple pages and full undo/redo.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/demaconsulting/Plexus</PackageProjectUrl>
     <RepositoryUrl>https://github.com/demaconsulting/Plexus</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>Icon.png</PackageIcon>
-    <PackageTags>dotnet-library;requirements;traceability</PackageTags>
+    <PackageTags>dotnet-library;diagram;node-editor;nodes;undo-redo;graph</PackageTags>
     <Copyright>Copyright DEMA Consulting</Copyright>
     <Title>Plexus</Title>
     <Product>Plexus</Product>
@@ -36,20 +36,32 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
 
-    <!-- Polyfill Configuration -->
-    <PolyArgumentExceptions>true</PolyArgumentExceptions>
-
     <!-- SBOM Configuration -->
     <GenerateSBOM>true</GenerateSBOM>
     <SBOMPackageName>$(PackageId)</SBOMPackageName>
     <SBOMPackageVersion>$(Version)</SBOMPackageVersion>
     <SBOMPackageSupplier>Organization: $(Company)</SBOMPackageSupplier>
+
+    <!-- API Documentation Configuration -->
+    <!-- ApiMark turns this project's XML doc comments into gradually-disclosed Markdown API
+         reference (api.md index -> namespace -> type -> member) for coding agents and developers.
+         - Output defaults to $(MSBuildProjectDirectory)\api (git-ignored, regenerated on every build).
+         - Generation runs once per build for the first target framework only, which is correct
+           because the public surface is identical across target frameworks.
+         - ApiMarkPackDocs ships the generated api/ tree inside the NuGet package.
+         - ApiMarkEnforceDocs fails the build on any public API member lacking an XML doc summary,
+           so the shipped reference cannot silently develop gaps (delegate members are covered since ApiMark 0.5.8).
+         - ApiMarkVisibility is left at its C# default (PublicAndProtected), which also documents the
+           protected/virtual extension points of public types (e.g. StandardNodeVisual.AddBox). -->
+    <ApiMarkPackDocs>true</ApiMarkPackDocs>
+    <ApiMarkEnforceDocs>Public</ApiMarkEnforceDocs>
+    <ApiMarkEnforceDocsSeverity>Error</ApiMarkEnforceDocsSeverity>
   </PropertyGroup>
 
   <!-- Build Tool Dependencies -->
   <ItemGroup>
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.8" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.13" PrivateAssets="All" />
-    <PackageReference Include="Polyfill" Version="11.4.3" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
   </ItemGroup>
 
@@ -68,6 +80,11 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <!-- Geometry primitives are used throughout the model, so import them project-wide -->
+  <ItemGroup>
+    <Using Include="DemaConsulting.Plexus.Geometry" />
   </ItemGroup>
 
   <ItemGroup>

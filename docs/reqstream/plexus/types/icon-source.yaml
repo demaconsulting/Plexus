@@ -1,0 +1,69 @@
+---
+# Software Unit requirements for Plexus IconSource.
+#
+# IconSource is the immutable SVG icon descriptor that hosts attach to node types. The unit requirements are
+# verified by the unit tests in Types/IconSourceTests.cs and TypesAndGeometryTests.cs.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Types Requirements
+        sections:
+          - title: IconSource Requirements
+            requirements:
+              - id: Plexus-Types-IconSource-FromSvg
+                title: >-
+                  IconSource shall create an icon from SVG document text, expose that text unchanged, and reject
+                  null, empty or whitespace text.
+                justification: |
+                  Hosts normally hold their icons as SVG strings. An icon with no content could never be drawn, so
+                  it is rejected when created rather than shown as a blank.
+                tests:
+                  - IconSource_FromSvg_HasStableContentKey
+                  - IconSource_FromSvg_BlankText_ThrowsArgumentException
+
+              - id: Plexus-Types-IconSource-ContentKey
+                title: >-
+                  IconSource shall provide a stable key derived from the SVG content, so icons with the same content
+                  have the same key and icons with different content have different keys.
+                justification: |
+                  Painters cache decoded images. A content-derived key lets them share one decoded image between
+                  node types that use the same SVG and refresh it when the content changes.
+                tests:
+                  - IconSource_FromSvg_HasStableContentKey
+                  - IconSource_Key_HasPrefixAndHexDigest
+
+              - id: Plexus-Types-IconSource-Equality
+                title: >-
+                  IconSource shall treat two icons as equal when their content keys are equal and give equal icons
+                  equal hash codes.
+                justification: |
+                  Hosts and tests compare icons and keep them in sets. Equality by content means an icon created
+                  twice from the same SVG is recognized as the same icon.
+                tests:
+                  - IconSource_FromSvg_HasStableContentKey
+                  - IconSource_Equality_FollowsContent
+
+              - id: Plexus-Types-IconSource-FromFile
+                title: >-
+                  IconSource shall create an icon from the content of an SVG file when the icon is created, and
+                  shall report an unreadable file or a blank path as an error.
+                justification: |
+                  Hosts may ship icons as files. Reading eagerly means a missing file is found at start-up and the
+                  icon is immutable and safe to share afterwards.
+                tests:
+                  - IconSource_FromSvgFile_ExistingFile_LoadsContent
+                  - IconSource_FromSvgFile_MissingFileOrBlankPath_Throws
+                  - IconSource_FromFileAndResource_LoadContentAndRejectMissing
+
+              - id: Plexus-Types-IconSource-FromResource
+                title: >-
+                  IconSource shall create an icon from an embedded SVG resource of an assembly, and shall report a
+                  missing resource, a null assembly or a blank resource name as an error.
+                justification: |
+                  Hosts that bundle icons in their assemblies need to load them without file paths. A missing
+                  resource is a host mistake that should surface immediately, not as a blank icon.
+                tests:
+                  - IconSource_FromSvgResource_ExistingResource_LoadsContent
+                  - IconSource_FromSvgResource_MissingResourceOrInvalidArguments_Throws
+                  - IconSource_FromFileAndResource_LoadContentAndRejectMissing

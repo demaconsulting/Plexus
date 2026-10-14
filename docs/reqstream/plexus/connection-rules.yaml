@@ -1,0 +1,115 @@
+---
+# Software Unit requirements for Plexus ConnectionRules.
+#
+# ConnectionRules provides the host-extensible connection policy: the rule delegate, the ready-made rules, rule
+# combination and the allowed-or-denied result with a reason. The structural checks that always apply are owned by
+# the Model subsystem. The unit requirements are verified by the unit tests in ConnectionRulesTests.cs and
+# ConnectionTests.cs.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: ConnectionRules Requirements
+        requirements:
+          - id: Plexus-ConnectionRules-DefaultSingleInput
+            title: >-
+              ConnectionRules shall provide a default rule that allows a connection unless the input port already
+              has a wire and its definition does not allow fan-in, whose denial reason names the input and says it
+              does not accept more than one wire, and a diagram shall use that rule until the host supplies another
+              one.
+            justification: |
+              Most diagram models connect one source to each input while an output may feed many inputs. Making the
+              single-wire input the default, with an explicit per-port opt-in for inputs that merge wires, catches
+              accidental fan-in without configuration, and a host that assigns a rule without the default keeps full
+              control.
+            tests:
+              - ConnectionRules_Default_AnyPorts_ReturnsAllowed
+              - ConnectionRules_Default_AllowsAndHostRuleReceivesOutputThenInput
+              - ConnectionRules_Default_OccupiedInput_DeniesWithReason
+              - ConnectionRules_DefaultAndSingleInputWire_OptedInInput_AllowAnotherWire
+              - DiagramPage_Connect_DefaultRules_RefuseFanInAndAllowFanOut
+              - DiagramPage_Connect_InputAllowsMultipleWires_AcceptsSeveralWires
+              - DiagramPage_Connect_HostRuleWithoutDefault_AllowsFanInEverywhere
+
+          - id: Plexus-ConnectionRules-SameType
+            title: >-
+              ConnectionRules shall provide a rule that allows a connection only when both ports have the same type
+              key, and whose denial reason names both type keys.
+            justification: |
+              Typed signal flows, such as float to float, are the most common domain policy. A ready-made rule with
+              an explanatory reason lets editors tell the user why a drop target is refused.
+            tests:
+              - ConnectionRules_SameType_RejectsMismatchedTypes
+              - ConnectionRules_SameType_DirectCall_ReasonNamesBothTypes
+
+          - id: Plexus-ConnectionRules-SingleInputWire
+            title: >-
+              ConnectionRules shall provide a single-input rule, equivalent to the default rule, that allows a
+              connection only when the input port has no wire yet or its definition allows fan-in, and whose denial
+              reason names the input port and its node.
+            justification: |
+              Hosts that compose rules explicitly need a named building block for the single-wire policy. It must
+              honor the per-port opt-in so both spellings behave the same, and explain the refusal in the user
+              interface.
+            tests:
+              - ConnectionRules_SingleInputWire_RejectsSecondWireToInput
+              - ConnectionRules_SingleInputWire_DirectCall_ReasonNamesInputAndNode
+              - ConnectionRules_DefaultAndSingleInputWire_OptedInInput_AllowAnotherWire
+
+          - id: Plexus-ConnectionRules-Combination
+            title: >-
+              ConnectionRules shall combine several rules into one that allows a connection only when every rule
+              allows it, returns the first denial, ignores later changes to the supplied rule list, and rejects
+              null rules; a combination that includes the default rule keeps the single-wire input policy and one
+              that leaves it out does not.
+            justification: |
+              Hosts normally need more than one policy at once. Combining rules in a defined order with a
+              predictable first-denial result keeps the reported reason deterministic, and composing with the
+              default rule is how a host adds domain policy without losing the fan-in default.
+            tests:
+              - ConnectionRules_All_CombinesRulesAndReportsFirstDenial
+              - ConnectionRules_All_FirstDenial_SkipsLaterRules
+              - ConnectionRules_All_NoRules_ReturnsAllowed
+              - ConnectionRules_All_ArrayChangedAfterCombining_KeepsOriginalRules
+              - ConnectionRules_All_WithAndWithoutDefault_FanInFollowsTheDefault
+
+          - id: Plexus-ConnectionRules-DenialReasons
+            title: >-
+              ConnectionRules shall report every denial with a human-readable reason, substituting a default reason
+              when none is given, and shall report an allowed result without a reason.
+            justification: |
+              Editors show the reason when a connection is refused, and the connect operation reports it in its
+              error. A denial without an explanation would leave users and hosts guessing.
+            tests:
+              - ConnectionCheck_Allowed_HasNoReason
+              - ConnectionCheck_Denied_WithReason_KeepsReason
+              - ConnectionCheck_Denied_NullReason_GetsDefaultReason
+              - DiagramPage_CanConnect_HostDenialWithoutReason_GetsDefaultReason
+
+          - id: Plexus-ConnectionRules-HostRule
+            title: >-
+              ConnectionRules shall let the host supply its own rule, which receives the output port as source and
+              the input port as target regardless of the order the ports were given, and whose decision and denial
+              reason are reported to the caller.
+            justification: |
+              Connection policy is domain specific, so the host must be able to decide. Receiving the ports in a
+              fixed output-then-input order lets rules be written without handling both orders.
+            tests:
+              - ConnectionRules_Default_AllowsAndHostRuleReceivesOutputThenInput
+              - ConnectionRules_SameType_RejectsMismatchedTypes
+              - DiagramPage_CanConnect_HostDenialWithoutReason_GetsDefaultReason
+
+          - id: Plexus-ConnectionRules-DegreeLimits
+            title: >-
+              ConnectionRules shall provide rules that limit the number of wires leaving an output port and ending at an
+              input port, whose denial reason names the port, that do not count the wire a reconnect check is
+              moving, and
+              that reject a limit below one.
+            justification: |
+              Degree limits are the most common domain rule after type matching. Built-in rules that already account
+              for the wire being moved spare every host the subtle mistake of counting it against its new port.
+            tests:
+              - ConnectionRules_MaxOutgoingWires_FullOutput_DeniesButMovingAWireOnTheSameOutputIsFine
+              - ConnectionRules_MaxOutgoingWires_ReconnectSourceOntoFullOutput_IsDenied
+              - ConnectionRules_MaxIncomingWires_FullInput_DeniesButTheMovingWireIsNotCounted
+              - ConnectionRules_MaxWires_LimitBelowOne_ThrowsArgumentOutOfRange

@@ -1,0 +1,145 @@
+---
+# Software Unit requirements for Plexus PropertyBag.
+#
+# PropertyBag holds the property values of one node: declared properties starting at their defaults plus ad-hoc
+# values, with validated, undoable assignment. Evidence comes from the PropertyBag unit tests, which host the bag in
+# a node on a page of a small test diagram because a bag cannot exist without its owning node.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Properties Requirements
+        sections:
+          - title: PropertyBag Requirements
+            requirements:
+              - id: Plexus-Properties-PropertyBag-Defaults
+                title: >-
+                  PropertyBag shall hold, for a new node, exactly the declared properties of the node type, each at
+                  its declared default value.
+                justification: |
+                  Every node starts in a valid, documented state that equals the node type's declaration.
+                tests:
+                  - PropertyBag_Initial_ContainsDeclaredDefaults
+
+              - id: Plexus-Properties-PropertyBag-Assignment
+                title: >-
+                  PropertyBag shall store an assigned value of each property kind and shall convert a compatible
+                  numeric value to the declared kind when no information is lost.
+                justification: |
+                  Hosts hold numbers in whatever type is convenient; a conversion that loses nothing must not force
+                  them to cast, while the stored value stays in the declared kind.
+                tests:
+                  - PropertyBag_Set_AllKinds_StoreValues
+                  - PropertyBag_Set_CompatibleNumericTypes_Convert
+
+              - id: Plexus-Properties-PropertyBag-Validation
+                title: >-
+                  PropertyBag shall reject an assignment whose value is missing, of an incompatible kind, a lossy
+                  or out-of-range number, not finite or not one of the declared choices, and shall leave the stored
+                  value and the history unchanged.
+                justification: |
+                  A declared property must never hold an illegal value, and a rejected assignment must have no side
+                  effect.
+                tests:
+                  - PropertyBag_Set_IncompatibleValues_ThrowArgumentException
+                  - PropertyBag_Set_ChoiceOutsideOptions_ThrowsArgumentException
+
+              - id: Plexus-Properties-PropertyBag-AdHoc
+                title: >-
+                  PropertyBag shall accept an assignment to an undeclared name as an ad-hoc property when the value
+                  is a portable kind, shall reject other values, and shall report no declaration for it.
+                justification: |
+                  Hosts attach custom values to nodes without declaring them, but only kinds that every later feature
+                  can handle are allowed.
+                tests:
+                  - PropertyBag_Set_AdHocProperty_AllowsPortableKindsOnly
+
+              - id: Plexus-Properties-PropertyBag-Read
+                title: >-
+                  PropertyBag shall return a value by name, optionally converted to a requested type when no
+                  precision is lost, and shall report a missing name or an impossible conversion as an error.
+                justification: |
+                  Typed reads spare hosts manual casts, while failures must be explicit rather than silently
+                  returning wrong data.
+                tests:
+                  - PropertyBag_Read_MissingKeysAndConversions_BehaveAsDocumented
+                  - PropertyBag_Get_OverflowingConversion_ThrowsInvalidCastException
+
+              - id: Plexus-Properties-PropertyBag-Enumeration
+                title: >-
+                  PropertyBag shall enumerate declared properties in declaration order followed by ad-hoc properties
+                  in insertion order.
+                justification: |
+                  Editors and snapshots depend on a stable, predictable order.
+                tests:
+                  - PropertyBag_Enumeration_DeclaredFirstThenAdHocInInsertionOrder
+
+              - id: Plexus-Properties-PropertyBag-Reset
+                title: >-
+                  PropertyBag shall restore a declared property to its default and remove an ad-hoc property when it
+                  is reset, as an undoable change that restores an ad-hoc property at its former position, and shall
+                  record nothing for an already-default value or fail for an unknown name.
+                justification: |
+                  Reset is a standard editor action and must follow the same undo rules as any other change.
+                tests:
+                  - PropertyBag_Reset_DeclaredProperty_RestoresDefaultAndRoundTrips
+                  - PropertyBag_Reset_AlreadyDefaultOrUnknown_NoEntryOrThrows
+                  - PropertyBag_Reset_AdHocProperty_RemovesAndRestoresPositionOnUndo
+
+              - id: Plexus-Properties-PropertyBag-Undo
+                title: >-
+                  PropertyBag shall record every assignment of a declared or ad-hoc property as one undo entry whose
+                  undo and redo restore the previous and the new value exactly.
+                justification: |
+                  Every mutation of a diagram is undoable, including node property edits.
+                tests:
+                  - PropertyBag_Set_DeclaredAndAdHoc_UndoRedoRoundTrip
+
+              - id: Plexus-Properties-PropertyBag-NoOp
+                title: PropertyBag shall record no undo entry for an assignment that leaves the stored value unchanged.
+                justification: |
+                  Redundant assignments, such as an editor writing back an unchanged value, must not pollute the
+                  history or mark the document modified.
+                tests:
+                  - PropertyBag_Set_SameValue_RecordsNothing
+
+              - id: Plexus-Properties-PropertyBag-Merge
+                title: >-
+                  PropertyBag shall merge repeated assignments of the same property inside one transaction into a
+                  single undo entry that restores the value from before the first assignment.
+                justification: |
+                  Slider-style editing produces many assignments that must undo as one step.
+                tests:
+                  - PropertyBag_Set_RepeatedInTransaction_MergesIntoOneEntry
+
+              - id: Plexus-Properties-PropertyBag-Notification
+                title: >-
+                  PropertyBag shall raise its property-changed notification with the property name and the indexer
+                  name for every change, including undo and redo, and shall report the change to the owning node
+                  and its diagram.
+                justification: |
+                  Bound editors, node views and diagram listeners refresh from these notifications.
+                tests:
+                  - PropertyBag_PropertyChanged_RaisedWithNameAndIndexerOnSetAndUndo
+                  - PropertyBag_Set_RaisesNodeAndDiagramChangedEvents
+
+              - id: Plexus-Properties-PropertyBag-RemovedNode
+                title: PropertyBag shall reject assignments while its node is removed from its page.
+                justification: |
+                  A removed node is outside the diagram, so changes to it could not be recorded in the history.
+                tests:
+                  - PropertyBag_Set_OnRemovedNode_ThrowsInvalidOperationException
+
+              - id: Plexus-Properties-PropertyBag-BatchEdit
+                title: >-
+                  PropertyBag shall validate a set of requested changes first (reading text for typed properties)
+                  and then apply either all of them as one undo entry or, when any is invalid, none, reporting a
+                  message for every rejected property and recording nothing when nothing changes.
+                justification: |
+                  A properties dialog must either apply everything the user entered or leave the node untouched, and
+                  must show every problem at once.
+                tests:
+                  - PropertyBag_TrySetAll_AllValid_AppliesAsOneUndoEntry
+                  - PropertyBag_TrySetAll_AnyInvalid_ChangesNothingAndReportsAll
+                  - PropertyBag_TrySetAll_NoEffectiveChange_RecordsNothing
+                  - PropertyBag_TrySetAll_EmptyName_IsReported

@@ -1,0 +1,95 @@
+---
+# Software Unit requirements for Plexus PageCollection.
+#
+# The PageCollection unit is the ordered, observable list of the pages of a diagram. It provides the undoable page
+# operations, the change notifications of the list and a read-only non-generic list view for UI binding. Evidence is
+# provided by the PageCollection unit tests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        sections:
+          - title: PageCollection Requirements
+            requirements:
+              - id: Plexus-Model-PageCollection-AddInsert
+                title: >-
+                  The PageCollection shall add a new empty page at the end or insert it at a given position, return
+                  the page, and reject a blank name or a position outside the list.
+                justification: |
+                  Hosts and users build multi-page diagrams by appending and inserting pages. Rejecting a blank
+                  name or an out-of-range position at the call keeps the page list valid and surfaces mistakes
+                  immediately.
+                tests:
+                  - PageCollection_AddAndInsert_PlacePagesAndRoundTrip
+                  - PageCollection_AddAndInsert_InvalidArguments_Throw
+
+              - id: Plexus-Model-PageCollection-Remove
+                title: >-
+                  The PageCollection shall remove a page together with its content from the diagram, so that its
+                  elements are no longer found, and report false when the page is not in the collection.
+                justification: |
+                  Removing a page must remove everything on it from the document without leaving elements that can
+                  still be reached through the diagram. A false result for an unknown page lets callers remove
+                  defensively without handling exceptions.
+                tests:
+                  - PageCollection_Remove_DetachesContentAndUndoRestoresIt
+                  - PageCollection_Remove_PageNotInDiagram_ReturnsFalse
+
+              - id: Plexus-Model-PageCollection-Move
+                title: >-
+                  The PageCollection shall move a page to a new position within the list and reject a page that is
+                  not in the collection or a position outside the list.
+                justification: |
+                  Users reorder pages to organize a document. Rejecting invalid pages and positions keeps the page
+                  order well defined.
+                tests:
+                  - PageCollection_Move_ReordersPagesAndRoundTrips
+
+              - id: Plexus-Model-PageCollection-Undo
+                title: >-
+                  The PageCollection shall record each page addition, insertion, removal and move as one undoable
+                  history entry whose undo and redo restore the exact page order and, for a removal, the very same
+                  page object with all of its content.
+                justification: |
+                  Page structure is part of the document, so page operations must be undoable like element edits.
+                  Restoring the same page object keeps references held by hosts and controls valid after an undo.
+                tests:
+                  - PageCollection_AddAndInsert_PlacePagesAndRoundTrip
+                  - PageCollection_Remove_DetachesContentAndUndoRestoresIt
+                  - PageCollection_Move_ReordersPagesAndRoundTrips
+
+              - id: Plexus-Model-PageCollection-Notification
+                title: >-
+                  The PageCollection shall raise a collection-changed notification with itself as the sender for
+                  every page addition, removal and move, including those caused by undo and redo.
+                justification: |
+                  UI item controls bind to the collection and update their tab or list display from these
+                  notifications. A stable sender and complete coverage let a control stay in sync without a mirror
+                  collection.
+                tests:
+                  - PageCollection_CollectionChanged_RaisedForAddRemoveMove
+                  - PageCollection_CollectionChanged_ReportsAddMoveRemoveWithListInSync
+
+              - id: Plexus-Model-PageCollection-NotificationOrder
+                title: >-
+                  The PageCollection shall raise its notifications only after the change is complete, so that a
+                  removed page is already detached and unregistered and an added or restored page is already
+                  attached.
+                justification: |
+                  Handlers that react to a notification inspect the diagram. Seeing a half-attached or
+                  half-detached page would cause errors or inconsistent displays, so state must be settled first.
+                tests:
+                  - PageCollection_Remove_PageIsDetachedBeforeNotifications
+                  - PageCollection_UndoRemove_PageIsAttachedBeforeNotifications
+
+              - id: Plexus-Model-PageCollection-ListBinding
+                title: >-
+                  The PageCollection shall present its pages as a read-only list that reflects the current pages
+                  and shall reject every mutation made through the non-generic list interface.
+                justification: |
+                  UI frameworks bind to the non-generic list interface. Making it read-only prevents a control from
+                  bypassing the undoable page operations and corrupting the undo history.
+                tests:
+                  - PageCollection_AsIList_ReflectsPagesAndIsReadOnly
+                  - PageCollection_AsIList_Mutators_ThrowNotSupported

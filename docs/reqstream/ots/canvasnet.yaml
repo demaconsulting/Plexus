@@ -1,0 +1,73 @@
+---
+# CanvasNet OTS Software Requirements
+#
+# Requirements for the DemaConsulting.CanvasNet and DemaConsulting.CanvasNet.Svg libraries used by the
+# PlexusRendering system to rasterize scenes. Evidence is provided by the PlexusRendering tests, which exercise
+# the CanvasNet functionality Plexus relies on.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: CanvasNet Requirements
+        requirements:
+          - id: Plexus-OTS-CanvasNet-Rasterize
+            title: >-
+              CanvasNet shall rasterize filled and stroked rectangles, rounded rectangles and paths, with
+              anti-aliasing and translucent blending, onto an in-memory bitmap.
+            justification: |
+              The headless renderer paints every node, wire, group and grid primitive through CanvasNet drawing
+              calls. Correct fills, strokes, curves, anti-aliasing and alpha blending are required for the PNG
+              output to be a faithful picture of the diagram scene.
+            tags: [ots]
+            tests:
+              - ScenePainter_Paint_FilledRect_CoversAreaOnly
+              - ScenePainter_Paint_StrokedRect_OnePixelBorderIsCrisp
+              - ScenePainter_Paint_RoundedRect_CornerIsCutAway
+              - ScenePainter_Paint_FilledPath_FillsPolygon
+              - ScenePainter_Paint_StrokedCubicPath_FollowsTheCurve
+              - ScenePainter_Paint_DiagonalStroke_IsAntiAliased
+              - ScenePainter_Paint_TranslucentFill_BlendsWithBackdrop
+
+          - id: Plexus-OTS-CanvasNet-Text
+            title: >-
+              CanvasNet shall measure and draw text with a bundled font, with measured widths that scale with font
+              size and a fallback when the requested font family is unavailable.
+            justification: |
+              Node sizing, label placement and the rendered titles depend on CanvasNet text measurement and drawing.
+              Deterministic measurements and a guaranteed fallback font keep rendering reproducible across machines.
+            tags: [ots]
+            tests:
+              - CanvasTextMeasurer_Measure_LongerText_IsWider
+              - CanvasTextMeasurer_Measure_DoubleFontSize_DoublesWidth
+              - CanvasTextMeasurer_Measure_Bold_IsAtLeastAsWide
+              - CanvasTextMeasurer_Measure_UnknownFamily_FallsBackToBundledFont
+              - CanvasTextMeasurer_Measure_SameInput_IsDeterministic
+              - ScenePainter_Paint_Text_PaintsGlyphsInsideRect
+              - ScenePainter_Paint_TextAlignment_AnchorsToRectEdges
+              - ScenePainter_Paint_BoldText_DrawsMoreInk
+
+          - id: Plexus-OTS-CanvasNet-Svg
+            title: >-
+              CanvasNet.Svg shall rasterize SVG documents to bitmaps at a requested size and shall report malformed
+              SVG without crashing the host.
+            justification: |
+              Node icons are host-supplied SVG text. The renderer rasterizes them through CanvasNet.Svg and must
+              survive a malformed icon by skipping it rather than failing the whole render.
+            tags: [ots]
+            tests:
+              - IconCache_Get_SameKeyAndSize_ReturnsSharedSurface
+              - IconCache_Get_MalformedSvg_ReturnsNull
+              - ScenePainter_Paint_Icon_CompositesRasterizedSvg
+              - ScenePainter_Paint_MalformedIcon_IsSkipped
+              - PlexusRenderer_Render_NodeIcon_PaintsRasterizedSvg
+
+          - id: Plexus-OTS-CanvasNet-Png
+            title: CanvasNet shall encode a rendered bitmap as a PNG image, preserving transparency.
+            justification: |
+              PNG is the output format of the headless renderer, including transparent backgrounds, so the
+              CanvasNet PNG encoder must produce valid images.
+            tags: [ots]
+            tests:
+              - PlexusRenderer_RenderPng_DefaultOptions_ProducesPngSignature
+              - PlexusRenderer_RenderPng_TransparentBackground_KeepsAlpha
+              - PlexusRenderer_SavePng_WritesPngFile

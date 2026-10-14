@@ -1,0 +1,102 @@
+---
+# ApiMark OTS Software Requirements
+#
+# Requirements for the ApiMark API reference generation tool functionality.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: ApiMark Requirements
+        requirements:
+          - id: Plexus-OTS-ApiMark-Generate
+            title: >-
+              ApiMark shall generate gradually-disclosed Markdown API reference documentation for
+              each shipped package from its XML doc comments and ship it inside the NuGet package.
+            justification: |
+              The intended readers of the Plexus API reference include coding agents assembling an
+              application against the library. They read far more effectively from compact Markdown
+              organized for gradual disclosure (an index, then a page per namespace, type and member)
+              than from a single large reference. DemaConsulting.ApiMark.MSBuild produces exactly
+              that during the build of each shipped package, and ApiMarkPackDocs places it in the
+              api/ folder of the package so it travels with the library. FileAssert asserts the
+              index, namespace and type pages inside each produced .nupkg, which is the only
+              evidence that the MSBuild integration actually ran and that its output was packed.
+            tags: [ots]
+            tests:
+              - ApiMark_CoreApiDocsPacked
+              - ApiMark_RenderingApiDocsPacked
+              - ApiMark_AvaloniaApiDocsPacked
+              - ApiMark_PropertyGridApiDocsPacked
+
+          - id: Plexus-OTS-ApiMark-RenderExamples
+            title: >-
+              ApiMark shall render namespace documentation and documented examples, in the language
+              they declare, into the generated API reference.
+            justification: |
+              An agent assembling an application needs worked, copyable usage examples and a
+              namespace overview before it needs member signatures. Three facts are asserted because
+              each is load-bearing: that the NamespaceDoc summary and its example reach the
+              namespace page with the usage example immediately after the one-line summary, that an
+              example's code renders as a fenced code block on type and member pages, and that an
+              example which is not C# (the XAML of the Avalonia package) is fenced with the language
+              its code element declares, so a reader and a syntax highlighter do not treat markup as
+              C#. A generator that silently dropped any of them would still produce a complete-looking
+              file tree, so the content of the packed pages is asserted, not just their existence.
+            tags: [ots]
+            tests:
+              - ApiMark_NamespaceDocRendered
+              - ApiMark_ExampleCodeRendered
+              - ApiMark_ExampleLanguageRendered
+
+          - id: Plexus-OTS-ApiMark-RenderSignatures
+            title: >-
+              ApiMark shall render C# signatures with parameter defaults, nullability, record and
+              init-only forms and generic type parameters, and shall give each page a breadcrumb.
+            justification: |
+              An agent that reads one member page must be able to call the member correctly from that
+              page alone. That needs the signature itself to carry what the language declares: the
+              default of an optional parameter, whether a type may be null, whether a type is a record
+              and a property init-only, and the type parameters of a generic method. Without them the
+              doc comments would have to restate the signature, and could drift from it. The
+              breadcrumb line under each heading lets the reader climb back to the namespace and type
+              page without the index. FileAssert asserts the rendered text of representative pages.
+            tags: [ots]
+            tests:
+              - ApiMark_SignaturesRendered
+
+          - id: Plexus-OTS-ApiMark-LinkPackages
+            title: >-
+              ApiMark shall link the types of the core package that appear in the Rendering,
+              Avalonia and PropertyGrid API references to the core package's own reference.
+            justification: |
+              The three dependent packages take and return core types (DiagramPage, Node, Diagram).
+              An agent reading a Rendering page needs to follow the type to its page, not stop at a
+              bare name in an external-types table. ApiMarkExternalLinks maps the core assembly to the
+              api/ folder of the core package of the same version in the NuGet package cache, and
+              FileAssert asserts that a dependent page links a core type through that path.
+            tags: [ots]
+            tests:
+              - ApiMark_CrossPackageLinksRendered
+
+          - id: Plexus-OTS-ApiMark-EnforceDocs
+            title: >-
+              ApiMark shall fail the build when a public API member of any shipped package lacks an
+              XML doc summary.
+            justification: |
+              An API reference is only trustworthy if it is complete. The C# compiler's
+              documentation warning (CS1591) does not flag an implicit default constructor or a
+              member whose documentation is an unresolvable inheritdoc on a framework interface;
+              ApiMark's documentation-coverage check closes both gaps, and it runs at severity
+              Error so that a gap fails the build instead of shipping. It is enabled for all four
+              packages, including the core package, whose public delegate ConnectionValidator is
+              covered since ApiMark 0.5.8 no longer reports the compiler-synthesized delegate
+              members as undocumented. The packages are asserted through the generated pages of
+              members that were flagged during adoption and are now documented (the PropertyGrid
+              package through the pages of its control constructor and public members, the core
+              package through the delegate page).
+            tags: [ots]
+            tests:
+              - ApiMark_CoreMembersDocumented
+              - ApiMark_RenderingMembersDocumented
+              - ApiMark_AvaloniaMembersDocumented
+              - ApiMark_PropertyGridMembersDocumented

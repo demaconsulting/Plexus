@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Mixer: three inputs merging into one output -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 14 H20 L36 32 M4 32 H36 M4 50 H20 L36 32" stroke="#F2F2F2" stroke-width="2"/>
+    <circle cx="42" cy="32" r="6" stroke="#D2A3FF" stroke-width="3"/>
+    <path d="M48 32 H62" stroke="#F2F2F2" stroke-width="2"/>
+  </g>
+</svg>

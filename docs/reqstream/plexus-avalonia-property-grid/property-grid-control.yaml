@@ -1,0 +1,145 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid PropertyGridControl.
+#
+# Each requirement decomposes a system requirement into the behavior of the PropertyGrid control (rows, categories,
+# sorting, search, expansion, state display, description pane, layout, keyboard and automation). Tests are the headless
+# control tests in PropertyGridDisplayTests.cs, PropertyGridKeyboardTests.cs and PropertyGridScreenshotTests.cs.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: PropertyGridControl Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Content
+            title: >-
+              The grid shall show the properties of its selected object (through the source factory) or of a
+              custom property source, as category bands followed by property rows, omit non-browsable properties,
+              replace the content when either input changes, re-read values when the object announces a change,
+              and report when there is nothing to show.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; the grid is the user's window onto an object.
+            tests:
+              - PropertyGrid_Rows_ShowCategoriesAndBrowsableProperties
+              - PropertyGrid_CustomSource_ReplacesSelectedObject
+              - PropertyGrid_ObservableObject_ShowsExternalChanges
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Layout
+            title: >-
+              The grid shall use compact rows of about 22 pixels with a name column and a value column, let the
+              user resize the name column with a splitter, and allow the toolbar, the search box and the
+              description pane to be hidden.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; users of the WinForms property grid expect its
+              dense two-column layout.
+            tests:
+              - PropertyGrid_Rows_AreCompact
+              - PropertyGrid_ColumnSplitter_ResizesNameColumn
+              - PropertyGrid_Chrome_CanBeHidden
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Sorting
+            title: >-
+              The grid shall switch between categorized and alphabetical order with toolbar toggles that show the
+              current mode.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; the two familiar ways to find a property.
+            tests:
+              - PropertyGrid_SortToggle_SwitchesBetweenCategorizedAndAlphabetical
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Search
+            title: >-
+              The grid shall filter its rows by the text of its search box (name, display name or category),
+              including nested properties, and shall show a message when nothing matches.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; large objects have many properties.
+            tests:
+              - PropertyGrid_Search_FiltersRowsByName
+              - PropertyGrid_Search_FindsNestedPropertiesAndReportsNoMatch
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Expansion
+            title: >-
+              The grid shall collapse and expand categories, remembering the state of each category when the shown
+              object changes, and expand nested objects into indented child rows.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; collapsing hides what the user does not need.
+            tests:
+              - PropertyGrid_Category_CollapsesAndRemembersState
+              - PropertyGrid_NestedObject_ExpandsToIndentedChildren
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-RowState
+            title: >-
+              The grid shall dim read-only rows and show values that differ from their default in bold.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; the visual cues of the WinForms property grid.
+            tests:
+              - PropertyGrid_ReadOnlyRow_IsDimmedAndNotEditable
+              - PropertyGrid_ChangedValue_IsBold
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Description
+            title: >-
+              The grid shall show the display name and description of the selected property in a description pane.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; descriptions explain unfamiliar properties.
+            tests:
+              - PropertyGrid_Description_FollowsSelection
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Keyboard
+            title: >-
+              The grid shall support keyboard navigation: Up, Down, Home, End and the page keys move the selection,
+              Left and Right collapse, expand or move to the parent or first child, Enter or F2 starts editing (or
+              toggles a category or nested object), Escape abandons an edit, and Tab moves between the name and
+              the value of a row.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; the grid must be usable without a pointer.
+            tests:
+              - PropertyGrid_Keyboard_UpDown_MoveSelectionThroughRows
+              - PropertyGrid_Keyboard_LeftRight_CollapseAndExpandCategory
+              - PropertyGrid_Keyboard_LeftRight_ExpandNestedObjectAndMoveBetweenParentAndChild
+              - PropertyGrid_Keyboard_EnterAndF2_EditSelectedValue
+              - PropertyGrid_Keyboard_Enter_TogglesCategoryAndNestedObject
+              - PropertyGrid_Keyboard_Tab_MovesBetweenNameAndValue
+              - PropertyGrid_Keyboard_SearchBox_KeepsItsOwnKeys
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Automation
+            title: >-
+              The grid shall give every row, editor and toolbar control an automation id and name, the rows being
+              identified by their property path (PropertyGrid_Row_ followed by the path).
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; automation and UI tests find controls by id.
+            tests:
+              - PropertyGrid_Rows_HaveAutomationIdsAndNames
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Session
+            title: >-
+              The grid shall edit through a session that it exposes, live by default or staged on request, and
+              shall run the session's writes inside the host's commit scope.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; docked panels apply edits at once, dialogs buffer
+              them, and a host wraps writes in its undo transaction.
+            tests:
+              - PropertyEditors_Text_Staged_BuffersUntilCommit
+              - PropertyEditors_Staged_CommitRunsInsideTheCommitScope
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-Theme
+            title: >-
+              The grid shall take its colors from the theme resources so that it renders in the light and the dark
+              theme variants.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; hosts run in either variant. Evidence is the
+              rendered frame, captured to the temp folder for review.
+            tests:
+              - PropertyGrid_Screenshot_CategorizedDark
+              - PropertyGrid_Screenshot_AlphabeticalDark
+              - PropertyGrid_Screenshot_CategorizedLight
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-SourceOwnership
+            title: >-
+              The grid shall dispose a source it created for its selected object when the content changes and while
+              the grid is out of the visual tree (creating it again, with the expanded rows kept, when it returns), and
+              shall never dispose a source assigned by the host.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; a source that listens to the edited object would
+              otherwise keep it alive and keep reacting after the grid is gone, while a host-owned source must stay
+              usable.
+            tests:
+              - PropertyGrid_SelectedObjectSource_IsDisposedByTheGridButHostSourceIsNot
+              - PropertyGrid_SelectedObjectSource_IsReleasedWhileDetachedAndRecreatedOnAttach

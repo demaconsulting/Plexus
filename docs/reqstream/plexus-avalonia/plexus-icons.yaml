@@ -1,0 +1,52 @@
+---
+# Software Unit requirements for PlexusAvalonia PlexusIcons.
+#
+# Decomposes the PlexusAvalonia system requirements into the responsibility of the unit that converts host SVG
+# icons into cached Avalonia images. Tests are the unit tests in PlexusIconsTests.cs.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: PlexusIcons Requirements
+        requirements:
+          - id: PlexusAvalonia-PlexusIcons-Convert
+            title: >-
+              A valid SVG icon shall be converted into an image of the size the SVG declares.
+            justification: |
+              Decomposes PlexusAvalonia-Icons; hosts and the painter draw icons from this image.
+            tests:
+              - PlexusIcons_GetImage_ValidSvg_ReturnsImage
+
+          - id: PlexusAvalonia-PlexusIcons-Cache
+            title: >-
+              Requests for the same icon, or for icons with the same SVG, shall return the same image.
+            justification: |
+              Decomposes PlexusAvalonia-Icons; parsing SVG for every frame would make dragging sluggish.
+            tests:
+              - PlexusIcons_GetImage_SameIcon_ReturnsCachedInstance
+
+          - id: PlexusAvalonia-PlexusIcons-BoundedCache
+            title: >-
+              The icon cache shall hold no more than 2048 icons, plus the one being added.
+            justification: |
+              Decomposes PlexusAvalonia-Icons; long-running hosts that load transient icons must not grow memory
+              without limit, while large tool palettes still stay cached.
+            tests:
+              - PlexusIcons_GetImage_ManyDistinctIcons_KeepsCacheBounded
+
+          - id: PlexusAvalonia-PlexusIcons-Malformed
+            title: >-
+              A malformed SVG icon shall yield no image, without throwing, on every request.
+            justification: |
+              Decomposes PlexusAvalonia-Icons; the host supplies icons, and one broken icon must not break the
+              display.
+            tests:
+              - PlexusIcons_GetImage_BrokenSvg_ReturnsNullWithoutThrowing
+
+          - id: PlexusAvalonia-PlexusIcons-NullArgument
+            title: >-
+              A null icon shall be rejected.
+            justification: |
+              Decomposes PlexusAvalonia-Icons; programming errors are reported at the call.
+            tests:
+              - PlexusIcons_GetImage_Null_Throws

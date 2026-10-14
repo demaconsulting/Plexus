@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Start: a circle containing a play triangle -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="32" cy="32" r="22" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M26 20 L46 32 L26 44 Z" stroke="#F5DC6B" stroke-width="3"/>
+  </g>
+</svg>

@@ -1,0 +1,43 @@
+---
+# PlexusRendering platform requirements.
+#
+# These requirements specify the platforms and runtime the DemaConsulting.Plexus.Rendering package must support.
+# Source filters (windows@, ubuntu@, macos@, net10.0@) restrict which test results count as evidence for each
+# requirement; removing them invalidates the evidence-based proof.
+
+sections:
+  - title: PlexusRendering Requirements
+    sections:
+      - title: Platform Support
+        requirements:
+          - id: PlexusRendering-Platform-Windows
+            title: The system shall build and run on Windows platforms.
+            tags: [system]
+            justification: |
+              Windows is a major development and automation platform for diagram rendering.
+            tests:
+              - "windows@PlexusRendering_RenderPng_DiagramPage_ProducesDecodablePng"
+
+          - id: PlexusRendering-Platform-Linux
+            title: The system shall build and run on Linux platforms.
+            tags: [system]
+            justification: |
+              Rendering runs headless in Linux containers and CI/CD agents, which is the primary server scenario.
+            tests:
+              - "ubuntu@PlexusRendering_RenderPng_DiagramPage_ProducesDecodablePng"
+
+          - id: PlexusRendering-Platform-MacOS
+            title: The system shall build and run on macOS platforms.
+            tags: [system]
+            justification: |
+              Developers on Apple platforms must be able to render diagrams locally.
+            tests:
+              - "macos@PlexusRendering_RenderPng_DiagramPage_ProducesDecodablePng"
+
+          - id: PlexusRendering-Platform-Net10
+            title: The system shall support the .NET 10 runtime.
+            tags: [system]
+            justification: |
+              The rendering package targets .NET 10, the current long-term support runtime.
+            tests:
+              - "net10.0@PlexusRendering_RenderPng_DiagramPage_ProducesDecodablePng"
