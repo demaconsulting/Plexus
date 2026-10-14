@@ -69,8 +69,9 @@ changes: element presence, group membership and layout. Duplicating elements is 
   visible wire (in page order) are cached per page, so routing many wires does not rebuild them for each wire.
   `OnElementChanging` runs before any notification of a change, attach or detach: a change of a node, annotation or
   group discards all three, a change of a wire discards the traffic, and a wire attached at the end of the page is
-  added to the cached traffic exactly as a fresh build would add it. A diagram setting (such as the theme) discards
-  the caches of every page, and a page discards its caches when it is removed from or put back into the diagram, so a
+  added to the cached traffic exactly as a fresh build would add it. A theme change discards the caches of every page
+  (other diagram settings leave them), and a page discards its caches when it is removed from or put back into the
+  diagram, so a
   page restored by undo never routes with a theme that changed while it was out. A re-routed wire, and a new wire that
   would merge two nets at a fan-in input, route against a fresh traffic so the cache never holds a merge for a wire
   that does not exist. `WireTraffic.Segments` returns a snapshot view of an append-only list, rebuilt only after a

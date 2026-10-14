@@ -67,8 +67,9 @@ internal sealed class WireTraffic
     /// <param name="source">The output port the wire starts at.</param>
     /// <param name="target">The input port the wire ends at.</param>
     /// <returns><see langword="true"/> when the target allows fan-in and already belongs to a different net.</returns>
+    /// <remarks>A target seen for the first time joins the source's net without merging anything.</remarks>
     public bool WouldMerge(Port source, Port target) =>
-        target.AllowsMultipleWires && Find(Identity(source)) != Find(Identity(target));
+        target.AllowsMultipleWires && _nets.TryGetValue(target, out var id) && Find(id) != Find(Identity(source));
 
     /// <summary>
     ///     Gets the net identity of a wire's source port, assigning a new one the first time it is seen.
@@ -79,14 +80,24 @@ internal sealed class WireTraffic
     public int NetOf(Port source, Port? target = null)
     {
         var net = Find(Identity(source));
-        if (target is { AllowsMultipleWires: true })
+        if (target is not { AllowsMultipleWires: true })
         {
-            var other = Find(Identity(target));
-            if (other != net)
-            {
-                _parents[other] = net;
-                _resolvedStale = true;
-            }
+            return net;
+        }
+
+        // A fan-in input seen for the first time simply joins this net; one that already has a net merges it into this
+        // one, which re-tags the segments of that net
+        if (!_nets.TryGetValue(target, out var id))
+        {
+            _nets[target] = net;
+            return net;
+        }
+
+        var other = Find(id);
+        if (other != net)
+        {
+            _parents[other] = net;
+            _resolvedStale = true;
         }
 
         return net;

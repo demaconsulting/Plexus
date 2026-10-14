@@ -32,10 +32,11 @@ default router's wires must not cross the box of any node other than at its own 
 - **Nodes changed after earlier wires**
   (`DiagramPage_Connect_NodeMovedOrAddedAfterEarlierWires_IsAvoided`): after a wire is routed, a node moved into the
   way of a new wire and a node added in the way of another are each avoided at their current position.
-- **Theme changed while a page was removed**
-  (`DiagramPage_Connect_PageRestoredAfterThemeChange_UsesTheNewTheme`): a page whose wires were routed with the
-  default theme is removed, the obstacle margin is widened and the removal is undone; a new wire on it takes the route
-  of a page that had the wide margin from the start, which differs from the default-margin route.
+- **Theme changed after wires were routed**
+  (`DiagramPage_Connect_AfterThemeChange_UsesTheNewTheme`): on a page whose wires were routed with the default theme,
+  the obstacle margin is widened, once while the page stays in the diagram and once while it is removed (the removal is
+  then undone); a new wire on either page takes the route of a page that had the wide margin from the start, which
+  differs from the default-margin route.
 - **Wires leave and enter through horizontal stubs**
   (`Routing_ConnectedWires_LeaveAndEnterPortsHorizontallyThroughStubs`): the first and last segments of connected
   wires are horizontal and at least one stub long, for both routers, ahead and behind.

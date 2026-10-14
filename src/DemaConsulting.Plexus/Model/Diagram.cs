@@ -408,8 +408,8 @@ public sealed partial class Diagram
     /// <param name="propertyName">The changed property, if any.</param>
     internal void RaiseChanged(DiagramChangeKind kind, DiagramPage? page, DiagramElement? element, string? propertyName)
     {
-        // A diagram setting such as the theme changes the obstacles and anchors of every page
-        if (kind == DiagramChangeKind.SettingsChanged)
+        // The theme shapes the obstacles, group frames and anchors of every page; other settings do not
+        if (kind == DiagramChangeKind.SettingsChanged && propertyName == nameof(Theme))
         {
             foreach (var each in Pages)
             {

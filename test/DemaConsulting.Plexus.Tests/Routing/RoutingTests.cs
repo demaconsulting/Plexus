@@ -78,10 +78,10 @@ public class RoutingTests
     }
 
     /// <summary>
-    ///     Validates that a page restored by undo after the theme changed routes new wires with the new theme.
+    ///     Validates that a page re-themed while attached, or restored by undo after the theme changed, routes new wires with the new theme.
     /// </summary>
     [Fact]
-    public void DiagramPage_Connect_PageRestoredAfterThemeChange_UsesTheNewTheme()
+    public void DiagramPage_Connect_AfterThemeChange_UsesTheNewTheme()
     {
         // Arrange: the same page three times - default theme, a wide obstacle margin from the start, and a page
         // whose earlier wire was routed with the default theme before it was removed, re-themed and restored
@@ -103,16 +103,20 @@ public class RoutingTests
 
         var (_, plain) = Build(DiagramTheme.Classic);
         var (_, fresh) = Build(wide);
+        var (live, attached) = Build(DiagramTheme.Classic);
         var (restored, page) = Build(DiagramTheme.Classic);
 
         // Act
+        live.Theme = wide;
+        var attachedRoute = attached.Connect("P.value", "C.in").Route;
         restored.Pages.Remove(page);
         restored.Theme = wide;
         restored.History.Undo();
         var route = page.Connect("P.value", "C.in").Route;
 
-        // Assert: the margin changes the route, and the restored page routes like the page that always had it
+        // Assert: the margin changes the route, and both re-themed pages route like the page that always had it
         Assert.NotEqual(plain.Connect("P.value", "C.in").Route, fresh.Connect("P.value", "C.in").Route);
+        Assert.Equal(fresh.Wires[^1].Route, attachedRoute);
         Assert.Equal(fresh.Wires[^1].Route, route);
     }
 

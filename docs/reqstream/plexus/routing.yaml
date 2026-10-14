@@ -44,7 +44,7 @@ sections:
             tests:
               - DiagramPage_Connect_NodeBetweenPorts_RoutesAroundIt
               - DiagramPage_Connect_NodeMovedOrAddedAfterEarlierWires_IsAvoided
-              - DiagramPage_Connect_PageRestoredAfterThemeChange_UsesTheNewTheme
+              - DiagramPage_Connect_AfterThemeChange_UsesTheNewTheme
 
           - id: Plexus-Routing-PortStubs
             title: >-
