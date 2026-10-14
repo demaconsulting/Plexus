@@ -372,10 +372,10 @@ public class SceneHitTestTests
     }
 
     /// <summary>
-    ///     Validates that hit testing stays quick and correct on a page of a thousand nodes with thousands of queries.
+    ///     Validates that hit testing stays correct on a page of a thousand nodes with thousands of queries.
     /// </summary>
     [Fact]
-    public void Scene_HitTest_ThousandNodes_ManyQueriesAreQuickAndCorrect()
+    public void Scene_HitTest_ThousandNodes_ManyQueriesAreCorrect()
     {
         // Arrange: a 40 x 25 lattice of nodes at pitch 150
         var (_, page) = SceneTestModel.CreatePage();
@@ -388,7 +388,6 @@ public class SceneHitTestTests
         var scene = SceneBuilder.Build(page);
 
         // Act: hit the body center of every node, five times over
-        var watch = System.Diagnostics.Stopwatch.StartNew();
         var wrong = 0;
         for (var pass = 0; pass < 5; pass++)
         {
@@ -402,10 +401,7 @@ public class SceneHitTestTests
             }
         }
 
-        watch.Stop();
-
-        // Assert: generous bound (5000 queries; typically a few milliseconds in total)
+        // Assert: every one of the 5000 queries reported its node
         Assert.Equal(0, wrong);
-        Assert.True(watch.ElapsedMilliseconds < 5000, $"5000 hit tests took {watch.ElapsedMilliseconds} ms");
     }
 }

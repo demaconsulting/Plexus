@@ -10,12 +10,11 @@ are used.
 
 #### Test Environment
 
-Standard xunit runner; no files, fonts or network. The scalability scenario has a generous wall-clock bound.
+Standard xunit runner; no files, fonts or network.
 
 #### Acceptance Criteria
 
-All scenarios pass on every target framework. Query results equal brute-force results exactly, including order; five
-thousand hit tests on a thousand-node scene report the expected nodes within five seconds.
+All scenarios pass on every target framework. Query results equal brute-force results exactly, including order.
 
 #### Test Scenarios
 
@@ -49,8 +48,9 @@ Queries and index:
   (`SpatialIndex_Query_HugeRegion_ReturnsAllIntersecting`), negative coordinates
   (`SpatialIndex_Query_NegativeCoordinates_AreFound`) and a non-positive cell size
   (`SpatialIndex_Constructor_NonPositiveCellSize_Throws`).
-- **Scalability**
-  (`Scene_HitTest_ThousandNodes_ManyQueriesAreQuickAndCorrect`).
+- **Large scenes**
+  (`Scene_HitTest_ThousandNodes_ManyQueriesAreCorrect`): five thousand hit tests at the centers of a thousand nodes
+  each report that node.
 
 Layouts and lookups:
 

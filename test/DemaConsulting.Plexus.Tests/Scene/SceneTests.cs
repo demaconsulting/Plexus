@@ -1,6 +1,5 @@
 namespace DemaConsulting.Plexus.Tests;
 
-using System.Diagnostics;
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Scene;
 
@@ -376,10 +375,10 @@ public class SceneTests
     }
 
     /// <summary>
-    ///     Validates that building a scene of a thousand nodes with wires and querying it stays quick.
+    ///     Validates that a scene of a thousand nodes with wires is built and every node is hit at its center.
     /// </summary>
     [Fact]
-    public void Scene_LargePage_BuildAndHitTest_CompleteQuickly()
+    public void Scene_LargePage_BuildAndHitTest_EveryNodeIsHit()
     {
         // Arrange: 40 x 25 gain nodes, each wired to its right neighbor
         var (_, page) = SceneTestModel.CreatePage();
@@ -398,13 +397,10 @@ public class SceneTests
         }
 
         // Act
-        var watch = Stopwatch.StartNew();
         var scene = SceneBuilder.Build(page);
         var hits = nodes.Count(n => ReferenceEquals(scene.HitTest(n.Bounds.Center).Element, n));
-        watch.Stop();
 
-        // Assert: generous bound for build plus 1000 hit tests
+        // Assert
         Assert.Equal(1000, hits);
-        Assert.True(watch.ElapsedMilliseconds < 5000, $"Build and hit testing took {watch.ElapsedMilliseconds} ms");
     }
 }

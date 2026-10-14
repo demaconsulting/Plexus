@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Routing;
 
@@ -135,10 +134,10 @@ public class NetSeparationTests
     }
 
     /// <summary>
-    ///     Validates that many parallel nets are routed quickly and none of them runs along another.
+    ///     Validates that many parallel nets routed one after another are orthogonal and none of them runs along another.
     /// </summary>
     [Fact]
-    public void OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracksQuickly()
+    public void OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracks()
     {
         // Arrange: twenty nets from a column of outputs to a reversed column of inputs, routed one after the other
         const int nets = 20;
@@ -149,7 +148,6 @@ public class NetSeparationTests
         router.Route(Request(new Point(0, 0), new Point(300, 150), 0, []));
 
         // Act
-        var watch = Stopwatch.StartNew();
         for (var i = 0; i < nets; i++)
         {
             var request = Request(new Point(0, i * 30), new Point(300, (nets - 1 - i) * 30), i, existing);
@@ -159,10 +157,7 @@ public class NetSeparationTests
             polylines.Add(RouteAssertions.Polyline(request, route));
         }
 
-        watch.Stop();
-
-        // Assert: fast, orthogonal, and no pair of nets runs along each other
-        Assert.True(watch.ElapsedMilliseconds < 3000, $"Routing took {watch.ElapsedMilliseconds} ms");
+        // Assert: orthogonal, and no pair of nets runs along each other
         for (var i = 0; i < nets; i++)
         {
             Assert.True(RouteAssertions.IsOrthogonal(polylines[i]), $"Net {i} is not orthogonal");

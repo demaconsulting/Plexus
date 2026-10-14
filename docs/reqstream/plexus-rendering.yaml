@@ -128,7 +128,6 @@ sections:
           - PlexusRendering-PlexusRenderer-Background
           - PlexusRendering-PlexusRenderer-Grid
           - PlexusRendering-ScenePainter-Grid
-          - PlexusRendering-ScenePainter-GridPerformance
         tests:
           - PlexusRendering_Render_BackgroundAndGridOptions_ChangeThePixels
 

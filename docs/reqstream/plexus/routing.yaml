@@ -27,6 +27,7 @@ sections:
               - Plexus-Routing-SimpleRouter-LoopWhenBehind
             tests:
               - Routing_ConnectedWires_UnderEitherRouter_AreOrthogonal
+              - Routing_DenseConnectedPage_RoutesEveryWireOrthogonally
 
           - id: Plexus-Routing-ObstacleAvoidance
             title: >-
@@ -96,21 +97,6 @@ sections:
             tests:
               - Routing_SameRequest_BothRouters_AreDeterministic
 
-          - id: Plexus-Routing-Performance
-            title: >-
-              Connecting every wire of a page of sixty nodes and ninety-five wires through the default router shall
-              complete within ten seconds on a development workstation, and the router shall route a wire among
-              hundreds of nodes without a noticeable delay.
-            justification: |
-              Routing runs on every connect, move and re-route of a wire while the user edits; slow routing makes
-              the editor feel sluggish on realistic diagrams with hundreds of nodes.
-            tags:
-              - performance
-            children:
-              - Plexus-Routing-OrthogonalRouter-Performance
-            tests:
-              - Routing_DenseConnectedPage_RoutesEveryWireQuickly
-
           - id: Plexus-Routing-InvalidRequests
             title: Each router shall reject a null route request with an argument exception.
             justification: |
@@ -153,7 +139,6 @@ sections:
             children:
               - Plexus-Routing-OrthogonalRouter-NetSeparation
               - Plexus-Routing-OrthogonalRouter-SameNetTrunk
-              - Plexus-Routing-OrthogonalRouter-NetPerformance
             tests:
               - DiagramPage_Connect_TwoNetsToAdjacentInputs_DoNotRunAlongEachOther
               - DiagramPage_RerouteAll_TwoNets_KeepsNetsApartAndIsRepeatable

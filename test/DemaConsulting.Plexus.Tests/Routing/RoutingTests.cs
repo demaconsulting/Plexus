@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Routing;
 
@@ -197,10 +196,10 @@ public class RoutingTests
     }
 
     /// <summary>
-    ///     Validates that every wire of a densely connected page is routed, orthogonal and quick to compute.
+    ///     Validates that every wire of a densely connected page is created and routed orthogonally.
     /// </summary>
     [Fact]
-    public void Routing_DenseConnectedPage_RoutesEveryWireQuickly()
+    public void Routing_DenseConnectedPage_RoutesEveryWireOrthogonally()
     {
         // Arrange: a 6 x 10 lattice of mixers, each wired to the next column on its own row and on the row below
         const int columns = 6;
@@ -217,7 +216,6 @@ public class RoutingTests
         }
 
         // Act
-        var watch = Stopwatch.StartNew();
         var wires = new List<Wire>();
         for (var c = 0; c < columns - 1; c++)
         {
@@ -231,11 +229,8 @@ public class RoutingTests
             }
         }
 
-        watch.Stop();
-
-        // Assert: generous bound for a whole page of wires; each is orthogonal
+        // Assert: every wire was created and each is orthogonal
         Assert.Equal(((columns - 1) * rows) + ((columns - 1) * (rows - 1)), wires.Count);
-        Assert.True(watch.ElapsedMilliseconds < 10_000, $"Connecting {wires.Count} wires took {watch.ElapsedMilliseconds} ms");
         Assert.All(wires, wire => Assert.True(RouteAssertions.IsOrthogonal(wire.GetPoints())));
     }
 

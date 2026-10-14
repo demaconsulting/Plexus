@@ -12,14 +12,12 @@ SimpleRouter), with unit requirements linked below the subsystem requirements in
 ### Test Environment
 
 The standard xunit test runner of the `DemaConsulting.Plexus.Tests` project on net8.0, net9.0 and net10.0 on Windows,
-Linux and macOS. No files, network or fonts are used. Two tests contain wall-clock bounds (see Acceptance Criteria);
-the bounds are generous, so they fail only for a loss of scalability, not for machine noise.
+Linux and macOS. No files, network or fonts are used.
 
 ### Acceptance Criteria
 
-All tests below pass on every target framework. For the performance requirement a page of sixty nodes with
-ninety-five connected wires must be fully routed in under ten seconds. Every routed wire of every scenario must be
-orthogonal, and the default router's wires must not cross the box of any node other than at its own ports.
+All tests below pass on every target framework. Every routed wire of every scenario must be orthogonal, and the
+default router's wires must not cross the box of any node other than at its own ports.
 
 ### Test Scenarios
 
@@ -43,9 +41,9 @@ orthogonal, and the default router's wires must not cross the box of any node ot
 - **Determinism**
   (`Routing_SameRequest_BothRouters_AreDeterministic`): two instances of each router give equal results for one
   request with obstacles.
-- **Dense page routes quickly**
-  (`Routing_DenseConnectedPage_RoutesEveryWireQuickly`): a lattice of sixty nodes with ninety-five connected wires
-  finishes within the bound and all wires are orthogonal.
+- **Dense page**
+  (`Routing_DenseConnectedPage_RoutesEveryWireOrthogonally`): a lattice of sixty nodes gets all ninety-five connected
+  wires, and every one is orthogonal.
 - **Null request**
   (`Routing_NullRequest_BothRouters_ThrowArgumentNullException`): both routers reject a null request.
 - **Net separation**

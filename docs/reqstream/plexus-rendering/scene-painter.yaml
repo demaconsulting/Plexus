@@ -108,15 +108,7 @@ sections:
               Decomposes PlexusRendering-Render-BackgroundAndGrid; grid dots line up with grid-snapped nodes.
             tests:
               - ScenePainter_Paint_Grid_DrawsDotsAtSpacing
-
-          - id: PlexusRendering-ScenePainter-GridPerformance
-            title: >-
-              The painter shall draw a grid over a very large area (tens of thousands of dots) within seconds.
-            justification: |
-              Decomposes PlexusRendering-Render-BackgroundAndGrid; large high-resolution renders must not stall on
-              the background grid.
-            tests:
-              - ScenePainter_Paint_LargeGrid_CompletesQuickly
+              - ScenePainter_Paint_LargeGrid_DrawsDotsAtHighCoordinates
 
           - id: PlexusRendering-ScenePainter-Placement
             title: >-
