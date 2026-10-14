@@ -258,6 +258,7 @@ sections:
         children:
           - PlexusAvalonia-PlexusIcons-Convert
           - PlexusAvalonia-PlexusIcons-Cache
+          - PlexusAvalonia-PlexusIcons-BoundedCache
           - PlexusAvalonia-PlexusIcons-Malformed
           - PlexusAvalonia-PlexusIcons-NullArgument
           - PlexusAvalonia-ScenePainter-Icons

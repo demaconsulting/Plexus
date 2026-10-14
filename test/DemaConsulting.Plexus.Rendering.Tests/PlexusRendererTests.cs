@@ -154,6 +154,23 @@ public class PlexusRendererTests
     }
 
     /// <summary>
+    ///     Validates that a transparent canvas from a theme given in the options is preserved in the PNG.
+    /// </summary>
+    [Fact]
+    public void PlexusRenderer_RenderPng_TransparentOptionTheme_KeepsAlpha()
+    {
+        // Arrange: the diagram's own theme is opaque; the option theme is not
+        var (_, page) = RenderTestModel.CreatePage();
+        var theme = new DiagramTheme { CanvasBackground = Color.Transparent };
+
+        // Act
+        using var image = RenderTestModel.Decode(PlexusRenderer.RenderPng(page, new RenderOptions { Bounds = FixedArea.Bounds, ShowGrid = false, Theme = theme }));
+
+        // Assert
+        Assert.Equal(0, image[5, 5].A);
+    }
+
+    /// <summary>
     ///     Validates that grid dots sit on multiples of the grid size and can be switched off.
     /// </summary>
     [Fact]
@@ -356,6 +373,8 @@ public class PlexusRendererTests
         Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Scale = double.NaN }));
         Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Padding = -1 }));
         Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Bounds = new Rect(0, 0, 0, 10) }));
+        Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Bounds = new Rect(double.NaN, 0, 10, 10) }));
+        Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Bounds = new Rect(0, double.NegativeInfinity, 10, 10) }));
         Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Bounds = new Rect(0, 0, 100000, 10) }));
         Assert.Throws<ArgumentException>(() => PlexusRenderer.SavePng(page, " "));
     }

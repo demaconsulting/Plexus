@@ -10,7 +10,9 @@ namespace DemaConsulting.Plexus.Avalonia;
 /// <remarks>
 ///     The editor paints node icons through the same cache, so an icon used both on the canvas and in a
 ///     host palette is parsed once. The cache is process-wide, keyed by <see cref="IconSource.Key"/>,
-///     and thread-safe. Icons are normally few and long-lived; entries are never evicted.
+///     and thread-safe. It is bounded: when it holds more than 2048 icons it is cleared, so hosts that
+///     load transient icons do not grow memory without limit; a cleared icon is simply loaded again on
+///     its next use.
 /// </remarks>
 /// <example>
 ///     Show a node type's icon in your own control, for example a menu item or a tree node.
@@ -29,9 +31,19 @@ namespace DemaConsulting.Plexus.Avalonia;
 public static class PlexusIcons
 {
     /// <summary>
+    ///     The number of cached icons after which the cache is cleared; large enough for big tool palettes.
+    /// </summary>
+    internal const int MaxEntries = 2048;
+
+    /// <summary>
     ///     Cached images by icon key; a null entry records an icon that failed to load so it is not retried.
     /// </summary>
     private static readonly ConcurrentDictionary<string, SvgImage?> Cache = new(StringComparer.Ordinal);
+
+    /// <summary>
+    ///     Gets the number of icons currently cached.
+    /// </summary>
+    internal static int Count => Cache.Count;
 
     /// <summary>
     ///     Gets an Avalonia image for an icon, loading and caching it on first use.
@@ -71,7 +83,16 @@ public static class PlexusIcons
     /// </summary>
     /// <param name="icon">The icon.</param>
     /// <returns>The image, or null when the SVG could not be loaded.</returns>
-    internal static SvgImage? GetSvgImage(IconSource icon) => Cache.GetOrAdd(icon.Key, _ => Load(icon));
+    internal static SvgImage? GetSvgImage(IconSource icon)
+    {
+        // Bound the memory held by transient icons; losing the cache only costs a re-load
+        if (Cache.Count > MaxEntries)
+        {
+            Cache.Clear();
+        }
+
+        return Cache.GetOrAdd(icon.Key, static (_, source) => Load(source), icon);
+    }
 
     /// <summary>
     ///     Parses an icon's SVG text.

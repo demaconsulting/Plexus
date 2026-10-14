@@ -72,6 +72,25 @@ public class PlexusIconsTests
     });
 
     /// <summary>
+    ///     Validates that loading more distinct icons than the bound keeps the cache bounded.
+    /// </summary>
+    [Fact]
+    public Task PlexusIcons_GetImage_ManyDistinctIcons_KeepsCacheBounded() => UiTest.Run(() =>
+    {
+        // Arrange: more distinct icons than the cache holds
+        var requests = PlexusIcons.MaxEntries + 10;
+
+        // Act
+        for (var i = 0; i < requests; i++)
+        {
+            PlexusIcons.GetImage(IconSource.FromSvg($"<svg xmlns='http://www.w3.org/2000/svg' width='4' height='4'><rect width='4' height='4'/><!-- {i} --></svg>"));
+        }
+
+        // Assert
+        Assert.InRange(PlexusIcons.Count, 1, PlexusIcons.MaxEntries + 1);
+    });
+
+    /// <summary>
     ///     Validates that a null icon is rejected.
     /// </summary>
     [Fact]

@@ -17,11 +17,14 @@ sections:
               - PlexusRenderer_RenderPng_DefaultOptions_ProducesPngSignature
 
           - id: PlexusRendering-PlexusRenderer-TransparentBackground
-            title: The renderer shall keep a transparent background transparent in the PNG it produces.
+            title: >-
+              The renderer shall keep a transparent background, whether requested directly or by the theme in
+              the options, transparent in the PNG it produces.
             justification: |
               Decomposes PlexusRendering-Render-Png; pictures placed on other media need their transparency preserved.
             tests:
               - PlexusRenderer_RenderPng_TransparentBackground_KeepsAlpha
+              - PlexusRenderer_RenderPng_TransparentOptionTheme_KeepsAlpha
 
           - id: PlexusRendering-PlexusRenderer-SavePng
             title: The renderer shall write the rendered PNG to a file path given by the caller.
@@ -153,8 +156,8 @@ sections:
           - id: PlexusRendering-PlexusRenderer-InvalidInput
             title: >-
               The renderer shall throw an argument exception for a missing page, a non-finite or non-positive
-              scale, negative or non-finite padding, empty bounds, an image larger than the maximum surface size,
-              and an empty file path.
+              scale, negative or non-finite padding, empty or non-finite bounds, an image larger than the
+              maximum surface size, and an empty file path.
             justification: |
               Decomposes PlexusRendering-Render-InvalidInput; bad options must fail early and loudly.
             tests:

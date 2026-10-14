@@ -13,8 +13,9 @@ and the painter draws icons from the same cache.
 ### Data Model
 
 A static, thread-safe cache maps the icon's key (the identity of its SVG text) to the converted image or to null when
-the conversion failed. Failures are cached too, so a malformed icon is not parsed again on every frame. The cache grows
-with the number of distinct icons and is never emptied.
+the conversion failed. Failures are cached too, so a malformed icon is not parsed again on every frame. The cache is
+bounded: when it holds more than 2048 icons (enough for large tool palettes) it is cleared, so hosts that load transient
+icons do not grow memory without limit; a cleared icon is converted again on its next request.
 
 ### Key Methods
 

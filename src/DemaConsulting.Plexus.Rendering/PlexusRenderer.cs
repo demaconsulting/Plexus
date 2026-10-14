@@ -56,7 +56,7 @@ public static class PlexusRenderer
     {
         // Opaque backgrounds need no alpha channel, which keeps files smaller
         using var surface = Render(page, options);
-        var opaque = (options?.Background ?? page.Diagram.Theme.CanvasBackground).A == 255;
+        var opaque = (options?.Background ?? options?.Theme?.CanvasBackground ?? page.Diagram.Theme.CanvasBackground).A == 255;
         using var stream = new MemoryStream();
         PngCodec.Save(surface, stream, opaque ? PngColorType.Rgb : PngColorType.Rgba);
         return stream.ToArray();
@@ -91,7 +91,8 @@ public static class PlexusRenderer
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is null.</exception>
     /// <exception cref="ArgumentException">
     ///     Thrown when the scale is not a finite positive number, the padding is negative or not
-    ///     finite, or the image would exceed the maximum surface size (8192 pixels on a side).
+    ///     finite, the bounds are empty or not finite, or the image would exceed the maximum surface
+    ///     size (8192 pixels on a side).
     /// </exception>
     public static Surface Render(DiagramPage page, RenderOptions? options = null)
     {
@@ -168,9 +169,10 @@ public static class PlexusRenderer
             throw new ArgumentException("Padding must be a finite, non-negative number.", nameof(options));
         }
 
-        if (options.Bounds is { } bounds && (bounds.IsEmpty || !double.IsFinite(bounds.Width) || !double.IsFinite(bounds.Height)))
+        if (options.Bounds is { } bounds &&
+            (!double.IsFinite(bounds.X) || !double.IsFinite(bounds.Y) || !double.IsFinite(bounds.Width) || !double.IsFinite(bounds.Height) || bounds.IsEmpty))
         {
-            throw new ArgumentException("Bounds must be a non-empty area.", nameof(options));
+            throw new ArgumentException("Bounds must be a finite, non-empty area.", nameof(options));
         }
     }
 }

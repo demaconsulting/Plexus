@@ -25,6 +25,15 @@ sections:
             tests:
               - PlexusIcons_GetImage_SameIcon_ReturnsCachedInstance
 
+          - id: PlexusAvalonia-PlexusIcons-BoundedCache
+            title: >-
+              The icon cache shall hold no more than 2048 icons, plus the one being added.
+            justification: |
+              Decomposes PlexusAvalonia-Icons; long-running hosts that load transient icons must not grow memory
+              without limit, while large tool palettes still stay cached.
+            tests:
+              - PlexusIcons_GetImage_ManyDistinctIcons_KeepsCacheBounded
+
           - id: PlexusAvalonia-PlexusIcons-Malformed
             title: >-
               A malformed SVG icon shall yield no image, without throwing, on every request.
