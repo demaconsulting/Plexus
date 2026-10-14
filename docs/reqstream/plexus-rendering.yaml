@@ -1,0 +1,198 @@
+---
+# PlexusRendering system requirements.
+#
+# Observable behavior of the DemaConsulting.Plexus.Rendering package, verified by the system-level tests in
+# PlexusRenderingTests.cs. Each requirement is decomposed downward into the unit requirements and the CanvasNet OTS
+# requirements it relies on (children link downward only).
+
+sections:
+  - title: PlexusRendering Requirements
+    requirements:
+      - id: PlexusRendering-Render-Png
+        title: >-
+          The system shall render a page of a Plexus diagram to a PNG image, returned as bytes or written to a file.
+        justification: |
+          PNG is the interchange format for diagram pictures used in documentation, reports, build pipelines and
+          automated tooling; callers need either the bytes (to embed or stream) or a file (to archive).
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-RenderPng
+          - PlexusRendering-PlexusRenderer-TransparentBackground
+          - PlexusRendering-PlexusRenderer-SavePng
+          - Plexus-OTS-CanvasNet-Png
+        tests:
+          - PlexusRendering_RenderPng_DiagramPage_ProducesDecodablePng
+          - PlexusRendering_SavePng_DiagramPage_WritesDecodableFile
+
+      - id: PlexusRendering-Render-Content
+        title: >-
+          The rendered image shall show the nodes (including their titles and names), wires, annotations and groups
+          of the page, drawn with the diagram theme.
+        justification: |
+          The picture is only useful if it is a faithful depiction of the diagram: every element kind the editor
+          shows must appear, styled consistently with the interactive view.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-Nodes
+          - PlexusRendering-PlexusRenderer-Wires
+          - PlexusRendering-PlexusRenderer-StyledWires
+          - PlexusRendering-PlexusRenderer-AnnotationsAndGroups
+          - PlexusRendering-ScenePainter-Rectangles
+          - PlexusRendering-ScenePainter-Paths
+          - PlexusRendering-ScenePainter-Blending
+          - PlexusRendering-ScenePainter-Order
+          - PlexusRendering-ScenePainter-Clipping
+          - Plexus-OTS-CanvasNet-Rasterize
+        tests:
+          - PlexusRendering_Render_FullPage_ShowsEveryElementKind
+
+      - id: PlexusRendering-Render-Icons
+        title: >-
+          The system shall render the SVG icon of a node inside the node, and shall continue to render the rest of
+          the page when an icon cannot be rasterized.
+        justification: |
+          Node icons are host-supplied SVG text that Plexus does not control; a single malformed icon must not
+          prevent a diagram from being rendered, and diagrams that repeat an icon must stay fast and bounded in memory.
+        tags: [system]
+        children:
+          - PlexusRendering-ScenePainter-Icons
+          - PlexusRendering-ScenePainter-MalformedIcon
+          - PlexusRendering-IconCache-SharedRasterization
+          - PlexusRendering-IconCache-MalformedSvg
+          - PlexusRendering-IconCache-BoundedMemory
+          - Plexus-OTS-CanvasNet-Svg
+        tests:
+          - PlexusRendering_Render_FullPage_ShowsEveryElementKind
+          - PlexusRendering_Render_MalformedIcon_StillRendersTheRestOfThePage
+
+      - id: PlexusRendering-Render-StyledNodes
+        title: >-
+          The system shall render each node with the fill, border, halo, opacity and icon tint of the diagram's
+          node styler, leaving unstyled nodes in the theme's look, and shall show a changed styling after the host
+          refreshes the diagram's appearance.
+        justification: |
+          Styled nodes convey state (a lit lamp, the fluid in a tank); pictures produced for documents and reports
+          must show them exactly as the interactive view does.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-StyledNodes
+          - PlexusRendering-ScenePainter-IconTint
+        tests:
+          - PlexusRendering_Render_StyledNodes_ShowTheStyleOnlyWhereTheStylerDecides
+      - id: PlexusRendering-Render-TextLayout
+        title: >-
+          The system shall lay out node text using the same fonts it paints with, so that painted text occupies
+          the width that was measured for layout, falling back to a bundled font when a requested font family is
+          unavailable.
+        justification: |
+          Node sizing and label placement are computed from measured text widths; if measurement and painting
+          disagreed, labels would overflow their boxes. The bundled fallback keeps output reproducible on machines
+          without the theme font.
+        tags: [system]
+        children:
+          - PlexusRendering-CanvasTextMeasurer-Width
+          - PlexusRendering-CanvasTextMeasurer-Weight
+          - PlexusRendering-CanvasTextMeasurer-LineHeight
+          - PlexusRendering-CanvasTextMeasurer-Degenerate
+          - PlexusRendering-CanvasTextMeasurer-FontFallback
+          - PlexusRendering-ScenePainter-Text
+          - Plexus-OTS-CanvasNet-Text
+        tests:
+          - PlexusRendering_Render_NodeTitle_MatchesMeasuredTextWidth
+          - PlexusRendering_Render_FullPage_ShowsEveryElementKind
+
+      - id: PlexusRendering-Render-Framing
+        title: >-
+          The caller shall be able to choose the rendered area (the page content plus padding, or explicit bounds)
+          and the resolution (scale) of the image.
+        justification: |
+          Documentation needs whole-page pictures, detail crops and high-resolution output; the renderer must size
+          the image from the content by default and obey explicit requests otherwise.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-FitContent
+          - PlexusRendering-PlexusRenderer-Bounds
+          - PlexusRendering-PlexusRenderer-Scale
+          - PlexusRendering-ScenePainter-Placement
+        tests:
+          - PlexusRendering_Render_FramingOptions_SizeTheImage
+
+      - id: PlexusRendering-Render-BackgroundAndGrid
+        title: >-
+          The caller shall be able to choose the background color of the image and whether the dot grid is drawn.
+        justification: |
+          Pictures are placed on different media: a transparent or white background suits documents, while the grid
+          reproduces the look of the editor.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-Background
+          - PlexusRendering-PlexusRenderer-Grid
+          - PlexusRendering-ScenePainter-Grid
+          - PlexusRendering-ScenePainter-GridPerformance
+        tests:
+          - PlexusRendering_Render_BackgroundAndGridOptions_ChangeThePixels
+
+      - id: PlexusRendering-Render-ThemeAndSelection
+        title: >-
+          The caller shall be able to render with a theme other than the diagram's own, and to have chosen elements
+          drawn highlighted as selected.
+        justification: |
+          Reports often need a print-friendly theme without modifying the diagram, and tooling highlights the
+          elements it wants to draw attention to.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-Theme
+          - PlexusRendering-PlexusRenderer-Selection
+        tests:
+          - PlexusRendering_Render_ThemeAndSelectionOptions_RestyleTheImage
+
+      - id: PlexusRendering-Render-PixelSurface
+        title: >-
+          The system shall also return the rendered image as an in-memory pixel surface that the caller owns and
+          that is independent of any other render.
+        justification: |
+          Callers that post-process the pixels or encode another image format need the bitmap itself; sharing a
+          surface between renders would corrupt one caller's image with another's changes.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-Surface
+        tests:
+          - PlexusRendering_Render_PixelSurface_IsOwnedByTheCaller
+
+      - id: PlexusRendering-Render-InvalidInput
+        title: >-
+          The system shall reject a missing page, an unusable scale, padding, bounds or path, and an image that
+          would exceed the maximum size, with an argument exception instead of producing an image.
+        justification: |
+          Failing early with a clear exception prevents silently wrong output and unbounded memory use when
+          callers pass bad options.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-InvalidInput
+          - PlexusRendering-CanvasTextMeasurer-InvalidInput
+          - PlexusRendering-ScenePainter-InvalidInput
+        tests:
+          - PlexusRendering_Render_InvalidInput_IsRejected
+
+      - id: PlexusRendering-Render-Concurrency
+        title: >-
+          The system shall allow several threads to render the same unmodified page at the same time, each
+          producing the same image.
+        justification: |
+          Servers and build tools render many diagrams in parallel; shared font and icon caches must not corrupt
+          results.
+        tags: [system]
+        children:
+          - PlexusRendering-IconCache-ConcurrentUse
+          - PlexusRendering-CanvasTextMeasurer-Deterministic
+        tests:
+          - PlexusRendering_Render_ConcurrentCalls_ProduceIdenticalImages
+
+      - id: PlexusRendering-Headless
+        title: The system shall render without referencing any UI framework.
+        justification: |
+          Rendering must work in servers, containers and build pipelines that have no display or UI toolkit, so the
+          package cannot depend on one.
+        tags: [system]
+        tests:
+          - PlexusRendering_Dependencies_AssemblyReferences_ContainNoUiFramework

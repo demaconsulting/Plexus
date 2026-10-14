@@ -1,0 +1,29 @@
+---
+# Svg.Controls.Skia.Avalonia OTS Software Requirements
+#
+# Requirements for the Svg.Controls.Skia.Avalonia library (Svg.Skia for Avalonia) used by the PlexusAvalonia system
+# to draw node icons. Evidence is provided by the PlexusAvalonia icon tests.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: SvgSkia Requirements
+        requirements:
+          - id: Plexus-OTS-SvgSkia-Render
+            title: Svg.Controls.Skia.Avalonia shall convert SVG text into an Avalonia image that can be drawn.
+            justification: |
+              Node icons are host-supplied SVG text. The editor converts them to Avalonia images through this
+              library so that icons are drawn as native vector graphics.
+            tags: [ots]
+            tests:
+              - PlexusIcons_GetImage_ValidSvg_ReturnsImage
+              - PlexusIcons_GetImage_SameIcon_ReturnsCachedInstance
+
+          - id: Plexus-OTS-SvgSkia-Malformed
+            title: Svg.Controls.Skia.Avalonia shall report malformed SVG as a failure the host can handle.
+            justification: |
+              A single broken icon must not prevent the editor from displaying the rest of the diagram, so the
+              library's failure mode on malformed SVG must be one the host can detect and skip.
+            tags: [ots]
+            tests:
+              - PlexusIcons_GetImage_BrokenSvg_ReturnsNullWithoutThrowing

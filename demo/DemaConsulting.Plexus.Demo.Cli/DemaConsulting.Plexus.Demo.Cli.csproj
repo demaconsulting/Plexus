@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <OutputType>Exe</OutputType>
+    <AssemblyName>plexus-demo-render</AssemblyName>
+    <RootNamespace>DemaConsulting.Plexus.Demo.Cli</RootNamespace>
+
+    <!-- Demo assemblies are never published as packages -->
+    <IsPackable>false</IsPackable>
+
+    <!-- Code Quality Configuration (same gates as the shipped libraries) -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <!-- Code Analysis Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Tests exercise argument parsing and the command runner directly -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemaConsulting.Plexus.Demo.Tests" />
+  </ItemGroup>
+
+  <!-- Project References -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DemaConsulting.Plexus\DemaConsulting.Plexus.csproj" />
+    <ProjectReference Include="..\..\src\DemaConsulting.Plexus.Rendering\DemaConsulting.Plexus.Rendering.csproj" />
+    <ProjectReference Include="..\DemaConsulting.Plexus.Demo.Model\DemaConsulting.Plexus.Demo.Model.csproj" />
+  </ItemGroup>
+
+</Project>

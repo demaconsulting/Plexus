@@ -1,0 +1,106 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid PropertySources.
+#
+# Each requirement decomposes a system requirement into the behavior of the property sources, the source factory and
+# the ordering helpers. Tests are the PropertySourceTests unit tests.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: PropertySources Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-ReflectionDiscovery
+            title: >-
+              The reflection source shall discover the properties of any object through the component model type
+              descriptor, so that custom type descriptors and type description providers add or remove
+              properties, omit non-browsable properties unless asked to include them, expose the default
+              property name, and reject a missing target.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Show-Properties; the grid must show dynamic objects as well
+              as plain classes, and hide what the author marked as hidden.
+            tests:
+              - ReflectionPropertySource_GetItems_HidesNonBrowsableByDefault
+              - ReflectionPropertySource_CustomTypeDescriptor_ExposesDynamicProperties
+              - ReflectionPropertySource_TypeDescriptionProvider_AddsProperties
+              - ReflectionPropertySource_DefaultProperty_IsExposed
+              - ReflectionPropertySource_EmptyOrNullTarget_IsHandled
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-ReflectionNotifications
+            title: >-
+              The reflection source shall raise a change notification when its target raises a property change,
+              rebuild its items when a property that requires a full refresh changes or the source is refreshed,
+              and stop listening when disposed.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Show-Properties; the grid must follow a target that changes
+              by itself, and a property annotated to refresh all others changes what is shown.
+            tests:
+              - ReflectionPropertySource_NotifyPropertyChanged_RaisesChanged
+              - ReflectionPropertySource_RefreshAllProperty_RebuildsItems
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-Custom
+            title: >-
+              The custom source and custom item shall let a host supply items whose values are read and written
+              through delegates, with all item metadata given explicitly, read-only when no setter is supplied,
+              and change notifications when the host changes the list or a value.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Sources-Compose; hosts and adapters must be able to show
+              data that is not a .NET object with annotations.
+            tests:
+              - CustomPropertySource_AddRemoveNotify_RaiseChanges
+              - CustomPropertyItem_Options_AreExposed
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-Composite
+            title: >-
+              The composite source shall present the items of several sources in order, keep the first item when
+              two sources supply the same name, forward the change notifications of its sources, and allow
+              sources to be added and removed.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Sources-Compose; one grid must show data from several
+              origins at once, for example a name, a property bag and host data.
+            tests:
+              - CompositePropertySource_GetItems_MergesInOrderAndForwardsChanges
+              - CompositePropertySource_GetItems_DuplicateNameKeepsTheFirst
+              - CompositePropertySource_AddRemoveDispose_UpdateItemsAndSubscriptions
+              - CompositePropertySource_ReflectionAndCustom_AreEditedThroughTheirOwnItems
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-Factory
+            title: >-
+              The source factory shall choose the source for an object: a registered adapter first, then the
+              object itself when it is a source or provides one, otherwise reflection.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Sources-Compose; a grid is given any object; adapters for
+              other object kinds must be able to plug in without the grid knowing them.
+            tests:
+              - PropertySourceFactory_Create_ChoosesRegisteredProviderOrReflection
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-Ordering
+            title: >-
+              The ordering helper shall order items by category and then display name, or by display name alone,
+              ignoring case and culture, with parenthesized names first, and group them into categories.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Order; users migrating from the WinForms property grid
+              expect its categorized and alphabetical views.
+            tests:
+              - PropertyOrdering_Order_CategorizedSortsByCategoryThenLabel
+              - PropertyOrdering_Order_AlphabeticalIgnoresCategories
+              - PropertyOrdering_Group_ProducesCategoryGroupsOrOneFlatGroup
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-CategoryOrder
+            title: >-
+              The ordering helper shall order categories by the rank of their items (the lowest rank of a category
+              decides) before ordering them alphabetically, so a source can show a category such as General first.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Order; an adapter that lists a name next to domain categories
+              needs its own category first without renaming the others.
+            tests:
+              - PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-CommitScope
+            title: >-
+              A composite source shall chain the commit scopes of its sources that have one, the first source
+              outermost, and run the writes exactly once.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; merging sources must not lose the undo
+              bracketing of a source that has one.
+            tests:
+              - CompositePropertySource_RunCommit_ChainsTheSourceScopes

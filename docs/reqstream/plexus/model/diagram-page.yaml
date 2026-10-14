@@ -1,0 +1,292 @@
+---
+# Software Unit requirements for Plexus DiagramPage.
+#
+# The DiagramPage unit is one canvas of a diagram: it holds the nodes, wires, annotations and groups placed on it and
+# provides the undoable operations that create, connect, group, move, re-route and remove them. Evidence is provided by
+# the DiagramPage unit tests; duplicating elements is covered by the Snapshot unit.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        sections:
+          - title: DiagramPage Requirements
+            requirements:
+              - id: Plexus-Model-DiagramPage-Name
+                title: >-
+                  The DiagramPage shall allow its name to be changed as one undoable entry, reject a blank name, and
+                  record nothing when the name is unchanged.
+                justification: |
+                  Page names are shown to users as tab titles and are part of the document. Renaming is a user edit
+                  that must be undoable, and a blank name would make the page unidentifiable.
+                tests:
+                  - DiagramPage_Name_Set_UndoRedoRoundTripAndValidation
+
+              - id: Plexus-Model-DiagramPage-RemovedGuard
+                title: >-
+                  The DiagramPage shall reject every modification while it is removed from its diagram, and accept
+                  modifications again once the removal is undone.
+                justification: |
+                  A removed page keeps its content so that undo can restore it, but edits to a detached page would
+                  silently alter content that is no longer part of the document and corrupt the undo history.
+                tests:
+                  - DiagramPage_Mutation_WhenRemoved_ThrowsInvalidOperationException
+                  - DiagramPage_Remove_Element_MutationRejectedUntilUndo
+
+              - id: Plexus-Model-DiagramPage-AddNode
+                title: >-
+                  The DiagramPage shall add a node of a registered node type, given by key or by type object, at a
+                  finite position as an undoable entry, sizing it from the type's declared size or the theme default
+                  grown to fit its ports, and shall reject an unknown or unregistered type and a non-finite position.
+                justification: |
+                  Adding nodes is the primary way to build a diagram. Nodes must come only from the types the host
+                  declared, get a size appropriate to their ports so that nothing overlaps, and bad input must be
+                  rejected before the model changes.
+                tests:
+                  - DiagramPage_AddNode_ByTypeKey_CreatesNodeAtPosition
+                  - DiagramPage_AddNode_UnknownTypeKey_ThrowsArgumentException
+                  - DiagramPage_AddNode_UnregisteredNodeType_ThrowsArgumentException
+                  - DiagramPage_AddNode_NonFinitePosition_ThrowsArgumentException
+                  - DiagramPage_AddNode_FewPorts_UsesThemeDefaultSize
+                  - DiagramPage_AddNode_ManyPorts_GrowsToFitPorts
+                  - DiagramPage_AddNode_TypeWithDefaultSize_UsesDeclaredSize
+
+              - id: Plexus-Model-DiagramPage-NodeIdentity
+                title: >-
+                  The DiagramPage shall give each new node a unique name and element id, generating the name from the
+                  type key and the lowest unused number and the id as a dash-free GUID unless supplied, and shall
+                  reject a duplicate or empty name, unless uniqueness is disabled, and a duplicate id.
+                justification: |
+                  Names identify nodes to users and hosts, and ids identify every element internally and in
+                  snapshots. Generated identities must never collide, freed numbers may be reused, and explicit
+                  identities supplied by a host must be honored or rejected, never silently altered.
+                tests:
+                  - DiagramPage_AddNode_ExplicitNameAndId_UsesThem
+                  - DiagramPage_AddNode_DuplicateId_ThrowsArgumentException
+                  - DiagramPage_AddNode_DefaultId_IsUniqueGuidWithoutDashes
+                  - DiagramPage_AddNode_NoName_GeneratesUniqueNamesFromKeyLastSegment
+                  - DiagramPage_AddNode_NoName_ReusesFreedNumber
+                  - DiagramPage_AddNode_DuplicateOrEmptyName_ThrowsArgumentException
+                  - DiagramPage_AddNode_DuplicateNameWithUniquenessOff_Succeeds
+
+              - id: Plexus-Model-DiagramPage-AddAnnotation
+                title: >-
+                  The DiagramPage shall add a free-floating text annotation with given text and bounds as an undoable
+                  entry, and shall reject missing text and invalid bounds.
+                justification: |
+                  Annotations let users document a diagram. Rejecting null text and bounds that are non-finite or
+                  have a negative size keeps every annotation drawable and measurable.
+                tests:
+                  - DiagramPage_AddAnnotation_CreatesAnnotationWithTextAndBounds
+                  - DiagramPage_AddAnnotation_InvalidArguments_Throw
+
+              - id: Plexus-Model-DiagramPage-CanConnect
+                title: >-
+                  The DiagramPage shall decide, without changing the model, whether two ports can be connected, given in
+                  either order: it shall require an output and an input of two different nodes on this page and no
+                  existing wire between the same ports, then apply the diagram's connection rule (by default one that
+                  refuses a second wire into an input that does not allow fan-in), and every denial shall carry a
+                  reason.
+                justification: |
+                  A UI must know before the user completes a drag whether a connection is valid and why not. The
+                  structural rules keep the graph meaningful and the host rule adds domain policy; guaranteeing a
+                  reason lets the UI always explain a denial.
+                tests:
+                  - DiagramPage_CanConnect_StructuralViolations_AreDeniedWithReasons
+                  - DiagramPage_CanConnect_PortsOnDifferentPages_IsDenied
+                  - DiagramPage_CanConnect_HostDenialWithoutReason_GetsDefaultReason
+                  - ConnectionRules_Default_AllowsAndHostRuleReceivesOutputThenInput
+                  - DiagramPage_Connect_DefaultRules_RefuseFanInAndAllowFanOut
+                  - DiagramPage_Connect_InputAllowsMultipleWires_AcceptsSeveralWires
+                  - DiagramPage_Connect_HostRuleWithoutDefault_AllowsFanInEverywhere
+
+              - id: Plexus-Model-DiagramPage-Connect
+                title: >-
+                  The DiagramPage shall connect two ports given as objects, in either order, with a wire that runs from
+                  the output to the input as one undoable entry, using a supplied route or, when none is supplied, a
+                  route from the diagram's router, and shall throw with the denial reason when the connection is not
+                  allowed.
+                justification: |
+                  Wires carry the data flow of the diagram. Ordering the ports automatically keeps hosts from caring
+                  about direction, automatic routing gives a readable result by default, and refusing denied
+                  connections with the reason prevents invalid wires from ever entering the model.
+                tests:
+                  - DiagramPage_Connect_OutputToInput_CreatesWire
+                  - DiagramPage_Connect_ReversedPorts_AutoOrdersOutputToInput
+                  - DiagramPage_Connect_Denied_ThrowsInvalidOperationExceptionWithReason
+                  - DiagramPage_Connect_RouteSuppliedOrNull_UsesSuppliedRouteOrRouter
+
+              - id: Plexus-Model-DiagramPage-ConnectByPath
+                title: >-
+                  The DiagramPage shall connect two ports given as "Node.port" paths, preferring an output for the
+                  source and an input for the target when a name is shared, as one undoable entry that honors a supplied
+                  route and id, and shall throw when a path names no port on the page or the connection is denied.
+                justification: |
+                  Text paths make it possible to describe diagrams in a few readable lines, including nodes whose
+                  input and output share a name. Failing clearly on unknown paths avoids silently dropped wires.
+                tests:
+                  - DiagramPage_ConnectByPath_SharedPortName_PrefersOutputThenInput
+                  - DiagramPage_ConnectByPath_IsOneUndoEntryAndAcceptsIdAndRoute
+                  - DiagramPage_ConnectByPath_UnknownPathOrDeniedConnection_Throws
+
+              - id: Plexus-Model-DiagramPage-RerouteAll
+                title: >-
+                  The DiagramPage shall recompute the route of every wire with the diagram's current router as one
+                  undoable entry, discarding manual routes, and shall record nothing when no route changes.
+                justification: |
+                  Wires are routed when created, so nodes added later are not avoided and a changed router or theme
+                  leaves old routes behind. A single re-route operation lets hosts tidy a whole page and users undo
+                  it in one step.
+                tests:
+                  - DiagramPage_RerouteAll_RecomputesAllWiresAsOneUndoEntry
+                  - DiagramPage_RerouteAll_NothingChanges_RecordsNoHistory
+                  - DiagramPage_RerouteAll_UsesCurrentRouter_DiscardingManualRoutes
+
+              - id: Plexus-Model-DiagramPage-GroupObstacles
+                title: >-
+                  When the theme enables it (the default), the DiagramPage shall hand the router the frame of every
+                  visible group, inflated by the obstacle margin (expanded: bounds including the title bar;
+                  collapsed: the collapsed box), except the frames of groups that contain one of the wire's end
+                  nodes at any depth, and shall not offer groups hidden inside a collapsed group; wires shall be
+                  routed this way on connect, when an end node moves and on re-route, while moving a group alone
+                  shall not re-route unrelated wires.
+                justification: |
+                  Wires should not run through unrelated groups, but the wires of a group's own members must be
+                  able to cross its frame. Routing stays an event-driven computation, so the host re-routes the
+                  page after moving a group when unrelated wires should avoid its new position.
+                tests:
+                  - DiagramPage_Connect_GroupBetweenPorts_RoutesAroundGroupFrame
+                  - DiagramPage_Connect_EndNodeInsideGroup_ThatGroupIsNotAnObstacle
+                  - DiagramPage_Connect_TargetInsideGroup_MayCrossItsFrame
+                  - DiagramPage_Connect_NestedGroups_ExemptionFollowsMembershipPerGroup
+                  - DiagramPage_Connect_EndNodeNestedTwoLevelsDeep_AllAncestorsAreExempt
+                  - DiagramPage_Connect_CollapsedGroupBetweenPorts_RoutesAroundCollapsedBox
+                  - DiagramPage_Connect_GroupInsideCollapsedGroup_IsNotAnObstacle
+                  - DiagramPage_RerouteAll_AfterGroupMoved_RoutesAroundGroup
+                  - DiagramPage_Move_EndNode_ReroutesAroundGroupFrame
+                  - DiagramPage_RerouteAll_WithGroups_IsDeterministic
+                  - DiagramPage_Connect_NoGroups_ObstaclesAreOnlyNodeBoxes
+
+              - id: Plexus-Model-DiagramPage-CreateGroup
+                title: >-
+                  The DiagramPage shall create a group around nodes, annotations and groups of this page as one undoable
+                  entry, ignoring wires in the member list, nesting the new group inside the common parent group
+                  of the members, and rejecting an empty member list, members of another page and members that
+                  belong to different groups.
+                justification: |
+                  Groups organize large diagrams. Wires follow their nodes and are never members, nesting must
+                  follow the existing structure so the hierarchy stays a tree, and invalid member sets must be
+                  rejected before anything changes.
+                tests:
+                  - DiagramPage_CreateGroup_LinksMembersAndRoundTrips
+                  - DiagramPage_CreateGroup_InvalidInput_Throws
+                  - DiagramPage_CreateGroup_WiresInMemberList_AreIgnored
+                  - DiagramPage_CreateGroup_MembersOfSameGroup_NestsInsideThatGroup
+
+              - id: Plexus-Model-DiagramPage-Ungroup
+                title: >-
+                  The DiagramPage shall dissolve a group as one undoable entry, keeping its members, which take the
+                  group's place in its parent group or become top-level, and shall reject a missing group or a
+                  group of another page.
+                justification: |
+                  Users must be able to undo an organization decision without losing the grouped content, and
+                  members of a dissolved nested group must stay where they were in the hierarchy.
+                tests:
+                  - DiagramPage_Ungroup_RemovesFrameKeepsMembersAndRoundTrips
+                  - DiagramPage_Ungroup_NestedGroup_MembersTakeFramePlaceInParent
+                  - DiagramPage_Ungroup_InvalidArguments_Throw
+
+              - id: Plexus-Model-DiagramPage-Move
+                title: >-
+                  The DiagramPage shall move nodes and annotations by a delta as one undoable entry, ignoring wires in
+                  the set, recording nothing for a zero delta or an empty set, merging consecutive moves inside a
+                  transaction, and rejecting a non-finite delta or an element of another page.
+                justification: |
+                  Dragging elements is the most frequent edit. A drag produces many small moves that users expect
+                  to undo as one step, and no-op moves must not clutter the history.
+                tests:
+                  - DiagramPage_Move_NodesAndAnnotations_ShiftsBoundsAndRoundTrips
+                  - DiagramPage_Move_ZeroDeltaOrEmptySet_RecordsNothing
+                  - DiagramPage_Move_InvalidArguments_Throw
+                  - DiagramPage_Move_WireInSet_IsIgnored
+                  - DiagramPage_Move_ManyMovesInTransaction_CreateOneEntry
+                  - DiagramPage_Move_SeparateCalls_CreateSeparateEntries
+                  - DiagramPage_Move_MergedWithRouteEditInTransaction_RestoresOriginalOnUndo
+                  - DiagramPage_Move_RaisesBoundsChangedNotifications
+
+              - id: Plexus-Model-DiagramPage-MoveWires
+                title: >-
+                  When elements move the DiagramPage shall keep wires consistent: a wire whose two nodes moved by the
+                  same delta shall have its route translated, a wire with only one moved end shall be re-routed, and a
+                  wire of unmoved nodes shall stay untouched, all within the same undo entry as the move.
+                justification: |
+                  Wires follow their nodes. Translating keeps a manually shaped route intact when a whole assembly
+                  moves, re-routing keeps a single moved end connected cleanly, and doing both in the move's own
+                  undo entry means undo restores nodes and wires together.
+                tests:
+                  - DiagramPage_Move_BothEndpointsMoved_TranslatesRoute
+                  - DiagramPage_Move_OneEndpointMoved_ReroutesWire
+                  - DiagramPage_Move_UnrelatedNode_LeavesWireUntouched
+                  - Node_MoveToAndBounds_MoveNodeAndRerouteWires
+
+              - id: Plexus-Model-DiagramPage-MoveGroup
+                title: >-
+                  When a group is moved the DiagramPage shall move all its direct and nested members with it, translate
+                  the wires inside the group, re-route the wires that cross its boundary, and move a collapsed
+                  group's box together with its members.
+                justification: |
+                  A group is one unit to the user. Moving only its frame would leave members behind, and wires
+                  inside the group must keep their shape while wires to the outside must follow.
+                tests:
+                  - DiagramPage_Move_Group_MovesAllMembersAndRoundTrips
+                  - DiagramPage_Move_Group_TranslatesInternalWiresAndReroutesCrossingWires
+                  - DiagramPage_Move_CollapsedGroup_MovesBoxAndMembers
+
+              - id: Plexus-Model-DiagramPage-Remove
+                title: >-
+                  The DiagramPage shall remove one or several elements as one undoable entry, removing the wires
+                  attached to removed nodes, removing only the frame of a removed group unless removal with members is
+                  requested, and restoring the same objects, positions and group membership on undo, and shall
+                  reject an element of another page.
+                justification: |
+                  Deleting must never leave a wire without an end or lose content unexpectedly, and users must be
+                  able to delete a group frame or a group with everything in it. Restoring the exact objects on undo
+                  keeps references held by hosts and controls valid.
+                tests:
+                  - DiagramPage_Remove_Node_RemovesAttachedWiresAndRoundTrips
+                  - DiagramPage_Remove_Node_UndoRestoresSameObjectsAtSamePositions
+                  - DiagramElement_Remove_RemovesFromPage
+                  - DiagramPage_Remove_Multiple_IsSingleEntryAndRoundTrips
+                  - DiagramPage_Remove_EmptyOrInvalid_NoEntryOrThrows
+                  - DiagramPage_Remove_Group_RemovesFrameOnlyAndRoundTrips
+                  - DiagramPage_RemoveWithMembers_Group_RemovesMembersWiresAndRoundTrips
+                  - DiagramPage_RemoveWithMembers_NestedGroups_RemovesEverythingAndRoundTrips
+                  - DiagramPage_Remove_GroupMember_UpdatesGroupAndRestoresSlotOnUndo
+                  - DiagramPage_Remove_NestedGroupFrame_MembersFlowToParent
+                  - DiagramPage_Remove_GroupAndOneMemberTogether_RoundTrips
+
+              - id: Plexus-Model-DiagramPage-Undo
+                title: >-
+                  The DiagramPage shall record each adding, connecting and removing operation as one history entry whose
+                  undo and redo restore the exact page content, including element ids, list order and z-order.
+                justification: |
+                  Every user-visible edit must be reversible without loss. Restoring ids and order exactly means
+                  an undo is indistinguishable from the edit never having happened.
+                tests:
+                  - DiagramPage_Creation_AddNodeAnnotationAndWire_UndoRedoRoundTrip
+                  - DiagramPage_RemoveThenUndo_RestoresExactState
+                  - DiagramPage_Remove_Node_UndoRestoresSameObjectsAtSamePositions
+
+              - id: Plexus-Model-DiagramPage-Notification
+                title: >-
+                  The DiagramPage shall expose its nodes, wires, annotations, groups and all elements as read-only
+                  observable lists and shall finish attaching or detaching an element before any list or change
+                  notification is raised.
+                justification: |
+                  Controls bind to the content lists and repaint on notifications. Handlers that find an element
+                  half attached or half detached would show wrong content, so every notification must see a
+                  consistent page.
+                tests:
+                  - DiagramPage_ContentLists_AreObservable
+                  - DiagramPage_Remove_ElementIsDetachedBeforeNotifications
+                  - DiagramPage_UndoRemove_ElementIsAttachedBeforeNotifications

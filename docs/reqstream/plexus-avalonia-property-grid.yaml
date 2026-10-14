@@ -1,0 +1,292 @@
+---
+# PlexusAvaloniaPropertyGrid system requirements.
+#
+# Observable behavior of the DemaConsulting.Plexus.Avalonia.PropertyGrid package, verified by the system-level tests in
+# PlexusAvaloniaPropertyGridTests.cs. Each requirement is decomposed downward into the unit requirements (children link
+# downward only). The requirements cover the UI-free layers (model, sources, edit session, editor registry) and the
+# Avalonia controls built on them (grid, editors, collection editor, dialog); the control tests are headless.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    requirements:
+      - id: PlexusAvaloniaPropertyGrid-Show-Properties
+        title: >-
+          The system shall show the properties of any .NET object, honoring the System.ComponentModel
+          annotations that the WinForms property grid honors (category, display name, description, read-only,
+          hidden, default value, type converter, refresh, parenthesized name, password) and the properties added
+          by custom type descriptors.
+        justification: |
+          The grid is a generic property grid for users migrating from the WinForms property grid; attribute
+          fidelity decides whether existing annotated classes can be shown unchanged.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertyModel-Annotations
+          - PlexusAvaloniaPropertyGrid-PropertyModel-Defaults
+          - PlexusAvaloniaPropertyGrid-PropertyModel-Converter
+          - PlexusAvaloniaPropertyGrid-PropertySources-ReflectionDiscovery
+          - PlexusAvaloniaPropertyGrid-PropertySources-ReflectionNotifications
+        tests:
+          - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
+
+      - id: PlexusAvaloniaPropertyGrid-Order
+        title: >-
+          The system shall order and group the properties alphabetically or by category.
+        justification: |
+          Categorized and alphabetical views are the two familiar ways to find a property.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertySources-Ordering
+          - PlexusAvaloniaPropertyGrid-PropertySources-CategoryOrder
+        tests:
+          - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
+
+      - id: PlexusAvaloniaPropertyGrid-Text-Values
+        title: >-
+          The system shall read and write property values as text through their type converters in a
+          caller-chosen culture (the current culture by default) and offer the standard values of a property.
+        justification: |
+          Users edit values as text in their own culture and pick enumeration members from lists.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertyModel-ValueAccess
+          - PlexusAvaloniaPropertyGrid-PropertyModel-TextConversion
+          - PlexusAvaloniaPropertyGrid-PropertyModel-StandardValues
+        tests:
+          - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
+          - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
+
+      - id: PlexusAvaloniaPropertyGrid-Nested-Collections
+        title: >-
+          The system shall show the properties of expandable objects as nested properties and the elements of
+          collection properties as indexed items.
+        justification: |
+          Real objects contain nested objects and collections.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertyModel-Expandable
+          - PlexusAvaloniaPropertyGrid-PropertyModel-Collections
+        tests:
+          - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
+          - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
+
+      - id: PlexusAvaloniaPropertyGrid-Validation
+        title: >-
+          The system shall report invalid values and failures of property accessors and converters as error
+          messages per property, never as exceptions to the caller.
+        justification: |
+          The user interface must stay usable when user code throws.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertyModel-Validation
+          - PlexusAvaloniaPropertyGrid-EditSession-Errors
+          - PlexusAvaloniaPropertyGrid-EditSession-ReportError
+        tests:
+          - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
+
+      - id: PlexusAvaloniaPropertyGrid-Edit-Live
+        title: >-
+          The system shall be able to apply each edit to the edited object immediately.
+        justification: |
+          Property panels that apply edits as the user types need no buffering.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-EditSession-Live
+          - PlexusAvaloniaPropertyGrid-EditSession-Reset
+          - PlexusAvaloniaPropertyGrid-EditSession-Refresh
+        tests:
+          - PlexusAvaloniaPropertyGrid_LiveSessionOverComposite_WritesThroughBothSources
+
+      - id: PlexusAvaloniaPropertyGrid-Edit-Staged
+        title: >-
+          The system shall be able to buffer edits, including nested and collection element edits, without
+          touching the edited object, and apply them in order on commit or discard them on cancel.
+        justification: |
+          Dialogs with OK and Cancel must not change the object until the user accepts.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-EditSession-StagedBuffering
+          - PlexusAvaloniaPropertyGrid-EditSession-StagedCommit
+          - PlexusAvaloniaPropertyGrid-EditSession-StagedCancel
+          - PlexusAvaloniaPropertyGrid-EditSession-Paths
+        tests:
+          - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
+
+      - id: PlexusAvaloniaPropertyGrid-Edit-Transaction
+        title: >-
+          The system shall run the writes of a commit inside a host-supplied scope so that a host can make a
+          commit one undo step.
+        justification: |
+          Plexus edits are undoable; a property dialog must be undoable as one step.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-EditSession-CommitScope
+          - PlexusAvaloniaPropertyGrid-EditSession-SourceScope
+          - PlexusAvaloniaPropertyGrid-PropertySources-CommitScope
+        tests:
+          - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
+
+      - id: PlexusAvaloniaPropertyGrid-Edit-Collections
+        title: >-
+          The system shall edit collection properties through a working copy (add, remove, reorder) and apply
+          the result to lists, arrays, sets and read-only collections as documented.
+        justification: |
+          Collection properties are edited as a whole.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-EditSession-CollectionEditing
+          - PlexusAvaloniaPropertyGrid-EditSession-CollectionElements
+          - PlexusAvaloniaPropertyGrid-EditSession-CollectionCommit
+          - PlexusAvaloniaPropertyGrid-EditSession-CollectionLive
+          - PlexusAvaloniaPropertyGrid-EditSession-CollectionReplace
+        tests:
+          - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
+
+      - id: PlexusAvaloniaPropertyGrid-Sources-Compose
+        title: >-
+          The system shall accept host-supplied items without reflection, merge several sources into one, and
+          choose a source for any object through a factory with registrable adapters.
+        justification: |
+          Hosts and adapters supply data that is not an annotated object, for example a node name, a property
+          bag and host data together.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertySources-Custom
+          - PlexusAvaloniaPropertyGrid-PropertySources-Composite
+          - PlexusAvaloniaPropertyGrid-PropertySources-Factory
+        tests:
+          - PlexusAvaloniaPropertyGrid_LiveSessionOverComposite_WritesThroughBothSources
+
+      - id: PlexusAvaloniaPropertyGrid-Editors
+        title: >-
+          The system shall let annotations request a custom editor and let a registry map editor keys and
+          property types to the editors of the user interface layer.
+        justification: |
+          Types such as colors need dedicated editors that the generic layers cannot know.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-EditorRegistry-Attribute
+          - PlexusAvaloniaPropertyGrid-EditorRegistry-ResolveByKey
+          - PlexusAvaloniaPropertyGrid-EditorRegistry-ResolveByType
+          - PlexusAvaloniaPropertyGrid-EditorRegistry-ResolveItem
+          - PlexusAvaloniaPropertyGrid-PropertyEditors-CustomEditors
+        tests:
+          - PlexusAvaloniaPropertyGrid_EditorRegistry_ResolvesEditorsForAnnotatedProperties
+          - PlexusAvaloniaPropertyGrid_CustomEditor_IsUsedForAnnotatedProperty
+
+      - id: PlexusAvaloniaPropertyGrid-Grid-Display
+        title: >-
+          The system shall provide an Avalonia property grid control that shows the properties of an object in a
+          WinForms-style two-column layout, with categorized and alphabetical order, search, collapsible categories,
+          expandable nested objects, a description pane, dimmed read-only rows, bold changed values, keyboard
+          navigation, automation ids and light and dark theme support, and that edits through an edit session in live
+          or staged mode.
+        justification: |
+          Users migrating from the WinForms property grid expect its layout and behavior in an Avalonia application.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Content
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Layout
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Sorting
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Search
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Expansion
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-RowState
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Description
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Keyboard
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Automation
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Session
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-Theme
+        tests:
+          - PlexusAvaloniaPropertyGrid_PropertyGrid_ShowsAndEditsAnAnnotatedObject
+
+      - id: PlexusAvaloniaPropertyGrid-Grid-Editors
+        title: >-
+          The system shall edit each kind of property with a suitable editor (text, password, boolean, enumeration,
+          flags, standard values, color, nested object, collection) and show invalid input inline, with the reason,
+          until it is fixed.
+        justification: |
+          Every property type needs an editor that feels native, and a refused value must be explained.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertyEditors-Text
+          - PlexusAvaloniaPropertyGrid-PropertyEditors-Validation
+          - PlexusAvaloniaPropertyGrid-PropertyEditors-Choices
+          - PlexusAvaloniaPropertyGrid-PropertyEditors-Color
+          - PlexusAvaloniaPropertyGrid-PropertyEditors-Nested
+          - PlexusAvaloniaPropertyGrid-PropertyEditors-Collections
+        tests:
+          - PlexusAvaloniaPropertyGrid_PropertyGrid_ShowsAndEditsAnAnnotatedObject
+
+      - id: PlexusAvaloniaPropertyGrid-Grid-CollectionEditor
+        title: >-
+          The system shall provide a collection editor, embeddable and as a dialog, that adds, removes, reorders and
+          edits the members of a collection (recursively) on a working copy and applies it through the owning session
+          on OK.
+        justification: |
+          Collection properties are edited as a whole, with the option to cancel.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-CollectionEditorUi-WorkingList
+          - PlexusAvaloniaPropertyGrid-CollectionEditorUi-Members
+          - PlexusAvaloniaPropertyGrid-CollectionEditorUi-Capabilities
+          - PlexusAvaloniaPropertyGrid-CollectionEditorUi-Dialog
+          - PlexusAvaloniaPropertyGrid-CollectionEditorUi-Nested
+        tests:
+          - PlexusAvaloniaPropertyGrid_CollectionEditor_EditsCollectionThroughWorkingCopy
+
+      - id: PlexusAvaloniaPropertyGrid-Grid-Dialog
+        title: >-
+          The system shall provide a one-call property dialog that edits an object in a staged grid, commits on OK
+          (optionally inside a host commit scope) and discards on Cancel.
+        justification: |
+          Hosts open a property dialog for the selected object with a single call and make it one undo step.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Title
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Commit
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Validation
+        tests:
+          - PlexusAvaloniaPropertyGrid_PropertyGridDialog_CommitsOrDiscardsTheEdits
+
+      - id: PlexusAvaloniaPropertyGrid-Plexus-Nodes
+        title: >-
+          The system shall show and edit Plexus nodes, annotations and groups in the grid with one assignment: a node
+          shows its name, its declared properties with their definitions' presentation and its host data, and every
+          commit is one undo entry of the diagram (one step for a staged dialog, one step per edit for a live panel)
+          that leaves the live host data untouched until it is replaced.
+        justification: |
+          A diagram editor shows the selected element in a properties dialog or a docked panel; the user expects
+          validation, bold changed values, drop-downs and one undo step per OK.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Rows
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Validation
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Commit
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Refusal
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Live
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Elements
+        tests:
+          - PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry
+
+      - id: PlexusAvaloniaPropertyGrid-Plexus-Dialog
+        title: >-
+          The system shall provide a one-call properties dialog for a Plexus node whose OK applies everything as one
+          undo entry and whose Cancel changes nothing, and that refuses an invalid or vetoed name with the reason.
+        justification: |
+          Hosts open the properties of a node on double-click with a single line.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Show
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Commit
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Validation
+        tests:
+          - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_CommitsOrDiscardsAsOneUndoEntry
+
+      - id: PlexusAvaloniaPropertyGrid-Independent
+        title: >-
+          The system shall not depend on Plexus types in its generic layers: only the Plexus adapter layer may use
+          them.
+        justification: |
+          The grid is useful for any object; Plexus support is a separate adapter layer on the source abstraction.
+        tags: [system]
+        tests:
+          - PlexusAvaloniaPropertyGrid_Dependencies_GenericLayers_UseNoPlexusTypes

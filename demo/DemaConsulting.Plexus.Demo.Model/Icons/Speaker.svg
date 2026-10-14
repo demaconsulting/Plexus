@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Speaker: a driver with a flared cone and sound arcs -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 24 H16 L30 12 V52 L16 40 H6 Z" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M38 24 C42 28 42 36 38 40" stroke="#D2A3FF" stroke-width="2.5"/>
+    <path d="M44 16 C52 24 52 40 44 48" stroke="#D2A3FF" stroke-width="2.5"/>
+    <path d="M50 8 C62 20 62 44 50 56" stroke="#D2A3FF" stroke-width="2.5"/>
+  </g>
+</svg>

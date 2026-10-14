@@ -1,0 +1,104 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Configuration -->
+    <PackageId>DemaConsulting.Plexus.Avalonia.PropertyGrid</PackageId>
+    <Version>0.0.0</Version>
+    <Authors>DEMA Consulting</Authors>
+    <Company>DEMA Consulting</Company>
+    <Description>Generic, annotation-driven property grid for Avalonia: shows and edits any annotated .NET object using System.ComponentModel attributes.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/demaconsulting/Plexus</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/demaconsulting/Plexus</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>Icon.png</PackageIcon>
+    <PackageTags>dotnet-library;property-grid;propertygrid;avalonia;ui</PackageTags>
+    <Copyright>Copyright DEMA Consulting</Copyright>
+    <Title>Plexus Avalonia Property Grid</Title>
+    <Product>Plexus Avalonia Property Grid</Product>
+
+    <!-- Symbol Package Configuration -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <!-- Code Quality Configuration -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <!-- SBOM Configuration -->
+    <GenerateSBOM>true</GenerateSBOM>
+    <SBOMPackageName>$(PackageId)</SBOMPackageName>
+    <SBOMPackageVersion>$(Version)</SBOMPackageVersion>
+    <SBOMPackageSupplier>Organization: $(Company)</SBOMPackageSupplier>
+
+    <!-- API Documentation Configuration -->
+    <!-- ApiMark turns this project's XML doc comments into gradually-disclosed Markdown API
+         reference (api.md index -> namespace -> type -> member) for coding agents and developers.
+         - Output defaults to $(MSBuildProjectDirectory)\api (git-ignored, regenerated on every build).
+         - Generation runs once per build for the first target framework only, which is correct
+           because the public surface is identical across target frameworks.
+         - ApiMarkPackDocs ships the generated api/ tree inside the NuGet package.
+         - ApiMarkEnforceDocs fails the build on any public API member lacking an XML doc summary,
+           so the shipped reference cannot silently develop gaps. -->
+    <ApiMarkPackDocs>true</ApiMarkPackDocs>
+    <!-- PublicAndProtected also documents the protected/virtual extension points of public types. -->
+    <ApiMarkVisibility>PublicAndProtected</ApiMarkVisibility>
+    <ApiMarkEnforceDocs>Public</ApiMarkEnforceDocs>
+    <ApiMarkEnforceDocsSeverity>Error</ApiMarkEnforceDocsSeverity>
+  </PropertyGroup>
+
+  <!-- Build Tool Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.7" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.13" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
+  </ItemGroup>
+
+  <!-- Code Analysis Dependencies -->
+  <ItemGroup>
+    <!-- Analyzer packages use child-element form to configure both PrivateAssets and IncludeAssets:
+         - PrivateAssets="all" prevents these build-time analyzers from becoming transitive dependencies
+           in packages that consume this library.
+         - IncludeAssets lists all asset types (including 'analyzers' and 'buildtransitive') to ensure
+           Roslyn analyzers and MSBuild targets are fully activated during the build. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests" />
+  </ItemGroup>
+
+  <!-- Package References: only the adapter layer in the Plexus folder (namespace ...PropertyGrid.Plexus) uses Plexus types;
+       the generic layers must not depend on them. -->
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DemaConsulting.Plexus\DemaConsulting.Plexus.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\Icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

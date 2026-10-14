@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- End: a double circle around a stop square -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="32" cy="32" r="24" stroke="#F2F2F2" stroke-width="2"/>
+    <circle cx="32" cy="32" r="19" stroke="#F2F2F2" stroke-width="1.5"/>
+    <path d="M23 23 H41 V41 H23 Z" stroke="#F5DC6B" stroke-width="3"/>
+  </g>
+</svg>

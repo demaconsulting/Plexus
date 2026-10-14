@@ -6,15 +6,74 @@ input-files:
   - docs/design/title.txt
   - docs/design/introduction.md
   - docs/design/plexus.md
-  - docs/design/plexus/demo.md
+  - docs/design/plexus/geometry.md
+  - docs/design/plexus/connection-rules.md
+  - docs/design/plexus/model.md
+  - docs/design/plexus/model/diagram.md
+  - docs/design/plexus/model/page-collection.md
+  - docs/design/plexus/model/diagram-page.md
+  - docs/design/plexus/model/node.md
+  - docs/design/plexus/model/wire.md
+  - docs/design/plexus/model/annotation.md
+  - docs/design/plexus/model/group.md
+  - docs/design/plexus/history.md
+  - docs/design/plexus/history/undo-history.md
+  - docs/design/plexus/types.md
+  - docs/design/plexus/types/node-type-registry.md
+  - docs/design/plexus/types/icon-source.md
+  - docs/design/plexus/properties.md
+  - docs/design/plexus/properties/property-definition.md
+  - docs/design/plexus/properties/property-bag.md
+  - docs/design/plexus/routing.md
+  - docs/design/plexus/routing/orthogonal-router.md
+  - docs/design/plexus/routing/simple-router.md
+  - docs/design/plexus/scene.md
+  - docs/design/plexus/scene/diagram-theme.md
+  - docs/design/plexus/scene/node-layout.md
+  - docs/design/plexus/scene/text-measurement.md
+  - docs/design/plexus/scene/scene-builder.md
+  - docs/design/plexus/scene/diagram-scene.md
+  - docs/design/plexus/serialization.md
+  - docs/design/plexus/serialization/snapshot.md
+  - docs/design/plexus/serialization/plexus-clipboard.md
+  - docs/design/plexus-rendering.md
+  - docs/design/plexus-rendering/plexus-renderer.md
+  - docs/design/plexus-rendering/scene-painter.md
+  - docs/design/plexus-rendering/canvas-text-measurer.md
+  - docs/design/plexus-rendering/icon-cache.md
+  - docs/design/plexus-avalonia.md
+  - docs/design/plexus-avalonia/editor.md
+  - docs/design/plexus-avalonia/editor/diagram-editor.md
+  - docs/design/plexus-avalonia/editor/gestures.md
+  - docs/design/plexus-avalonia/editor/diagram-clipboard.md
+  - docs/design/plexus-avalonia/editor/node-type-drag-source.md
+  - docs/design/plexus-avalonia/editor/node-palette.md
+  - docs/design/plexus-avalonia/scene-painter.md
+  - docs/design/plexus-avalonia/avalonia-text-measurer.md
+  - docs/design/plexus-avalonia/plexus-icons.md
+  - docs/design/plexus-avalonia-property-grid.md
+  - docs/design/plexus-avalonia-property-grid/property-model.md
+  - docs/design/plexus-avalonia-property-grid/property-sources.md
+  - docs/design/plexus-avalonia-property-grid/edit-session.md
+  - docs/design/plexus-avalonia-property-grid/editor-registry.md
+  - docs/design/plexus-avalonia-property-grid/property-grid-control.md
+  - docs/design/plexus-avalonia-property-grid/property-editors.md
+  - docs/design/plexus-avalonia-property-grid/collection-editor-ui.md
+  - docs/design/plexus-avalonia-property-grid/property-grid-dialog.md
+  - docs/design/plexus-avalonia-property-grid/plexus-node-source.md
+  - docs/design/plexus-avalonia-property-grid/node-properties-dialog.md
   - docs/design/ots.md
+  - docs/design/ots/apimark.md
+  - docs/design/ots/avalonia.md
   - docs/design/ots/buildmark.md
+  - docs/design/ots/canvasnet.md
   - docs/design/ots/fileassert.md
   - docs/design/ots/pandoc.md
   - docs/design/ots/reqstream.md
   - docs/design/ots/reviewmark.md
   - docs/design/ots/sarifmark.md
   - docs/design/ots/sonarmark.md
+  - docs/design/ots/svg-skia.md
   - docs/design/ots/sysml2tools.md
   - docs/design/ots/versionmark.md
   - docs/design/ots/weasyprint.md

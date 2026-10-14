@@ -1,0 +1,201 @@
+---
+# Software Unit requirements for PlexusAvalonia NodePalette.
+#
+# Decomposes the PlexusAvalonia Editor subsystem requirement for the node palette into the responsibilities of the
+# control: listing the node types, drawing each exactly as the canvas draws a new node, filtering and grouping,
+# laying the items out in columns, selecting and activating, following an editor, adding a node on activation,
+# revealing and invoking items for automation, the built-in search box, starting the drag, and caching the drawn
+# scenes. Tests are the unit tests in NodePaletteTests.cs, NodePaletteEditorTests.cs, NodePaletteColumnTests.cs and
+# NodePalettePixelTests.cs, which run in the headless Avalonia platform with Skia drawing so that rendered pixels are
+# real.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: Editor Requirements
+        sections:
+          - title: NodePalette Requirements
+            requirements:
+              - id: PlexusAvalonia-Editor-NodePalette-Items
+                title: >-
+                  The palette shall show one item for every node type of a registry or of any sequence of node types,
+                  in registration order, each with its display name as accessible name and an automation identifier
+                  derived from its key by a public rule that hosts and automation tools share, shall show nothing when
+                  no types are given, and shall pick up a registry that changed when told to refresh.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; a host should only have to hand over its registry to
+                  get a complete palette that tools can find, and registries are mutable configuration.
+                tests:
+                  - NodePalette_Types_Registry_ShowsAnItemForEveryType
+                  - NodePalette_Types_PlainSequence_ShowsItems
+                  - NodePalette_Types_Null_IsEmpty
+                  - NodePalette_GetAutomationId_SanitizesKey
+                  - NodePalette_Refresh_PicksUpAddedTypes
+
+              - id: PlexusAvalonia-Editor-NodePalette-LooksLikeCanvas
+                title: >-
+                  Each item shall draw the node type exactly as a freshly added node of that type is drawn on the
+                  canvas (box, header, icon, ports, port labels, summary of default values, any custom node visual,
+                  and the display name as the name label) by the same scene builder and painter, with the same theme
+                  and zoom, and shall be sized from the node's visual extent at that zoom.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; users choose a node by what it looks like, so the
+                  palette must show what the drop will produce, and sharing the drawing code is the only way to keep
+                  the two from drifting apart.
+                tests:
+                  - NodePalette_Items_UseTheCanvasScene_WithNameSummaryPortsAndCustomVisual
+                  - NodePalette_Item_IsPixelIdenticalToTheDroppedNode
+                  - NodePalette_Zoom_ScalesItemsAndIsClamped
+
+              - id: PlexusAvalonia-Editor-NodePalette-BoxColumn
+                title: >-
+                  All items of a palette shall share one horizontal box column: the node box of every item shall be
+                  centered horizontally in the same cell width, with input labels extending to the left and output
+                  labels to the right, so that the box centers coincide whatever the labels around them; the column
+                  shall be as wide as the widest visual extent of any item, the category headers shall keep the full
+                  width, and when the labels are wider than the palette the boxes shall stay centered in that wider
+                  content (which scrolls) instead of being shifted individually.  The boxes shall also share one top
+                  line within a row.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; positioning each item from its own visual extent put
+                  the node boxes at different horizontal positions, which looked messy; one shared column makes the
+                  list calm to scan.
+                tests:
+                  - NodePalette_Items_ShareOneBoxColumn
+                  - NodePalette_Items_KeepTheSharedBoxColumnWhenContentOverflows
+                  - NodePalette_Zoom_ScalesItemsAndIsClamped
+
+              - id: PlexusAvalonia-Editor-NodePalette-Columns
+                title: >-
+                  When the palette is wide enough, it shall lay the items of each category out in several columns of
+                  equal cells, as many as fit (at least one, at most the maximum number of columns when one is set,
+                  keeping the minimum column spacing), so that node boxes line up down every column and across every
+                  row and the category headers keep the full width; it shall lay the items out again when the
+                  palette's width, the zoom, the filter, the grouping or the types change, and shall scroll
+                  horizontally only when one cell is wider than the palette.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; a host that lets the user widen the palette expects
+                  the room to show more node types at once, and a grid of aligned boxes stays as easy to scan as the
+                  single column.
+                tests:
+                  - NodePalette_Columns_FollowThePaletteWidth
+                  - NodePalette_Columns_CellsAreEqualAndInsideThePalette
+                  - NodePalette_Columns_BoxesAlignInAGrid
+                  - NodePalette_Columns_HeadersSpanTheFullWidthAndSectionsStartNewRows
+                  - NodePalette_Columns_ScrollHorizontallyOnlyWhenOneCellDoesNotFit
+                  - NodePalette_Columns_LayOutAgainOnFilterZoomAndTypes
+                  - NodePalette_Columns_MaxColumnsAndMinColumnSpacing
+                  - NodePalette_Columns_EmptyPaletteHasOneColumn
+
+              - id: PlexusAvalonia-Editor-NodePalette-FilterAndGroups
+                title: >-
+                  The palette shall narrow the list to the types whose display name, title, key or category contains
+                  the filter text ignoring case, and shall list the types under category headers in registration
+                  order with uncategorized types last, unless grouping is off or no visible type has a category.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; real vocabularies have dozens of types, which users
+                  must be able to search and browse by category.
+                tests:
+                  - NodePalette_Filter_MatchesNameTitleKeyAndCategory
+                  - NodePalette_GroupByCategory_OrdersGroupsByRegistrationWithUncategorizedLast
+                  - NodePalette_GroupByCategory_OffOrNoCategories_ShowsNoHeaders
+
+              - id: PlexusAvalonia-Editor-NodePalette-SelectAndActivate
+                title: >-
+                  Clicking an item shall select it, double-clicking it or pressing Enter on the selected item shall
+                  raise the activation event with its node type, and the arrow, Home and End keys shall move the
+                  selection (Left and Right within a row and Up and Down by a row when the items are in several
+                  columns).
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; keyboard users and hosts that add nodes by
+                  activation need the same access as drag users.
+                tests:
+                  - NodePalette_DoubleClick_RaisesNodeTypeActivated
+                  - NodePalette_Keyboard_ArrowsMoveSelectionAndEnterActivates
+                  - NodePalette_SelectedNodeType_SetByHost_HighlightsItem
+                  - NodePalette_Columns_ArrowKeysMoveByCellAndRow
+                  - NodePalette_Columns_VerticalMoveCrossesSectionsAndSingleColumnIgnoresHorizontalKeys
+                  - NodePalette_Columns_SearchBoxKeysStillWork
+
+              - id: PlexusAvalonia-Editor-NodePalette-FollowsEditor
+                title: >-
+                  A palette given an editor shall list the node types of the registry of the editor's current
+                  diagram, follow the editor when it shows another diagram (but keep its items when only the page
+                  changes), draw with the editor's effective theme including later theme changes, listen to the editor
+                  only while it is in the visual tree and catch up when it returns, and let an explicit type list or
+                  theme win.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; a document's registry and theme are replaced by New
+                  and Open, so a host should not have to feed the palette a registry and a theme of its own and keep
+                  them in step; one property connects the two controls.
+                tests:
+                  - NodePalette_Editor_TakesTypesAndThemeFromTheEditor
+                  - NodePalette_Editor_ExplicitTypesAndThemeWin
+                  - NodePalette_Editor_FollowsDiagramReplacementButNotPageSwitches
+                  - NodePalette_Editor_PicksUpChangesMadeWhileDetached
+
+              - id: PlexusAvalonia-Editor-NodePalette-ActivateAddsNode
+                title: >-
+                  Activating a node type (double-click, Enter or the Activate method) shall raise the activation event
+                  and, unless a handler marks it handled, add a node of the type at the visible center of the
+                  palette's editor, snapped, selected and as one undo entry, shifting it by a grid cell while the
+                  place is taken, and shall add nothing when there is no editor, it is read-only or it does not know
+                  the type.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; double-clicking a palette entry is the other way to
+                  add a node besides dragging, and a host should get it without code while keeping the option to
+                  take over.
+                tests:
+                  - NodePalette_Activate_WithEditor_AddsSelectedNodeAtCenterAsOneUndoEntry
+                  - NodePalette_Activate_Repeatedly_CascadesNodes
+                  - NodePalette_Activate_HandledSuppressesTheDefault
+                  - NodePalette_Activate_WithoutEditorOrWithUnusableEditor_AddsNothing
+                  - NodePalette_DoubleClickAndEnter_WithEditor_AddNodes
+
+              - id: PlexusAvalonia-Editor-NodePalette-RevealAndInvoke
+                title: >-
+                  The palette shall scroll an item into view and select a node type by type (reporting whether the
+                  type is shown), and every item shall expose the UI Automation Invoke pattern, which selects and
+                  activates the type, and bring itself into view when an automation client asks to scroll it.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; a palette of dozens of types scrolls, and tests and
+                  UI drivers must be able to reach an entry that is out of view without filtering the list down or
+                  synthesizing pointer input.
+                tests:
+                  - NodePalette_ScrollIntoViewAndSelect_RevealTheItem
+                  - NodePalette_Columns_ScrollIntoViewRevealsTheItem
+                  - NodePaletteItem_AutomationPeer_SupportsInvokeAndScrollIntoView
+
+              - id: PlexusAvalonia-Editor-NodePalette-SearchBox
+                title: >-
+                  The palette shall show a search box above its entries by default, with a documented automation
+                  identifier and prompt, that edits the filter and follows it, can be hidden, and leaves its editing
+                  keys to the box while the arrow keys and Enter still move through and activate the results.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; every host of a large vocabulary needs the same small
+                  search UI, so the control should bring it.
+                tests:
+                  - NodePalette_ShowFilter_DefaultSearchBoxFiltersBothWays
+                  - NodePalette_ShowFilter_Off_HidesTheBox
+                  - NodePalette_SearchBox_KeyboardMovesThroughResultsAndEnterActivates
+
+              - id: PlexusAvalonia-Editor-NodePalette-Drag
+                title: >-
+                  Pressing an item and moving past the drag threshold shall start the node type drag for the item's
+                  type, so that releasing it over a DiagramEditor creates the node.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; dragging onto the canvas is the purpose of the
+                  palette, and it must need no code from the host.
+                tests:
+                  - NodePalette_DragItem_PastThreshold_StartsNodeTypeDragWithTheKey
+                  - NodePalette_DragItemOntoEditor_CreatesNodeWhereGhostWas
+
+              - id: PlexusAvalonia-Editor-NodePalette-SceneCache
+                title: >-
+                  The palette shall build the scene of a node type once and reuse it while only the filter, grouping or
+                  zoom change, and shall rebuild the scenes when the types or the theme change.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; typing into a filter box must stay instant even for
+                  large vocabularies.
+                tests:
+                  - NodePalette_Scenes_AreCachedUntilTypesOrThemeChange

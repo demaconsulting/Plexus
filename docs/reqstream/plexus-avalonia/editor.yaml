@@ -1,0 +1,203 @@
+---
+# Software Subsystem requirements for PlexusAvalonia Editor.
+#
+# Decomposes the PlexusAvalonia system requirements into the responsibility of the Editor subsystem: the control,
+# its pointer gestures, the clipboard bridge and the node type drag helper working together. Tests are the
+# subsystem-level tests in EditorTests.cs; the requirements decompose further into the unit requirements below.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: Editor Requirements
+        requirements:
+          - id: PlexusAvalonia-Editor-SceneSync
+            title: >-
+              The editor shall keep what it draws, what hit testing finds and what the diagram theme and view
+              (zoom and scroll) say consistent with the shown page, rebuilding its picture when the diagram changes.
+            justification: |
+              Decomposes PlexusAvalonia-Display; painting, hit testing and gestures must all work from the same
+              current picture of the page, or users would act on elements that are not where they appear.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-Defaults
+              - PlexusAvalonia-Editor-DiagramEditor-ViewTransform
+              - PlexusAvalonia-Editor-DiagramEditor-SceneRefresh
+              - PlexusAvalonia-Editor-DiagramEditor-Painting
+              - PlexusAvalonia-Editor-DiagramEditor-SelectionHygiene
+              - PlexusAvalonia-Editor-DiagramEditor-PageFollow
+              - PlexusAvalonia-Editor-DiagramClipboard-TextFormatting
+            tests:
+              - Editor_SceneSync_ModelThemeAndViewChanges_KeepSceneAndHitTestingConsistent
+
+          - id: PlexusAvalonia-Editor-PointerEditing
+            title: >-
+              The editor shall turn pointer input on the shown page into selection, move, duplicate, connect, wire
+              segment, annotation resize, group toggle and view navigation actions through its gestures, each drag
+              recorded as one undo step and view navigation recording none.
+            justification: |
+              Decomposes PlexusAvalonia-Selection, -Move, -Connect, -WireReshape, -Annotation, -GroupToggle and
+              -Navigation; the control routes each press to the right gesture and the gestures edit the model.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-Selection
+              - PlexusAvalonia-Editor-DiagramEditor-RubberBand
+              - PlexusAvalonia-Editor-DiagramEditor-DragMove
+              - PlexusAvalonia-Editor-DiagramEditor-CtrlDrag
+              - PlexusAvalonia-Editor-DiagramEditor-Connect
+              - PlexusAvalonia-Editor-DiagramEditor-WireSegment
+              - PlexusAvalonia-Editor-DiagramEditor-AnnotationResize
+              - PlexusAvalonia-Editor-DiagramEditor-GroupToggle
+              - PlexusAvalonia-Editor-DiagramEditor-Navigation
+              - PlexusAvalonia-Editor-Gestures-Move
+              - PlexusAvalonia-Editor-Gestures-Duplicate
+              - PlexusAvalonia-Editor-Gestures-DeferredSelection
+              - PlexusAvalonia-Editor-Gestures-Connect
+              - PlexusAvalonia-Editor-Gestures-ConnectValidation
+              - PlexusAvalonia-Editor-Gestures-Resize
+              - PlexusAvalonia-Editor-Gestures-ResizeMinimum
+              - PlexusAvalonia-Editor-Gestures-WireSegmentLimits
+              - PlexusAvalonia-Editor-Gestures-WireSegmentMove
+              - PlexusAvalonia-Editor-Gestures-Pan
+              - PlexusAvalonia-Editor-Gestures-RubberBand
+              - PlexusAvalonia-Editor-Gestures-RubberBandAdditive
+              - PlexusAvalonia-Editor-Gestures-RubberBandGroups
+              - PlexusAvalonia-Editor-Gestures-RubberBandNoHistory
+            tests:
+              - Editor_PointerEditing_SelectMoveConnectResizeBandAndPan_EditModelWithOneUndoStepEach
+
+          - id: PlexusAvalonia-Editor-WireEditing
+            title: >-
+              The editor shall let the user reshape a selected wire through its bend handles, port stubs and
+              double-click jogs and re-attach its ends by dragging the end handles, through its gestures and
+              hit testing, each edit recorded as one undo step and each rejected drop recording none.
+            justification: |
+              Decomposes PlexusAvalonia-WireEditing; the control routes presses on wire handles and segments to
+              the wire gestures, which edit the model through the wire API.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-WireHandles
+              - PlexusAvalonia-Editor-DiagramEditor-WireBend
+              - PlexusAvalonia-Editor-DiagramEditor-WireJog
+              - PlexusAvalonia-Editor-DiagramEditor-WireEnds
+              - PlexusAvalonia-Editor-Gestures-WireBend
+              - PlexusAvalonia-Editor-Gestures-WireEndReconnect
+            tests:
+              - PlexusAvalonia_WireEditing_BendStubJogAndEndpoint_AreSingleUndoEntries
+
+          - id: PlexusAvalonia-Editor-GestureCancellation
+            title: >-
+              The editor shall abandon a drag in progress when Escape, Undo, Redo or a page change occurs, restoring
+              the diagram and leaving the history unchanged.
+            justification: |
+              Decomposes PlexusAvalonia-GestureCancellation; the control and the gestures together must guarantee
+              that a half-made change never reaches the history.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-GestureCancel
+              - PlexusAvalonia-Editor-DiagramEditor-History
+              - PlexusAvalonia-Editor-Gestures-MoveCancel
+              - PlexusAvalonia-Editor-Gestures-ConnectCancel
+              - PlexusAvalonia-Editor-Gestures-ResizeCancel
+              - PlexusAvalonia-Editor-Gestures-WireSegmentCancel
+            tests:
+              - Editor_GestureInFlight_EscapeUndoRedoAndPageChange_CancelWithoutHistory
+
+          - id: PlexusAvalonia-Editor-InlineEditing
+            title: >-
+              The editor shall offer one inline editor at a time, for a node name or an annotation text, that
+              commits or cancels through shared commands, with name rejections reported to the user.
+            justification: |
+              Decomposes PlexusAvalonia-Rename and the text editing part of PlexusAvalonia-Annotation; both inline
+              editors must behave alike so that commit, cancel and outside clicks are predictable.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-Rename
+              - PlexusAvalonia-Editor-DiagramEditor-AnnotationEdit
+              - PlexusAvalonia-Editor-DiagramEditor-EditLifecycle
+            tests:
+              - Editor_InlineEditing_RenameAndAnnotation_CommitOrCancel
+
+          - id: PlexusAvalonia-Editor-Clipboard
+            title: >-
+              The editor shall copy, cut and paste through a clipboard that carries the Plexus format with a text
+              fallback, and shall report clipboard failures to the host through events.
+            justification: |
+              Decomposes PlexusAvalonia-Clipboard; the control (commands, events) and the clipboard bridge (formats)
+              together deliver the workflow.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-Clipboard
+              - PlexusAvalonia-Editor-DiagramEditor-ClipboardFailures
+              - PlexusAvalonia-Editor-DiagramClipboard-WriteBothFormats
+              - PlexusAvalonia-Editor-DiagramClipboard-ReadPrefersPlexusFormat
+              - PlexusAvalonia-Editor-DiagramClipboard-TextFallback
+              - PlexusAvalonia-Editor-DiagramClipboard-EmptyClipboard
+            tests:
+              - Editor_Clipboard_CopyCutPasteAndFailures_GoThroughBridgeAndRaiseEvents
+
+          - id: PlexusAvalonia-Editor-NodeDrop
+            title: >-
+              The editor shall create a node for a dropped node type payload and shall provide a helper that makes a
+              control start such drags.
+            justification: |
+              Decomposes PlexusAvalonia-NodeDrop; the drag source helper and the drop target must agree on the
+              payload.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-NodeDrop
+              - PlexusAvalonia-Editor-NodeTypeDragSource-StartsDrag
+              - PlexusAvalonia-Editor-NodeTypeDragSource-Abandon
+              - PlexusAvalonia-Editor-NodeTypeDragSource-LeftButtonOnly
+              - PlexusAvalonia-Editor-NodeTypeDragSource-Dispose
+              - PlexusAvalonia-Editor-NodeTypeDragSource-PlatformFailure
+            tests:
+              - Editor_NodeDrop_PayloadDroppedOnEditor_CreatesSelectedNodeAndIgnoresUnknownTypes
+
+          - id: PlexusAvalonia-Editor-NodePalette
+            title: >-
+              The editor subsystem shall provide a node palette whose items look exactly like freshly added nodes on
+              the canvas, that can be filtered, grouped, selected, activated and dragged onto the editor, and the editor
+              shall show a ghost of the dragged node at the snapped drop position so that the node lands exactly where
+              the ghost was.
+            justification: |
+              Decomposes PlexusAvalonia-NodePalette; the palette, the drag payload and the drop target must agree on
+              what is created and where, and the user sees the result before releasing.
+            children:
+              - PlexusAvalonia-Editor-NodePalette-Items
+              - PlexusAvalonia-Editor-NodePalette-LooksLikeCanvas
+              - PlexusAvalonia-Editor-NodePalette-BoxColumn
+              - PlexusAvalonia-Editor-NodePalette-Columns
+              - PlexusAvalonia-Editor-NodePalette-FilterAndGroups
+              - PlexusAvalonia-Editor-NodePalette-SelectAndActivate
+              - PlexusAvalonia-Editor-NodePalette-FollowsEditor
+              - PlexusAvalonia-Editor-NodePalette-ActivateAddsNode
+              - PlexusAvalonia-Editor-NodePalette-RevealAndInvoke
+              - PlexusAvalonia-Editor-NodePalette-SearchBox
+              - PlexusAvalonia-Editor-DiagramEditor-AddNodeAtCenter
+              - PlexusAvalonia-Editor-DiagramEditor-SelectionCommands
+              - PlexusAvalonia-Editor-DiagramEditor-ViewCommands
+              - PlexusAvalonia-Editor-NodePalette-Drag
+              - PlexusAvalonia-Editor-NodePalette-SceneCache
+              - PlexusAvalonia-Editor-DiagramEditor-DropGhost
+            tests:
+              - Editor_NodePalette_DragItemOverEditor_ShowsGhostAndDropsNodeWhereGhostWas
+
+          - id: PlexusAvalonia-Editor-HostIntegration
+            title: >-
+              The editor shall raise events for node double-clicks and context requests, and shall refuse every
+              editing action while read-only.
+            justification: |
+              Decomposes PlexusAvalonia-HostEvents and PlexusAvalonia-ReadOnly; the host drives dialogs, menus and
+              the editing policy through this surface.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-HostEvents
+              - PlexusAvalonia-Editor-DiagramEditor-ReadOnly
+            tests:
+              - Editor_HostIntegration_EventsAndReadOnly_AreRaisedAndRespected
+
+          - id: PlexusAvalonia-Editor-Keyboard
+            title: >-
+              The editor shall run delete, undo, redo, select-all, duplicate and rename from keyboard shortcuts,
+              except while an inline editor is open, which owns the keyboard.
+            justification: |
+              Decomposes PlexusAvalonia-Keyboard and the select-all part of PlexusAvalonia-Selection; typing into an
+              inline editor must never trigger diagram commands.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-Keyboard
+              - PlexusAvalonia-Editor-DiagramEditor-Delete
+              - PlexusAvalonia-Editor-DiagramEditor-Duplicate
+            tests:
+              - Editor_Keyboard_Shortcuts_RunCommandsUnlessInlineEditorIsOpen

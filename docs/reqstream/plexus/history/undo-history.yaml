@@ -1,0 +1,164 @@
+---
+# Software Unit requirements for Plexus UndoHistory.
+#
+# UndoHistory owns the undo and redo stacks of one diagram together with transactions, mergeable commands,
+# suspension, dirty tracking and capacity. Evidence comes from the UndoHistory unit tests, which use the history
+# on its own with simple in-memory commands.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: History Requirements
+        sections:
+          - title: UndoHistory Requirements
+            requirements:
+              - id: Plexus-History-UndoHistory-Execute
+                title: >-
+                  UndoHistory shall apply an executed command and record it as one undo entry with its description,
+                  shall not record a command whose application fails, and shall reject missing arguments.
+                justification: |
+                  Execution is the only way a change reaches the history. Applying before recording guarantees that
+                  the stacks never contain a change that did not happen.
+                tests:
+                  - UndoHistory_Execute_LambdaCommand_AppliesAndRecords
+                  - UndoHistory_Execute_DoThrows_NothingRecorded
+                  - UndoHistory_Execute_NullArguments_ThrowArgumentNullException
+
+              - id: Plexus-History-UndoHistory-UndoRedo
+                title: >-
+                  UndoHistory shall undo the most recent entry and redo the most recently undone entry, report
+                  whether each is possible and its description, return false when there is nothing to do, and
+                  discard the redo entries when a new command is executed.
+                justification: |
+                  Undo and redo are the primary user-facing operations; menus need the availability and descriptions,
+                  and a new edit after an undo must start a new history branch.
+                tests:
+                  - UndoHistory_UndoRedo_RoundTripsState
+                  - UndoHistory_UndoRedo_EmptyStacks_ReturnFalse
+                  - UndoHistory_Execute_AfterUndo_ClearsRedo
+
+              - id: Plexus-History-UndoHistory-Transactions
+                title: >-
+                  UndoHistory shall record the commands executed inside a transaction as a single entry that carries
+                  the description of the outermost transaction, shall flatten nested transactions, and shall record
+                  nothing for an empty transaction.
+                justification: |
+                  A gesture made of several primitive changes must undo and redo as one step, regardless of how the
+                  operations that produced it were nested.
+                tests:
+                  - UndoHistory_Transaction_Commit_CreatesSingleEntry
+                  - UndoHistory_Transaction_Empty_RecordsNothing
+                  - UndoHistory_Transaction_Nested_FlattensIntoOuterEntry
+
+              - id: Plexus-History-UndoHistory-Rollback
+                title: >-
+                  UndoHistory shall revert and discard only the commands recorded since a transaction began when that
+                  transaction is rolled back, leaving the commands of enclosing transactions intact.
+                justification: |
+                  Abandoning a gesture or a failed multi-step operation must restore the model exactly without
+                  disturbing the work of an enclosing operation.
+                tests:
+                  - UndoHistory_Transaction_Rollback_RevertsAndRecordsNothing
+                  - UndoHistory_Transaction_InnerRollback_KeepsOuterCommands
+                  - UndoHistory_Transaction_InnerRollback_DoesNotMergeIntoOuterCommand
+
+              - id: Plexus-History-UndoHistory-Merging
+                title: >-
+                  UndoHistory shall merge a mergeable command into the preceding command of the same transaction
+                  when the preceding command accepts it, and shall not merge commands executed outside a
+                  transaction.
+                justification: |
+                  A drag or slider produces many small commands; merging keeps one compact entry per gesture, while
+                  independent edits outside a transaction must stay individually undoable.
+                tests:
+                  - UndoHistory_Transaction_MergeableCommands_MergeIntoOne
+                  - UndoHistory_Execute_MergeableOutsideTransaction_DoesNotMerge
+
+              - id: Plexus-History-UndoHistory-Guards
+                title: >-
+                  UndoHistory shall reject undo, redo and clear while a transaction is open, shall reject recording
+                  while an undo or redo is running, shall reject transactions completed out of order or twice, and
+                  shall keep an entry on the undo stack when its undo fails.
+                justification: |
+                  Misuse such as re-entrant recording or out-of-order completion would silently corrupt the stacks, so
+                  it must fail loudly while leaving the history in a usable state.
+                tests:
+                  - UndoHistory_Transaction_DisposedOutOfOrder_ThrowsInvalidOperationException
+                  - UndoHistory_Transaction_CompletedTwice_RollbackThrowsDisposeIgnored
+                  - UndoHistory_UndoRedoClear_InsideTransaction_ThrowInvalidOperationException
+                  - UndoHistory_Execute_DuringUndo_ThrowsInvalidOperationException
+                  - UndoHistory_Undo_UndoThrows_EntryStaysOnUndoStack
+
+              - id: Plexus-History-UndoHistory-Suspend
+                title: >-
+                  UndoHistory shall apply changes made while suspended without recording them, shall resume
+                  recording only when the outermost suspension scope ends, and at that point shall discard the undo
+                  and redo entries and restore the dirty state it had when the suspension began.
+                justification: |
+                  Document loading changes the model behind the history's back; the old entries are then meaningless,
+                  and the dirty state must not claim a loaded document is modified.
+                tests:
+                  - UndoHistory_Suspend_ChangesAppliedButNotRecorded
+                  - UndoHistory_Suspend_Nested_ResumesAfterLastScope
+                  - UndoHistory_Suspend_CleanHistory_StaysClean
+                  - UndoHistory_Suspend_DirtyHistory_StaysDirtyAndClearsStacks
+                  - UndoHistory_Suspend_Nested_OnlyOutermostScopeClearsHistory
+
+              - id: Plexus-History-UndoHistory-DirtyTracking
+                title: >-
+                  UndoHistory shall report the history as dirty when its position differs from the position marked
+                  clean (initially the start), shall report it clean again after returning to that position, and
+                  shall report it dirty when the clean position has become unreachable.
+                justification: |
+                  The modified indicator must be accurate: undoing back to the saved state is clean, while diverging
+                  from it or losing it to the capacity limit is not.
+                tests:
+                  - UndoHistory_IsDirty_TracksCleanPointThroughUndoRedo
+                  - UndoHistory_IsDirty_NewCommandAfterUndoPastCleanPoint_StaysDirty
+                  - UndoHistory_IsDirty_CleanPointTrimmedByCapacity_StaysDirty
+
+              - id: Plexus-History-UndoHistory-Clear
+                title: UndoHistory shall discard all undo and redo entries and mark the history clean when cleared.
+                justification: |
+                  Hosts reset the history when a new document is created or opened.
+                tests:
+                  - UndoHistory_Clear_EmptiesStacksAndMarksClean
+
+              - id: Plexus-History-UndoHistory-Capacity
+                title: >-
+                  UndoHistory shall keep at most the configured number of undo entries (1000 by default), dropping
+                  the oldest first, shall apply a reduced capacity immediately, and shall reject a capacity below
+                  one.
+                justification: |
+                  Bounded memory use in long sessions, with immediate effect so that a lowered limit releases memory.
+                tests:
+                  - UndoHistory_Capacity_Exceeded_DropsOldestEntries
+                  - UndoHistory_Capacity_Lowered_TrimsAndValidates
+
+              - id: Plexus-History-UndoHistory-Changed
+                title: >-
+                  UndoHistory shall raise its change event after execute, undo, redo, mark clean, clear, the end of a
+                  suspension and a capacity trim.
+                justification: |
+                  Host UI elements bound to the availability of undo and redo and to the dirty flag refresh from this
+                  single notification.
+                tests:
+                  - UndoHistory_Changed_RaisedForStateChanges
+                  - UndoHistory_Suspend_Disposed_RaisesChanged
+                  - UndoHistory_Capacity_Lowered_RaisesChanged
+
+              - id: Plexus-History-UndoHistory-Transact
+                title: >-
+                  UndoHistory shall run an action or function as one undo entry that commits when it returns and,
+                  when it throws, rolls back everything it did and rethrows the original exception, shall return the
+                  result of a function, flatten nested calls, record nothing for an action that changes nothing, and
+                  reject missing arguments.
+                justification: |
+                  The correct transaction-with-rollback pattern is easy to get wrong; hosts apply multi-step edits
+                  such as a properties dialog through one call that cannot leave a half edit in the history.
+                tests:
+                  - UndoHistory_Transact_Success_RecordsOneEntry
+                  - UndoHistory_Transact_Throws_RollsBackAndRethrows
+                  - UndoHistory_TransactOfT_ReturnsResultAndRollsBackOnFailure
+                  - UndoHistory_Transact_Nested_FlattensIntoOuterEntry
+                  - UndoHistory_Transact_EmptyAndNullArguments

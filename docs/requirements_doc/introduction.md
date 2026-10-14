@@ -4,20 +4,21 @@ This document contains the requirements for the Plexus project.
 
 ## Purpose
 
-Plexus is a reference implementation demonstrating best practices for DEMA Consulting
-.NET libraries. It provides a standardized approach to library design, self-validation,
-and comprehensive documentation generation.
+Plexus is a general-purpose .NET library for building and editing node-based block diagrams. It ships a
+UI-free core (`DemaConsulting.Plexus`), a headless PNG renderer (`DemaConsulting.Plexus.Rendering`) and an
+Avalonia editor control (`DemaConsulting.Plexus.Avalonia`). The requirements are organized by software system
+(Plexus, PlexusRendering and PlexusAvalonia), subsystem and unit, and are traced to automated tests.
 
 ## Scope
 
 This requirements document covers:
 
-- Library API and functionality
-- Self-validation framework
-- Test result output formats
-- Multi-platform support
-- Documentation generation
-- CI/CD integration
+- The Plexus core system: document model, undo history, node types, properties, routing, scene graph and
+  clipboard serialization
+- The PlexusRendering system: headless PNG rendering
+- The PlexusAvalonia system: the interactive Avalonia editor control
+- Multi-platform and multi-runtime support
+- Off-the-shelf (OTS) software items used by the libraries and by the build and compliance pipeline
 
 ## Audience
 

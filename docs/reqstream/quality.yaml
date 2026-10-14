@@ -94,6 +94,22 @@ sections:
           - Plexus-OTS-ReqStream-Lint
           - Plexus-OTS-FileAssert
 
+      - id: Quality-ApiDocumentation
+        title: >-
+          The repository shall rely on ApiMark to generate and ship the Markdown API reference
+          of each package.
+        tags: [quality]
+        justification: |
+          The API reference shipped inside each NuGet package (and its completeness, namespace
+          overviews and usage examples) depends on ApiMark's generation, example-rendering and
+          documentation-coverage capabilities. This grouping requirement links those OTS
+          requirements to the quality root so they participate in orphan detection without
+          being falsely reported as disconnected from library functionality.
+        children:
+          - Plexus-OTS-ApiMark-Generate
+          - Plexus-OTS-ApiMark-RenderExamples
+          - Plexus-OTS-ApiMark-EnforceDocs
+
       - id: Quality-SoftwareStructureModeling
         title: The repository shall rely on SysML2Tools to lint and render software-structure models.
         tags: [quality]

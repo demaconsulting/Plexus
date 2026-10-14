@@ -1,0 +1,312 @@
+---
+# PlexusAvalonia system requirements.
+#
+# Observable behavior of the DemaConsulting.Plexus.Avalonia package: an Avalonia editor control that shows one
+# diagram page at a time and lets the user edit it with pointer and keyboard. Verified by the system-level tests in
+# PlexusAvaloniaTests.cs. Each requirement is decomposed downward into subsystem and unit requirements and into the
+# Avalonia and Svg.Controls.Skia.Avalonia OTS requirements it relies on (children link downward only).
+
+sections:
+  - title: PlexusAvalonia Requirements
+    requirements:
+      - id: PlexusAvalonia-Display
+        title: >-
+          The editor shall show the nodes, wires, annotations, groups and background grid of one diagram page, drawn
+          with the diagram theme, and shall update the picture when the diagram changes.
+        justification: |
+          The control is the user's window onto the diagram. It must be a faithful, current depiction of the model
+          even when other code (scripts, other views, undo) changes the diagram.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-SceneSync
+          - PlexusAvalonia-ScenePainter-Primitives
+          - PlexusAvalonia-ScenePainter-Grid
+          - PlexusAvalonia-ScenePainter-VisibleAreaOnly
+          - PlexusAvalonia-ScenePainter-Caches
+          - PlexusAvalonia-ScenePainter-Conversions
+          - Plexus-OTS-Avalonia-Render
+        tests:
+          - PlexusAvalonia_Display_ConnectedPage_ShowsSceneAndFollowsModelChanges
+
+      - id: PlexusAvalonia-Selection
+        title: >-
+          The user shall be able to select elements by clicking them, by Shift- or Ctrl-clicking to add or toggle,
+          by dragging a rubber band over the empty canvas, and by selecting everything, without recording history.
+        justification: |
+          Selection is the basis of every editing command. It is view state, so choosing elements must never
+          create undo entries or change the diagram.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-PointerEditing
+          - PlexusAvalonia-Editor-Keyboard
+        tests:
+          - PlexusAvalonia_Selection_ClickBandAndSelectAll_SelectElements
+
+      - id: PlexusAvalonia-Move
+        title: >-
+          Dragging a selected element shall move the whole selection live, snapped to the grid, as a single undo
+          entry, and Ctrl-dragging shall duplicate the selection and move the copies.
+        justification: |
+          Moving and copying elements is the most frequent edit. A whole drag must undo in one step, and snapping
+          keeps diagrams tidy.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-PointerEditing
+        tests:
+          - PlexusAvalonia_DragMove_SnapsAndRecordsOneUndoEntry
+          - PlexusAvalonia_CtrlDrag_DuplicatesSelection
+
+      - id: PlexusAvalonia-Connect
+        title: >-
+          Dragging from a port to another port shall connect them with a wire when the connection rules allow it,
+          from either end, and shall make no connection when the rules reject it or the pointer is released on the
+          empty canvas.
+        justification: |
+          Wiring nodes together is the purpose of a node diagram, and users must not be able to create connections
+          that the host's rules forbid.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-PointerEditing
+        tests:
+          - PlexusAvalonia_PortDrag_CompatibleAndIncompatiblePorts_ConnectsOnlyWhenAllowed
+
+      - id: PlexusAvalonia-WireReshape
+        title: >-
+          Dragging an interior segment of a wire shall move that segment perpendicular to itself, keeping the wire
+          orthogonal and attached to its ports, as a single undo entry.
+        justification: |
+          Automatic routing is not always what the user wants; reshaping a wire by hand must stay tidy and be
+          undoable.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-PointerEditing
+        tests:
+          - PlexusAvalonia_WireSegmentDrag_MovesInteriorSegmentWithOneUndoEntry
+
+      - id: PlexusAvalonia-WireEditing
+        title: >-
+          The user shall be able to drag the bend handles of a selected wire, pull a port stub or double-click a
+          segment to add a jog, and drag an end handle onto another port to reconnect the wire (checked against the
+          connection rules, with feedback), each as a single undo entry that keeps the wire orthogonal.
+        justification: |
+          Automatic routing and wiring are only the starting point; users must be able to tidy a wire and move its
+          ends without deleting and redrawing it, and every such edit must be easy to undo.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-WireEditing
+        tests:
+          - PlexusAvalonia_WireEditing_BendStubJogAndEndpoint_AreSingleUndoEntries
+
+      - id: PlexusAvalonia-Annotation
+        title: >-
+          The user shall be able to resize an annotation by dragging its corner handle and to edit its text in place,
+          each as a single undo entry.
+        justification: |
+          Annotations carry free text on the diagram; users need to size them and edit them without leaving the
+          canvas.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-PointerEditing
+          - PlexusAvalonia-Editor-InlineEditing
+        tests:
+          - PlexusAvalonia_Annotation_ResizeAndInlineEdit_AreUndoable
+
+      - id: PlexusAvalonia-GroupToggle
+        title: >-
+          Clicking the toggle of a group shall collapse an expanded group and expand a collapsed one, as an undoable
+          change.
+        justification: |
+          Collapsing groups lets users hide detail in large diagrams.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-PointerEditing
+        tests:
+          - PlexusAvalonia_GroupToggle_CollapsesAndExpandsUndoably
+
+      - id: PlexusAvalonia-Navigation
+        title: >-
+          The user shall be able to zoom around the pointer, scroll, and pan the view with the mouse wheel, the
+          middle button or Space plus a drag, and to fit the whole diagram into view, without changing the diagram.
+        justification: |
+          Diagrams are larger than the screen. Navigation is view state and must never edit or dirty the model.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-PointerEditing
+          - Plexus-OTS-Avalonia-Input
+        tests:
+          - PlexusAvalonia_PanAndZoom_ChangeViewWithoutEditingModel
+
+      - id: PlexusAvalonia-Keyboard
+        title: >-
+          The editor shall provide the shortcuts Delete, Ctrl+Z, Ctrl+Y or Ctrl+Shift+Z, Ctrl+A, Ctrl+D and F2 for
+          delete, undo, redo, select all, duplicate and rename.
+        justification: |
+          Keyboard shortcuts are the expected way to run frequent commands quickly and are required for accessible
+          use.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-Keyboard
+          - Plexus-OTS-Avalonia-Input
+        tests:
+          - PlexusAvalonia_KeyboardShortcuts_DeleteUndoRedoSelectAllAndDuplicate
+
+      - id: PlexusAvalonia-GestureCancellation
+        title: >-
+          Escape, Undo and Redo pressed while a drag is in progress shall only cancel that drag, restoring the
+          diagram and leaving the history unchanged; the next Undo shall then revert the previous completed entry.
+        justification: |
+          A user who changes their mind mid-drag expects the half-made change to vanish. Undoing the previous,
+          unrelated edit instead would silently destroy work.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-GestureCancellation
+        tests:
+          - PlexusAvalonia_Undo_DuringDrag_CancelsOnlyTheGesture
+
+      - id: PlexusAvalonia-Rename
+        title: >-
+          Double-clicking a node's name or pressing F2 shall open an inline editor for the name; the new name shall
+          be checked by the diagram's rename rules, rejected names shall stay open with the reason shown, and an
+          accepted rename shall be a single undo entry.
+        justification: |
+          Names identify nodes in the model and may have to be unique or follow host rules; the user needs immediate
+          feedback on why a name is refused.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-InlineEditing
+        tests:
+          - PlexusAvalonia_Rename_DuplicateThenValidName_RejectsThenCommits
+
+      - id: PlexusAvalonia-Clipboard
+        title: >-
+          Copy, cut and paste shall transfer the selected elements (with the wires between them) through the
+          operating-system clipboard in a Plexus-specific format with a plain-text fallback, and clipboard problems
+          shall be reported to the host as events instead of exceptions.
+        justification: |
+          Copying between diagrams and application instances is a core workflow. Clipboard content is untrusted and
+          the operating-system clipboard can fail, which must never crash the host application.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-Clipboard
+          - Plexus-OTS-Avalonia-Clipboard
+        tests:
+          - PlexusAvalonia_Clipboard_SystemClipboard_CarriesPlexusFormatAndTextFallback
+          - PlexusAvalonia_Clipboard_Failures_RaiseHostEvents
+
+      - id: PlexusAvalonia-NodeDrop
+        title: >-
+          Dropping a node type identifier onto the editor shall add a node of that type centered at the drop point,
+          selected, as a single undo entry, and hosts shall be able to make any control a source of such drags.
+        justification: |
+          Hosts offer a palette of node types; dragging from the palette onto the canvas is the natural way to add
+          nodes.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-NodeDrop
+        tests:
+          - PlexusAvalonia_DropNodeType_OntoEditor_CreatesNode
+
+      - id: PlexusAvalonia-NodePalette
+        title: >-
+          The library shall provide a node palette control that lists the node types of a registry or, when given an
+          editor, of the editor's current diagram, each drawn exactly as a new node of that type looks on the canvas,
+          with a built-in search box, that hosts can group by category and bind to the editor's zoom and theme, and
+          whose items can be dragged onto the editor (which previews the drop with a ghost) or activated, which adds
+          the node at the editor's center without host code.
+        justification: |
+          Hosts need a palette of nodes to drag onto the canvas; it should work from the registry or the editor alone
+          and must show what the user will get.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-NodePalette
+        tests:
+          - PlexusAvalonia_NodePalette_ItemsLookLikeCanvasNodes_AndActivate
+
+      - id: PlexusAvalonia-HostEvents
+        title: >-
+          The editor shall tell the host when a node is double-clicked and when a context menu is requested on an
+          element or on the empty canvas, without showing any dialog or menu itself.
+        justification: |
+          The host application owns dialogs and menus; it needs to know what the user pointed at.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-HostIntegration
+        tests:
+          - PlexusAvalonia_HostEvents_DoubleClickAndContextRequest_AreRaised
+
+      - id: PlexusAvalonia-ReadOnly
+        title: >-
+          A read-only editor shall still allow selecting, panning, zooming and copying, but shall not move, connect,
+          delete, paste, rename, resize or collapse anything.
+        justification: |
+          Hosts show diagrams that must not be changed (review mode, running systems) while still letting users
+          inspect them.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-HostIntegration
+        tests:
+          - PlexusAvalonia_ReadOnly_DragAndDelete_LeaveDiagramUnchanged
+
+      - id: PlexusAvalonia-Icons
+        title: >-
+          Node icons supplied as SVG text shall be drawn on their nodes, and a malformed icon shall only be left out
+          without preventing the rest of the diagram from being displayed.
+        justification: |
+          Icons help users recognize node types. Icons come from the host, so a broken one must not take the whole
+          display down.
+        tags: [system]
+        children:
+          - PlexusAvalonia-PlexusIcons-Convert
+          - PlexusAvalonia-PlexusIcons-Cache
+          - PlexusAvalonia-PlexusIcons-Malformed
+          - PlexusAvalonia-PlexusIcons-NullArgument
+          - PlexusAvalonia-ScenePainter-Icons
+          - Plexus-OTS-SvgSkia-Render
+          - Plexus-OTS-SvgSkia-Malformed
+        tests:
+          - PlexusAvalonia_Icons_ValidAndMalformedSvg_DisplayWithoutFailure
+
+      - id: PlexusAvalonia-StyledNodes
+        title: >-
+          The editor shall draw nodes with the fill, border, halo, opacity and icon tint of the diagram's node
+          styler exactly as the headless renderer does, shall repaint when the styler is assigned or the diagram's
+          appearance is refreshed, and shall leave node palette prototypes in the node type's default look.
+        justification: |
+          A styled node (a lit lamp, a tank holding a fluid) must look the same on screen as in exported pictures,
+          must follow host state without an edit, and the palette must keep showing what a freshly dropped node looks
+          like by default.
+        tags: [system]
+        children:
+          - PlexusAvalonia-ScenePainter-IconTint
+        tests:
+          - StyledNode_PaintsTheSameInTheEditorAndThePng
+          - Editor_NodeStyler_AssignAndRefresh_RepaintsAndPaletteStaysDefault
+      - id: PlexusAvalonia-TextLayout
+        title: >-
+          The editor shall size and place node text using the font metrics of the platform the diagram is displayed
+          on, so that the laid-out text matches what is drawn.
+        justification: |
+          Node boxes and labels are sized from measured text. Measuring with the same fonts that draw the text keeps
+          labels inside their boxes on every platform.
+        tags: [system]
+        children:
+          - PlexusAvalonia-AvaloniaTextMeasurer-Monotonic
+          - PlexusAvalonia-AvaloniaTextMeasurer-StyleDependence
+          - PlexusAvalonia-AvaloniaTextMeasurer-EmptyText
+          - PlexusAvalonia-AvaloniaTextMeasurer-NullArguments
+          - Plexus-OTS-Avalonia-Text
+        tests:
+          - PlexusAvalonia_Layout_LongerNodeName_WidensNameLabel
+
+      - id: PlexusAvalonia-HeadlessOperation
+        title: >-
+          The editor shall work in a window that has no display, laying out to the window size and rendering frames,
+          so that applications embedding it can be tested automatically.
+        justification: |
+          Applications that embed the editor are tested in build pipelines without a screen; the control must not
+          depend on one.
+        tags: [system]
+        children:
+          - Plexus-OTS-Avalonia-Headless
+        tests:
+          - PlexusAvalonia_Headless_HostedEditor_LaysOutAndRendersFrame

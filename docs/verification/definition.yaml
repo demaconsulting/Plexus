@@ -6,15 +6,74 @@ input-files:
   - docs/verification/title.txt
   - docs/verification/introduction.md
   - docs/verification/plexus.md
-  - docs/verification/plexus/demo.md
+  - docs/verification/plexus/geometry.md
+  - docs/verification/plexus/connection-rules.md
+  - docs/verification/plexus/model.md
+  - docs/verification/plexus/model/diagram.md
+  - docs/verification/plexus/model/page-collection.md
+  - docs/verification/plexus/model/diagram-page.md
+  - docs/verification/plexus/model/node.md
+  - docs/verification/plexus/model/wire.md
+  - docs/verification/plexus/model/annotation.md
+  - docs/verification/plexus/model/group.md
+  - docs/verification/plexus/history.md
+  - docs/verification/plexus/history/undo-history.md
+  - docs/verification/plexus/types.md
+  - docs/verification/plexus/types/node-type-registry.md
+  - docs/verification/plexus/types/icon-source.md
+  - docs/verification/plexus/properties.md
+  - docs/verification/plexus/properties/property-definition.md
+  - docs/verification/plexus/properties/property-bag.md
+  - docs/verification/plexus/routing.md
+  - docs/verification/plexus/routing/orthogonal-router.md
+  - docs/verification/plexus/routing/simple-router.md
+  - docs/verification/plexus/scene.md
+  - docs/verification/plexus/scene/diagram-theme.md
+  - docs/verification/plexus/scene/node-layout.md
+  - docs/verification/plexus/scene/text-measurement.md
+  - docs/verification/plexus/scene/scene-builder.md
+  - docs/verification/plexus/scene/diagram-scene.md
+  - docs/verification/plexus/serialization.md
+  - docs/verification/plexus/serialization/snapshot.md
+  - docs/verification/plexus/serialization/plexus-clipboard.md
+  - docs/verification/plexus-rendering.md
+  - docs/verification/plexus-rendering/plexus-renderer.md
+  - docs/verification/plexus-rendering/scene-painter.md
+  - docs/verification/plexus-rendering/canvas-text-measurer.md
+  - docs/verification/plexus-rendering/icon-cache.md
+  - docs/verification/plexus-avalonia.md
+  - docs/verification/plexus-avalonia/editor.md
+  - docs/verification/plexus-avalonia/editor/diagram-editor.md
+  - docs/verification/plexus-avalonia/editor/gestures.md
+  - docs/verification/plexus-avalonia/editor/diagram-clipboard.md
+  - docs/verification/plexus-avalonia/editor/node-type-drag-source.md
+  - docs/verification/plexus-avalonia/editor/node-palette.md
+  - docs/verification/plexus-avalonia/scene-painter.md
+  - docs/verification/plexus-avalonia/avalonia-text-measurer.md
+  - docs/verification/plexus-avalonia/plexus-icons.md
+  - docs/verification/plexus-avalonia-property-grid.md
+  - docs/verification/plexus-avalonia-property-grid/property-model.md
+  - docs/verification/plexus-avalonia-property-grid/property-sources.md
+  - docs/verification/plexus-avalonia-property-grid/edit-session.md
+  - docs/verification/plexus-avalonia-property-grid/editor-registry.md
+  - docs/verification/plexus-avalonia-property-grid/property-grid-control.md
+  - docs/verification/plexus-avalonia-property-grid/property-editors.md
+  - docs/verification/plexus-avalonia-property-grid/collection-editor-ui.md
+  - docs/verification/plexus-avalonia-property-grid/property-grid-dialog.md
+  - docs/verification/plexus-avalonia-property-grid/plexus-node-source.md
+  - docs/verification/plexus-avalonia-property-grid/node-properties-dialog.md
   - docs/verification/ots.md
+  - docs/verification/ots/apimark.md
+  - docs/verification/ots/avalonia.md
   - docs/verification/ots/buildmark.md
+  - docs/verification/ots/canvasnet.md
   - docs/verification/ots/fileassert.md
   - docs/verification/ots/pandoc.md
   - docs/verification/ots/reqstream.md
   - docs/verification/ots/reviewmark.md
   - docs/verification/ots/sarifmark.md
   - docs/verification/ots/sonarmark.md
+  - docs/verification/ots/svg-skia.md
   - docs/verification/ots/sysml2tools.md
   - docs/verification/ots/versionmark.md
   - docs/verification/ots/weasyprint.md

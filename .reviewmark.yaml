@@ -18,6 +18,10 @@ needs-review:
   - "!**/bin/**"                  # Exclude build output
   - "!node_modules/**"           # Exclude npm dependencies
   - "!**/.venv/**"                # Exclude Python virtual environment
+  - "!demo/**"                    # Exclude demo applications (not shipped, not software items)
+  - "!tools/**"                   # Exclude agent tooling (not shipped, not software items)
+  - "!test/DemaConsulting.Plexus.Demo.Tests/**"    # Exclude demo test project (not shipped)
+  - "!test/DemaConsulting.Plexus.Puppet.Tests/**"  # Exclude tooling test project (not shipped)
 
 # Evidence source: review data and index.json are located in the 'reviews' branch
 # of this repository, accessed through the GitHub public HTTPS raw content access.
@@ -61,12 +65,19 @@ reviews:
       - "README.md"
       - "docs/user_guide/**/*.md"
     paths:
-      - "docs/reqstream/plexus.yaml"                      # system requirements
-      - "docs/design/introduction.md"                                           # design introduction
-      - "docs/design/plexus.md"                               # system design
-      - "docs/verification/introduction.md"                                    # verification introduction
-      - "docs/verification/plexus.md"                        # system verification
-      - "test/DemaConsulting.Plexus.Tests/PlexusTests.cs"  # integration tests
+      - "docs/reqstream/plexus.yaml"                                    # system requirements
+      - "docs/design/introduction.md"                                # design introduction
+      - "docs/design/plexus.md"                                         # system design
+      - "docs/verification/introduction.md"                          # verification introduction
+      - "docs/verification/plexus.md"                                   # system verification
+      - "src/DemaConsulting.Plexus/NamespaceDoc.cs"  # root namespace documentation and usage example
+      - "test/DemaConsulting.Plexus.Tests/PlexusTests.cs"  # system integration tests
+      - "test/DemaConsulting.Plexus.Tests/PlexusWireStylingTests.cs"  # system/subsystem wire styling tests
+      - "test/DemaConsulting.Plexus.Tests/PlexusNodeStylingTests.cs"  # system/subsystem node styling tests
+      - "test/DemaConsulting.Plexus.Tests/TestModel.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Tests/Routing/RouteAssertions.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Tests/Scene/SceneTestModel.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Tests/Serialization/SerializationFixtures.cs"  # shared test fixture
 
   # Plexus-Design Review (one per system)
   - id: Plexus-Design
@@ -74,11 +85,11 @@ reviews:
     context:
       - "docs/reqstream/plexus.yaml"
     paths:
-      - "docs/reqstream/plexus/platform-requirements.yaml"  # platform requirements
-      - "docs/design/introduction.md"                                       # design introduction
-      - "docs/design/plexus.md"                           # system design
-      - "docs/design/plexus/**/*.md"                      # all system design documents
-      - "docs/design/ots.md"                                                # OTS overview
+      - "docs/reqstream/plexus/platform-requirements.yaml"              # platform requirements
+      - "docs/design/introduction.md"                                # design introduction
+      - "docs/design/plexus.md"                                         # system design
+      - "docs/design/plexus/**/*.md"                                    # all system design documents
+      - "docs/design/ots.md"                                         # OTS overview
 
   # Plexus-Verification Review (one per system)
   - id: Plexus-Verification
@@ -86,10 +97,10 @@ reviews:
     context:
       - "docs/reqstream/plexus.yaml"
     paths:
-      - "docs/verification/introduction.md"                                 # verification introduction
-      - "docs/verification/plexus.md"                     # system verification
-      - "docs/verification/plexus/**/*.md"               # all verification documents
-      - "docs/verification/ots.md"                                          # OTS overview
+      - "docs/verification/introduction.md"                          # verification introduction
+      - "docs/verification/plexus.md"                                   # system verification
+      - "docs/verification/plexus/**/*.md"                              # all verification documents
+      - "docs/verification/ots.md"                                   # OTS overview
 
   # Plexus-AllRequirements Review (one per system)
   - id: Plexus-AllRequirements
@@ -98,21 +109,1099 @@ reviews:
       - "docs/design/plexus.md"
       - "docs/reqstream/plexus.yaml"
     paths:
-      - "requirements.yaml"                                                 # root requirements file
-      - "docs/reqstream/**/*.yaml"                                          # all requirements files
+      - "requirements.yaml"                                          # root requirements file
+      - "docs/reqstream/quality.yaml"                                # quality (OTS tooling) requirements
+      - "docs/reqstream/plexus/**/*.yaml"                               # all system requirements files
 
-  # Plexus-Demo Review (one per unit)
-  - id: Plexus-Demo
-    title: Review that Plexus Demo Implementation is Correct
+  # Plexus-Geometry Review (one per unit)
+  - id: Plexus-Geometry
+    title: Review that Plexus Geometry Implementation is Correct
     context:
       - "docs/design/plexus.md"
       - "docs/reqstream/plexus.yaml"
     paths:
-      - "docs/reqstream/plexus/demo.yaml"                 # unit requirements
-      - "docs/design/plexus/demo.md"                     # unit design
-      - "docs/verification/plexus/demo.md"               # unit verification
-      - "src/DemaConsulting.Plexus/Demo.cs"                  # unit source
-      - "test/DemaConsulting.Plexus.Tests/DemoTests.cs"      # unit tests
+      - "docs/reqstream/plexus/geometry.yaml"
+      - "docs/design/plexus/geometry.md"
+      - "docs/verification/plexus/geometry.md"
+      - "src/DemaConsulting.Plexus/Geometry/*.cs"
+      - "test/DemaConsulting.Plexus.Tests/GeometryTests.cs"
+
+  # Plexus-ConnectionRules Review (one per unit)
+  - id: Plexus-ConnectionRules
+    title: Review that Plexus ConnectionRules Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/connection-rules.yaml"
+      - "docs/design/plexus/connection-rules.md"
+      - "docs/verification/plexus/connection-rules.md"
+      - "src/DemaConsulting.Plexus/Connections/*.cs"
+      - "test/DemaConsulting.Plexus.Tests/ConnectionTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Connections/ConnectionRulesTests.cs"
+
+  # Plexus-Model Review (one per subsystem)
+  - id: Plexus-Model
+    title: Review that Plexus Model Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/model.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/verification/plexus/model.md"
+      - "test/DemaConsulting.Plexus.Tests/Model/ModelTests.cs"
+
+  # Plexus-Model-Diagram Review (one per unit)
+  - id: Plexus-Model-Diagram
+    title: Review that Plexus Model Diagram Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/reqstream/plexus/model.yaml"
+    paths:
+      - "docs/reqstream/plexus/model/diagram.yaml"
+      - "docs/design/plexus/model/diagram.md"
+      - "docs/verification/plexus/model/diagram.md"
+      - "src/DemaConsulting.Plexus/Model/Diagram.cs"
+      - "src/DemaConsulting.Plexus/Model/Diagram.*.cs"
+      - "src/DemaConsulting.Plexus/Model/DiagramChange*.cs"
+      - "src/DemaConsulting.Plexus/Model/NodeRenam*EventArgs.cs"
+      - "src/DemaConsulting.Plexus/Model/DiagramOptions.cs"
+      - "test/DemaConsulting.Plexus.Tests/DiagramChangedEventTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/DiagramTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/DiagramVersionTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/MoveToPageTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/RenamePipelineTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/DiagramOptionsTests.cs"
+
+  # Plexus-Model-PageCollection Review (one per unit)
+  - id: Plexus-Model-PageCollection
+    title: Review that Plexus Model PageCollection Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/reqstream/plexus/model.yaml"
+    paths:
+      - "docs/reqstream/plexus/model/page-collection.yaml"
+      - "docs/design/plexus/model/page-collection.md"
+      - "docs/verification/plexus/model/page-collection.md"
+      - "src/DemaConsulting.Plexus/Model/PageCollection.cs"
+      - "test/DemaConsulting.Plexus.Tests/PageCollectionTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/PageCollectionBindingTests.cs"
+
+  # Plexus-Model-DiagramPage Review (one per unit)
+  - id: Plexus-Model-DiagramPage
+    title: Review that Plexus Model DiagramPage Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/reqstream/plexus/model.yaml"
+    paths:
+      - "docs/reqstream/plexus/model/diagram-page.yaml"
+      - "docs/design/plexus/model/diagram-page.md"
+      - "docs/verification/plexus/model/diagram-page.md"
+      - "src/DemaConsulting.Plexus/Model/DiagramPage.cs"
+      - "src/DemaConsulting.Plexus/Model/DiagramPage.*.cs"
+      - "src/DemaConsulting.Plexus/Model/ElementPresenceCommand.cs"
+      - "src/DemaConsulting.Plexus/Model/LayoutCommand.cs"
+      - "src/DemaConsulting.Plexus/Model/GroupMembershipCommand.cs"
+      - "src/DemaConsulting.Plexus/Model/GroupObstacles.cs"
+      - "test/DemaConsulting.Plexus.Tests/DiagramPageCreationTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/DiagramPageMoveTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/DiagramPageRemoveTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/RerouteAllTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Routing/GroupObstacleTests.cs"
+
+  # Plexus-Model-Node Review (one per unit)
+  - id: Plexus-Model-Node
+    title: Review that Plexus Model Node Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/reqstream/plexus/model.yaml"
+    paths:
+      - "docs/reqstream/plexus/model/node.yaml"
+      - "docs/design/plexus/model/node.md"
+      - "docs/verification/plexus/model/node.md"
+      - "src/DemaConsulting.Plexus/Model/DiagramElement.cs"
+      - "src/DemaConsulting.Plexus/Model/Node.cs"
+      - "src/DemaConsulting.Plexus/Model/Port.cs"
+      - "test/DemaConsulting.Plexus.Tests/PortPathTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/SharedPortNameTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/ElementConvenienceTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/NodeTests.cs"
+
+  # Plexus-Model-Wire Review (one per unit)
+  - id: Plexus-Model-Wire
+    title: Review that Plexus Model Wire Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/reqstream/plexus/model.yaml"
+    paths:
+      - "docs/reqstream/plexus/model/wire.yaml"
+      - "docs/design/plexus/model/wire.md"
+      - "docs/verification/plexus/model/wire.md"
+      - "src/DemaConsulting.Plexus/Model/Wire.cs"
+      - "src/DemaConsulting.Plexus/Model/ReconnectCommand.cs"
+      - "src/DemaConsulting.Plexus/Model/WireTraffic.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/WireTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/WireEditingTests.cs"
+
+  # Plexus-Model-Annotation Review (one per unit)
+  - id: Plexus-Model-Annotation
+    title: Review that Plexus Model Annotation Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/reqstream/plexus/model.yaml"
+    paths:
+      - "docs/reqstream/plexus/model/annotation.yaml"
+      - "docs/design/plexus/model/annotation.md"
+      - "docs/verification/plexus/model/annotation.md"
+      - "src/DemaConsulting.Plexus/Model/Annotation.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/AnnotationTests.cs"
+
+  # Plexus-Model-Group Review (one per unit)
+  - id: Plexus-Model-Group
+    title: Review that Plexus Model Group Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/model.md"
+      - "docs/reqstream/plexus/model.yaml"
+    paths:
+      - "docs/reqstream/plexus/model/group.yaml"
+      - "docs/design/plexus/model/group.md"
+      - "docs/verification/plexus/model/group.md"
+      - "src/DemaConsulting.Plexus/Model/Group.cs"
+      - "test/DemaConsulting.Plexus.Tests/GroupTests.cs"
+
+  # Plexus-History Review (one per subsystem)
+  - id: Plexus-History
+    title: Review that Plexus History Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/history.yaml"
+      - "docs/design/plexus/history.md"
+      - "docs/verification/plexus/history.md"
+      - "test/DemaConsulting.Plexus.Tests/History/HistoryTests.cs"
+
+  # Plexus-History-UndoHistory Review (one per unit)
+  - id: Plexus-History-UndoHistory
+    title: Review that Plexus History UndoHistory Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/history.md"
+      - "docs/reqstream/plexus/history.yaml"
+    paths:
+      - "docs/reqstream/plexus/history/undo-history.yaml"
+      - "docs/design/plexus/history/undo-history.md"
+      - "docs/verification/plexus/history/undo-history.md"
+      - "src/DemaConsulting.Plexus/History/*.cs"
+      - "test/DemaConsulting.Plexus.Tests/UndoHistoryTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/History/UndoHistoryTransactTests.cs"
+
+  # Plexus-Types Review (one per subsystem)
+  - id: Plexus-Types
+    title: Review that Plexus Types Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/types.yaml"
+      - "docs/design/plexus/types.md"
+      - "docs/verification/plexus/types.md"
+      - "test/DemaConsulting.Plexus.Tests/Types/TypesTests.cs"
+
+  # Plexus-Types-NodeTypeRegistry Review (one per unit)
+  - id: Plexus-Types-NodeTypeRegistry
+    title: Review that Plexus Types NodeTypeRegistry Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/types.md"
+      - "docs/reqstream/plexus/types.yaml"
+    paths:
+      - "docs/reqstream/plexus/types/node-type-registry.yaml"
+      - "docs/design/plexus/types/node-type-registry.md"
+      - "docs/verification/plexus/types/node-type-registry.md"
+      - "src/DemaConsulting.Plexus/Types/NodeType*.cs"
+      - "src/DemaConsulting.Plexus/Types/Port*.cs"
+      - "src/DemaConsulting.Plexus/Types/FreezableList.cs"
+      - "src/DemaConsulting.Plexus/Types/INodeDataSerializer.cs"
+      - "test/DemaConsulting.Plexus.Tests/TypesAndGeometryTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Types/NodeTypeRegistryTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Types/NodeTypeCategoryTests.cs"
+
+  # Plexus-Types-IconSource Review (one per unit)
+  - id: Plexus-Types-IconSource
+    title: Review that Plexus Types IconSource Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/types.md"
+      - "docs/reqstream/plexus/types.yaml"
+    paths:
+      - "docs/reqstream/plexus/types/icon-source.yaml"
+      - "docs/design/plexus/types/icon-source.md"
+      - "docs/verification/plexus/types/icon-source.md"
+      - "src/DemaConsulting.Plexus/Types/IconSource.cs"
+      - "test/DemaConsulting.Plexus.Tests/Types/IconSourceTests.cs"
+
+  # Plexus-Properties Review (one per subsystem)
+  - id: Plexus-Properties
+    title: Review that Plexus Properties Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/properties.yaml"
+      - "docs/design/plexus/properties.md"
+      - "docs/verification/plexus/properties.md"
+      - "test/DemaConsulting.Plexus.Tests/Properties/PropertiesTests.cs"
+
+  # Plexus-Properties-PropertyDefinition Review (one per unit)
+  - id: Plexus-Properties-PropertyDefinition
+    title: Review that Plexus Properties PropertyDefinition Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/properties.md"
+      - "docs/reqstream/plexus/properties.yaml"
+    paths:
+      - "docs/reqstream/plexus/properties/property-definition.yaml"
+      - "docs/design/plexus/properties/property-definition.md"
+      - "docs/verification/plexus/properties/property-definition.md"
+      - "src/DemaConsulting.Plexus/Properties/PropertyDefinition.cs"
+      - "src/DemaConsulting.Plexus/Properties/PropertyValueKind.cs"
+      - "src/DemaConsulting.Plexus/Properties/PropertyValues.cs"
+      - "test/DemaConsulting.Plexus.Tests/Properties/PropertyDefinitionTests.cs"
+
+  # Plexus-Properties-PropertyBag Review (one per unit)
+  - id: Plexus-Properties-PropertyBag
+    title: Review that Plexus Properties PropertyBag Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/properties.md"
+      - "docs/reqstream/plexus/properties.yaml"
+    paths:
+      - "docs/reqstream/plexus/properties/property-bag.yaml"
+      - "docs/design/plexus/properties/property-bag.md"
+      - "docs/verification/plexus/properties/property-bag.md"
+      - "src/DemaConsulting.Plexus/Properties/PropertyBag.cs"
+      - "src/DemaConsulting.Plexus/Properties/PropertyBag.Editing.cs"
+      - "test/DemaConsulting.Plexus.Tests/PropertyBagTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Properties/PropertyEditingTests.cs"
+
+  # Plexus-Routing Review (one per subsystem)
+  - id: Plexus-Routing
+    title: Review that Plexus Routing Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/routing.yaml"
+      - "docs/design/plexus/routing.md"
+      - "docs/verification/plexus/routing.md"
+      - "src/DemaConsulting.Plexus/Routing/NamespaceDoc.cs"
+      - "test/DemaConsulting.Plexus.Tests/Routing/RoutingTests.cs"
+
+  # Plexus-Routing-OrthogonalRouter Review (one per unit)
+  - id: Plexus-Routing-OrthogonalRouter
+    title: Review that Plexus Routing OrthogonalRouter Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/routing.md"
+      - "docs/reqstream/plexus/routing.yaml"
+    paths:
+      - "docs/reqstream/plexus/routing/orthogonal-router.yaml"
+      - "docs/design/plexus/routing/orthogonal-router.md"
+      - "docs/verification/plexus/routing/orthogonal-router.md"
+      - "src/DemaConsulting.Plexus/Routing/OrthogonalRouter.cs"
+      - "src/DemaConsulting.Plexus/Routing/OrthogonalSearch.cs"
+      - "src/DemaConsulting.Plexus/Routing/IWireRouter.cs"
+      - "src/DemaConsulting.Plexus/Routing/RouteRequest.cs"
+      - "src/DemaConsulting.Plexus/Routing/PortSide.cs"
+      - "src/DemaConsulting.Plexus/Routing/RouteSegment.cs"
+      - "src/DemaConsulting.Plexus/Routing/ForeignSegments.cs"
+      - "src/DemaConsulting.Plexus/Routing/RouteCleaner.cs"
+      - "src/DemaConsulting.Plexus/Routing/RouteEditor.cs"
+      - "test/DemaConsulting.Plexus.Tests/Routing/OrthogonalRouterTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Routing/NetSeparationTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Routing/RouteCleanerTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Routing/RouteEditorTests.cs"
+
+  # Plexus-Routing-SimpleRouter Review (one per unit)
+  - id: Plexus-Routing-SimpleRouter
+    title: Review that Plexus Routing SimpleRouter Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/routing.md"
+      - "docs/reqstream/plexus/routing.yaml"
+    paths:
+      - "docs/reqstream/plexus/routing/simple-router.yaml"
+      - "docs/design/plexus/routing/simple-router.md"
+      - "docs/verification/plexus/routing/simple-router.md"
+      - "src/DemaConsulting.Plexus/Routing/SimpleRouter.cs"
+      - "test/DemaConsulting.Plexus.Tests/Routing/SimpleRouterTests.cs"
+
+  # Plexus-Scene Review (one per subsystem)
+  - id: Plexus-Scene
+    title: Review that Plexus Scene Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/scene.yaml"
+      - "docs/design/plexus/scene.md"
+      - "docs/verification/plexus/scene.md"
+      - "src/DemaConsulting.Plexus/Scene/NamespaceDoc.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/SceneTests.cs"
+
+  # Plexus-Scene-DiagramTheme Review (one per unit)
+  - id: Plexus-Scene-DiagramTheme
+    title: Review that Plexus Scene DiagramTheme Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/scene.md"
+      - "docs/reqstream/plexus/scene.yaml"
+    paths:
+      - "docs/reqstream/plexus/scene/diagram-theme.yaml"
+      - "docs/design/plexus/scene/diagram-theme.md"
+      - "docs/verification/plexus/scene/diagram-theme.md"
+      - "src/DemaConsulting.Plexus/Scene/DiagramTheme*.cs"
+      - "src/DemaConsulting.Plexus/Scene/TextStyle.cs"
+      - "src/DemaConsulting.Plexus/Scene/TextAlignment.cs"
+      - "src/DemaConsulting.Plexus/Scene/PortAlignment.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/DiagramThemeTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/PortAlignmentTests.cs"
+
+  # Plexus-Scene-NodeLayout Review (one per unit)
+  - id: Plexus-Scene-NodeLayout
+    title: Review that Plexus Scene NodeLayout Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/scene.md"
+      - "docs/reqstream/plexus/scene.yaml"
+    paths:
+      - "docs/reqstream/plexus/scene/node-layout.yaml"
+      - "docs/design/plexus/scene/node-layout.md"
+      - "docs/verification/plexus/scene/node-layout.md"
+      - "src/DemaConsulting.Plexus/Scene/NodeGeometry.cs"
+      - "src/DemaConsulting.Plexus/Scene/NodeLayout.cs"
+      - "src/DemaConsulting.Plexus/Scene/PortLayout.cs"
+      - "src/DemaConsulting.Plexus/Scene/LayoutText.cs"
+      - "src/DemaConsulting.Plexus/Scene/TextWrapper.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/NodeLayoutTests.cs"
+
+  # Plexus-Scene-TextMeasurement Review (one per unit)
+  - id: Plexus-Scene-TextMeasurement
+    title: Review that Plexus Scene TextMeasurement Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/scene.md"
+      - "docs/reqstream/plexus/scene.yaml"
+    paths:
+      - "docs/reqstream/plexus/scene/text-measurement.yaml"
+      - "docs/design/plexus/scene/text-measurement.md"
+      - "docs/verification/plexus/scene/text-measurement.md"
+      - "src/DemaConsulting.Plexus/Scene/ITextMeasurer.cs"
+      - "src/DemaConsulting.Plexus/Scene/ApproximateTextMeasurer.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/TextMeasurementTests.cs"
+
+  # Plexus-Scene-SceneBuilder Review (one per unit)
+  - id: Plexus-Scene-SceneBuilder
+    title: Review that Plexus Scene SceneBuilder Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/scene.md"
+      - "docs/reqstream/plexus/scene.yaml"
+    paths:
+      - "docs/reqstream/plexus/scene/scene-builder.yaml"
+      - "docs/design/plexus/scene/scene-builder.md"
+      - "docs/verification/plexus/scene/scene-builder.md"
+      - "src/DemaConsulting.Plexus/Scene/SceneBuilder.cs"
+      - "src/DemaConsulting.Plexus/Scene/SceneComposer*.cs"
+      - "src/DemaConsulting.Plexus/Scene/SceneOptions.cs"
+      - "src/DemaConsulting.Plexus/Scene/*Primitive.cs"
+      - "src/DemaConsulting.Plexus/Scene/WirePaths.cs"
+      - "src/DemaConsulting.Plexus/Scene/WireJunctions.cs"
+      - "src/DemaConsulting.Plexus/Scene/WireCrossings.cs"
+      - "src/DemaConsulting.Plexus/Scene/CollapsedGroupInfo.cs"
+      - "src/DemaConsulting.Plexus/Scene/GroupLayout.cs"
+      - "src/DemaConsulting.Plexus/Scene/INodeVisual.cs"
+      - "src/DemaConsulting.Plexus/Scene/NodeVisualContext.cs"
+      - "src/DemaConsulting.Plexus/Scene/StandardNodeVisual.cs"
+      - "src/DemaConsulting.Plexus/Scene/WireStyle.cs"
+      - "src/DemaConsulting.Plexus/Scene/WireStylers.cs"
+      - "src/DemaConsulting.Plexus/Scene/NodeStyle.cs"
+      - "src/DemaConsulting.Plexus/Scene/NodeStylers.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/SceneBuilderTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/WireVisualsTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/WireJunctionAuditTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/WireCrossingTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/WiringAudit.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/SceneGroupTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/WireStyleTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/NodeStyleTests.cs"
+
+  # Plexus-Scene-DiagramScene Review (one per unit)
+  - id: Plexus-Scene-DiagramScene
+    title: Review that Plexus Scene DiagramScene Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/scene.md"
+      - "docs/reqstream/plexus/scene.yaml"
+    paths:
+      - "docs/reqstream/plexus/scene/diagram-scene.yaml"
+      - "docs/design/plexus/scene/diagram-scene.md"
+      - "docs/verification/plexus/scene/diagram-scene.md"
+      - "src/DemaConsulting.Plexus/Scene/DiagramScene.cs"
+      - "src/DemaConsulting.Plexus/Scene/HitKind.cs"
+      - "src/DemaConsulting.Plexus/Scene/HitResult.cs"
+      - "src/DemaConsulting.Plexus/Scene/HitTarget.cs"
+      - "src/DemaConsulting.Plexus/Scene/SpatialIndex.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/SceneHitTestTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/WireVisualsTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/SpatialIndexTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/SceneGroupLayoutTests.cs"
+
+  # Plexus-Serialization Review (one per subsystem)
+  - id: Plexus-Serialization
+    title: Review that Plexus Serialization Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+    paths:
+      - "docs/reqstream/plexus/serialization.yaml"
+      - "docs/design/plexus/serialization.md"
+      - "docs/verification/plexus/serialization.md"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/SerializationTests.cs"
+
+  # Plexus-Serialization-Snapshot Review (one per unit)
+  - id: Plexus-Serialization-Snapshot
+    title: Review that Plexus Serialization Snapshot Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/serialization.md"
+      - "docs/reqstream/plexus/serialization.yaml"
+    paths:
+      - "docs/reqstream/plexus/serialization/snapshot.yaml"
+      - "docs/design/plexus/serialization/snapshot.md"
+      - "docs/verification/plexus/serialization/snapshot.md"
+      - "src/DemaConsulting.Plexus/Serialization/*Snapshot*.cs"
+      - "src/DemaConsulting.Plexus/Serialization/PlexusJson*.cs"
+      - "src/DemaConsulting.Plexus/Serialization/PropertyCodec.cs"
+      - "src/DemaConsulting.Plexus/Serialization/NodeDataCodec.cs"
+      - "src/DemaConsulting.Plexus/Serialization/PropertyKindJsonConverter.cs"
+      - "src/DemaConsulting.Plexus/Serialization/RawJsonStringConverter.cs"
+      - "src/DemaConsulting.Plexus/Serialization/Diagram.Tree.cs"
+      - "src/DemaConsulting.Plexus/Serialization/DiagramTree.cs"
+      - "src/DemaConsulting.Plexus/Serialization/LoadReport.cs"
+      - "src/DemaConsulting.Plexus/Serialization/Node.CloneData.cs"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/SnapshotTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/DiagramJsonTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/DiagramStreamTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/DiagramTreeTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/UnknownNodeTypeTests.cs"
+
+  # Plexus-Serialization-PlexusClipboard Review (one per unit)
+  - id: Plexus-Serialization-PlexusClipboard
+    title: Review that Plexus Serialization PlexusClipboard Implementation is Correct
+    context:
+      - "docs/design/plexus.md"
+      - "docs/reqstream/plexus.yaml"
+      - "docs/design/plexus/serialization.md"
+      - "docs/reqstream/plexus/serialization.yaml"
+    paths:
+      - "docs/reqstream/plexus/serialization/plexus-clipboard.yaml"
+      - "docs/design/plexus/serialization/plexus-clipboard.md"
+      - "docs/verification/plexus/serialization/plexus-clipboard.md"
+      - "src/DemaConsulting.Plexus/Serialization/PlexusClipboard.cs"
+      - "src/DemaConsulting.Plexus/Serialization/ClipboardEnvelope.cs"
+      - "src/DemaConsulting.Plexus/Serialization/ClipboardSelection.cs"
+      - "src/DemaConsulting.Plexus/Serialization/ElementContent.cs"
+      - "src/DemaConsulting.Plexus/Serialization/ElementImporter.cs"
+      - "src/DemaConsulting.Plexus/Serialization/ImportOptions.cs"
+      - "src/DemaConsulting.Plexus/Serialization/PreparedImport.cs"
+      - "src/DemaConsulting.Plexus/Serialization/PasteResult.cs"
+      - "src/DemaConsulting.Plexus/Serialization/DiagramPage.Snapshot.cs"  # Duplicate entry point (shares clone path)
+      - "test/DemaConsulting.Plexus.Tests/Serialization/ClipboardTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/ClipboardSecurityTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/DuplicateTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Serialization/PasteResultMessageTests.cs"
+
+  # PlexusRendering-Architecture Review (one per system)
+  - id: PlexusRendering-Architecture
+    title: Review that PlexusRendering Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/plexus-rendering.yaml"                                    # system requirements
+      - "docs/design/introduction.md"                                # design introduction
+      - "docs/design/plexus-rendering.md"                                         # system design
+      - "docs/verification/introduction.md"                          # verification introduction
+      - "docs/verification/plexus-rendering.md"                                   # system verification
+      - "src/DemaConsulting.Plexus.Rendering/NamespaceDoc.cs"  # namespace documentation and usage example
+      - "test/DemaConsulting.Plexus.Rendering.Tests/PlexusRenderingTests.cs"  # system integration tests
+      - "test/DemaConsulting.Plexus.Rendering.Tests/RenderTestModel.cs"  # shared test fixture
+
+  # PlexusRendering-Design Review (one per system)
+  - id: PlexusRendering-Design
+    title: Review that PlexusRendering Design is Consistent and Complete
+    context:
+      - "docs/reqstream/plexus-rendering.yaml"
+    paths:
+      - "docs/reqstream/plexus-rendering/platform-requirements.yaml"              # platform requirements
+      - "docs/design/introduction.md"                                # design introduction
+      - "docs/design/plexus-rendering.md"                                         # system design
+      - "docs/design/plexus-rendering/**/*.md"                                    # all system design documents
+      - "docs/design/ots.md"                                         # OTS overview
+
+  # PlexusRendering-Verification Review (one per system)
+  - id: PlexusRendering-Verification
+    title: Review that PlexusRendering Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/plexus-rendering.yaml"
+    paths:
+      - "docs/verification/introduction.md"                          # verification introduction
+      - "docs/verification/plexus-rendering.md"                                   # system verification
+      - "docs/verification/plexus-rendering/**/*.md"                              # all verification documents
+      - "docs/verification/ots.md"                                   # OTS overview
+
+  # PlexusRendering-AllRequirements Review (one per system)
+  - id: PlexusRendering-AllRequirements
+    title: Review that All PlexusRendering Requirements are Complete
+    context:
+      - "docs/design/plexus-rendering.md"
+      - "docs/reqstream/plexus-rendering.yaml"
+    paths:
+      - "docs/reqstream/plexus-rendering/**/*.yaml"                               # all system requirements files
+
+  # PlexusRendering-PlexusRenderer Review (one per unit)
+  - id: PlexusRendering-PlexusRenderer
+    title: Review that PlexusRendering PlexusRenderer Implementation is Correct
+    context:
+      - "docs/design/plexus-rendering.md"
+      - "docs/reqstream/plexus-rendering.yaml"
+    paths:
+      - "docs/reqstream/plexus-rendering/plexus-renderer.yaml"
+      - "docs/design/plexus-rendering/plexus-renderer.md"
+      - "docs/verification/plexus-rendering/plexus-renderer.md"
+      - "src/DemaConsulting.Plexus.Rendering/PlexusRenderer.cs"
+      - "src/DemaConsulting.Plexus.Rendering/RenderOptions.cs"
+      - "test/DemaConsulting.Plexus.Rendering.Tests/PlexusRendererTests.cs"
+      - "test/DemaConsulting.Plexus.Rendering.Tests/WireStyleRenderingTests.cs"
+      - "test/DemaConsulting.Plexus.Rendering.Tests/NodeStyleRenderingTests.cs"
+
+  # PlexusRendering-ScenePainter Review (one per unit)
+  - id: PlexusRendering-ScenePainter
+    title: Review that PlexusRendering ScenePainter Implementation is Correct
+    context:
+      - "docs/design/plexus-rendering.md"
+      - "docs/reqstream/plexus-rendering.yaml"
+    paths:
+      - "docs/reqstream/plexus-rendering/scene-painter.yaml"
+      - "docs/design/plexus-rendering/scene-painter.md"
+      - "docs/verification/plexus-rendering/scene-painter.md"
+      - "src/DemaConsulting.Plexus.Rendering/ScenePainter.cs"
+      - "test/DemaConsulting.Plexus.Rendering.Tests/ScenePainterTests.cs"
+
+  # PlexusRendering-CanvasTextMeasurer Review (one per unit)
+  - id: PlexusRendering-CanvasTextMeasurer
+    title: Review that PlexusRendering CanvasTextMeasurer Implementation is Correct
+    context:
+      - "docs/design/plexus-rendering.md"
+      - "docs/reqstream/plexus-rendering.yaml"
+    paths:
+      - "docs/reqstream/plexus-rendering/canvas-text-measurer.yaml"
+      - "docs/design/plexus-rendering/canvas-text-measurer.md"
+      - "docs/verification/plexus-rendering/canvas-text-measurer.md"
+      - "src/DemaConsulting.Plexus.Rendering/CanvasTextMeasurer.cs"
+      - "src/DemaConsulting.Plexus.Rendering/FontProvider.cs"
+      - "test/DemaConsulting.Plexus.Rendering.Tests/CanvasTextMeasurerTests.cs"
+
+  # PlexusRendering-IconCache Review (one per unit)
+  - id: PlexusRendering-IconCache
+    title: Review that PlexusRendering IconCache Implementation is Correct
+    context:
+      - "docs/design/plexus-rendering.md"
+      - "docs/reqstream/plexus-rendering.yaml"
+    paths:
+      - "docs/reqstream/plexus-rendering/icon-cache.yaml"
+      - "docs/design/plexus-rendering/icon-cache.md"
+      - "docs/verification/plexus-rendering/icon-cache.md"
+      - "src/DemaConsulting.Plexus.Rendering/IconCache.cs"
+      - "test/DemaConsulting.Plexus.Rendering.Tests/IconCacheTests.cs"
+
+  # PlexusAvalonia-Architecture Review (one per system)
+  - id: PlexusAvalonia-Architecture
+    title: Review that PlexusAvalonia Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/plexus-avalonia.yaml"                                    # system requirements
+      - "docs/design/introduction.md"                                # design introduction
+      - "docs/design/plexus-avalonia.md"                                         # system design
+      - "docs/verification/introduction.md"                          # verification introduction
+      - "docs/verification/plexus-avalonia.md"                                   # system verification
+      - "src/DemaConsulting.Plexus.Avalonia/NamespaceDoc.cs"  # namespace documentation and usage example
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/PlexusAvaloniaTests.cs"  # system integration tests
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/EditorHost.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/TestApp.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/UiTest.cs"  # shared test fixture
+
+  # PlexusAvalonia-Design Review (one per system)
+  - id: PlexusAvalonia-Design
+    title: Review that PlexusAvalonia Design is Consistent and Complete
+    context:
+      - "docs/reqstream/plexus-avalonia.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/platform-requirements.yaml"              # platform requirements
+      - "docs/design/introduction.md"                                # design introduction
+      - "docs/design/plexus-avalonia.md"                                         # system design
+      - "docs/design/plexus-avalonia/**/*.md"                                    # all system design documents
+      - "docs/design/ots.md"                                         # OTS overview
+
+  # PlexusAvalonia-Verification Review (one per system)
+  - id: PlexusAvalonia-Verification
+    title: Review that PlexusAvalonia Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/plexus-avalonia.yaml"
+    paths:
+      - "docs/verification/introduction.md"                          # verification introduction
+      - "docs/verification/plexus-avalonia.md"                                   # system verification
+      - "docs/verification/plexus-avalonia/**/*.md"                              # all verification documents
+      - "docs/verification/ots.md"                                   # OTS overview
+
+  # PlexusAvalonia-AllRequirements Review (one per system)
+  - id: PlexusAvalonia-AllRequirements
+    title: Review that All PlexusAvalonia Requirements are Complete
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/**/*.yaml"                               # all system requirements files
+
+  # PlexusAvalonia-Editor Review (one per subsystem)
+  - id: PlexusAvalonia-Editor
+    title: Review that PlexusAvalonia Editor Satisfies Subsystem Requirements
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/editor.yaml"
+      - "docs/design/plexus-avalonia/editor.md"
+      - "docs/verification/plexus-avalonia/editor.md"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/EditorTests.cs"
+
+  # PlexusAvalonia-Editor-DiagramEditor Review (one per unit)
+  - id: PlexusAvalonia-Editor-DiagramEditor
+    title: Review that PlexusAvalonia Editor DiagramEditor Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+      - "docs/design/plexus-avalonia/editor.md"
+      - "docs/reqstream/plexus-avalonia/editor.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/editor/diagram-editor.yaml"
+      - "docs/design/plexus-avalonia/editor/diagram-editor.md"
+      - "docs/verification/plexus-avalonia/editor/diagram-editor.md"
+      - "src/DemaConsulting.Plexus.Avalonia/DiagramEditor*.cs"
+      - "src/DemaConsulting.Plexus.Avalonia/*EventArgs.cs"
+      - "src/DemaConsulting.Plexus.Avalonia/AssemblyInfo.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditor*Tests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/DiagramEditorWireEditingTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/NodeDropGhostTests.cs"
+
+  # PlexusAvalonia-Editor-Gestures Review (one per unit)
+  - id: PlexusAvalonia-Editor-Gestures
+    title: Review that PlexusAvalonia Editor Gestures Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+      - "docs/design/plexus-avalonia/editor.md"
+      - "docs/reqstream/plexus-avalonia/editor.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/editor/gestures.yaml"
+      - "docs/design/plexus-avalonia/editor/gestures.md"
+      - "docs/verification/plexus-avalonia/editor/gestures.md"
+      - "src/DemaConsulting.Plexus.Avalonia/Interaction/*.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/GesturesTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/DiagramEditorWireEditingTests.cs"
+
+  # PlexusAvalonia-Editor-DiagramClipboard Review (one per unit)
+  - id: PlexusAvalonia-Editor-DiagramClipboard
+    title: Review that PlexusAvalonia Editor DiagramClipboard Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+      - "docs/design/plexus-avalonia/editor.md"
+      - "docs/reqstream/plexus-avalonia/editor.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/editor/diagram-clipboard.yaml"
+      - "docs/design/plexus-avalonia/editor/diagram-clipboard.md"
+      - "docs/verification/plexus-avalonia/editor/diagram-clipboard.md"
+      - "src/DemaConsulting.Plexus.Avalonia/IDiagramClipboard.cs"
+      - "src/DemaConsulting.Plexus.Avalonia/SystemDiagramClipboard.cs"
+      - "src/DemaConsulting.Plexus.Avalonia/TextFormats.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/DiagramClipboardTests.cs"
+
+  # PlexusAvalonia-Editor-NodeTypeDragSource Review (one per unit)
+  - id: PlexusAvalonia-Editor-NodeTypeDragSource
+    title: Review that PlexusAvalonia Editor NodeTypeDragSource Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+      - "docs/design/plexus-avalonia/editor.md"
+      - "docs/reqstream/plexus-avalonia/editor.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/editor/node-type-drag-source.yaml"
+      - "docs/design/plexus-avalonia/editor/node-type-drag-source.md"
+      - "docs/verification/plexus-avalonia/editor/node-type-drag-source.md"
+      - "src/DemaConsulting.Plexus.Avalonia/NodeTypeDragSource.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/NodeTypeDragSourceTests.cs"
+
+  # PlexusAvalonia-Editor-NodePalette Review (one per unit)
+  - id: PlexusAvalonia-Editor-NodePalette
+    title: Review that PlexusAvalonia Editor NodePalette Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+      - "docs/design/plexus-avalonia/editor.md"
+      - "docs/reqstream/plexus-avalonia/editor.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/editor/node-palette.yaml"
+      - "docs/design/plexus-avalonia/editor/node-palette.md"
+      - "docs/verification/plexus-avalonia/editor/node-palette.md"
+      - "src/DemaConsulting.Plexus.Avalonia/NodePalette*.cs"
+      - "src/DemaConsulting.Plexus.Avalonia/NodePrototype*.cs"
+      - "src/DemaConsulting.Plexus.Avalonia/NodeTypeActivatedEventArgs.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/NodePaletteTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/NodePaletteEditorTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/NodePaletteColumnTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/NodePalettePixelTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/PaletteHost.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/PictureReader.cs"  # shared test fixture
+
+  # PlexusAvalonia-ScenePainter Review (one per unit)
+  - id: PlexusAvalonia-ScenePainter
+    title: Review that PlexusAvalonia ScenePainter Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/scene-painter.yaml"
+      - "docs/design/plexus-avalonia/scene-painter.md"
+      - "docs/verification/plexus-avalonia/scene-painter.md"
+      - "src/DemaConsulting.Plexus.Avalonia/ScenePainter.cs"
+      - "src/DemaConsulting.Plexus.Avalonia/PlexusAvaloniaExtensions.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/ScenePainterTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/NodeStylePixelTests.cs"
+
+  # PlexusAvalonia-AvaloniaTextMeasurer Review (one per unit)
+  - id: PlexusAvalonia-AvaloniaTextMeasurer
+    title: Review that PlexusAvalonia AvaloniaTextMeasurer Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/avalonia-text-measurer.yaml"
+      - "docs/design/plexus-avalonia/avalonia-text-measurer.md"
+      - "docs/verification/plexus-avalonia/avalonia-text-measurer.md"
+      - "src/DemaConsulting.Plexus.Avalonia/AvaloniaTextMeasurer.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/AvaloniaTextMeasurerTests.cs"
+
+  # PlexusAvalonia-PlexusIcons Review (one per unit)
+  - id: PlexusAvalonia-PlexusIcons
+    title: Review that PlexusAvalonia PlexusIcons Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia.md"
+      - "docs/reqstream/plexus-avalonia.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia/plexus-icons.yaml"
+      - "docs/design/plexus-avalonia/plexus-icons.md"
+      - "docs/verification/plexus-avalonia/plexus-icons.md"
+      - "src/DemaConsulting.Plexus.Avalonia/PlexusIcons.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.Tests/PlexusIconsTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-Architecture Review (one per system)
+  - id: PlexusAvaloniaPropertyGrid-Architecture
+    title: Review that PlexusAvaloniaPropertyGrid Architecture Satisfies Requirements
+    context:
+      - "README.md"
+      - "docs/user_guide/**/*.md"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"  # system requirements
+      - "docs/design/introduction.md"  # design introduction
+      - "docs/design/plexus-avalonia-property-grid.md"  # system design
+      - "docs/verification/introduction.md"  # verification introduction
+      - "docs/verification/plexus-avalonia-property-grid.md"  # system verification
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/NamespaceDoc.cs"  # namespace documentation and usage example
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PlexusAvaloniaPropertyGridTests.cs"  # system tests
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/TestModels.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/TestHelpers.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/DynamicModels.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/TestApp.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/UiTest.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/GridHarness.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/SampleModels.cs"  # shared test fixture
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/NodeFixture.cs"  # shared test fixture (node, host data)
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/GlobalUsings.cs"  # shared test fixture
+
+  # PlexusAvaloniaPropertyGrid-Design Review (one per system)
+  - id: PlexusAvaloniaPropertyGrid-Design
+    title: Review that PlexusAvaloniaPropertyGrid Design is Consistent and Complete
+    context:
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/platform-requirements.yaml"  # platform requirements
+      - "docs/design/introduction.md"  # design introduction
+      - "docs/design/plexus-avalonia-property-grid.md"  # system design
+      - "docs/design/plexus-avalonia-property-grid/**/*.md"  # all system design documents
+      - "docs/design/ots.md"  # OTS overview
+
+  # PlexusAvaloniaPropertyGrid-Verification Review (one per system)
+  - id: PlexusAvaloniaPropertyGrid-Verification
+    title: Review that PlexusAvaloniaPropertyGrid Verification is Consistent and Complete
+    context:
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/verification/introduction.md"  # verification introduction
+      - "docs/verification/plexus-avalonia-property-grid.md"  # system verification
+      - "docs/verification/plexus-avalonia-property-grid/**/*.md"  # all verification documents
+      - "docs/verification/ots.md"  # OTS overview
+
+  # PlexusAvaloniaPropertyGrid-AllRequirements Review (one per system)
+  - id: PlexusAvaloniaPropertyGrid-AllRequirements
+    title: Review that All PlexusAvaloniaPropertyGrid Requirements are Complete
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/**/*.yaml"  # all system requirements files
+
+  # PlexusAvaloniaPropertyGrid-PropertyModel Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-PropertyModel
+    title: Review that PlexusAvaloniaPropertyGrid PropertyModel Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/property-model.yaml"
+      - "docs/design/plexus-avalonia-property-grid/property-model.md"
+      - "docs/verification/plexus-avalonia-property-grid/property-model.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyItem.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyItem.Text.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyItem.Structure.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/ReflectionPropertyItem.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CollectionElementItem.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CollectionTypes.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyContext.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyErrors.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyResult.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/StandardValue.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertyAnnotationTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertyModelTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-PropertySources Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-PropertySources
+    title: Review that PlexusAvaloniaPropertyGrid PropertySources Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/property-sources.yaml"
+      - "docs/design/plexus-avalonia-property-grid/property-sources.md"
+      - "docs/verification/plexus-avalonia-property-grid/property-sources.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/IPropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/IPropertySourceProvider.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/IPropertyCommitScope.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertySourceChangedEventArgs.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/ReflectionPropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CustomPropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CustomPropertyItem.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CustomPropertyOptions.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CompositePropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertySourceFactory.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyOrdering.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertySortMode.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyGroup.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertySourceTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-EditSession Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-EditSession
+    title: Review that PlexusAvaloniaPropertyGrid EditSession Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/edit-session.yaml"
+      - "docs/design/plexus-avalonia-property-grid/edit-session.md"
+      - "docs/verification/plexus-avalonia-property-grid/edit-session.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyEditSession.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyEditMode.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertySessionChangedEventArgs.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PendingEdit.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CommitResult.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CollectionEditor.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CollectionApplier.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyCommitRefusedException.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/CommitScopeTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/EditSessionTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/EditSessionCollectionTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/EditSessionUiSupportTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-EditorRegistry Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-EditorRegistry
+    title: Review that PlexusAvaloniaPropertyGrid EditorRegistry Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/editor-registry.yaml"
+      - "docs/design/plexus-avalonia-property-grid/editor-registry.md"
+      - "docs/verification/plexus-avalonia-property-grid/editor-registry.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyEditorAttribute.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyEditorRegistry.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/EditorRegistryTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-PropertyGridControl Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-PropertyGridControl
+    title: Review that PlexusAvaloniaPropertyGrid PropertyGridControl Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/property-grid-control.yaml"
+      - "docs/design/plexus-avalonia-property-grid/property-grid-control.md"
+      - "docs/verification/plexus-avalonia-property-grid/property-grid-control.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyGrid.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyGrid.Layout.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyGrid.Rows.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyGrid.Input.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/GridRowViews.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/GridTheme.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CollectionEditorRequestedEventArgs.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertyGridDisplayTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertyGridKeyboardTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertyGridScreenshotTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-PropertyEditors Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-PropertyEditors
+    title: Review that PlexusAvaloniaPropertyGrid PropertyEditors Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/property-editors.yaml"
+      - "docs/design/plexus-avalonia-property-grid/property-editors.md"
+      - "docs/verification/plexus-avalonia-property-grid/property-editors.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyEditorContext.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/BuiltInEditors.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/ColorSupport.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/GlobalUsings.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertyGridEditingTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/ColorEditorTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-CollectionEditorUi Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-CollectionEditorUi
+    title: Review that PlexusAvaloniaPropertyGrid CollectionEditorUi Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/collection-editor-ui.yaml"
+      - "docs/design/plexus-avalonia-property-grid/collection-editor-ui.md"
+      - "docs/verification/plexus-avalonia-property-grid/collection-editor-ui.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CollectionEditorView.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/CollectionEditorDialog.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/CollectionEditorUiTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-PropertyGridDialog Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog
+    title: Review that PlexusAvaloniaPropertyGrid PropertyGridDialog Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/property-grid-dialog.yaml"
+      - "docs/design/plexus-avalonia-property-grid/property-grid-dialog.md"
+      - "docs/verification/plexus-avalonia-property-grid/property-grid-dialog.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/PropertyGridDialog.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PropertyGridDialogTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-PlexusNodeSource Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource
+    title: Review that PlexusAvaloniaPropertyGrid PlexusNodeSource Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/plexus-node-source.yaml"
+      - "docs/design/plexus-avalonia-property-grid/plexus-node-source.md"
+      - "docs/verification/plexus-avalonia-property-grid/plexus-node-source.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/NodePropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/AnnotationPropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/GroupPropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/ElementEditing.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/ElementPropertyItem.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/WorkingValues.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/DefinitionConverter.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/PlexusSourceRegistration.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/NamespaceDoc.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/NodePropertySourceTests.cs"
+
+  # PlexusAvaloniaPropertyGrid-NodePropertiesDialog Review (one per unit)
+  - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog
+    title: Review that PlexusAvaloniaPropertyGrid NodePropertiesDialog Implementation is Correct
+    context:
+      - "docs/design/plexus-avalonia-property-grid.md"
+      - "docs/reqstream/plexus-avalonia-property-grid.yaml"
+    paths:
+      - "docs/reqstream/plexus-avalonia-property-grid/node-properties-dialog.yaml"
+      - "docs/design/plexus-avalonia-property-grid/node-properties-dialog.md"
+      - "docs/verification/plexus-avalonia-property-grid/node-properties-dialog.md"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/NodePropertiesDialog.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/NodePropertiesDialogTests.cs"
+
+  # OTS-ApiMark Review (one per OTS item)
+  - id: OTS-ApiMark
+    title: Review that ApiMark Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/apimark.yaml"                                  # OTS requirements
+      - "docs/design/ots/apimark.md"                                       # OTS integration design
+      - "docs/verification/ots/apimark.md"                                 # OTS verification
+
+  # OTS-Avalonia Review (one per OTS item)
+  - id: OTS-Avalonia
+    title: Review that Avalonia Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/avalonia.yaml"                                   # OTS requirements
+      - "docs/design/ots/avalonia.md"                                        # OTS integration design
+      - "docs/verification/ots/avalonia.md"                                 # OTS verification
 
   # OTS-BuildMark Review (one per OTS item)
   - id: OTS-BuildMark
@@ -121,6 +1210,14 @@ reviews:
       - "docs/reqstream/ots/buildmark.yaml"                                 # OTS requirements
       - "docs/design/ots/buildmark.md"                                      # OTS integration design
       - "docs/verification/ots/buildmark.md"                               # OTS verification
+
+  # OTS-CanvasNet Review (one per OTS item)
+  - id: OTS-CanvasNet
+    title: Review that CanvasNet Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/canvasnet.yaml"                                   # OTS requirements
+      - "docs/design/ots/canvasnet.md"                                        # OTS integration design
+      - "docs/verification/ots/canvasnet.md"                                 # OTS verification
 
   # OTS-FileAssert Review (one per OTS item)
   - id: OTS-FileAssert
@@ -169,6 +1266,14 @@ reviews:
       - "docs/reqstream/ots/sonarmark.yaml"                                # OTS requirements
       - "docs/design/ots/sonarmark.md"                                     # OTS integration design
       - "docs/verification/ots/sonarmark.md"                              # OTS verification
+
+  # OTS-SvgSkia Review (one per OTS item)
+  - id: OTS-SvgSkia
+    title: Review that SvgSkia Provides Required Functionality
+    paths:
+      - "docs/reqstream/ots/svg-skia.yaml"                                   # OTS requirements
+      - "docs/design/ots/svg-skia.md"                                        # OTS integration design
+      - "docs/verification/ots/svg-skia.md"                                 # OTS verification
 
   # OTS-SysML2Tools Review (one per OTS item)
   - id: OTS-SysML2Tools

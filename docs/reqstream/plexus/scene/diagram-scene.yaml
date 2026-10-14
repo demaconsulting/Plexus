@@ -1,0 +1,146 @@
+---
+# Software Unit requirements for Plexus DiagramScene.
+#
+# Unit requirements decompose the Scene subsystem requirements (which link down to these IDs as children) and are
+# proven by the unit tests in SceneHitTestTests, SpatialIndexTests and SceneGroupLayoutTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Scene Requirements
+        sections:
+          - title: DiagramScene Requirements
+            requirements:
+              - id: Plexus-Scene-DiagramScene-HitPriority
+                title: >-
+                  Hit testing shall report within a node its port before its name and its name before its body,
+                  nodes and annotations before wires (except the handles and segments of a selected wire, see
+                  Plexus-Scene-DiagramScene-WireHandleHits), and the topmost of overlapping nodes first.
+                justification: |
+                  Ports must stay connectable even though they lie over the node; users expect the node on top to
+                  be the one they click.
+                tests:
+                  - Scene_HitTest_NodeBody_ReturnsNode
+                  - Scene_HitTest_NodeName_ReturnsNodeName
+                  - Scene_HitTest_PortAnchor_ReturnsPort
+                  - Scene_HitTest_NodeOverWire_ReturnsNode
+                  - Scene_HitTest_OverlappingNodes_ReturnsTopmost
+
+              - id: Plexus-Scene-DiagramScene-WireHits
+                title: >-
+                  Hit testing shall report a wire, with the zero-based index of the nearest polyline segment, when
+                  the point is within the given tolerance plus half the wire thickness of that segment, shall miss
+                  farther points, and shall never report a hidden wire.
+                justification: |
+                  Wires are thin; the tolerance makes them reachable, and the segment index lets editors drag the
+                  segment that was grabbed.
+                tests:
+                  - Scene_HitTest_WireSegments_ReturnWireWithSegmentIndex
+                  - Scene_HitTest_WireTolerance_NearHitsFarMisses
+                  - Scene_HitTest_HiddenWire_IsNotHit
+
+              - id: Plexus-Scene-DiagramScene-AnnotationHits
+                title: >-
+                  Hit testing shall report an annotation for its box and its resize handle only while the
+                  annotation is selected.
+                justification: |
+                  A handle that is not drawn must not react.
+                tests:
+                  - Scene_HitTest_Annotation_ReturnsAnnotationAndHandleWhenSelected
+
+              - id: Plexus-Scene-DiagramScene-GroupHits
+                title: >-
+                  Hit testing shall report an expanded group only for its border band, title bar and collapse
+                  toggle, leaving its interior transparent so that members inside are hit, and shall report a
+                  collapsed group for its box and its toggle.
+                justification: |
+                  A group frame covers its members; if its interior reacted, members could not be selected.
+                tests:
+                  - Scene_HitTest_ExpandedGroup_ReturnsBorderHeaderToggleAndTransparentInterior
+                  - Scene_HitTest_NodeInsideGroup_ReturnsNode
+                  - Scene_HitTest_CollapsedGroup_ReturnsCollapsedGroupAndToggle
+
+              - id: Plexus-Scene-DiagramScene-EmptyCanvas
+                title: >-
+                  Hit testing shall report the canvas kind, with no element, no port and no segment, for a point
+                  over nothing.
+                justification: |
+                  Clicks on empty canvas start rubber bands and clear selections.
+                tests:
+                  - Scene_HitTest_EmptyCanvas_ReturnsCanvas
+
+              - id: Plexus-Scene-DiagramScene-RenderedGeometry
+                title: >-
+                  Hit testing shall use the geometry of the primitives that were drawn, so that every drawn part of
+                  a node, including its icon, is reported as that node.
+                justification: |
+                  Pointer handling must never disagree with the picture.
+                tests:
+                  - Scene_HitTest_UsesRenderedGeometry
+
+              - id: Plexus-Scene-DiagramScene-RegionQuery
+                title: >-
+                  A region query shall return exactly the primitives whose bounds intersect the region, each once,
+                  in painting order, including primitives spanning several index cells, very large primitives,
+                  regions covering the whole scene and negative coordinates.
+                justification: |
+                  Painters and hosts rely on complete, ordered results; a missed or repeated primitive would show
+                  as a painting artifact.
+                tests:
+                  - Scene_Query_MatchesBruteForceAndKeepsDrawingOrder
+                  - Scene_Query_SmallRegion_ReturnsOnlyNearbyPrimitives
+                  - SpatialIndex_Query_ReturnsIntersectingItemsInInsertionOrder
+                  - SpatialIndex_Query_ItemSpanningCells_IsReturnedOnce
+                  - SpatialIndex_Query_LargeItem_IsFoundWhenIntersecting
+                  - SpatialIndex_Query_HugeRegion_ReturnsAllIntersecting
+                  - SpatialIndex_Query_NegativeCoordinates_AreFound
+
+              - id: Plexus-Scene-DiagramScene-ScalableQueries
+                title: >-
+                  Five thousand hit tests against a scene of one thousand nodes shall all report the expected node
+                  and complete within five seconds on a development workstation.
+                justification: |
+                  Hit tests run on every pointer move; the bound is generous against typical times of a few
+                  milliseconds, so only a loss of scalability, such as testing every target for every query,
+                  fails it.
+                tags:
+                  - performance
+                tests:
+                  - Scene_HitTest_ThousandNodes_ManyQueriesAreQuickAndCorrect
+
+              - id: Plexus-Scene-DiagramScene-GroupLayouts
+                title: >-
+                  The scene shall publish for each displayed group the frame, title bar and collapse toggle as drawn
+                  and hit-tested, and for a collapsed group its box and proxy ports, and shall report groups that
+                  are hidden, on another page or culled as not available.
+                justification: |
+                  Hosts position overlays and gestures on groups from these rectangles rather than re-deriving
+                  them from theme metrics.
+                tests:
+                  - DiagramScene_TryGetGroupLayout_ExpandedGroup_MatchesDrawnGeometry
+                  - DiagramScene_TryGetGroupLayout_ExpandedGroup_RectanglesAreWhatHitTestUses
+                  - DiagramScene_TryGetGroupLayout_CollapsedGroup_PublishesBoxToggleAndProxyPorts
+                  - DiagramScene_TryGetGroupLayout_HiddenGroupOrOtherPage_ReturnsFalse
+
+              - id: Plexus-Scene-DiagramScene-LayoutLookup
+                title: >-
+                  The scene shall return the content bounds covering all node layouts and the displayed polyline of
+                  each displayed wire.
+                justification: |
+                  Hosts overlay their own visuals and need the geometry the scene drew.
+                tests:
+                  - Scene_Bounds_CoverNodeLayouts
+                  - Scene_TryGetWirePoints_VisibleWire_ReturnsModelPoints
+
+              - id: Plexus-Scene-DiagramScene-WireHandleHits
+                title: >-
+                  For a selected wire, hit testing shall report its bend handles (with the bend index) and its
+                  source and target end handles (with the port) before the wire's segments, and the segments before
+                  the nodes underneath; for an unselected wire it shall report only segments, below nodes.
+                justification: |
+                  Handles are drawn on top, so they must be hit first; the shape of a selected wire is what the user
+                  is editing, so it must win over a node it happens to cross.
+                tests:
+                  - DiagramScene_HitTest_SelectedWireHandles_ReturnBendAndEndKinds
+                  - DiagramScene_HitTest_UnselectedWire_ReturnsSegmentNotHandle
+                  - DiagramScene_HitTest_SelectedWireOverNode_WireBeatsNodeButOnlyWhenSelected

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Envelope: attack, decay, sustain and release as a polyline -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 54 H60" stroke="#F2F2F2" stroke-width="1.5"/>
+    <path d="M6 54 L20 12 L32 30 H46 L58 54" stroke="#D2A3FF" stroke-width="3"/>
+    <path d="M20 12 V54 M32 30 V54 M46 30 V54" stroke="#F2F2F2" stroke-width="1"/>
+  </g>
+</svg>

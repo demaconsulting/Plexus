@@ -5,6 +5,21 @@ resource-path:
 input-files:
   - docs/user_guide/title.txt
   - docs/user_guide/introduction.md
+  - docs/user_guide/getting-started.md
+  - docs/user_guide/node-types.md
+  - docs/user_guide/building.md
+  - docs/user_guide/history.md
+  - docs/user_guide/files-clipboard.md
+  - docs/user_guide/serialization.md
+  - docs/user_guide/rendering.md
+  - docs/user_guide/editor.md
+  - docs/user_guide/palette.md
+  - docs/user_guide/property-grid.md
+  - docs/user_guide/styling.md
+  - docs/user_guide/wires.md
+  - docs/user_guide/extending.md
+  - docs/user_guide/testing.md
 template: template.html
+embed-resources: true
 table-of-contents: true
 number-sections: true

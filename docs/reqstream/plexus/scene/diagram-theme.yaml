@@ -1,0 +1,97 @@
+---
+# Software Unit requirements for Plexus DiagramTheme.
+#
+# Unit requirements decompose the Scene subsystem requirements (which link down to these IDs as children) and are
+# proven by the unit tests in DiagramThemeTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Scene Requirements
+        sections:
+          - title: DiagramTheme Requirements
+            requirements:
+              - id: Plexus-Scene-DiagramTheme-Classic
+                title: >-
+                  The classic theme shall provide the documented default colors, fonts, wire thickness, grid size
+                  and group translucency of the classic block-diagram look.
+                justification: |
+                  A diagram must look right with no configuration, and hosts and tests rely on the defaults being
+                  stable.
+                tests:
+                  - DiagramTheme_Classic_HasDocumentedDefaults
+
+              - id: Plexus-Scene-DiagramTheme-Customizable
+                title: >-
+                  A customized copy of a theme shall differ from the original only in the settings that were
+                  named and shall leave the original (including the shared classic theme) unchanged.
+                justification: |
+                  Hosts customize a few settings; a customization that altered the shared default would change
+                  every other diagram in the process.
+                tests:
+                  - DiagramTheme_With_CustomizedCopy_LeavesClassicUnchanged
+
+              - id: Plexus-Scene-DiagramTheme-TextStyles
+                title: >-
+                  The text styles for headers, names, summaries, port labels, group titles and annotations shall
+                  follow the theme's font family, font sizes and text colors.
+                justification: |
+                  Changing a font or size in the theme must change all text of that kind consistently, in layout
+                  and in painting.
+                tests:
+                  - DiagramTheme_TextStyles_FollowFontSettings
+
+              - id: Plexus-Scene-DiagramTheme-PortAlignment
+                title: >-
+                  The theme shall carry a port alignment setting that is centered by default and can be changed to
+                  top alignment in a customized copy, leaving the classic theme unchanged.
+                justification: |
+                  Port placement is a look-and-layout choice shared by the model, the routers and every painter, so
+                  it belongs in the theme that they all read.
+                tests:
+                  - DiagramTheme_PortAlignment_DefaultsToCenterAndCanBeChanged
+
+              - id: Plexus-Scene-DiagramTheme-WireMetrics
+                title: >-
+                  The classic theme shall draw junction dots of radius 3 by default and size the handles of a
+                  selected wire at 8, and a customized theme shall be able to switch junction dots off.
+                justification: |
+                  Junction dots and wire handles are part of the standard look; hosts must be able to turn the dots
+                  off or resize them.
+                tests:
+                  - DiagramTheme_Classic_WireJunctionAndHandleDefaults
+                  - SceneBuilder_Build_DotsDisabledByTheme_DrawsNoDot
+
+              - id: Plexus-Scene-DiagramTheme-WireSmoothSmallJogs
+                title: >-
+                  The theme shall carry a WireSmoothSmallJogs option that is on by default, in the classic theme and
+                  in a new theme, and that a customized copy can switch off to draw ordinary rounded corners.
+                justification: |
+                  Drawing a small step as one gentle curve is the better default; hosts that prefer square-cornered
+                  steps must be able to turn it off.
+                tests:
+                  - DiagramTheme_WireSmoothSmallJogs_DefaultsToTrueAndCanBeSwitchedOff
+                  - SceneBuilder_Build_SmallJog_DrawsSCurveUnlessDisabledByTheme
+
+              - id: Plexus-Scene-DiagramTheme-WireCrossingJumps
+                title: >-
+                  The theme shall carry a WireCrossingJumps option that is on by default and a WireJumpRadius of 4,
+                  in the classic theme and in a new theme, that a customized copy can switch off or resize.
+                justification: |
+                  Hopping over wires of other nets is the better default; hosts that prefer plain crossings or a
+                  different size must be able to change it.
+                tests:
+                  - DiagramTheme_WireCrossingJumps_DefaultToOnWithRadiusFourAndCanBeChanged
+                  - SceneBuilder_Build_JumpsOffOrTouchingNets_DrawNoHop
+
+              - id: Plexus-Scene-DiagramTheme-GroupsAreObstacles
+                title: >-
+                  The theme shall carry a GroupsAreObstacles option that is on by default, in the classic theme and
+                  in a new theme, and whose switching off makes wires route through group frames.
+                justification: |
+                  Avoiding unrelated groups is the better default, but hosts with dense layouts or their own
+                  routers must be able to route as if groups were not there.
+                tests:
+                  - DiagramTheme_GroupsAreObstacles_DefaultsToTrue
+                  - DiagramPage_Connect_GroupsAreObstaclesOff_RoutesThroughGroupFrame
+                  - DiagramPage_Connect_CollapsedGroupBetweenPorts_GroupsAreObstaclesOff_CrossesBox

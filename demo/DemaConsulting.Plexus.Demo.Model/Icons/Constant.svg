@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Constant: a fixed value held in a box, with a pin that carries it out -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 14 H44 V50 H10 Z" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M18 27 H36 M18 37 H36" stroke="#FFB04D" stroke-width="3"/>
+    <path d="M44 32 H60" stroke="#F2F2F2" stroke-width="2"/>
+    <circle cx="60" cy="32" r="2" stroke="#FFB04D" stroke-width="2"/>
+  </g>
+</svg>

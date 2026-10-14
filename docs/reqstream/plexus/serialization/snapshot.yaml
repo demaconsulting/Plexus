@@ -1,0 +1,177 @@
+---
+# Software Unit requirements for Plexus Snapshot.
+#
+# Unit requirements decompose the Serialization subsystem requirements (which link down to these IDs as children) and
+# are proven by the unit tests in SnapshotTests and DiagramJsonTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Serialization Requirements
+        sections:
+          - title: Snapshot Requirements
+            requirements:
+              - id: Plexus-Serialization-Snapshot-Capture
+                title: >-
+                  Capturing a diagram or a page as a snapshot shall record its pages, elements, routes, groups with
+                  collapsed state, properties and serializable node payloads without changing the diagram, and the
+                  page snapshot shall equal the diagram snapshot's entry for the page.
+                justification: |
+                  The snapshot is the single description of persisted state; capturing must be read-only so that
+                  saving never dirties the document.
+                tests:
+                  - Snapshot_PageToSnapshot_MatchesDiagramEntry
+                  - Snapshot_RoundTrip_RichDiagram_RestoresEverythingExactly
+
+              - id: Plexus-Serialization-Snapshot-RoundTrip
+                title: >-
+                  Restoring a snapshot, directly or through compact or indented JSON text and the JSON convenience
+                  methods of the diagram, shall reproduce ids, order, z-order, bounds, nested and collapsed
+                  groups, property values with their exact kinds (including extreme and ad-hoc values) and typed
+                  or custom node payloads, and writing the restored diagram shall give identical text.
+                justification: |
+                  Exact round trips are what makes persistence trustworthy.
+                tests:
+                  - Snapshot_RoundTrip_ThroughJson_RestoresEverythingExactly
+                  - Snapshot_RoundTrip_PropertiesOfEveryKind_KeepKindAndValue
+                  - Snapshot_RoundTrip_TypedAndCustomData_AreRestored
+                  - Snapshot_RoundTrip_ZOrder_IsPreserved
+                  - Snapshot_FromSnapshot_NestedCollapsedGroups_AreRestored
+                  - Diagram_ToJsonFromJson_RoundTripsContent
+
+              - id: Plexus-Serialization-Snapshot-OpaquePayloadOmitted
+                title: >-
+                  A node payload whose node type declares neither a data type nor a serializer shall be omitted from
+                  the snapshot and absent after restoring.
+                justification: |
+                  Undeclared payloads cannot be read back safely.
+                tests:
+                  - Snapshot_ToSnapshot_OpaqueData_IsOmitted
+
+              - id: Plexus-Serialization-Snapshot-FreshHistory
+                title: >-
+                  A restored diagram shall have an empty, clean undo history (loading itself is not undoable) and
+                  shall accept edits normally.
+                justification: |
+                  A newly opened document has nothing to undo.
+                tests:
+                  - Snapshot_FromSnapshot_HistoryIsEmptyAndClean
+                  - Snapshot_FromSnapshot_RestoredDiagramIsEditable
+
+              - id: Plexus-Serialization-Snapshot-StoredRoutes
+                title: Restoring shall keep the stored wire routes exactly and shall not ask the router to route.
+                justification: |
+                  Routes edited by hand, or produced by a router that is no longer available, must survive loading.
+                tests:
+                  - Snapshot_FromSnapshot_RoutesAreNotRerouted
+
+              - id: Plexus-Serialization-Snapshot-MissingTypes
+                title: >-
+                  Restoring a snapshot that uses node types missing from the registry shall throw a snapshot
+                  exception listing every missing type key.
+                justification: |
+                  Users resolve all missing types at once.
+                tests:
+                  - Snapshot_FromSnapshot_MissingNodeTypes_ListsAllOfThem
+
+              - id: Plexus-Serialization-Snapshot-UnsupportedVersion
+                title: >-
+                  Reading or restoring a snapshot of an unsupported format version shall throw a snapshot
+                  exception.
+                justification: |
+                  A reader must not guess at the meaning of a newer format.
+                tests:
+                  - Snapshot_UnsupportedVersion_IsRejected
+
+              - id: Plexus-Serialization-Snapshot-RejectInvalidContent
+                title: >-
+                  Restoring a snapshot shall throw a snapshot exception, naming the problem, for structurally
+                  invalid content (such as duplicate ids across pages, wires to unknown nodes or ports, or property
+                  values of the wrong kind) instead of producing a partial diagram.
+                justification: |
+                  Corrupt documents must be reported, not half-loaded.
+                tests:
+                  - Snapshot_FromSnapshot_InvalidContent_ThrowsSnapshotException
+                  - Snapshot_FromSnapshot_DuplicateIdAcrossPages_Throws
+                  - Snapshot_FromSnapshot_PropertyKindMismatch_Throws
+
+              - id: Plexus-Serialization-Snapshot-JsonShape
+                title: >-
+                  The JSON shall use camelCase member names, a format version, colors as  # AARRGGBB text and no type
+                  names, and shall be indented only when requested.
+                justification: |
+                  A stable, readable shape lets other tools and future versions read the documents.
+                tests:
+                  - PlexusJson_Serialize_ProducesStableShape
+                  - PlexusJson_Serialize_IndentedOptionControlsWhitespace
+                  - Diagram_ToJson_MatchesPlexusJsonAndIndentFlag
+
+              - id: Plexus-Serialization-Snapshot-RejectMalformedJson
+                title: >-
+                  Reading text that is not valid JSON of the snapshot shape, or that nests deeper than 64 levels,
+                  shall throw a JSON exception.
+                justification: |
+                  Malformed or hostile documents must fail cleanly and the depth limit protects the stack.
+                tests:
+                  - PlexusJson_Deserialize_Malformed_ThrowsJsonException
+                  - PlexusJson_Deserialize_TooDeep_ThrowsJsonException
+                  - Diagram_FromJson_InvalidInput_Throws
+
+              - id: Plexus-Serialization-Snapshot-UnknownMembersIgnored
+                title: >-
+                  Reading shall ignore JSON members it does not know, including members that look like type names,
+                  so that documents with additions can still be read.
+                justification: |
+                  Forward compatibility, and no type is ever selected by document content.
+                tests:
+                  - PlexusJson_Deserialize_UnknownMembers_AreIgnored
+
+              - id: Plexus-Serialization-Snapshot-Tree
+                title: >-
+                  It shall be possible to capture the diagram as a tree of plain values (string, bool, long, double,
+                  null, lists and string-keyed dictionaries only, with property kinds as plain strings, colors as
+                  # AARRGGBB text and host data as nested values) that has the schema of the JSON format, and a diagram
+                  shall be restorable from such a tree, tolerating other number types, dictionary and list types and
+                  JSON elements, and reporting unusable trees as snapshot exceptions.
+                justification: |
+                  Hosts that store diagrams in TOML, YAML or any other format need a representation that carries no
+                  System.Text.Json types and no second schema.
+                tests:
+                  - Diagram_ToTree_HoldsOnlyPlainValues
+                  - Diagram_ToTree_UsesPlainKindsColorsAndNestedData
+                  - Diagram_ToTree_WholeDoubleProperty_IsADouble
+                  - Diagram_ToTreeFromTree_RoundTripsLikeJson
+                  - Diagram_ToTree_IsACopy
+                  - Diagram_FromTree_ToleratesForeignNumbersMapsAndLists
+                  - Diagram_FromTree_PairSequencesAndJsonElements_AreAccepted
+                  - Diagram_FromTree_InvalidTree_ThrowsSnapshotException
+                  - Diagram_FromTree_MinimalTrees_Load
+
+              - id: Plexus-Serialization-Snapshot-Streams
+                title: >-
+                  The diagram shall be writable as UTF-8 JSON to a stream and readable from a stream (accepting a
+                  byte-order mark), shall produce the same text as the string form, and shall leave the stream open.
+                justification: |
+                  Platform file pickers hand out streams rather than paths.
+                tests:
+                  - Diagram_ToJsonFromJson_Stream_RoundTripsAndLeavesStreamOpen
+                  - Diagram_ToJson_Stream_WritesTheSameUtf8TextAsTheStringForm
+                  - Diagram_FromJson_Stream_AcceptsByteOrderMark
+                  - Diagram_FromJson_Stream_InvalidInput_Throws
+
+              - id: Plexus-Serialization-Snapshot-SkipUnknownTypes
+                title: >-
+                  By default loading a diagram that uses unknown node types shall fail, and when the load options
+                  ask to skip them, the nodes of unknown types, the wires that touch them, their group memberships
+                  and the groups that become empty shall be left out, everything else shall load normally, and the
+                  loaded diagram shall report what was skipped.
+                justification: |
+                  Files written by newer versions or with other plug-ins should still open when the user accepts
+                  losing the unknown part, and the user must be told what was lost.
+                tests:
+                  - Diagram_FromJson_UnknownTypes_DefaultIsStrict
+                  - Diagram_FromJson_SkipUnknownTypes_DropsNodesWiresAndMemberships
+                  - Diagram_FromSnapshot_SkipUnknownTypes_KeepsGroupsWithRemainingMembers
+                  - Diagram_FromSnapshot_SkipUnknownTypes_DropsGroupsThatBecomeEmptyRepeatedly
+                  - Diagram_FromJson_SkipUnknownTypes_NothingMissing_ReportIsEmpty
+                  - Diagram_FromTree_SkipUnknownTypes_WorksAcrossPages

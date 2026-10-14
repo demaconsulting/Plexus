@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Tank: an upright cylinder with a wavy liquid level -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 14 V50 C14 56 50 56 50 50 V14" stroke="#F2F2F2" stroke-width="2"/>
+    <ellipse cx="32" cy="14" rx="18" ry="6" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M14 32 C20 28 26 36 32 32 C38 28 44 36 50 32" stroke="#7FC4FF" stroke-width="3"/>
+    <path d="M18 44 C24 41 28 47 34 44 C38 42 42 46 46 44" stroke="#7FC4FF" stroke-width="2"/>
+  </g>
+</svg>

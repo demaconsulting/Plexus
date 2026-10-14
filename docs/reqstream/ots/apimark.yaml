@@ -1,0 +1,68 @@
+---
+# ApiMark OTS Software Requirements
+#
+# Requirements for the ApiMark API reference generation tool functionality.
+
+sections:
+  - title: OTS Software Requirements
+    sections:
+      - title: ApiMark Requirements
+        requirements:
+          - id: Plexus-OTS-ApiMark-Generate
+            title: >-
+              ApiMark shall generate gradually-disclosed Markdown API reference documentation for
+              each shipped package from its XML doc comments and ship it inside the NuGet package.
+            justification: |
+              The intended readers of the Plexus API reference include coding agents assembling an
+              application against the library. They read far more effectively from compact Markdown
+              organized for gradual disclosure (an index, then a page per namespace, type and member)
+              than from a single large reference. DemaConsulting.ApiMark.MSBuild produces exactly
+              that during the build of each shipped package, and ApiMarkPackDocs places it in the
+              api/ folder of the package so it travels with the library. FileAssert asserts the
+              index, namespace and type pages inside each produced .nupkg, which is the only
+              evidence that the MSBuild integration actually ran and that its output was packed.
+            tags: [ots]
+            tests:
+              - ApiMark_CoreApiDocsPacked
+              - ApiMark_RenderingApiDocsPacked
+              - ApiMark_AvaloniaApiDocsPacked
+              - ApiMark_PropertyGridApiDocsPacked
+
+          - id: Plexus-OTS-ApiMark-RenderExamples
+            title: >-
+              ApiMark shall render namespace documentation and documented examples into the
+              generated API reference.
+            justification: |
+              An agent assembling an application needs worked, copyable usage examples and a
+              namespace overview before it needs member signatures. Two facts are asserted because
+              both are load-bearing: that the NamespaceDoc summary and its example reach the
+              namespace page with the usage example immediately after the one-line summary, and
+              that an example's code renders as a fenced code block on type and member pages. A
+              generator that silently dropped either would still produce a complete-looking file
+              tree, so the content of the packed pages is asserted, not just their existence.
+            tags: [ots]
+            tests:
+              - ApiMark_NamespaceDocRendered
+              - ApiMark_ExampleCodeRendered
+
+          - id: Plexus-OTS-ApiMark-EnforceDocs
+            title: >-
+              ApiMark shall fail the build when a public API member of the Rendering, Avalonia or
+              PropertyGrid package lacks an XML doc summary.
+            justification: |
+              An API reference is only trustworthy if it is complete. The C# compiler's
+              documentation warning (CS1591) does not flag an implicit default constructor or a
+              member whose documentation is an unresolvable inheritdoc on a framework interface;
+              ApiMark's documentation-coverage check closes both gaps, and it runs at severity
+              Error so that a gap fails the build instead of shipping. The three packages that
+              enable it are asserted through the generated pages of members that were flagged
+              during adoption and are now documented (the PropertyGrid package through the pages of
+              its control constructor and public members). The core package does not enable the check
+              because ApiMark 0.5.7 reports the compiler-synthesized members of a public delegate
+              as undocumented; the compiler's own CS1591 (an error through TreatWarningsAsErrors)
+              still applies there.
+            tags: [ots]
+            tests:
+              - ApiMark_RenderingMembersDocumented
+              - ApiMark_AvaloniaMembersDocumented
+              - ApiMark_PropertyGridMembersDocumented

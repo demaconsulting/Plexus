@@ -1,23 +1,26 @@
 # Project Overview
 
-> **Downstream customization required**: Replace the `TODO` values below with
-> values specific to the target repository. These values are the canonical source
-> for project-wide template placeholders used throughout the repository.
+These values are the canonical source for project-wide template placeholders
+used throughout the repository.
 
-- **project-name**: TODO — repository/project name (e.g., `ReqStream`)
-- **organization**: TODO — organization name for document authorship (e.g., `DEMA Consulting`)
-- **project-tagline**: TODO — document subtitle; 4–8 words, noun phrase, no period
-  (e.g., `Requirements traceability for .NET projects`)
-- **description**: TODO — full project description, may be multiple sentences
-- **languages**: TODO — programming languages used (e.g., `C#`, `C++`)
-- **technologies**: TODO — key technologies and frameworks (e.g., `.NET`, `CMake`)
+- **project-name**: `Plexus`
+- **organization**: `DEMA Consulting`
+- **project-tagline**: `Node-based diagram editing for .NET`
+- **description**: Plexus is a general-purpose .NET library for building and
+  editing node-based block diagrams with typed ports, routed wires, annotations,
+  nestable collapsible groups, multiple pages, full undo/redo, and cross-application
+  copy/paste. It ships a UI-free core, a headless PNG renderer built on CanvasNet,
+  and an Avalonia editor control.
+- **languages**: `C#`
+- **technologies**: `.NET`, `Avalonia`, `CanvasNet`, `System.Text.Json`
 
 # Project Structure
 
-> **Downstream customization required**: Replace `{project}` and
-> `{test-project}` with the actual source and test project folder names.
-
 ```text
+├── demo/                                   # Not shipped: demo apps
+│   ├── DemaConsulting.Plexus.Demo.Model/
+│   ├── DemaConsulting.Plexus.Demo.Cli/
+│   └── DemaConsulting.Plexus.Demo.Gui/
 ├── docs/
 │   ├── build_notes/
 │   ├── code_quality/
@@ -31,9 +34,15 @@
 │   ├── user_guide/
 │   └── verification/
 ├── src/
-│   └── {project}/
-└── test/
-    └── {test-project}/
+│   ├── DemaConsulting.Plexus/              # Core (model, undo, routing, scene)
+│   ├── DemaConsulting.Plexus.Rendering/    # Headless CanvasNet PNG painter
+│   └── DemaConsulting.Plexus.Avalonia/     # Avalonia editor control
+├── test/
+│   ├── DemaConsulting.Plexus.Tests/
+│   ├── DemaConsulting.Plexus.Rendering.Tests/
+│   └── DemaConsulting.Plexus.Avalonia.Tests/
+└── tools/                                  # Not shipped: agent tooling
+    └── DemaConsulting.Plexus.Puppet/
 ```
 
 # Language and Spelling (ALL Agents)

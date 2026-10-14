@@ -1,0 +1,115 @@
+---
+# Software Unit requirements for Plexus Group.
+#
+# A group is a titled, nestable and collapsible frame around nodes, annotations and other groups. Requirements
+# describe its member list, membership rules, nesting, computed bounds, collapse and expand, title and
+# change notification.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        sections:
+          - title: Group Requirements
+            requirements:
+              - id: Plexus-Model-Group-Members
+                title: >-
+                  A group shall keep its direct members in order in a read-only observable list, link each member to
+                  the group, and add, remove and move members between groups undoably.
+                justification: |
+                  Users arrange elements into groups and regroup them. An ordered, observable member list lets views
+                  stay in step, and undoable membership changes keep the history complete.
+                tests:
+                  - Group_AddMemberAndRemoveMember_MoveElementsBetweenGroupsUndoably
+                  - Group_Members_AddAndRemove_RaiseCollectionChangedAndKeepOrder
+                  - Group_AddMember_AlreadyMemberOfSameGroup_RecordsNothing
+
+              - id: Plexus-Model-Group-MemberRules
+                title: >-
+                  A group shall refuse members that are wires or lie on another page, and shall refuse to contain
+                  itself or one of its ancestors.
+                justification: |
+                  Wires follow their nodes and are never grouped, elements of other pages cannot share a frame, and
+                  a group that contains itself would make nesting and bounds computation endless.
+                tests:
+                  - Group_AddMemberAndRemoveMember_InvalidOperations_Throw
+
+              - id: Plexus-Model-Group-Nesting
+                title: >-
+                  A group shall contain other groups, and shall enumerate all of its members at any depth, including
+                  nested groups, depth first.
+                justification: |
+                  Large diagrams are organized hierarchically. Operations such as moving or removing a group need the
+                  complete set of its descendants.
+                tests:
+                  - Group_AllMembers_IncludesNestedGroupsAndTheirMembers
+
+              - id: Plexus-Model-Group-Bounds
+                title: >-
+                  An expanded group shall report bounds that enclose the full visual extent of its members, nested
+                  groups included, plus padding and a title bar, and shall follow the members as they change, with
+                  an empty group reporting a fixed-size box.
+                justification: |
+                  The frame must never cut through the names, summaries and port labels drawn for its members, and
+                  it must follow its members automatically so that users do not resize frames by hand.
+                tests:
+                  - Group_Bounds_ExpandedFitsMemberExtentsWithPaddingAndTitle
+                  - Group_Bounds_EnclosesNameSummaryAndPortLabels
+                  - Group_Bounds_NestedGroup_OuterContainsInnerAndSiblings
+                  - Group_Bounds_MemberJoinsOrLeaves_BoundsFollowMembers
+                  - Group_Bounds_EmptyGroup_FixedBoxAtCollapsedPosition
+
+              - id: Plexus-Model-Group-Collapse
+                title: >-
+                  A group shall collapse into a fixed-size box at the position of its expanded frame and expand
+                  again undoably, restoring the previous layout exactly and recording nothing when the state is
+                  unchanged.
+                justification: |
+                  Collapsing groups reduces clutter in large diagrams. Members keep their own positions so that
+                  expanding restores the layout exactly, and the change must be undoable.
+                tests:
+                  - Group_IsCollapsed_SetTrueAndFalse_UndoRedoRoundTrip
+                  - Group_IsCollapsed_SameValue_RecordsNothing
+
+              - id: Plexus-Model-Group-CollapseHidesMembers
+                title: >-
+                  A collapsed group shall hide its members while remaining visible itself and keeping its members,
+                  and expanding it shall show them again.
+                justification: |
+                  Collapsing is only useful if the members disappear from the view. They must remain in the group
+                  so no content is lost.
+                tests:
+                  - Group_IsCollapsed_HidesMembers
+                  - Group_IsCollapsed_NestedMember_IsNotVisibleUntilExpanded
+
+              - id: Plexus-Model-Group-Title
+                title: >-
+                  A group shall change its title undoably, rejecting a null title and recording nothing when the
+                  title is unchanged.
+                justification: |
+                  The title identifies the group in the frame. Editing it must be undoable like every other change.
+                tests:
+                  - Group_Title_Set_UndoRedoRoundTrip
+                  - Group_Title_SameValue_RecordsNothing
+
+              - id: Plexus-Model-Group-Detached
+                title: >-
+                  A group shall reject changes to its title, collapse state and members while it is removed from its
+                  page.
+                justification: |
+                  Changes to a detached group would not be recorded in the history and could not be undone, so they
+                  are refused until an undo restores the group.
+                tests:
+                  - Group_Setters_RemovedGroup_ThrowInvalidOperationExceptionUntilUndo
+
+              - id: Plexus-Model-Group-ChangeNotification
+                title: >-
+                  A group shall raise a property-changed notification for changes to its title, collapse state,
+                  members and bounds, including through undo and redo, and report a bounds change of every ancestor
+                  group when a nested group changes.
+                justification: |
+                  Views redraw a group frame from change notifications. Because the bounds of an outer group depend
+                  on its nested groups, ancestors must be told as well.
+                tests:
+                  - Group_PropertyChanged_TitleCollapseAndMembers_RaisedForSetAndUndo
+                  - Group_PropertyChanged_MemberJoinsNestedGroup_ReportsBoundsOnAncestors

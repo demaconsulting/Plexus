@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Sine: a pair of axes with one period of a sine curve -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M6 8 V56 M6 32 H60" stroke="#F2F2F2" stroke-width="1.5"/>
+    <path d="M6 32 C16 6 26 6 32 32 C38 58 48 58 58 32" stroke="#FFB04D" stroke-width="3"/>
+  </g>
+</svg>

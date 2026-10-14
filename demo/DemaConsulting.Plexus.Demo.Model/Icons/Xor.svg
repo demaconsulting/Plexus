@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- XOR gate symbol: the OR shape with an extra curve behind it -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 24 H14 M4 40 H14 M52 32 H60" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M18 14 C34 14 46 18 52 32 C46 46 34 50 18 50 C24 40 24 24 18 14 Z" stroke="#6FE39A" stroke-width="2.5"/>
+    <path d="M10 14 C16 24 16 40 10 50" stroke="#F2F2F2" stroke-width="2"/>
+  </g>
+</svg>

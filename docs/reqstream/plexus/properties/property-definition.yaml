@@ -1,0 +1,98 @@
+---
+# Software Unit requirements for Plexus PropertyDefinition.
+#
+# PropertyDefinition declares one editable property of a node type: name, value kind, default, choices and
+# presentation hints, together with the shared value rules. Evidence comes from the PropertyDefinition unit tests,
+# which need no diagram.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Properties Requirements
+        sections:
+          - title: PropertyDefinition Requirements
+            requirements:
+              - id: Plexus-Properties-PropertyDefinition-KindInference
+                title: >-
+                  PropertyDefinition shall infer the value kind from the default value, widening smaller integer
+                  types to 32-bit or 64-bit integers and floating-point and decimal types to double.
+                justification: |
+                  Declarations stay short when the kind follows from the default, and a small set of canonical kinds
+                  keeps stored values portable.
+                tests:
+                  - PropertyDefinition_Constructor_InfersKindFromDefault
+                  - PropertyDefinition_Constructor_ColorAndSmallNumbers_NormalizeToCanonicalKinds
+                  - PropertyDefinition_Constructor_WideNumericTypes_NormalizeToCanonicalKinds
+
+              - id: Plexus-Properties-PropertyDefinition-DefaultValidation
+                title: >-
+                  PropertyDefinition shall reject a blank name, a missing default, a default of an unsupported type
+                  and a numeric default that is not finite or exceeds the 64-bit integer range.
+                justification: |
+                  A declaration that cannot produce a legal value must fail when it is written, not when a node is
+                  created.
+                tests:
+                  - PropertyDefinition_Constructor_UnsupportedDefault_ThrowsArgumentException
+                  - PropertyDefinition_Constructor_OutOfRangeOrNonFiniteNumbers_ThrowArgumentException
+
+              - id: Plexus-Properties-PropertyDefinition-Choices
+                title: >-
+                  PropertyDefinition shall turn a string property into a choice property when a choice list is
+                  supplied, keep its own copy of the list, and report no choices otherwise.
+                justification: |
+                  Choice properties give hosts drop-down style editing with a closed set of values, and a private
+                  copy prevents later changes to the caller's list from altering the declaration.
+                tests:
+                  - PropertyDefinition_Choices_Initializer_MakesChoiceProperty
+                  - PropertyDefinition_Choices_NotSet_IsNull
+                  - PropertyDefinition_Choices_SourceListChangedLater_DefinitionKeepsCopy
+
+              - id: Plexus-Properties-PropertyDefinition-ChoiceValidation
+                title: >-
+                  PropertyDefinition shall reject a choice list that is empty, contains duplicates or is combined
+                  with a default that is not a string and one of the choices.
+                justification: |
+                  An invalid choice list would make the default value, or every value, illegal.
+                tests:
+                  - PropertyDefinition_Choices_Invalid_Throws
+
+              - id: Plexus-Properties-PropertyDefinition-Presentation
+                title: >-
+                  PropertyDefinition shall default the display name to the property name and carry optional
+                  description, category, unit, editor hint, summary and read-only hints without restricting the value.
+                justification: |
+                  Editors and summaries need labels and grouping information, but the hints must never change which
+                  values are legal.
+                tests:
+                  - PropertyDefinition_Presentation_Defaults_AreEmpty
+                  - PropertyDefinition_Presentation_ExplicitHints_AreStored
+
+              - id: Plexus-Properties-PropertyDefinition-Formatting
+                title: >-
+                  PropertyDefinition shall format a value for display with the invariant culture or a supplied
+                  formatter, and shall format a summary line as the display name and value followed by the unit when
+                  one is set.
+                justification: |
+                  Summary text must not change with the user's regional settings, and hosts need to override the
+                  formatting of individual values.
+                tests:
+                  - PropertyDefinition_FormatSummary_AppliesDisplayNameUnitAndFormat
+                  - PropertyDefinition_FormatSummary_WithAndWithoutUnit_AppendsUnitOnlyWhenSet
+                  - PropertyDefinition_FormatValue_UsesInvariantCulture
+
+              - id: Plexus-Properties-PropertyDefinition-TextEditing
+                title: >-
+                  A property definition shall convert the text a user typed into a value of exactly its kind
+                  (culture-invariant, tolerating surrounding white space, alternative boolean spellings, a missing
+                  hash on colors, a trailing unit on numbers and the case of a unique choice) and give the reason
+                  when the text is not valid, and shall format a value as text that parses back to the same value.
+                justification: |
+                  Every host property editor needs the same parsing and error messages; owning them next to the
+                  definition keeps all editors consistent and correct.
+                tests:
+                  - PropertyDefinition_TryParse_ValidText_ProducesTypedValues
+                  - PropertyDefinition_TryParse_TolerantForms_AreAccepted
+                  - PropertyDefinition_TryParse_InvalidText_IsRefused
+                  - PropertyDefinition_TryParse_Choice_ExactWinsAndAmbiguousIsRefused
+                  - PropertyDefinition_TryParse_IsCultureInvariant
+                  - PropertyDefinition_FormatForEdit_RoundTripsThroughTryParse

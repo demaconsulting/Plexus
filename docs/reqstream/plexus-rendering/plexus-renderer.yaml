@@ -1,0 +1,161 @@
+---
+# Software Unit requirements for PlexusRendering PlexusRenderer.
+#
+# Decomposes the PlexusRendering system requirements into the responsibility of the public renderer entry point.
+# Tests are the PlexusRendererTests unit tests.
+
+sections:
+  - title: PlexusRendering Requirements
+    sections:
+      - title: PlexusRenderer Requirements
+        requirements:
+          - id: PlexusRendering-PlexusRenderer-RenderPng
+            title: The renderer shall render a page to the contents of a PNG file.
+            justification: |
+              Decomposes PlexusRendering-Render-Png; callers need the encoded image bytes to embed or stream.
+            tests:
+              - PlexusRenderer_RenderPng_DefaultOptions_ProducesPngSignature
+
+          - id: PlexusRendering-PlexusRenderer-TransparentBackground
+            title: The renderer shall keep a transparent background transparent in the PNG it produces.
+            justification: |
+              Decomposes PlexusRendering-Render-Png; pictures placed on other media need their transparency preserved.
+            tests:
+              - PlexusRenderer_RenderPng_TransparentBackground_KeepsAlpha
+
+          - id: PlexusRendering-PlexusRenderer-SavePng
+            title: The renderer shall write the rendered PNG to a file path given by the caller.
+            justification: |
+              Decomposes PlexusRendering-Render-Png; archiving an image is the most common use and should need no
+              extra code from the caller.
+            tests:
+              - PlexusRenderer_SavePng_WritesPngFile
+
+          - id: PlexusRendering-PlexusRenderer-Surface
+            title: >-
+              The renderer shall return the rendered image as a new pixel surface of the size the options imply,
+              owned by the caller.
+            justification: |
+              Decomposes PlexusRendering-Render-PixelSurface; callers that post-process pixels need the bitmap.
+            tests:
+              - PlexusRenderer_Render_Scale2_DoublesSizeAndPositions
+              - PlexusRenderer_Render_Background_UsesOptionOrTheme
+
+          - id: PlexusRendering-PlexusRenderer-FitContent
+            title: >-
+              The renderer shall, when no bounds are given, size the image to the page content plus the requested
+              padding, and shall render an empty page as a padding-only image.
+            justification: |
+              Decomposes PlexusRendering-Render-Framing; the default picture must show the whole page without
+              the caller computing its extent.
+            tests:
+              - PlexusRenderer_RenderPng_EmptyPage_ProducesPaddingSizedImage
+              - PlexusRenderer_Render_NoBounds_FitsContentPlusPadding
+
+          - id: PlexusRendering-PlexusRenderer-Bounds
+            title: >-
+              The renderer shall, when bounds are given, render exactly that diagram area, without adding padding.
+            justification: |
+              Decomposes PlexusRendering-Render-Framing; detail crops need an exact, predictable area.
+            tests:
+              - PlexusRenderer_RenderPng_BoundsAndScale_DetermineImageSize
+
+          - id: PlexusRendering-PlexusRenderer-Scale
+            title: >-
+              The renderer shall multiply the image size and the position of the content by the requested scale.
+            justification: |
+              Decomposes PlexusRendering-Render-Framing; high-resolution output must keep the picture proportional.
+            tests:
+              - PlexusRenderer_Render_Scale2_DoublesSizeAndPositions
+              - PlexusRenderer_RenderPng_BoundsAndScale_DetermineImageSize
+
+          - id: PlexusRendering-PlexusRenderer-Background
+            title: >-
+              The renderer shall fill the image with the requested background color, or with the theme's canvas
+              background when none is requested.
+            justification: |
+              Decomposes PlexusRendering-Render-BackgroundAndGrid.
+            tests:
+              - PlexusRenderer_Render_Background_UsesOptionOrTheme
+
+          - id: PlexusRendering-PlexusRenderer-Grid
+            title: >-
+              The renderer shall draw the dot grid behind the content, on multiples of the theme's grid size, unless
+              the grid is switched off.
+            justification: |
+              Decomposes PlexusRendering-Render-BackgroundAndGrid; the grid reproduces the editor's look and must
+              line up with grid-snapped nodes.
+            tests:
+              - PlexusRenderer_Render_ShowGrid_DrawsDotsOnGridPoints
+
+          - id: PlexusRendering-PlexusRenderer-Nodes
+            title: >-
+              The renderer shall draw each node as a box in the theme's node color, with its title, its name and
+              its icon.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; nodes are the primary content of a diagram.
+            tests:
+              - PlexusRenderer_Render_Node_PaintsBoxWithNodeFill
+              - PlexusRenderer_Render_NodeTextTitleAndName_PaintsGlyphPixels
+              - PlexusRenderer_Render_NodeIcon_PaintsRasterizedSvg
+
+          - id: PlexusRendering-PlexusRenderer-Wires
+            title: The renderer shall draw each wire between the ports it connects in the theme's wire color.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; wires carry the diagram's connectivity.
+            tests:
+              - PlexusRenderer_Render_Wire_StrokesBetweenPorts
+
+          - id: PlexusRendering-PlexusRenderer-StyledWires
+            title: >-
+              The renderer shall draw wires in the color, thickness and dash pattern of the diagram's wire
+              styler, and shall show a changed styling after the host refreshes the diagram's appearance.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; styled wires convey meaning (data type, state) and must
+              appear in rendered images exactly as the scene describes them, with no painter-specific styling code.
+            tests:
+              - PlexusRenderer_Render_StyledWire_UsesStylerColorAndThickness
+              - PlexusRenderer_Render_DashedWire_AlternatesInkAndGaps
+              - PlexusRenderer_Render_StylerDependsOnHostState_ChangesAfterRefresh
+
+          - id: PlexusRendering-PlexusRenderer-StyledNodes
+            title: >-
+              The renderer shall draw nodes in the fill, border, halo and opacity of the diagram's node styler and
+              with the icon recolored to the style's tint.
+            justification: |
+              Decomposes PlexusRendering-Render-StyledNodes; styled nodes convey meaning (state) and must appear in
+              rendered images exactly as the scene describes them, with no painter-specific styling code.
+            tests:
+              - PlexusRenderer_Render_StyledNode_ShowsFillBorderAndTintedIcon
+              - PlexusRenderer_Render_GlowAndOpacity_ShowHaloAndFade
+          - id: PlexusRendering-PlexusRenderer-AnnotationsAndGroups
+            title: The renderer shall draw annotations, expanded groups and collapsed groups.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; annotations and groups organize and explain the diagram.
+            tests:
+              - PlexusRenderer_Render_AnnotationAndGroups_PaintsAnnotationFill
+
+          - id: PlexusRendering-PlexusRenderer-Theme
+            title: The renderer shall draw with the theme given in the options instead of the diagram's own theme.
+            justification: |
+              Decomposes PlexusRendering-Render-ThemeAndSelection; a different look must not require changing the
+              diagram.
+            tests:
+              - PlexusRenderer_Render_ThemeOption_OverridesDiagramTheme
+
+          - id: PlexusRendering-PlexusRenderer-Selection
+            title: The renderer shall draw the elements given as the selection with the theme's selection outline.
+            justification: |
+              Decomposes PlexusRendering-Render-ThemeAndSelection; tooling highlights elements it wants noticed.
+            tests:
+              - PlexusRenderer_Render_SelectedNode_DrawsSelectionOutline
+
+          - id: PlexusRendering-PlexusRenderer-InvalidInput
+            title: >-
+              The renderer shall throw an argument exception for a missing page, a non-finite or non-positive
+              scale, negative or non-finite padding, empty bounds, an image larger than the maximum surface size,
+              and an empty file path.
+            justification: |
+              Decomposes PlexusRendering-Render-InvalidInput; bad options must fail early and loudly.
+            tests:
+              - PlexusRenderer_Render_InvalidInput_Throws

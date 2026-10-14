@@ -1,0 +1,41 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid PropertyGridDialog.
+#
+# Each requirement decomposes a system requirement into the behavior of the property dialog helper. Tests are the
+# headless tests in PropertyGridDialogTests.cs.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: PropertyGridDialog Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-Title
+            title: >-
+              The dialog shall default its title to the display name (or type name) of the object followed by
+              " - Properties", and use the given title when there is one.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; hosts rarely want to name every dialog.
+            tests:
+              - PropertyGridDialog_GetDefaultTitle_UsesDisplayNameOrTypeName
+              - PropertyGridDialog_Constructor_CreatesStagedGridWithTitle
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-Commit
+            title: >-
+              The dialog shall edit the object in a staged grid, commit the edits on OK inside the host's commit
+              scope and return true, and discard them on Cancel and return false.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; the dialog is one undo step.
+            tests:
+              - PropertyGridDialog_Ok_CommitsAndReturnsTrue
+              - PropertyGridDialog_Cancel_DiscardsAndReturnsFalse
+              - PropertyGridDialog_Ok_RunsCommitInsideScopeOnce
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-Validation
+            title: >-
+              The dialog shall stay open and show the reason, without writing anything, while a value is invalid
+              or the commit fails.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; OK must not accept invalid input.
+            tests:
+              - PropertyGridDialog_Ok_WithInvalidValue_StaysOpen
+              - PropertyGridDialog_Ok_WhenCommitFails_StaysOpenWithReason

@@ -2,176 +2,81 @@
 
 ## Purpose
 
-This document is the user guide for Plexus, a demonstration .NET library that
-showcases best practices for DEMA Consulting libraries.
+This document is the user guide for Plexus, a general-purpose .NET library for building and editing node-based block
+diagrams with typed ports, routed wires, annotations, nestable collapsible groups, multiple pages, full undo/redo, and
+cross-application copy/paste.
+
+Plexus is aimed at many independent host applications. The host decides what the nodes are (hardware blocks, signal
+processing stages, workflow steps) and owns file formats; Plexus provides the
+diagram model, editing behavior, rendering and an interactive editor control. The guide shows how a host application
+uses each of those parts, task by task, and keeps every task short: if a common task needs a page of code, that is a
+defect of the library to be reported, not something to document.
+
+![The Plexus demo application showing a multi-page diagram](images/overview.png)
 
 ## Scope
 
 This user guide covers:
 
-- Installation of the library
-- Basic usage and examples
-- API reference
+- The packages and how to install them
+- Core concepts: diagrams, pages, nodes, ports, wires, annotations and groups
+- Declaring node types, ports, properties, categories, icons and host data
+- Building and editing diagrams in code: pages, connections, groups, annotations, move to page
+- Undo, redo, transactions and dirty tracking
+- Saving and loading diagrams as JSON, the snapshot model, custom file formats (a TOML example with Tomlyn) and the
+  host's own objects stored with the diagram, and the clipboard between applications
+- Headless rendering to PNG
+- Embedding the Avalonia editor control and the node palette
+- The property grid: a generic, annotation-driven Avalonia grid, with a ready-made node properties dialog and a docked
+  panel whose every commit is one undo step
+- Appearance: themes and dynamic wire and node styling
+- Wires: connection rules, fan-in, routing, wire editing and custom routers
+- Extension points: custom node visuals, the scene and hit testing, custom serializers
+- Testing and automating a host application
 
-# Continuous Compliance
+The library does not load or save files (the host owns file formats), ship a node-type catalog or icon library,
+or support wires between pages. A property-editing grid is a separate package.
 
-This template follows the
+## How to Read This Guide
+
+The guide builds on one running example, a small math dataflow (constants feeding an adder that feeds a scope), which
+mirrors the Math domain of the demo application shipped in the repository. Fragments continue from the objects built
+in *Getting Started*: `types` (the node type registry), `diagram`, `page` and the nodes `a`, `b`, `sum` and `scope`.
+A fragment that needs a namespace the previous ones did not use starts with its `using` lines; the other fragments
+assume the namespaces already imported in the same chapter. The code of the guide is compiled against the current
+sources of the library.
+
+Plexus has a complete reference host application, the demo, in the `demo/` folder of the repository. Every feature in
+this guide is used there, and the screenshots are taken from it. *Getting Started* explains how to run it, and the
+chapter *Testing and Automating* explains how it is driven by scripts.
+
+The packages ship a Markdown API reference (see *API Reference* in *Getting Started*) that lists every member; this
+guide explains how the parts fit together.
+
+## Packages
+
+Plexus is delivered as four NuGet packages:
+
+| Package                                       | Purpose                                                              |
+|-----------------------------------------------|----------------------------------------------------------------------|
+| `DemaConsulting.Plexus`                       | UI-free core: model, undo, routing, scene graph, clipboard format    |
+| `DemaConsulting.Plexus.Rendering`             | Headless PNG renderer (depends on CanvasNet)                         |
+| `DemaConsulting.Plexus.Avalonia`              | Avalonia editor control and node palette (depends on Avalonia)       |
+| `DemaConsulting.Plexus.Avalonia.PropertyGrid` | Property grid, properties dialog and panel (depends on Avalonia)     |
+
+The core targets .NET 8, 9 and 10 and has no third-party runtime dependencies. The other packages target .NET 10. The
+Avalonia package does not depend on the rendering package, and the property grid package is generic: it edits any
+annotated .NET object and adds a small adapter for Plexus nodes.
+
+## Continuous Compliance
+
+Plexus follows the
 [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance) methodology, which ensures
-compliance evidence is generated automatically on every CI run.
+compliance evidence is generated automatically on every CI run. Requirements are traced to passing tests, markdownlint,
+cspell and yamllint are enforced before any build proceeds, and each release ships with generated requirements, trace
+matrix, design, verification and quality documents.
 
-## Key Practices
-
-- **Requirements Traceability**: Every requirement is linked to passing tests, and a trace matrix is
-  auto-generated on each release
-- **Linting Enforcement**: markdownlint, cspell, and yamllint are enforced before any build proceeds
-- **Automated Audit Documentation**: Each release ships with generated requirements, justifications,
-  trace matrix, and quality reports
-- **CodeQL and SonarCloud**: Security and quality analysis runs on every build
-
-# Installation
-
-Install the library using the .NET CLI:
-
-```bash
-dotnet add package DemaConsulting.Plexus
-```
-
-# Usage
-
-## Basic Usage
-
-```csharp
-using DemaConsulting.Plexus;
-
-var demo = new Demo();
-var result = demo.DemoMethod("World");
-Console.WriteLine(result); // Output: Hello, World!
-```
-
-## API Reference
-
-### Demo
-
-The `Demo` class provides demonstration functionality for the Plexus library.
-
-#### Constants
-
-##### DefaultPrefix
-
-```csharp
-public const string DefaultPrefix = "Hello";
-```
-
-The greeting prefix used when no custom prefix is specified.
-
-#### Constructors
-
-##### Demo()
-
-```csharp
-public Demo()
-```
-
-Initializes a new instance of the `Demo` class with the default prefix "Hello".
-
-##### Demo(string prefix)
-
-```csharp
-public Demo(string prefix)
-```
-
-Initializes a new instance of the `Demo` class with a custom prefix.
-
-**Parameters:**
-
-- `prefix` (string): The prefix to use in greetings. Must not be null or empty.
-
-**Exceptions:**
-
-- `ArgumentNullException`: Thrown when `prefix` is null.
-- `ArgumentException`: Thrown when `prefix` is an empty string.
-
-#### Properties
-
-##### Prefix
-
-```csharp
-public string Prefix { get; }
-```
-
-Gets the greeting prefix used by this instance.
-
-#### Methods
-
-##### DemoMethod
-
-```csharp
-public string DemoMethod(string name)
-```
-
-Returns a greeting message for the specified name.
-
-**Parameters:**
-
-- `name` (string): The name to greet. Must not be null or empty.
-
-**Returns:**
-
-A string containing the greeting message in the format "{prefix}, {name}!".
-
-**Exceptions:**
-
-- `ArgumentNullException`: Thrown when `name` is null.
-- `ArgumentException`: Thrown when `name` is an empty string.
-
-**Example:**
-
-```csharp
-var demo = new Demo();
-var greeting = demo.DemoMethod("World");
-// greeting = "Hello, World!"
-```
-
-# Examples
-
-## Example 1: Basic Greeting
-
-```csharp
-using DemaConsulting.Plexus;
-
-var demo = new Demo();
-var result = demo.DemoMethod("Alice");
-Console.WriteLine(result);
-// Output: Hello, Alice!
-```
-
-## Example 2: Custom Prefix
-
-```csharp
-using DemaConsulting.Plexus;
-
-var demo = new Demo("Hi");
-var result = demo.DemoMethod("Alice");
-Console.WriteLine(result);
-// Output: Hi, Alice!
-```
-
-## Example 3: Error Handling
-
-```csharp
-using DemaConsulting.Plexus;
-
-var demo = new Demo();
-try
-{
-    var result = demo.DemoMethod(null);
-}
-catch (ArgumentNullException ex)
-{
-    Console.WriteLine("Name cannot be null");
-}
-```
-
-# References
+## References
 
 - [REF-1] Continuous Compliance Methodology (<https://github.com/demaconsulting/ContinuousCompliance>)
+- [REF-2] Avalonia UI Documentation (<https://docs.avaloniaui.net>)

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Add: two inputs meeting in a circle with a plus sign -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="36" cy="32" r="16" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M36 24 V40 M28 32 H44" stroke="#FFB04D" stroke-width="3"/>
+    <path d="M4 22 H22 M4 42 H22" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M52 32 H62" stroke="#F2F2F2" stroke-width="2"/>
+  </g>
+</svg>

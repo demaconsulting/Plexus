@@ -1,0 +1,160 @@
+---
+# Software Unit requirements for Plexus NodeTypeRegistry.
+#
+# NodeTypeRegistry covers the host declarations of node types, their ports, presentation hints and port types, and
+# the registries that hold them. The unit requirements are verified by the unit tests in TypesAndGeometryTests.cs,
+# PortPathTests.cs, SharedPortNameTests.cs, PropertyBagTests.cs, Types/NodeTypeRegistryTests.cs and
+# Types/NodeTypeCategoryTests.cs.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Types Requirements
+        sections:
+          - title: NodeTypeRegistry Requirements
+            requirements:
+              - id: Plexus-Types-NodeTypeRegistry-Registration
+                title: >-
+                  NodeTypeRegistry shall register node types by key, report whether a key is registered, return a
+                  registered type by key (failing for an unknown key, or reporting absence through the try variant),
+                  count the registered types and enumerate them in registration order.
+                justification: |
+                  Diagrams create nodes from host-declared types looked up by key, and editors list the available
+                  types in a stable order. The registry is the single place where those declarations live.
+                tests:
+                  - NodeTypeRegistry_AddGetTryGetContains_WorkAndRejectDuplicates
+                  - NodeTypeRegistry_Enumerate_ReturnsRegistrationOrder
+
+              - id: Plexus-Types-NodeTypeRegistry-DuplicateKeys
+                title: >-
+                  NodeTypeRegistry shall reject registration of a node type whose key is already registered and
+                  shall keep the original registration.
+                justification: |
+                  A key identifies a node type in snapshots and in the add-node API. Silently replacing a type
+                  would change the meaning of existing nodes and saved documents.
+                tests:
+                  - NodeTypeRegistry_AddGetTryGetContains_WorkAndRejectDuplicates
+                  - NodeTypeRegistry_Add_DuplicateKey_KeepsOriginalType
+
+              - id: Plexus-Types-NodeTypeRegistry-DuplicateMembers
+                title: >-
+                  NodeTypeRegistry shall reject a node type that declares the same input name twice, the same
+                  output name twice or the same property name twice, shall allow an input and an output to share a
+                  name, and shall leave the registry unchanged when it rejects a type.
+                justification: |
+                  Ports and properties are looked up by name, so duplicates within a direction would be ambiguous.
+                  An input and an output may legitimately share a name, such as a position that is both read and
+                  written. Rejecting the type at registration reports the mistake before any node exists.
+                tests:
+                  - NodeTypeRegistry_Add_DuplicatePortOrPropertyNames_ThrowsArgumentException
+                  - NodeTypeRegistry_Add_SameNameOnInputAndOutput_IsAllowed
+                  - NodeTypeRegistry_Add_DuplicateNameWithinOutputs_Throws
+                  - NodeTypeRegistry_Add_RejectedDeclaration_CanBeCorrectedAndRegistered
+
+              - id: Plexus-Types-NodeTypeRegistry-Freeze
+                title: >-
+                  NodeTypeRegistry shall prevent changes to the port and property lists of a node type once it has
+                  been registered.
+                justification: |
+                  Live nodes derive their ports from the type. Allowing a registered type to change would leave
+                  existing nodes inconsistent with their declaration.
+                tests:
+                  - NodeType_AfterRegistration_ListsAreFrozen
+
+              - id: Plexus-Types-NodeTypeRegistry-Removal
+                title: >-
+                  NodeTypeRegistry shall remove a registered node type by key, reporting whether it was registered,
+                  allow the key to be registered again afterwards and keep the order of the remaining types.
+                justification: |
+                  Hosts that start from a shared registry need to drop the types a particular document should not
+                  offer. Once removed, a type must no longer be usable for new nodes.
+                tests:
+                  - NodeTypeRegistry_Remove_RegisteredKey_RemovesTypeAndReturnsTrue
+                  - NodeTypeRegistry_Remove_ThenAddAgain_Works
+                  - NodeTypeRegistry_Remove_RemovedTypeCannotBeAdded
+                  - NodeTypeRegistry_Enumerate_ReturnsRegistrationOrder
+
+              - id: Plexus-Types-NodeTypeRegistry-Naming
+                title: >-
+                  NodeTypeRegistry shall require a non-blank key for every node type, default its title to the last
+                  dot-separated segment of the key, and default its display name to the title.
+                justification: |
+                  Hosts namespace keys, such as "acme.math.Integrator", but users need a short readable heading and
+                  a palette name. Sensible defaults avoid repeating text while still allowing explicit values.
+                tests:
+                  - NodeType_Title_DefaultsToLastKeySegment
+                  - NodeType_DisplayName_DefaultsToTitle
+                  - NodeType_Constructor_BlankKey_ThrowsArgumentException
+
+              - id: Plexus-Types-NodeTypeRegistry-PortDeclarations
+                title: >-
+                  NodeTypeRegistry shall keep the declared input and output ports of a node type in declaration
+                  order with their name, port type key and label, defaulting the label to the name, and shall reject
+                  a port with a blank name or type key.
+                justification: |
+                  Nodes show their ports in the order the host declared them, and wires refer to ports by name and
+                  type. A complete, validated port declaration is the basis of every node created from the type.
+                tests:
+                  - NodeType_Ports_PreserveDeclarationOrderPerDirection
+                  - PortDefinition_Label_DefaultsToNameUnlessSet
+                  - PortDefinition_Constructor_BlankNameOrTypeKey_ThrowsArgumentException
+                  - NodeTypeRegistry_Add_SameNameOnInputAndOutput_IsAllowed
+
+              - id: Plexus-Types-NodeTypeRegistry-PortFanIn
+                title: >-
+                  NodeTypeRegistry shall let a port declaration state whether an input accepts more than one wire,
+                  defaulting to false, and shall report that value on the ports of nodes created from the type, with
+                  outputs always reporting that they accept any number of wires.
+                justification: |
+                  Most inputs take a single wire, but some, such as a join or a shared target, legitimately merge
+                  several. Declaring that per port keeps the default strict and lets the host opt in exactly where
+                  merging makes sense.
+                tests:
+                  - Port_AllowsMultipleWires_DefaultsToFalseForInputsAndTrueForOutputs
+                  - DiagramPage_Connect_InputAllowsMultipleWires_AcceptsSeveralWires
+
+              - id: Plexus-Types-NodeTypeRegistry-PresentationHints
+                title: >-
+                  NodeTypeRegistry shall let a node type declare a default size, whether editors may resize it, an
+                  icon and a category, and shall report these as unspecified when the host does not declare them.
+                justification: |
+                  Some node types need a fixed or larger box, a resize handle or an icon, and palettes group types
+                  by category, while most declarations need none of these. Optional hints let the host choose
+                  without forcing every declaration to repeat defaults.
+                tests:
+                  - NodeType_Presentation_NotDeclared_IsUnspecified
+                  - NodeType_Presentation_Declared_IsExposed
+                  - NodeType_Category_NotDeclared_IsNull
+                  - NodeType_Category_Declared_IsExposedAndKeptByRegistry
+
+              - id: Plexus-Types-NodeTypeRegistry-SummaryLines
+                title: >-
+                  NodeTypeRegistry shall produce the summary lines of a node from the properties flagged for the
+                  summary, in declaration order, unless the node type declares its own summary function.
+                justification: |
+                  Nodes show key property values below the header. A default derived from the property declarations
+                  avoids boilerplate, and a custom function covers summaries the defaults cannot express.
+                tests:
+                  - NodeType_GetSummaryLines_DefaultAndCustom
+
+              - id: Plexus-Types-NodeTypeRegistry-PortTypeColors
+                title: >-
+                  NodeTypeRegistry shall register port types with a color, return the registered port type for a key
+                  and return a neutral gray port type carrying the requested key when the key is not registered.
+                justification: |
+                  Port colors show which ports are compatible. A diagram that mentions a port type the host forgot
+                  to register must still render, so lookup falls back to a neutral color instead of failing.
+                tests:
+                  - PortTypeRegistry_Get_RegisteredAndUnknownKeys
+                  - PortTypeRegistry_Get_UnknownKey_ReturnsNeutralGrayWithoutRegistering
+
+              - id: Plexus-Types-NodeTypeRegistry-PortTypeDuplicates
+                title: >-
+                  NodeTypeRegistry shall reject registration of a port type whose key is already registered and
+                  shall keep the first definition.
+                justification: |
+                  Two colors for one port type key would make the drawn color depend on registration order and
+                  hide a host declaration mistake.
+                tests:
+                  - PortTypeRegistry_Get_RegisteredAndUnknownKeys
+                  - PortTypeRegistry_Add_DuplicateKey_KeepsFirstType

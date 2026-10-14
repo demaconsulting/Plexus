@@ -13,87 +13,43 @@ correctly.
 ### Verification Approach
 
 xUnit is verified by self-validation evidence from the CI pipeline. Each scenario names a specific
-test method that xUnit must discover, execute, and record in a TRX result file. A passing pipeline
-run for all scenarios constitutes evidence that both requirements are satisfied.
+test method in the Plexus system tests that xUnit must discover, execute, and record in a TRX result
+file. A passing pipeline run for all scenarios constitutes evidence that both requirements are
+satisfied.
 
 ### Test Scenarios
 
-#### Demo_DemoMethod_DefaultPrefix_ReturnsGreeting
+#### Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram
 
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod returns the
-expected greeting using the default prefix.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
-
-#### Demo_DemoMethod_CustomPrefix_ReturnsGreeting
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod returns the
-expected greeting using a custom prefix.
+**Scenario**: xUnit discovers and runs this test; the test verifies that a default-configured diagram can be built,
+connected, edited and queried.
 
 **Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
 
 **Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
 
-#### Demo_DemoMethod_NullInput_ThrowsArgumentNullException
+#### Plexus_EditingSession_UndoAllThenRedoAll_RestoresExactStates
 
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod rejects a null
-argument with ArgumentNullException.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
-
-#### Demo_DemoMethod_EmptyInput_ThrowsArgumentException
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that DemoMethod rejects an
-empty string argument with ArgumentException.
+**Scenario**: xUnit discovers and runs this test; the test verifies that a long editing session can be fully undone
+and redone.
 
 **Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
 
 **Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
 
-#### Demo_Constructor_NullPrefix_ThrowsArgumentNullException
+#### Plexus_Transaction_WholeGesture_UndoesAsOneStep
 
-**Scenario**: xUnit discovers and runs this test; the test verifies that the constructor rejects a
-null prefix with ArgumentNullException.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
-
-#### Demo_Constructor_EmptyPrefix_ThrowsArgumentException
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that the constructor rejects an
-empty string prefix with ArgumentException.
+**Scenario**: xUnit discovers and runs this test; the test verifies that a transaction groups a whole gesture into
+one undo step.
 
 **Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
 
 **Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
 
-#### Demo_DefaultPrefix_Read_IsHello
+#### Plexus_LoadingWithSuspendedHistory_LeavesCleanEmptyHistory
 
-**Scenario**: xUnit discovers and runs this test; the test verifies that the DefaultPrefix constant
-has the value "Hello".
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
-
-#### Demo_Prefix_WithCustomConstruction_ReturnsCustomPrefix
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that the Prefix property
-returns the value supplied at construction.
-
-**Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
-
-**Requirement coverage**: `Plexus-OTS-xUnit-Execute`, `Plexus-OTS-xUnit-Report`.
-
-#### Demo_DefaultConstructor_WithNoArgs_SetsDefaultPrefix
-
-**Scenario**: xUnit discovers and runs this test; the test verifies that the default constructor
-sets Prefix to the DefaultPrefix constant.
+**Scenario**: xUnit discovers and runs this test; the test verifies that content loaded with history suspended
+leaves a clean, empty history.
 
 **Expected**: xUnit executes the test, the test passes, and the result appears in the TRX output.
 
@@ -101,19 +57,11 @@ sets Prefix to the DefaultPrefix constant.
 
 ### Requirements Coverage
 
-- **`Plexus-OTS-xUnit-Execute`**: Demo_DemoMethod_DefaultPrefix_ReturnsGreeting,
-  Demo_DemoMethod_CustomPrefix_ReturnsGreeting,
-  Demo_DemoMethod_NullInput_ThrowsArgumentNullException,
-  Demo_DemoMethod_EmptyInput_ThrowsArgumentException,
-  Demo_Constructor_NullPrefix_ThrowsArgumentNullException,
-  Demo_Constructor_EmptyPrefix_ThrowsArgumentException, Demo_DefaultPrefix_Read_IsHello,
-  Demo_Prefix_WithCustomConstruction_ReturnsCustomPrefix,
-  Demo_DefaultConstructor_WithNoArgs_SetsDefaultPrefix
-- **`Plexus-OTS-xUnit-Report`**: Demo_DemoMethod_DefaultPrefix_ReturnsGreeting,
-  Demo_DemoMethod_CustomPrefix_ReturnsGreeting,
-  Demo_DemoMethod_NullInput_ThrowsArgumentNullException,
-  Demo_DemoMethod_EmptyInput_ThrowsArgumentException,
-  Demo_Constructor_NullPrefix_ThrowsArgumentNullException,
-  Demo_Constructor_EmptyPrefix_ThrowsArgumentException, Demo_DefaultPrefix_Read_IsHello,
-  Demo_Prefix_WithCustomConstruction_ReturnsCustomPrefix,
-  Demo_DefaultConstructor_WithNoArgs_SetsDefaultPrefix
+- **`Plexus-OTS-xUnit-Execute`**: Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram,
+  Plexus_EditingSession_UndoAllThenRedoAll_RestoresExactStates,
+  Plexus_Transaction_WholeGesture_UndoesAsOneStep,
+  Plexus_LoadingWithSuspendedHistory_LeavesCleanEmptyHistory
+- **`Plexus-OTS-xUnit-Report`**: Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram,
+  Plexus_EditingSession_UndoAllThenRedoAll_RestoresExactStates,
+  Plexus_Transaction_WholeGesture_UndoesAsOneStep,
+  Plexus_LoadingWithSuspendedHistory_LeavesCleanEmptyHistory

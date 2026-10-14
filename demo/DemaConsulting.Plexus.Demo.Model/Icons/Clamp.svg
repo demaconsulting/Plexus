@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Clamp: a ramp that flattens at an upper and a lower limit -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 14 H60 M4 50 H60" stroke="#F2F2F2" stroke-width="1.5"/>
+    <path d="M6 50 H20 L44 14 H58" stroke="#FFB04D" stroke-width="3"/>
+  </g>
+</svg>

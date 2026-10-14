@@ -1,0 +1,63 @@
+---
+# Software Unit requirements for PlexusAvalonia DiagramClipboard.
+#
+# Decomposes the PlexusAvalonia Editor subsystem requirements into the responsibility of the clipboard bridge (the
+# operating-system clipboard with a Plexus format and a text fallback) and of the text formatting helper. Tests are
+# the unit tests in DiagramClipboardTests.cs.
+
+sections:
+  - title: PlexusAvalonia Requirements
+    sections:
+      - title: Editor Requirements
+        sections:
+          - title: DiagramClipboard Requirements
+            requirements:
+              - id: PlexusAvalonia-Editor-DiagramClipboard-WriteBothFormats
+                title: >-
+                  Writing to the clipboard shall place the Plexus JSON on the operating-system clipboard both in the
+                  Plexus-specific format and as plain text, as one entry.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Clipboard; the specific format identifies Plexus content exactly,
+                  and the text copy lets other applications and older versions receive it.
+                tests:
+                  - SystemDiagramClipboard_SetAsync_Json_WritesTaggedFormatAndTextTogether
+
+              - id: PlexusAvalonia-Editor-DiagramClipboard-ReadPrefersPlexusFormat
+                title: >-
+                  Reading from the clipboard shall return the Plexus-specific format when it is present, even when
+                  the plain-text representation differs.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Clipboard; the exact format is authoritative.
+                tests:
+                  - SystemDiagramClipboard_GetAsync_TaggedFormatPresent_PrefersIt
+
+              - id: PlexusAvalonia-Editor-DiagramClipboard-TextFallback
+                title: >-
+                  Reading from the clipboard shall fall back to plain text when no Plexus-specific format is
+                  present.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Clipboard; text copied from another application instance or tool
+                  must still paste.
+                tests:
+                  - SystemDiagramClipboard_GetAsync_OnlyPlainText_FallsBackToText
+
+              - id: PlexusAvalonia-Editor-DiagramClipboard-EmptyClipboard
+                title: >-
+                  Reading from an empty clipboard shall return nothing rather than failing.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-Clipboard; pasting with nothing copied is a normal user action.
+                tests:
+                  - SystemDiagramClipboard_GetAsync_EmptyClipboard_ReturnsNull
+
+              - id: PlexusAvalonia-Editor-DiagramClipboard-TextFormatting
+                title: >-
+                  The text formatting helper shared by painting and measuring shall format text in the requested
+                  font size and weight, and shall give empty text the height of a line.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-SceneSync; one formatting path for measured and drawn text
+                  guarantees that laid-out boxes match the glyphs (the helper lives with the clipboard bridge unit
+                  because both are thin adapters over Avalonia platform services).
+                tests:
+                  - TextFormats_Create_EmptyText_FormatsASingleSpace
+                  - TextFormats_Create_LargerFontSize_IsTallerAndWider
+                  - TextFormats_Create_BoldStyle_IsAtLeastAsWideAsRegular

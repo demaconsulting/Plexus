@@ -1,0 +1,453 @@
+---
+# Software Unit requirements for Plexus SceneBuilder.
+#
+# Unit requirements decompose the Scene subsystem requirements (which link down to these IDs as children) and are
+# proven by the unit tests in SceneBuilderTests and SceneGroupTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Scene Requirements
+        sections:
+          - title: SceneBuilder Requirements
+            requirements:
+              - id: Plexus-Scene-SceneBuilder-Nodes
+                title: >-
+                  The builder shall draw each visible node as a filled, bordered box with its type title (wrapped
+                  or shrunk to stay inside the box), icon when the type has one, instance name, summary lines and
+                  one triangle and label per port, colored by the port type.
+                justification: |
+                  This is the standard node look every painter must reproduce.
+                tests:
+                  - SceneBuilder_Build_StandardNode_EmitsBoxTitleNameSummaryAndPorts
+                  - SceneBuilder_Build_PortTriangle_UsesPortTypeColor
+                  - SceneBuilder_Build_NodeWithIcon_EmitsIconPrimitive
+                  - SceneBuilder_Build_LongTitle_WrapsIntoLinesInsideTheBox
+
+              - id: Plexus-Scene-SceneBuilder-Wires
+                title: >-
+                  The builder shall draw each visible wire as a stroked path through its anchors and bend points
+                  with rounded corners (rounding shrinking at short segments), ending in a filled arrowhead at the
+                  target unless arrowheads are disabled in the theme.
+                justification: |
+                  Wires show the direction of data flow; rounded orthogonal corners are the diagram's visual
+                  style.
+                tests:
+                  - SceneBuilder_Build_StraightWire_IsStrokedPathBetweenAnchors
+                  - SceneBuilder_Build_Wire_EndsInFilledArrowheadAtTheTarget
+                  - SceneBuilder_Build_WireArrowheadsDisabled_DrawsOnlyTheLine
+                  - SceneBuilder_Build_WireWithBends_RoundsCornersWithCubics
+                  - WirePaths_Rounded_ShrinksRadiusOnShortSegmentsAndSkipsStraightRuns
+
+              - id: Plexus-Scene-SceneBuilder-WireStyle
+                title: >-
+                  The builder shall draw each wire with the color, thickness and arrowhead choice of the style
+                  that the diagram's wire styler returns for it, taking every member the style leaves unset (or
+                  every member, when there is no styler, the styler returns no style or the styler throws) from
+                  the theme, growing the arrowhead with the thickness, evaluating the styler again on every build
+                  so the style follows the wire's connections, using the same styler for the display routes of
+                  wires attached to collapsed groups, and recording the styled thickness in the wire's hit target.
+                justification: |
+                  Hosts need individual wires drawn differently depending on what they connect (for example by
+                  data type or by a property of a node), and a faulty host callback must never stop the diagram
+                  from drawing.
+                tests:
+                  - Diagram_WireStyler_Default_IsNullAndWiresUseTheme
+                  - SceneBuilder_Build_StylerColorAndThickness_AreApplied
+                  - SceneBuilder_Build_NullMembersAndNullStyle_FallBackToTheme
+                  - SceneBuilder_Build_StylerArrowhead_OverridesTheme
+                  - SceneBuilder_Build_StylerThrows_FallsBackToTheme
+                  - SceneBuilder_Build_PropertyChangeOnConnectedNode_RestylesWire
+                  - SceneBuilder_Build_CollapsedGroupProxyWire_UsesStyler
+                  - SceneBuilder_Build_StyledThickness_WidensHitTarget
+
+              - id: Plexus-Scene-SceneBuilder-WireDashes
+                title: >-
+                  When a wire style has a dash pattern the builder shall split the wire's stroked path (including
+                  its rounded corners) into one path figure per dash, starting at the source end, repeating an
+                  odd-length pattern like SVG, keeping a dash that turns a corner in one figure, and leaving the
+                  wire solid when the pattern is empty or so fine that it would produce an excessive number of
+                  dashes.
+                justification: |
+                  Dashing in the scene (rather than in each painter) makes every painter draw the identical
+                  pattern with no painter support, while the guard keeps a careless pattern from flooding the
+                  scene with figures.
+                tests:
+                  - SceneBuilder_Build_StylerDash_SplitsWireIntoFigures
+                  - WireStyle_Dash_OddLength_RepeatsPattern
+                  - WirePaths_Dashed_AroundCorner_KeepsDashContinuous
+                  - WirePaths_Dashed_RoundedCorner_CoversExpectedLength
+                  - WirePaths_Dashed_TooFinePattern_LeavesPathSolid
+
+              - id: Plexus-Scene-SceneBuilder-WireStylers
+                title: >-
+                  The wire style shall reject non-positive or non-finite thickness and dash lengths and copy its
+                  dash list, and the ready-made stylers shall color a wire by its source port's type, map a
+                  property of the source or target node to a style, apply a style to wires matching a condition,
+                  and combine stylers so that later ones override the members earlier ones set, rejecting null
+                  arguments.
+                justification: |
+                  The common cases (color by data type, style by node state) should be one line for the host,
+                  and invalid styles must fail where they are written instead of while drawing.
+                tests:
+                  - WireStyle_Validation_RejectsNonPositiveValues
+                  - WireStyle_Dash_IsCopied
+                  - WireStylers_ByPortType_UsesSourcePortTypeColor
+                  - WireStylers_ByTargetNodeProperty_ReadsTargetNode
+                  - WireStylers_Combine_LaterStylersOverrideEarlierNonNullMembers
+                  - WireStylers_NullArguments_Throw
+
+              - id: Plexus-Scene-SceneBuilder-WireStylersPerPage
+                title: >-
+                  The per-page styler helper shall build the styler of a page once per page and diagram version and
+                  reuse it for every wire of that page, build a new one after any change (including undo, redo and
+                  RefreshAppearance), keep pages apart, compose with the other stylers, fall back to the theme and
+                  retry when its factory fails, style nothing for a wire that is not on a page, and reject a null
+                  factory.
+                justification: |
+                  Styling that depends on a computation shared by all wires of a page (a simulation, a traversal)
+                  must not repeat it for every wire of every scene build, and the host must not have to write a
+                  cache and keep it in step with the diagram.
+                tests:
+                  - WireStylers_PerPage_BuildsOncePerPageAndVersion
+                  - WireStylers_PerPage_FollowsPropertyEditsUndoAndRedo
+                  - WireStylers_PerPage_KeepsPagesApartAndCombines
+                  - WireStylers_PerPage_FailingFactoryFallsBackAndRetries_NullStylerStylesNothing
+                  - WireStylers_PerPage_ArgumentChecksAndDetachedWire
+
+              - id: Plexus-Scene-SceneBuilder-NodeStyle
+                title: >-
+                  The builder shall draw each node with the fill, border, border thickness, title color, icon tint,
+                  halo and opacity of the style that the diagram's node styler returns for it, taking every member
+                  the style leaves unset (or the whole style, when the styler returns nothing or fails) from the
+                  theme, shall expose the resolved style and its fallbacks to custom node visuals, shall draw the
+                  selection outline on top, and shall follow property changes, undo and redo of the node.
+                justification: |
+                  Node appearance must follow the model (a property, a connection, host data) in every painter
+                  without painter-specific work, custom visuals must be able to honor the same style, and a faulty
+                  host callback must never stop the diagram from drawing.
+                tests:
+                  - Diagram_NodeStyler_Default_IsNullAndNodesUseTheme
+                  - SceneBuilder_Build_NodeStyle_FillBorderThicknessAndHeaderText_AreApplied
+                  - SceneBuilder_Build_NodeStyle_NullMembersAndNullStyle_FallBackToTheme
+                  - SceneBuilder_Build_NodeStyle_IconTintAndOpacity_ReachTheIcon
+                  - SceneBuilder_Build_NodeStyle_Opacity_FadesEverythingTheNodeDraws
+                  - SceneBuilder_Build_NodeStyle_Glow_AddsFadingRingsBelowTheBox
+                  - SceneBuilder_Build_NodeStylerThrows_FallsBackToTheme
+                  - SceneBuilder_Build_PropertyChangeOnNode_RestylesNode
+                  - SceneBuilder_Build_StyledSelectedNode_DrawsSelectionOutlineOnTop
+                  - SceneBuilder_Build_CustomVisual_ReadsTheResolvedStyleFromTheContext
+                  - NodeVisualContext_Style_WithoutStyler_IsNoneAndFadedIsIdentity
+
+              - id: Plexus-Scene-SceneBuilder-NodeStylers
+                title: >-
+                  The node style shall reject non-positive or non-finite border thickness and an opacity outside 0 to
+                  1, shall combine with overrides winning where set, the icon primitive shall carry its tint and
+                  opacity with the same validation, and the ready-made stylers shall map a node property (or its
+                  absence), match a condition and combine so that later stylers override only what they set.
+                justification: |
+                  The common cases (style by node state) should be one line for the host, and invalid styles must
+                  fail where they are written instead of while drawing.
+                tests:
+                  - NodeStyle_ValidationAndWithOverrides_BehaveAsDocumented
+                  - IconPrimitive_TintAndOpacity_DefaultAndValidate
+                  - NodeStylers_ByPropertyAndWhen_MapNodes
+                  - NodeStylers_Combine_LaterStylersOverrideEarlierNonNullMembers
+                  - NodeStylers_NullArguments_Throw
+
+              - id: Plexus-Scene-SceneBuilder-NodeStylersPerPage
+                title: >-
+                  The per-page node styler helper shall build the styler of a page once per page and diagram version
+                  and reuse it for every node of that page, build a new one after any change (including undo, redo
+                  and refresh), keep pages apart, retry a failing factory, treat a null styler as "style nothing"
+                  and style no node that is not on a page.
+                justification: |
+                  Styling that needs a computation shared by the whole page (a simulation) must not repeat it for
+                  every node of every scene build, and the host must not have to write a cache and keep it in step
+                  with the diagram.
+                tests:
+                  - NodeStylers_PerPage_BuildsOncePerPageAndVersion
+                  - NodeStylers_PerPage_FollowsPropertyEditsUndoAndRedo
+                  - NodeStylers_PerPage_KeepsPagesApartAndHandlesFailuresAndDetachedNodes
+              - id: Plexus-Scene-SceneBuilder-Annotations
+                title: >-
+                  The builder shall draw each visible annotation as a filled note box (its own fill or the theme's)
+                  with its text wrapped to the inner width, omitting lines that do not fit the height.
+                justification: |
+                  Notes must stay legible inside their box and never draw text outside it.
+                tests:
+                  - SceneBuilder_Build_Annotation_UsesFillAndWrapsText
+                  - SceneBuilder_Build_Annotation_TooSmallForText_DropsLines
+
+              - id: Plexus-Scene-SceneBuilder-Grid
+                title: >-
+                  The builder shall add the background grid as the first primitive when enabled, covering the
+                  visible bounds when given and otherwise the content plus a margin, and shall add none when
+                  disabled.
+                justification: |
+                  The dotted grid shows the snapping lattice; hosts that draw their own background must be able to
+                  turn it off.
+                tests:
+                  - SceneBuilder_Build_EmptyPage_ContainsOnlyGrid
+                  - SceneBuilder_Build_ShowGrid_ControlsGridPrimitive
+
+              - id: Plexus-Scene-SceneBuilder-DrawingOrder
+                title: >-
+                  The builder shall draw wires under nodes, nodes and annotations in the page's z-order, and
+                  nested expanded group frames outermost first.
+                justification: |
+                  Painters follow the list order, so it decides what covers what.
+                tests:
+                  - SceneBuilder_Build_DrawingOrder_WiresUnderNodesInZOrder
+                  - SceneBuilder_Build_NestedExpandedGroups_DrawOuterFrameFirst
+
+              - id: Plexus-Scene-SceneBuilder-SelectionAndHover
+                title: >-
+                  The builder shall add an outline in the selection color around each selected node, annotation
+                  and group, a wider underlay beneath each selected wire, the resize handle of each selected
+                  annotation, and the same in the hover color for the hovered element unless it is selected.
+                justification: |
+                  Selection and hover feedback is part of the picture every painter shows.
+                tests:
+                  - SceneBuilder_Build_SelectedNode_AddsSelectionOutline
+                  - SceneBuilder_Build_SelectedWire_AddsWiderUnderlay
+                  - SceneBuilder_Build_Hover_UsesHoverColorUnlessSelected
+                  - SceneBuilder_Build_SelectedAnnotation_ShowsResizeHandle
+                  - SceneBuilder_Build_SelectedGroup_AddsSelectionOutline
+
+              - id: Plexus-Scene-SceneBuilder-Culling
+                title: >-
+                  When visible bounds are given, the builder shall leave out nodes, annotations, groups and wires
+                  that lie entirely outside them.
+                justification: |
+                  Skipping invisible elements keeps scenes of large diagrams small.
+                tests:
+                  - SceneBuilder_Build_VisibleBounds_CullsElementsOutsideAndSizesGrid
+                  - SceneBuilder_Build_VisibleBounds_CullsWiresOutside
+
+              - id: Plexus-Scene-SceneBuilder-ThemeOption
+                title: The builder shall use the theme named in the options instead of the diagram's theme.
+                justification: |
+                  Painters and exports may restyle a diagram without changing the diagram itself.
+                tests:
+                  - SceneBuilder_Build_ThemeOverride_ChangesColors
+
+              - id: Plexus-Scene-SceneBuilder-MeasurerOption
+                title: >-
+                  The builder shall size labels, names and wrapped text with the text measurer named in the
+                  options.
+                justification: |
+                  Painters know the exact font metrics of what they draw.
+                tests:
+                  - SceneBuilder_Build_TextMeasurerOption_IsUsedForLayout
+
+              - id: Plexus-Scene-SceneBuilder-CustomVisuals
+                title: >-
+                  The builder shall draw a node with the custom visual of its node type when it has one, either
+                  replacing or decorating the standard node look, and shall attribute the visual's primitives to
+                  the node.
+                justification: |
+                  Hosts need domain-specific node appearance that still works in every painter.
+                tests:
+                  - SceneBuilder_Build_CustomVisual_ReplacesStandardTemplate
+                  - SceneBuilder_Build_DecoratingVisual_KeepsStandardPrimitivesAndAddsOwn
+
+              - id: Plexus-Scene-SceneBuilder-ExpandedGroups
+                title: >-
+                  The builder shall draw an expanded group as a translucent frame with a title bar, a minus toggle
+                  and the title, behind its members, and shall restore the members when a collapsed group is
+                  expanded again.
+                justification: |
+                  Frames show membership without hiding the members.
+                tests:
+                  - SceneBuilder_Build_ExpandedGroup_DrawsFrameTitleBarAndToggleBehindMembers
+                  - SceneBuilder_Build_ExpandAgain_RestoresMembers
+
+              - id: Plexus-Scene-SceneBuilder-CollapsedBox
+                title: >-
+                  The builder shall draw a collapsed group as a single summary box with title and plus toggle that
+                  hides its members and nested groups, drawing only the outermost collapsed group of a nest, and
+                  growing taller when there are more proxy ports than fit.
+                justification: |
+                  Collapsing is the way to simplify large diagrams, and a nest must collapse as one.
+                tests:
+                  - SceneBuilder_Build_CollapsedGroup_HidesMembersAndDrawsSummaryBox
+                  - SceneBuilder_Build_CollapsedGroup_BoxGrowsToFitProxyPorts
+                  - SceneBuilder_Build_NestedCollapsedGroups_OutermostWins
+                  - SceneBuilder_Build_ExpandedGroupInsideCollapsedGroup_IsHidden
+
+              - id: Plexus-Scene-SceneBuilder-ProxyPorts
+                title: >-
+                  The builder shall give a collapsed group one proxy port per inner port that a wire crossing the
+                  group boundary uses (inputs left, outputs right, labelled with the inner port's path), display
+                  such wires to the proxy port with a transient route, and hide wires with both ends inside the group.
+                justification: |
+                  Collapsed groups must stay visibly connected, and wires inside them must not clutter the picture.
+                tests:
+                  - SceneBuilder_Build_CollapsedGroup_CrossingWiresAttachToProxyPorts
+                  - SceneBuilder_Build_CollapsedGroup_WireInsideIsHidden
+                  - SceneBuilder_Build_CollapsedGroup_SharedInnerPortHasOneProxy
+
+              - id: Plexus-Scene-SceneBuilder-GroupObstacles
+                title: >-
+                  The transient display route of a wire attached to a collapsed group shall avoid the frame of every
+                  expanded visible group that contains neither end node of the wire (at any depth), may cross the
+                  frame of a group that contains one, and shall ignore group frames when the theme switches the
+                  option off.
+                justification: |
+                  Display routes are computed from the proxy ports at every scene build; they must follow the same
+                  rule as stored routes, otherwise a wire to a collapsed group would run through unrelated groups.
+                tests:
+                  - SceneBuilder_Build_CollapsedGroupWire_RoutesAroundUnrelatedGroupFrame
+                  - SceneBuilder_Build_CollapsedGroupWire_TargetInsideGroup_FrameIsNotAnObstacle
+                  - SceneBuilder_Build_CollapsedGroupWire_GroupsAreObstaclesOff_CrossesFrame
+
+              - id: Plexus-Scene-SceneBuilder-DisplayRouteNets
+                title: >-
+                  The transient display route of a wire attached to a collapsed group shall be requested with the
+                  net of the wire's source port and with the segments of every other displayed wire (stored routes
+                  and the display routes computed before it, in page order), so the router keeps different nets
+                  apart and lets wires of one net share a trunk, deterministically.
+                justification: |
+                  A display route computed without the other wires can run on top of, or line up with, another
+                  signal's wire; stored routes already avoid that.
+                tests:
+                  - SceneBuilder_Build_CollapsedGroupWire_DisplayRequestCarriesOtherNetsSegments
+                  - SceneBuilder_Build_CollapsedGroupWires_ShareNetBySourcePort
+                  - SceneBuilder_Build_CollapsedGroupWire_DisplayRouteIsDeterministic
+
+              - id: Plexus-Scene-SceneBuilder-DoesNotModifyModel
+                title: >-
+                  Building a scene, including transient display routes for collapsed groups, shall not change the
+                  model, the stored wire routes or the undo history.
+                justification: |
+                  Scene building happens on every repaint and is not an edit.
+                tests:
+                  - SceneBuilder_Build_WithCollapsedGroupAndHighlights_DoesNotModifyModelOrHistory
+
+              - id: Plexus-Scene-SceneBuilder-NullPage
+                title: The builder shall throw an argument-null exception when the page is null.
+                justification: |
+                  A missing page is a programming error that should be reported at the call site.
+                tests:
+                  - SceneBuilder_Build_NullPage_ThrowsArgumentNullException
+
+              - id: Plexus-Scene-SceneBuilder-WireJunctions
+                title: >-
+                  The builder shall draw a filled dot of the theme's junction radius, in the color of the wire that
+                  owns the point, wherever wires of one net (every wire from the same output port, joined through
+                  inputs that allow fan-in so that wires merging into such an input are one net) leave a shared
+                  point in three or more different directions, above the wires and below the nodes, and shall draw
+                  no dot for wires of different nets, for wires that merely turn together, or when the theme
+                  disables junction dots.
+                justification: |
+                  Where branches of one signal split off a trunk, a dot shows that the lines are connected, as
+                  opposed to merely crossing.
+                tests:
+                  - SceneBuilder_Build_BranchingNet_DrawsJunctionDotOnBothWires
+                  - SceneBuilder_Build_StyledBranchingNet_ColorsJunctionDotLikeTheWire
+                  - SceneBuilder_Build_DifferentNets_DrawNoJunctionDot
+                  - SceneBuilder_Build_DotsDisabledByTheme_DrawsNoDot
+                  - WireJunctions_Find_BendOnPassingTrunk_IsAJunction
+                  - WireJunctions_Find_IdenticalWires_HaveNoJunction
+                  - SceneBuilder_Build_AuditConfiguration_DrawsDotsExactlyAtJunctions
+                  - SceneBuilder_Build_AutoRoutedFanIn_DrawsMergeDot
+                  - SceneBuilder_Build_PlainInputsWithoutFanOut_DrawNoDot
+                  - DiagramPage_Connect_FanInIntoOptedInInput_RoutesAsOneNet
+                  - SceneBuilder_Build_DifferentNetConfigurations_DrawNoDot
+                  - SceneBuilder_Build_StyledNet_KeepsDotsScaledAndColored
+                  - SceneBuilder_Build_CollapsedGroupFanOut_DotsAndSquareCornersFollowDisplayRoutes
+                  - SceneBuilder_Build_AuditPage_IsDeterministic
+                  - WireJunctions_Find_CollinearOverlapWithoutDivergence_HasNoJunction
+                  - WireJunctions_Find_WireEndingOnTrunk_IsAJunctionAtTheEnd
+                  - WireJunctions_Find_PlusOfOneNet_IsAJunctionAndStable
+                  - DemoSamples_Wiring_Page_ShowsDotsHopsAndMergeDotForOptedInFanIn
+
+              - id: Plexus-Scene-SceneBuilder-WireJunctionCorners
+                title: >-
+                  The builder shall draw the corner of a wire that bends at a junction point of its net with radius
+                  zero (a square "T"), without small-jog smoothing, even when the theme switches the dots off,
+                  let the neighboring corner use the whole shared segment, and leave every other corner rounded.
+                justification: |
+                  A junction dot on a rounded corner reads as a curve next to a dot; a crisp T shows plainly that the
+                  branch leaves the trunk.
+                tests:
+                  - SceneBuilder_Build_AuditConfiguration_JunctionCornersAreSquareAndOthersRounded
+                  - SceneBuilder_Build_DotsOff_JunctionCornerStaysSquare
+                  - WirePaths_Rounded_SharpCorner_HasNoCurveAndLetsTheNextCornerUseTheSegment
+                  - WirePaths_Rounded_SharpCornerOnSmallJog_IsNotSmoothed
+
+              - id: Plexus-Scene-SceneBuilder-WireCrossingJumps
+                title: >-
+                  The builder shall, when the theme's crossing jumps are on, draw a small semicircular hop upward in
+                  the horizontal wire where it crosses a vertical wire of a different net at a point inside both
+                  runs, clear of corner curves, arrowheads and junction dots, scaling the radius with the wire
+                  thickness, merging crossings closer than the sum of their radii into one wider hop and skipping a
+                  hop that does not fit, following the hop with dashes, taking collapsed-group display routes into
+                  account, and leaving the polyline and hit testing straight and the result deterministic.
+                justification: |
+                  Wires of different nets that cross are not connected; a hop shows that, and drawing it with
+                  ordinary path commands keeps every painter alike.
+                tests:
+                  - WireCrossings_Find_InteriorCrossing_IsReportedOnTheHorizontalWire
+                  - WireCrossings_Find_SameNet_HasNoHop
+                  - WireCrossings_Find_EndsAndBends_HaveNoHop
+                  - WireCrossings_Find_CrossingNearVerticalCorner_HasNoHop
+                  - WireCrossings_Find_JunctionAtCrossing_HasNoHop
+                  - WireCrossings_Find_ThickWires_GrowTheRadius
+                  - WirePaths_Rounded_SingleHop_IsASemicircleOverTheCrossing
+                  - WirePaths_Rounded_RightToLeftWire_HopsOverTheCrossing
+                  - WirePaths_Rounded_CloseCrossings_MergeIntoOneWiderHop
+                  - WirePaths_Rounded_DistantCrossings_GetSeparateHops
+                  - WirePaths_Rounded_HopsThatDoNotFit_AreSkipped
+                  - WirePaths_Rounded_VerticalRun_NeverHops
+                  - WirePaths_Dashed_Hop_DashesFollowTheArc
+                  - SceneBuilder_Build_DifferentNetCrossing_HorizontalWireHopsByDefault
+                  - SceneBuilder_Build_JumpsOffOrTouchingNets_DrawNoHop
+                  - SceneBuilder_Build_ThickDashedHoppingWire_ScalesAndDashesTheHop
+                  - SceneBuilder_Build_Hop_LeavesPolylineAndHitTestingStraight
+                  - SceneBuilder_Build_CollapsedGroupDisplayRoute_ParticipatesInCrossings
+                  - SceneBuilder_Build_Hops_AreDeterministic
+
+              - id: Plexus-Scene-SceneBuilder-WireArrowheadFit
+                title: >-
+                  The builder shall round the last corner of a wire only as far as leaves a straight run of the
+                  arrowhead's length before the tip, keep the full radius when the last segment is the usual stub,
+                  shrink the arrowhead to the last segment when that is shorter than the arrowhead, and stop the
+                  stroke inside the arrowhead.
+                justification: |
+                  A rounded corner or a bend under the arrowhead looks like a glitch; the arrowhead must always sit
+                  on a straight piece of wire, however short the last segment is.
+                tests:
+                  - WirePaths_Rounded_StubLengthFinalSegment_KeepsFullRadius
+                  - WirePaths_Rounded_ShortFinalSegment_ArrowheadSitsOnStraightRun
+                  - SceneBuilder_Build_VeryShortFinalSegment_ShrinksArrowheadToFit
+
+              - id: Plexus-Scene-SceneBuilder-WireSmallJogs
+                title: >-
+                  The builder shall draw a step shorter than twice the corner radius between two parallel runs of a
+                  wire as one S-shaped cubic curve about four times as long as the step, centered on it and limited
+                  to the straight run available on both sides (and to the arrowhead clearance at the tip), leaving
+                  the stored route and the hit-test polyline unchanged, keeping dashes on the curve, drawing the
+                  two ordinary corners for longer steps, U turns and when the theme switches the option off.
+                justification: |
+                  Two tight corners with almost no straight piece between them look like a kink; one gentle curve
+                  reads as a deliberate offset between neighboring port rows.
+                tests:
+                  - WirePaths_Rounded_ShortStep_DrawsOneSCurveSpanningFourSteps
+                  - WirePaths_Rounded_ShortStepNearTheStart_ClampsTheSpanToTheRun
+                  - WirePaths_Rounded_LongStep_KeepsTwoCorners
+                  - WirePaths_Rounded_ShortStepWithoutSmoothingOrAsUTurn_KeepsTwoCorners
+                  - WirePaths_Rounded_ShortStepTooCloseToArrowhead_KeepsCorners
+                  - WirePaths_Dashed_SCurve_DashesFollowTheCurve
+                  - SceneBuilder_Build_SmallJog_DrawsSCurveUnlessDisabledByTheme
+
+              - id: Plexus-Scene-SceneBuilder-WireHandles
+                title: >-
+                  The builder shall draw, for each selected wire that is shown with its stored route, a square
+                  handle at every bend and a round handle at both ends, above the nodes, and none for unselected
+                  wires.
+                justification: |
+                  Handles show where a selected wire can be grabbed to reshape it or to move its ends.
+                tests:
+                  - SceneBuilder_Build_SelectedWire_DrawsHandlesAtBendsAndEnds

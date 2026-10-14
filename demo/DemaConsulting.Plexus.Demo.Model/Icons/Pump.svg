@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Pump: a round housing with an impeller, an inlet below-left and an outlet on top-right -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="30" cy="36" r="18" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M30 36 L30 22 M30 36 L42 43 M30 36 L18 43" stroke="#7FC4FF" stroke-width="3"/>
+    <path d="M30 18 V8 H60" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M2 36 H12" stroke="#F2F2F2" stroke-width="2"/>
+  </g>
+</svg>

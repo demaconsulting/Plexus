@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>plexus-demo</AssemblyName>
+    <RootNamespace>DemaConsulting.Plexus.Demo.Gui</RootNamespace>
+
+    <!-- The executable's icon (Explorer, taskbar pin), generated at several sizes from the repository's Icon.png -->
+    <ApplicationIcon>Assets\plexus-demo.ico</ApplicationIcon>
+
+    <!-- Demo assemblies are never published as packages -->
+    <IsPackable>false</IsPackable>
+
+    <!-- Code Quality Configuration (same gates as the shipped libraries) -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <!-- Code Analysis Dependencies -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="10.0.401">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.35.0.4138">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- The UI is built in code (no XAML), so the only Avalonia pieces needed are the desktop host and the Fluent theme.
+       Material.Icons.Avalonia supplies the toolbar icons; it is a demo-only dependency that the shipped libraries never reference. -->
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Material.Icons.Avalonia" Version="3.0.2" />
+  </ItemGroup>
+
+  <!-- Tests exercise the command line, the automation dispatcher and the dialog view models directly -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="DemaConsulting.Plexus.Demo.Tests" />
+  </ItemGroup>
+
+  <!-- The window icon is the repository's Icon.png, linked (not copied) so there is one source of truth -->
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\Icon.png" Link="Assets\Icon.png" />
+  </ItemGroup>
+
+  <!-- Project References -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DemaConsulting.Plexus\DemaConsulting.Plexus.csproj" />
+    <ProjectReference Include="..\..\src\DemaConsulting.Plexus.Avalonia\DemaConsulting.Plexus.Avalonia.csproj" />
+    <ProjectReference Include="..\..\src\DemaConsulting.Plexus.Avalonia.PropertyGrid\DemaConsulting.Plexus.Avalonia.PropertyGrid.csproj" />
+    <ProjectReference Include="..\..\src\DemaConsulting.Plexus.Rendering\DemaConsulting.Plexus.Rendering.csproj" />
+    <ProjectReference Include="..\DemaConsulting.Plexus.Demo.Model\DemaConsulting.Plexus.Demo.Model.csproj" />
+  </ItemGroup>
+
+</Project>

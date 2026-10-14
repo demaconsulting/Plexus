@@ -1,0 +1,147 @@
+---
+# Software Unit requirements for Plexus Wire.
+#
+# A wire is a directed connection from an output port to an input port. Requirements describe its endpoints,
+# route (bend points), polyline and bounds, undoable route editing and rerouting, and removal.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Model Requirements
+        sections:
+          - title: Wire Requirements
+            requirements:
+              - id: Plexus-Model-Wire-Endpoints
+                title: >-
+                  A wire shall run from an output port (its source) to an input port (its target), also when it
+                  was created by connecting the two ports in reverse order.
+                justification: |
+                  Wires are directed: data flows from an output to an input. Hosts evaluate or export the diagram
+                  using the source and target, so the direction must be fixed regardless of the order the ports
+                  were supplied in.
+                tests:
+                  - Wire_SourceAndTarget_ReversedConnect_RunFromOutputToInput
+
+              - id: Plexus-Model-Wire-Route
+                title: >-
+                  A wire shall store its route as a copy of the interior bend points supplied to it, excluding the
+                  two port anchors.
+                justification: |
+                  A route supplied by the host or by a router must not change later because the caller modifies
+                  its own list, and the end points must always come from the ports rather than from the route.
+                tests:
+                  - Wire_Route_SuppliedList_IsCopied
+                  - DiagramPage_Connect_RouteSuppliedOrNull_UsesSuppliedRouteOrRouter
+
+              - id: Plexus-Model-Wire-Points
+                title: >-
+                  A wire shall report its full polyline as the source anchor, the bend points and the target anchor,
+                  with the end points following their ports when a node moves.
+                justification: |
+                  Renderers and hit testing draw the wire from its polyline. End points taken from the current port
+                  anchors ensure that a wire never stays detached from a node that has been moved.
+                tests:
+                  - Wire_GetPoints_IncludesAnchorsAndBendPoints
+                  - Wire_GetPoints_EndNodeMoved_AnchorsFollowPorts
+
+              - id: Plexus-Model-Wire-Bounds
+                title: >-
+                  A wire shall report the bounding box of its full polyline, which has zero height or width for a
+                  straight wire.
+                justification: |
+                  Views, scrolling and export use the extent of each element. The wire extent must cover the anchors
+                  and every bend so no part of the wire is clipped.
+                tests:
+                  - Wire_GetBounds_CoversFullPolyline
+                  - Wire_GetBounds_StraightWire_HasZeroHeight
+                  - Wire_GetBounds_ThroughBaseType_EqualsPolylineBox
+
+              - id: Plexus-Model-Wire-SetRoute
+                title: >-
+                  A wire shall replace its bend points undoably with a copy of a supplied list, recording nothing for
+                  an identical route, rejecting a null route and rejecting changes while the wire is removed.
+                justification: |
+                  Manual route editing is a user action and must be undoable. Ignoring identical routes keeps the
+                  history free of no-ops, and rejecting null or detached edits protects the model.
+                tests:
+                  - Wire_SetRouteAndReroute_UndoRedoRoundTrip
+                  - Wire_SetRoute_SuppliedList_IsCopied
+                  - Wire_SetRouteAndReroute_RemovedWire_ThrowsInvalidOperationExceptionUntilUndo
+
+              - id: Plexus-Model-Wire-Reroute
+                title: >-
+                  A wire shall recompute its bend points with the diagram's router on request, undoably, discarding
+                  any manual route edits.
+                justification: |
+                  After manual edits or layout changes users want the automatic route back. Using the diagram's
+                  router keeps the result consistent with newly created wires.
+                tests:
+                  - Wire_Reroute_ManualRoute_RestoresRouterRouteAndUndoes
+                  - Wire_SetRouteAndReroute_UndoRedoRoundTrip
+
+              - id: Plexus-Model-Wire-Remove
+                title: >-
+                  A wire shall remove itself from its page and from its ports undoably, restoring the same wire with
+                  its route and identifier on undo.
+                justification: |
+                  Deleting a connection is a basic edit. Undo must bring back the identical wire so host references
+                  to it remain valid.
+                tests:
+                  - Wire_Remove_UndoRedoRoundTrip
+                  - Wire_Remove_AttachedWire_DetachesFromPageAndPorts
+
+              - id: Plexus-Model-Wire-ChangeNotification
+                title: >-
+                  A wire shall raise a property-changed notification and report an element change to its diagram
+                  whenever its route changes, including through undo and redo.
+                justification: |
+                  Views redraw a wire when its route changes. Notifying on undo and redo keeps the view in step
+                  with the model.
+                tests:
+                  - Wire_SetRoute_RouteChanged_RaisesPropertyChangedForSetAndUndo
+
+              - id: Plexus-Model-Wire-RouteNormalization
+                title: >-
+                  A wire shall normalize every route it stores, whether set later or supplied when connecting, by
+                  merging collinear bends and removing zero-length segments, and shall record nothing when the
+                  normalized route equals the current one.
+                justification: |
+                  Manual edits such as dragging a segment into line with its neighbor leave bends that do not bend;
+                  merging them keeps routes minimal and keeps the history free of no-ops.
+                tests:
+                  - Wire_SetRoute_CollinearAndZeroLengthBends_AreNormalized
+                  - DiagramPage_Connect_RouteWithCollinearBend_StoresNormalizedRoute
+                  - Wire_SetRoute_SameShapeAfterNormalizing_RecordsNothing
+
+              - id: Plexus-Model-Wire-Reconnect
+                title: >-
+                  A wire shall move one or both of its ends to other ports of its page, validated with the
+                  connection rules in which the wire itself does not count as a duplicate or as a second wire into its
+                  own target, re-routing the wire,
+                  keeping its identifier and recording one undo entry that restores the ports and the route;
+                  a rejected move shall throw with the reason and change nothing, a move to the current ports shall
+                  record nothing, and the page shall report the verdict in advance without changing the model.
+                justification: |
+                  Dragging the end of a wire to another port is a basic editing action. It must not create a new wire
+                  (references to the wire stay valid), must obey the same rules as connecting, and must be undone in
+                  one step.
+                tests:
+                  - Wire_Reconnect_ValidTarget_MovesEndKeepsIdAndReroutes
+                  - Wire_Reconnect_ValidSource_MovesSourceEnd
+                  - Wire_Reconnect_UndoRedo_RestoresEndsAndRouteAsOneEntry
+                  - Wire_Reconnect_SamePorts_RecordsNothing
+                  - Wire_Reconnect_InvalidMoves_ThrowWithReasonAndChangeNothing
+                  - DiagramPage_CanReconnect_ExcludesTheWireItselfFromDuplicateCheck
+                  - DiagramPage_CanReconnect_OntoOccupiedInput_FollowsFanInRule
+                  - Wire_Reconnect_RemovedWire_ThrowsInvalidOperationException
+
+              - id: Plexus-Model-Wire-AddJog
+                title: >-
+                  A wire shall add a draggable jog to one of its segments undoably as one entry, and report false,
+                  without recording anything, for a segment that cannot take one.
+                justification: |
+                  A jog gives a straight segment a piece that can be dragged, which is how users reshape a wire that
+                  has no bends yet.
+                tests:
+                  - Wire_AddJog_StraightSegment_AddsBumpAsOneUndoEntry
+                  - Wire_AddJog_UnknownSegment_ReturnsFalse

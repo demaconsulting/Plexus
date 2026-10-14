@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Switch: two terminals joined by a lever, flipped half open -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 40 H18 M46 40 H60" stroke="#F2F2F2" stroke-width="2"/>
+    <circle cx="20" cy="40" r="3" stroke="#6FE39A" stroke-width="2"/>
+    <circle cx="44" cy="40" r="3" stroke="#6FE39A" stroke-width="2"/>
+    <path d="M22 38 L42 16" stroke="#F2F2F2" stroke-width="3"/>
+  </g>
+</svg>

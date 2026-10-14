@@ -14,6 +14,12 @@ language: en
 
 # Project-specific technical terms and tool names
 words:
+  - apimark
+  - axaml
+  - ApiMark
+  - inheritdoc
+  - msbuild
+  - Tomlyn
   - buildmark
   - DEMA
   - Dema
@@ -35,6 +41,51 @@ words:
   - weasyprint
   - netstandard
   - yamlfix
+  # Plexus domain and dependency terms
+  - dwmapi
+  - Avalonia
+  - canvasnet
+  - CanvasNet
+  - demaconsulting
+  - FlaUI
+  - focusable
+  - browsable
+  - Skia
+  - slnx
+  - Segoe
+  - headlessly
+  - undoable
+  - undoably
+  - redoable
+  - ungroup
+  - ungrouping
+  - rects
+  - rasterizations
+  - rasterizes
+  - rasterizing
+  - reparsed
+  - rethrowing
+  - pngs
+  - ADSR
+  - RGBA
+  - BGRA
+  - Argb
+  - AARRGGBB
+  - RRGGBB
+  - LTRB
+  - HRESULT
+  - CLIPBRD
+  - ordinally
+  - ROOTOWNER
+  # Test fixture literals (sample names, keystroke-like strings and sample text)
+  - Cutme
+  - fghij
+  - ijlt
+  - Namey
+  - undu
+  - ünïcode
+  - Xena
+  - zoomtofit
 
 # Exclude common build artifacts, dependencies, and vendored third-party code
 ignorePaths:
@@ -49,4 +100,5 @@ ignorePaths:
   - "**/.agent-logs/**"
   - "**/bin/**"
   - "**/obj/**"
+  - "src/**/api/**"
   - package-lock.json

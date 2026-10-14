@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- AND gate symbol -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 24 H14 M4 40 H14 M50 32 H60" stroke="#F2F2F2" stroke-width="2"/>
+    <path d="M14 14 H32 C44 14 50 22 50 32 C50 42 44 50 32 50 H14 Z" stroke="#6FE39A" stroke-width="2.5"/>
+  </g>
+</svg>

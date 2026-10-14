@@ -1,0 +1,88 @@
+---
+# Software Subsystem requirements for Plexus Types.
+#
+# The Types subsystem holds the host declarations that nodes are created from: port types, node types and icons.
+# Each requirement decomposes a system requirement (Plexus-Core-NodeTypes or Plexus-Core-Elements) and is verified
+# by the subsystem tests in Types/TypesTests.cs, which use the NodeTypeRegistry and IconSource units together.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Types Requirements
+        requirements:
+          - id: Plexus-Types-Declaration
+            title: >-
+              The Types subsystem shall let a host declare port types with colors and node types with a key, title,
+              ports, properties and an optional icon, and retrieve each declaration by key.
+            justification: |
+              Plexus knows nothing about the host's domain. Everything a node is, from its heading to its ports, comes
+              from declarations the host registers up front and that the rest of Plexus looks up by key.
+            children:
+              - Plexus-Types-NodeTypeRegistry-Registration
+              - Plexus-Types-NodeTypeRegistry-Naming
+              - Plexus-Types-NodeTypeRegistry-PortDeclarations
+              - Plexus-Types-NodeTypeRegistry-PortTypeColors
+              - Plexus-Types-NodeTypeRegistry-SummaryLines
+            tests:
+              - Types_Declaration_PortTypesNodeTypesAndIcon_AreRetrievable
+
+          - id: Plexus-Types-Validation
+            title: >-
+              The Types subsystem shall reject duplicate node type keys, port type keys, port names within a
+              direction and property names, leaving earlier declarations unchanged, and shall prevent a registered
+              node type from being modified.
+            justification: |
+              Duplicate or changing declarations make nodes, wires and saved documents ambiguous. Failing at
+              registration time reports the host mistake early and keeps every live node consistent with its type.
+            children:
+              - Plexus-Types-NodeTypeRegistry-DuplicateKeys
+              - Plexus-Types-NodeTypeRegistry-DuplicateMembers
+              - Plexus-Types-NodeTypeRegistry-Freeze
+              - Plexus-Types-NodeTypeRegistry-PortTypeDuplicates
+            tests:
+              - Types_Validation_DuplicateKeyAndMembers_AreRejectedLeavingRegistryUnchanged
+              - Types_Validation_RegisteredType_CannotBeModified
+
+          - id: Plexus-Types-Icons
+            title: >-
+              The Types subsystem shall let a node type carry an SVG icon created from SVG text, a file or an
+              embedded resource, and shall give icons with equal content equal keys.
+            justification: |
+              Icons make node types recognizable in the diagram and in palettes. Content-derived identity lets
+              painters share decoded images between node types that use the same artwork.
+            children:
+              - Plexus-Types-IconSource-FromSvg
+              - Plexus-Types-IconSource-ContentKey
+              - Plexus-Types-IconSource-Equality
+              - Plexus-Types-IconSource-FromFile
+              - Plexus-Types-IconSource-FromResource
+              - Plexus-Types-NodeTypeRegistry-PresentationHints
+            tests:
+              - Types_Icons_SameSvgOnTwoNodeTypes_SharesKeyAndEquality
+
+          - id: Plexus-Types-NodeDefaults
+            title: >-
+              The Types subsystem shall provide the declared ports and the declared default size of a node type, so a
+              node added from the type starts with those ports and that size.
+            justification: |
+              Adding a node by type key must yield a ready-to-wire node without further setup. The type is the single
+              source of the node's ports, labels and starting size.
+            children:
+              - Plexus-Types-NodeTypeRegistry-PortDeclarations
+              - Plexus-Types-NodeTypeRegistry-PortFanIn
+              - Plexus-Types-NodeTypeRegistry-PresentationHints
+            tests:
+              - Types_NodeDefaults_AddNode_UsesDeclaredPortsAndSize
+
+          - id: Plexus-Types-Availability
+            title: >-
+              The Types subsystem shall make a node type available for creating nodes only while it is registered,
+              so a removed type cannot be instantiated until it is registered again.
+            justification: |
+              Hosts tailor the offered types per document by removing some from a shared registry. Nodes must only
+              be created from the types the registry currently offers.
+            children:
+              - Plexus-Types-NodeTypeRegistry-Registration
+              - Plexus-Types-NodeTypeRegistry-Removal
+            tests:
+              - Types_Availability_RemoveAndReRegister_ControlsNodeCreation

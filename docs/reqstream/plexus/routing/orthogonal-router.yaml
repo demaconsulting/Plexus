@@ -1,0 +1,219 @@
+---
+# Software Unit requirements for Plexus OrthogonalRouter.
+#
+# Unit requirements decompose the Routing subsystem requirements (which link down to these IDs as children) and are
+# proven by the unit tests in OrthogonalRouterTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Routing Requirements
+        sections:
+          - title: OrthogonalRouter Requirements
+            requirements:
+              - id: Plexus-Routing-OrthogonalRouter-Orthogonal
+                title: >-
+                  The router shall return bend points such that every segment of the polyline from the start port
+                  through the bend points to the end port is horizontal or vertical.
+                justification: |
+                  Orthogonal routing is the purpose of the router; any diagonal segment would break the diagram
+                  style and the assumptions of the wire painters.
+                tests:
+                  - OrthogonalRouter_Route_ObstacleBetweenPorts_AvoidsObstacleInterior
+                  - OrthogonalRouter_Route_TargetBehindSource_UsesStubsOutAndIn
+                  - OrthogonalRouter_Route_BottomStartSide_LeavesDownward
+
+              - id: Plexus-Routing-OrthogonalRouter-StraightWhenAligned
+                title: >-
+                  The router shall return no bend points when the two ports lie on one row with nothing between
+                  them.
+                justification: |
+                  A straight wire is the clearest connection for aligned ports, and unnecessary bends would make
+                  it look as if the nodes had been moved.
+                tests:
+                  - OrthogonalRouter_Route_SameRow_ReturnsNoBendPoints
+
+              - id: Plexus-Routing-OrthogonalRouter-FewBends
+                title: >-
+                  Without obstacles, the router shall connect a target that lies ahead of and below or above the
+                  source with a single vertical run centered between the two stubs and snapped to the grid, which
+                  is two bend points.
+                justification: |
+                  Wires with few, long segments are easier to follow, and a centered run makes the layout
+                  symmetric and predictable.
+                tests:
+                  - OrthogonalRouter_Route_NoObstacles_ForwardTarget_ProducesCenteredZShape
+
+              - id: Plexus-Routing-OrthogonalRouter-StepInMiddleOfRun
+                title: >-
+                  When the two ports lie on rows that differ by less than a few grid steps, the router shall place
+                  the vertical step in the middle of the horizontal run between the two stubs (within half a grid
+                  step), not next to either port, and shall do so repeatably.
+                justification: |
+                  A small step right after the source label or right before the target reads as a kink; in the
+                  middle of the run it reads as a deliberate offset between two parallel wires. The router
+                  already prefers bends near the middle of the two stubs, so this pins the behavior down.
+                tests:
+                  - OrthogonalRouter_Route_SmallRowOffset_PlacesStepInMiddleOfRun
+                  - OrthogonalRouter_Route_SmallRowOffsetBetweenNodes_StepInMiddleAndDeterministic
+
+              - id: Plexus-Routing-OrthogonalRouter-AvoidObstacles
+                title: >-
+                  The router shall return a route whose segments never enter the interior of any given obstacle
+                  box, whenever such a route exists, including for hundreds of obstacles.
+                justification: |
+                  Obstacles are the node boxes with their clearance margin; a wire through a node would be
+                  mistaken for a connection to that node.
+                tests:
+                  - OrthogonalRouter_Route_ObstacleBetweenPorts_AvoidsObstacleInterior
+                  - OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_FastAndClear
+
+              - id: Plexus-Routing-OrthogonalRouter-Stubs
+                title: >-
+                  The router shall start the route with a straight stub of at least the requested stub length in
+                  the direction of the start side and end it with a straight stub of at least that length
+                  arriving through the end side, including for targets behind the source and for top and bottom
+                  sides.
+                justification: |
+                  Stubs keep wires clear of the port triangles and labels and make direction of flow visible even
+                  when the target lies behind the source.
+                tests:
+                  - OrthogonalRouter_Route_TargetBehindSource_UsesStubsOutAndIn
+                  - OrthogonalRouter_Route_BottomStartSide_LeavesDownward
+
+              - id: Plexus-Routing-OrthogonalRouter-OverlappingMargins
+                title: >-
+                  The router shall still find a route when the clearance box of a neighboring node covers a
+                  stub end point, without crossing the neighbor's real box.
+                justification: |
+                  Users place nodes closer together than twice the clearance, and wires between such nodes must
+                  not fall back to a crude route just because the clearance boxes overlap.
+                tests:
+                  - OrthogonalRouter_Route_ObstacleCoversStubPoint_StillRoutes
+
+              - id: Plexus-Routing-OrthogonalRouter-EnclosedFallback
+                title: >-
+                  When no obstacle-free route exists, the router shall return the route the simple elbow router
+                  would produce for the same request.
+                justification: |
+                  A wire must always be produced; the elbow route is deterministic, orthogonal and predictable
+                  when no better route exists.
+                tests:
+                  - OrthogonalRouter_Route_EndWalledIn_FallsBackToSimpleRouter
+
+              - id: Plexus-Routing-OrthogonalRouter-Deterministic
+                title: >-
+                  Identical requests shall yield identical bend points when routed repeatedly and by different
+                  router instances.
+                justification: |
+                  Equal-cost alternatives must be resolved the same way every time, otherwise diagrams would
+                  change when merely reloaded.
+                tests:
+                  - OrthogonalRouter_Route_SameRequest_IsDeterministic
+
+              - id: Plexus-Routing-OrthogonalRouter-Performance
+                title: >-
+                  The router shall route two hundred wires among three hundred nodes within two seconds in total
+                  on a development workstation, with every route clear of every obstacle.
+                justification: |
+                  Routing runs on every interactive edit; the bound is generous against typical times below one
+                  millisecond per wire, so that only a loss of scalability, such as scanning every obstacle for
+                  every step, fails it.
+                tags:
+                  - performance
+                tests:
+                  - OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_FastAndClear
+
+              - id: Plexus-Routing-OrthogonalRouter-NullRequest
+                title: The router shall throw an argument-null exception when the request is null.
+                justification: |
+                  A null request is a caller bug that should be reported at the call site.
+                tests:
+                  - OrthogonalRouter_Route_NullRequest_ThrowsArgumentNullException
+
+              - id: Plexus-Routing-OrthogonalRouter-NetSeparation
+                title: >-
+                  When the request carries the segments of existing wires, the router shall route a wire so that it
+                  does not run along a segment of a wire of another net, using a parallel track one grid step away,
+                  and shall accept crossing such a segment when there is no other way; a net is every wire that
+                  starts at the same output port. A run that lies within a few units of another net's run and
+                  begins or ends within a port pitch of where that run ends counts as running along it, so wires
+                  of different nets do not line up end to end.
+                justification: |
+                  Wires of different signals that share a track are ambiguous: the reader cannot tell which signal
+                  continues where, and two runs that stop and start a port pitch apart on the same track read as
+                  one wire with a kink. Crossings are unavoidable in dense diagrams and are harmless, so they cost
+                  only a small penalty, while overlaps cost a lot. A zero overlap penalty switches the behavior off
+                  for hosts that do not want it.
+                tests:
+                  - OrthogonalRouter_Route_WithoutExistingSegments_TwoNetsShareTrunk
+                  - OrthogonalRouter_Route_ExistingOtherNet_DoesNotRunAlongIt
+                  - OrthogonalRouter_Route_RunLiningUpWithOtherNet_MovesToItsOwnTrack
+                  - OrthogonalRouter_Route_MustCrossOtherNet_CrossesWithoutOverlap
+                  - OrthogonalRouter_Route_ZeroOverlapPenalty_IgnoresOtherNets
+                  - OrthogonalRouter_Route_WithExistingSegments_IsDeterministic
+
+              - id: Plexus-Routing-OrthogonalRouter-SameNetTrunk
+                title: >-
+                  The router shall not penalize running along segments of the wire's own net, so that wires leaving
+                  one output may share a trunk like a bus.
+                justification: |
+                  Branches of one signal belong together; drawing them on one trunk with a junction dot is the
+                  conventional notation, and forcing separate tracks would clutter the diagram.
+                tests:
+                  - OrthogonalRouter_Route_ExistingSameNet_MayShareTrunk
+                  - OrthogonalRouter_Route_RunLiningUpWithSameNet_KeepsMiddleChannel
+
+              - id: Plexus-Routing-OrthogonalRouter-NetPerformance
+                title: >-
+                  The router shall route twenty parallel nets one after another, each keeping clear of the
+                  previous ones, within three seconds in total on a development workstation, with every route
+                  orthogonal and no two nets running along each other.
+                justification: |
+                  Net separation adds lines to the search grid; the bound proves that its cost stays small even
+                  when many foreign segments are inside the search window.
+                tags:
+                  - performance
+                tests:
+                  - OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracksQuickly
+
+              - id: Plexus-Routing-OrthogonalRouter-RouteCleaning
+                title: >-
+                  The route cleaner shall remove bend points that lie on a straight run between their neighbors,
+                  bends that repeat a point or coincide with an end point, shall keep genuine reversals, shall be
+                  idempotent and shall reject a null route.
+                justification: |
+                  Manual edits leave bends that no longer bend and zero-length segments. Removing them keeps the
+                  stored route and the bend handles tidy without ever changing the drawn shape.
+                tests:
+                  - RouteCleaner_Clean_CollinearBend_IsMerged
+                  - RouteCleaner_Clean_ChainOfCollinearBends_CollapsesToStraightLine
+                  - RouteCleaner_Clean_ZeroLengthSegments_AreRemoved
+                  - RouteCleaner_Clean_Reversal_IsKept
+                  - RouteCleaner_Clean_AlreadyCleanRoute_IsUnchangedAndStable
+                  - RouteCleaner_Clean_NullRoute_ThrowsArgumentNullException
+
+              - id: Plexus-Routing-OrthogonalRouter-RouteEditing
+                title: >-
+                  The route editor shall move a segment, or a bend together with its two adjacent segments, keeping
+                  the route orthogonal and the ports fixed; shall insert a jog next to a port when a stub segment
+                  moves and a draggable bump when asked to jog a segment; and shall report null for a diagonal route
+                  or an index that does not exist.
+                justification: |
+                  Interactive wire editing must never produce a diagonal segment or detach a port. Keeping the
+                  geometry in a pure function lets a drag recompute the route from its start on every pointer move
+                  and lets the rules be tested without a diagram.
+                tests:
+                  - RouteEditor_MoveSegment_InteriorSegment_MovesAndNeighborsStretch
+                  - RouteEditor_MoveSegment_FirstStub_InsertsJogNextToSourcePort
+                  - RouteEditor_MoveSegment_LastStub_InsertsJogNextToTargetPort
+                  - RouteEditor_MoveSegment_StraightWire_InsertsJogAtBothEnds
+                  - RouteEditor_MoveSegment_StubToItsOwnLine_LeavesRouteUnchanged
+                  - RouteEditor_MoveSegment_OntoNeighborLine_MergesCollinearBends
+                  - RouteEditor_MoveBend_Corner_MovesBothAdjacentSegments
+                  - RouteEditor_MoveBend_NextToStub_InsertsJog
+                  - RouteEditor_MoveBend_TowardPort_KeepsOneStubLength
+                  - RouteEditor_Edits_BadIndexOrDiagonalRoute_ReturnNull
+                  - RouteEditor_InsertJog_HorizontalSegment_AddsCenteredBump
+                  - RouteEditor_InsertJog_NearSegmentEnd_IsClampedAwayFromTheEnd
+                  - RouteEditor_InsertJog_VerticalSegment_StepsSideways

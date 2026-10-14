@@ -1,0 +1,96 @@
+---
+# Software Subsystem requirements for Plexus History.
+#
+# The History subsystem provides the command-based undo/redo history behind every diagram mutation. These
+# requirements decompose the system undo/redo requirement into the history semantics (execute, undo and redo,
+# transactions, suspension, dirty tracking, capacity and change notification); each is verified by the
+# subsystem-level history tests and realized by the UndoHistory unit requirements.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: History Requirements
+        requirements:
+          - id: Plexus-History-UndoRedo
+            title: >-
+              The History subsystem shall record every executed change as an entry that can be undone and redone in
+              order, discard the redo entries when a new change is executed, and refuse stack operations while a
+              transaction is open.
+            justification: |
+              Hosts expose undo and redo for every diagram edit. The entries must replay in strict order, a new edit
+              after an undo must not leave a stale redo branch, and a failing step must not corrupt the stacks.
+            children:
+              - Plexus-History-UndoHistory-Execute
+              - Plexus-History-UndoHistory-UndoRedo
+              - Plexus-History-UndoHistory-Guards
+            tests:
+              - History_UndoRedo_ExecuteUndoRedoWorkflow_ReplaysInOrderAndGuardsOperations
+
+          - id: Plexus-History-Transactions
+            title: >-
+              The History subsystem shall group the changes made inside a transaction into a single undo entry,
+              flatten nested transactions, merge consecutive compatible changes, and let a transaction or a nested
+              transaction be rolled back without leaving an entry.
+            justification: |
+              One user gesture, such as a drag or a multi-step operation, must undo as one step, and abandoning the
+              gesture must restore the model exactly. Merging keeps the history compact for gestures that produce
+              many small changes.
+            children:
+              - Plexus-History-UndoHistory-Transactions
+              - Plexus-History-UndoHistory-Rollback
+              - Plexus-History-UndoHistory-Transact
+              - Plexus-History-UndoHistory-Merging
+            tests:
+              - History_Transactions_DragWithNestedRollback_ProducesOneUndoEntry
+              - History_Transactions_RolledBackTransaction_LeavesStateAndHistoryUntouched
+
+          - id: Plexus-History-Suspend
+            title: >-
+              The History subsystem shall allow recording to be suspended while a document is loaded, apply the
+              suspended changes without recording them, and afterwards discard the stale entries while restoring the
+              dirty state that existed before the suspension.
+            justification: |
+              Loading or bulk-building a diagram must not fill the undo stack with entries that no longer match the
+              model, and loading into a clean diagram must not make it appear modified.
+            children:
+              - Plexus-History-UndoHistory-Suspend
+            tests:
+              - History_Suspend_LoadWorkflow_DropsStaleEntriesAndRestoresDirtyState
+
+          - id: Plexus-History-DirtyTracking
+            title: >-
+              The History subsystem shall report whether the document differs from the last saved state, shall treat
+              an undo back to the saved state as clean, and shall support marking the state clean and clearing the
+              history.
+            justification: |
+              Hosts prompt to save only when the document really changed, so the dirty flag must follow undo and redo
+              and must stay dirty when the saved state can no longer be reached.
+            children:
+              - Plexus-History-UndoHistory-DirtyTracking
+              - Plexus-History-UndoHistory-Clear
+            tests:
+              - History_DirtyTracking_SaveUndoDiverge_TracksSavedState
+
+          - id: Plexus-History-Capacity
+            title: >-
+              The History subsystem shall limit the number of undo entries to a configurable capacity, dropping the
+              oldest entries first.
+            justification: |
+              A long editing session must not grow memory without bound, and dropping the oldest entries preserves
+              the most recent, most useful undo steps.
+            children:
+              - Plexus-History-UndoHistory-Capacity
+            tests:
+              - History_Capacity_LimitedHistory_DropsOldestAndRejectsInvalidValues
+
+          - id: Plexus-History-StateNotification
+            title: >-
+              The History subsystem shall notify listeners once for every completed change of the undo or redo state
+              or of the dirty flag.
+            justification: |
+              Host UI elements such as undo buttons and the modified indicator refresh from this notification, so it
+              must fire for every state change and not once per command inside a transaction.
+            children:
+              - Plexus-History-UndoHistory-Changed
+            tests:
+              - History_StateNotification_Workflow_RaisesChangedOncePerStateChange

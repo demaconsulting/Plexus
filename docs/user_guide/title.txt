@@ -1,13 +1,14 @@
 ---
 title: Plexus User Guide
-subtitle: A .NET Reference Implementation for Libraries
+subtitle: Node-based diagram editing for .NET
 author: DEMA Consulting
-description: A .NET Reference Implementation for Libraries
+description: User guide for Plexus, a node-based diagram editing library for .NET
 lang: en-US
 keywords:
   - Plexus
   - .NET
-  - Library
-  - Documentation
-  - Best Practices
+  - Avalonia
+  - Diagram
+  - Node Editor
+  - User Guide
 ---

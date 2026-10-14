@@ -1,0 +1,89 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid PropertyEditors.
+#
+# Each requirement decomposes a system requirement into the behavior of the editors of the value column and of the
+# editor registry of the grid control. Tests are the headless tests in PropertyGridEditingTests.cs and
+# ColorEditorTests.cs.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: PropertyEditors Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-PropertyEditors-Text
+            title: >-
+              The text editor shall write typed text when Enter is pressed or the focus leaves the editor, abandon
+              it on Escape, and mask password text; read-only values shall be shown as text.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Editors; most properties are edited as text.
+            tests:
+              - PropertyEditors_Text_Live_WritesOnEnter
+              - PropertyEditors_Text_Live_WritesWhenFocusLeaves
+              - PropertyEditors_Text_Staged_BuffersUntilCommit
+              - PropertyEditors_Escape_CancelsTypedText
+              - PropertyEditors_PasswordText_IsMasked
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyEditors-Validation
+            title: >-
+              The grid shall show a rejected value inline as a red border with the reason as a tooltip, keep the
+              rejected text until it is fixed or abandoned, and write nothing to the target while it is rejected.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Editors; the user must see why a value was refused.
+            tests:
+              - PropertyEditors_InvalidNumber_ShowsErrorUntilFixed
+              - PropertyEditors_OutOfRangeValue_Staged_ShowsValidationMessage
+              - PropertyEditors_Escape_OnRowCancelsRejectedEdit
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyEditors-Choices
+            title: >-
+              The grid shall edit booleans with a check box, enumerations with a drop-down, flags enumerations with
+              a multi-select drop-down, and values with converter standard values with a drop-down that is
+              editable unless the converter is exclusive.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Editors; choices are picked, not typed.
+            tests:
+              - PropertyEditors_Bool_TogglesWithCheckBox
+              - PropertyEditors_Enum_SelectsFromDropDown
+              - PropertyEditors_FlagsEnum_TogglesMembers
+              - PropertyEditors_StandardValues_UseEditableDropDown
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyEditors-Color
+            title: >-
+              The grid shall edit Avalonia and System.Drawing colors, optional ones included, as hex text next to a
+              swatch and reject text that is not a color.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Editors; colors are common and need a swatch.
+            tests:
+              - PropertyEditors_Color_UsesSwatchAndHexText
+              - ColorSupport_FormatAndParse_RoundTripBothColorTypes
+              - ColorEditor_EditsBothColorTypes
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyEditors-Nested
+            title: >-
+              The grid shall edit the properties of nested objects, including structures, through child rows and
+              keep the summary text of the parent current.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Editors; nested objects are common.
+            tests:
+              - PropertyEditors_NestedObjects_WriteThroughToOwner
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyEditors-Collections
+            title: >-
+              The grid shall show a collection as a summary text with a button that asks for the collection editor,
+              and let a host handler replace the editor.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Editors; collections are edited in their own dialog.
+            tests:
+              - PropertyEditors_Collection_ShowsSummaryAndOpensEditor
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyEditors-CustomEditors
+            title: >-
+              The grid shall choose the editor of a row from an editor registry by the annotation's key, then the
+              property type, then a fallback, let a host register its own editors per grid or for all grids, and
+              reset a property to its default from the row's context menu.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Editors; hosts add editors the generic grid cannot know.
+            tests:
+              - PropertyEditors_CustomEditor_SliderEditsAnnotatedProperty
+              - PropertyEditors_EditorRegistry_FallsBackAndHonorsTypeRegistrations
+              - PropertyEditors_ResetMenu_RestoresDefaultValue

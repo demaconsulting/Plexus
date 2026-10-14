@@ -73,6 +73,11 @@ tools:
     command: dotnet tool list
     regex: '(?i)demaconsulting\.fileassert\s+(?<version>\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?)'
 
+  # ApiMark.MSBuild (DemaConsulting.ApiMark.MSBuild from the project package references)
+  apimark-msbuild:
+    command: dotnet list src/DemaConsulting.Plexus/DemaConsulting.Plexus.csproj package
+    regex: '(?i)DemaConsulting\.ApiMark\.MSBuild\s+(?<version>\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?)'
+
   # sysml2tools (DemaConsulting.Sysml2Tools.Tool from dotnet tool list)
   sysml2tools:
     command: dotnet tool list

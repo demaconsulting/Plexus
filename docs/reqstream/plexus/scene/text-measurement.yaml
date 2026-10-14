@@ -1,0 +1,58 @@
+---
+# Software Unit requirements for Plexus TextMeasurement.
+#
+# Unit requirements decompose the Scene subsystem requirements (which link down to these IDs as children) and are
+# proven by the unit tests in TextMeasurementTests.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Scene Requirements
+        sections:
+          - title: TextMeasurement Requirements
+            requirements:
+              - id: Plexus-Scene-TextMeasurement-Estimates
+                title: >-
+                  The default text measurer shall estimate a width that grows with text length, with bold weight
+                  and proportionally with font size, that is zero for empty text, and that classes narrow glyphs
+                  narrower than ordinary ones and wide glyphs wider.
+                justification: |
+                  Estimates need to be close enough to real proportional fonts that labels and boxes look right
+                  when no painter-specific measurer is available.
+                tests:
+                  - ApproximateTextMeasurer_Measure_ScalesWithLengthWeightAndSize
+                  - ApproximateTextMeasurer_Measure_NarrowNormalWide_AreOrderedByWidth
+
+              - id: Plexus-Scene-TextMeasurement-LineHeight
+                title: The default text measurer shall return a line height that depends only on the font size.
+                justification: |
+                  Lines of a text block must be spaced evenly whatever their content.
+                tests:
+                  - ApproximateTextMeasurer_Measure_LineHeight_DependsOnlyOnFontSize
+
+              - id: Plexus-Scene-TextMeasurement-Headless
+                title: >-
+                  The default text measurer shall work for any font family name without installed fonts or a
+                  painter.
+                justification: |
+                  Headless use must not depend on the fonts of the machine.
+                tests:
+                  - ApproximateTextMeasurer_AsTextMeasurer_MeasuresWithoutPainterOrFonts
+
+              - id: Plexus-Scene-TextMeasurement-Deterministic
+                title: >-
+                  The default text measurer shall return identical sizes for identical text and style, whichever
+                  instance measures.
+                justification: |
+                  Reproducible measurements make layouts, tests and renderings stable.
+                tests:
+                  - ApproximateTextMeasurer_Measure_SameInput_IsDeterministic
+
+              - id: Plexus-Scene-TextMeasurement-NullArguments
+                title: >-
+                  The default text measurer shall throw an argument-null exception when the text or the style is
+                  null.
+                justification: |
+                  Missing arguments are programming errors that should be reported at the call site.
+                tests:
+                  - ApproximateTextMeasurer_Measure_NullArguments_ThrowArgumentNullException

@@ -1,0 +1,98 @@
+---
+# Software Subsystem requirements for Plexus Properties.
+#
+# The Properties subsystem lets a node type declare typed properties and gives every node a validated, undoable
+# property bag. These requirements decompose the system node type and node property requirements; each is verified
+# by the subsystem-level properties tests and realized by the PropertyDefinition and PropertyBag unit requirements.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Properties Requirements
+        requirements:
+          - id: Plexus-Properties-Declaration
+            title: >-
+              The Properties subsystem shall let a node type declare properties with a name, a value kind inferred
+              from the default value (boolean, 32-bit integer, 64-bit integer, double, string, choice or color), the
+              default value and an optional choice list, and shall reject invalid declarations.
+            justification: |
+              Hosts describe the editable state of each node type declaratively. Inferring the kind from the default
+              keeps declarations short, and rejecting invalid declarations early prevents nodes that start with an
+              illegal value.
+            children:
+              - Plexus-Properties-PropertyDefinition-KindInference
+              - Plexus-Properties-PropertyDefinition-DefaultValidation
+              - Plexus-Properties-PropertyDefinition-Choices
+              - Plexus-Properties-PropertyDefinition-ChoiceValidation
+            tests:
+              - Properties_Declaration_DeclaredTypes_ExposeKindsDefaultsAndChoices
+              - Properties_Declaration_InvalidDeclarations_AreRejected
+
+          - id: Plexus-Properties-Display
+            title: >-
+              The Properties subsystem shall carry presentation hints for each declared property and shall format
+              property values for display as a summary line with the display name, the value and the unit.
+            justification: |
+              Editors and node summaries need labels, units and consistent, culture-independent value text without
+              the host formatting every value itself.
+            children:
+              - Plexus-Properties-PropertyDefinition-Presentation
+              - Plexus-Properties-PropertyDefinition-Formatting
+              - Plexus-Properties-PropertyDefinition-TextEditing
+            tests:
+              - Properties_Display_SummaryOfNodeValues_UsesNamesUnitsAndFormats
+
+          - id: Plexus-Properties-Defaults
+            title: The Properties subsystem shall give every new node the declared default of each of its properties.
+            justification: |
+              A node must be fully usable, with valid values, the moment it is created.
+            children:
+              - Plexus-Properties-PropertyBag-Defaults
+            tests:
+              - Properties_Defaults_NewNode_HoldsEveryDeclaredDefault
+
+          - id: Plexus-Properties-Validation
+            title: >-
+              The Properties subsystem shall validate every property assignment against the declared kind and
+              choices, converting compatible numeric values and rejecting incompatible ones without changing the
+              node, and shall accept undeclared properties only with portable value kinds.
+            justification: |
+              A property must never hold a value its declaration forbids, because later features such as saving,
+              copying and editing rely on the declared kinds.
+            children:
+              - Plexus-Properties-PropertyBag-Assignment
+              - Plexus-Properties-PropertyBag-Validation
+              - Plexus-Properties-PropertyBag-BatchEdit
+              - Plexus-Properties-PropertyBag-AdHoc
+            tests:
+              - Properties_Validation_Assignments_ConvertRejectAndAllowAdHoc
+
+          - id: Plexus-Properties-Access
+            title: >-
+              The Properties subsystem shall let a host read property values by name, optionally converted to a
+              requested type, enumerate them in a defined order, and reset a property to its default.
+            justification: |
+              Hosts and tools read node state generically, and resetting a property is a standard editor action.
+            children:
+              - Plexus-Properties-PropertyBag-Read
+              - Plexus-Properties-PropertyBag-Enumeration
+              - Plexus-Properties-PropertyBag-Reset
+            tests:
+              - Properties_Access_ReadEnumerateAndReset_BehaveAsDocumented
+
+          - id: Plexus-Properties-UndoNotification
+            title: >-
+              The Properties subsystem shall make every property change undoable and redoable as one history entry,
+              record nothing for a change that does not alter the value, merge repeated changes of one property in a
+              transaction, notify listeners of each change, and reject changes on a node removed from its page.
+            justification: |
+              Property edits are ordinary diagram edits: they must undo and redo like any other change, stay compact
+              during slider-style editing, and refresh bound UI through change notification.
+            children:
+              - Plexus-Properties-PropertyBag-Undo
+              - Plexus-Properties-PropertyBag-NoOp
+              - Plexus-Properties-PropertyBag-Merge
+              - Plexus-Properties-PropertyBag-Notification
+              - Plexus-Properties-PropertyBag-RemovedNode
+            tests:
+              - Properties_UndoNotification_EditSession_UndoesRedoesAndNotifies

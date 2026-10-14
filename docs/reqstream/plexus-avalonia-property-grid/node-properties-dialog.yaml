@@ -1,0 +1,40 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid NodePropertiesDialog.
+#
+# Each requirement decomposes a system requirement into the behavior of the node properties dialog. Tests are the
+# headless tests in NodePropertiesDialogTests.cs.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: NodePropertiesDialog Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Show
+            title: >-
+              The dialog shall be titled "<name> - Properties", show the node in a staged grid with the name row
+              first, and validate its arguments.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; hosts open it with one call.
+            tests:
+              - NodePropertiesDialog_ShowAsync_ShowsTheNodeInAStagedGrid
+              - NodePropertiesDialog_Arguments_AreValidated
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Commit
+            title: >-
+              OK shall apply the rename, the properties and the host data as one undo entry and complete with true;
+              Cancel shall change nothing and complete with false.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; the dialog is one undo step.
+            tests:
+              - NodePropertiesDialog_Ok_CommitsAsOneUndoEntry
+              - NodePropertiesDialog_Cancel_ChangesNothing
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Validation
+            title: >-
+              The dialog shall stay open and show the reason, without changing the node, while the name is invalid or
+              the rename is vetoed.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; OK must not accept a refused name.
+            tests:
+              - NodePropertiesDialog_Ok_InvalidNameShowsTheReasonAndStaysOpen
+              - NodePropertiesDialog_Ok_VetoedRenameShowsTheReasonOnTheNameRow

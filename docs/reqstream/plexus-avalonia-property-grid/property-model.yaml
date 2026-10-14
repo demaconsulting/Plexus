@@ -1,0 +1,141 @@
+---
+# Software Unit requirements for PlexusAvaloniaPropertyGrid PropertyModel.
+#
+# Each requirement decomposes a system requirement into the behavior of the PropertyItem model, its descriptor-backed
+# implementation and the text, standard-value, nested-object and collection behavior derived from type converters.
+# Tests are the PropertyAnnotationTests and PropertyModelTests unit tests.
+
+sections:
+  - title: PlexusAvaloniaPropertyGrid Requirements
+    sections:
+      - title: PropertyModel Requirements
+        requirements:
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-Annotations
+            title: >-
+              The unit shall derive an item's category (Misc when absent), display name, description, read-only
+              state, password masking, parenthesized name, refresh mode and custom editor key from the
+              System.ComponentModel annotations of the property (the editor key from the PropertyEditor
+              annotation, or else from a UIHint data annotation), and from the data annotation Display and
+              Editable attributes where the component model attributes are absent.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Show-Properties; users migrating from the WinForms property
+              grid expect the same annotations to drive the same presentation; the data annotation attributes
+              are a convenience for code that is not WinForms-derived, and UIHint lets a model name a custom
+              editor without referencing the Avalonia assembly.
+            tests:
+              - PropertyItem_Annotation_Category_DefaultsToMiscAndHonorsAnnotation
+              - PropertyItem_Annotation_DisplayNameAndDescription_AreHonored
+              - PropertyItem_Annotation_DisplayAttribute_SuppliesNameDescriptionAndGroup
+              - PropertyItem_Annotation_ReadOnly_AnnotationGetterOnlyAndEditable
+              - PropertyItem_Annotation_PasswordAndParenthesize_AreHonored
+              - PropertyItem_Annotation_RefreshProperties_IsExposed
+              - PropertyItem_Annotation_PropertyEditorAnnotation_OnPropertyAndType
+              - PropertyItem_Annotation_UIHint_SuppliesTheEditorKey
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-Defaults
+            title: >-
+              The unit shall report that an item is changed when its value differs from its default value
+              (DefaultValue annotation) or its default rule (ShouldSerialize method) says so, never report an
+              item without a default as changed, and restore the default through the Reset method or the Reset
+              method convention.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Show-Properties; the grid shows changed values in bold and
+              offers a reset; both depend on the default semantics of the WinForms annotations.
+            tests:
+              - PropertyItem_Annotation_DefaultValue_IsChangedTracksTheCurrentValue
+              - PropertyItem_Annotation_ShouldSerializePattern_DrivesIsChanged
+              - PropertyItem_Annotation_Reset_RestoresTheDefaultValue
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-Converter
+            title: >-
+              The unit shall use the type converter named by the TypeConverter annotation of the property, or
+              else the converter of the property type, for all text and standard-value behavior.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Show-Properties; custom types are shown and edited as text
+              only through their converters.
+            tests:
+              - PropertyItem_Annotation_TypeConverterAnnotation_IsUsed
+              - PropertyItem_CustomConverter_RoundTripsWithCulture
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-ValueAccess
+            title: >-
+              The unit shall read and write the value of the property through the item, including the property
+              path of the item.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Text-Values; every other behavior of the grid is built on
+              reading and writing the underlying value.
+            tests:
+              - PropertyItem_GetValueSetValue_ReadAndWriteTheTarget
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-TextConversion
+            title: >-
+              The unit shall convert values to and from text with the property's type converter using the
+              culture passed by the caller, defaulting to the current culture, treat null as empty text and an
+              empty nullable as null, accept any text for an object-typed property, and report a type that
+              cannot be edited as text.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Text-Values; users type numbers and dates in their own
+              culture while persisted text needs the invariant culture; the caller must be able to choose.
+            tests:
+              - PropertyItem_TextConversion_UsesTheRequestedCultureAndDefaultsToCurrent
+              - PropertyItem_TextConversion_HandlesNullNullableAndObject
+              - PropertyItem_TextConversion_UnsupportedTypeReportsAnError
+              - PropertyItem_Enum_ParsesMemberNames
+              - PropertyItem_TrySetText_InvalidTextFailsWithoutChangingTheValue
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-StandardValues
+            title: >-
+              The unit shall list the standard values of a property with their text, including enumeration
+              members, boolean values and values that depend on the edited instance, and report whether the list
+              is exclusive.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Text-Values; drop-down editors need the allowed values and
+              whether other values may be typed.
+            tests:
+              - PropertyItem_StandardValues_EnumFlagsAndBoolean
+              - PropertyItem_StandardValues_CanDependOnTheInstance
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-Expandable
+            title: >-
+              The unit shall expose the browsable properties of an expandable object (reference or value type,
+              also when the property is declared as object) as child items with nested paths, write edits of a
+              value-type child back to the parent property, and make the children of a read-only value-type
+              property read-only.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Nested-Collections; nested objects are edited in place in
+              the grid; a struct is a copy and must be written back.
+            tests:
+              - PropertyItem_Children_ExpandableObjectExposesNestedProperties
+              - PropertyItem_Children_FollowTheCurrentValue
+              - PropertyItem_Children_ValueTypeParentReceivesTheModifiedStruct
+              - PropertyItem_Children_ReadOnlyValueTypeHasReadOnlyChildren
+              - PropertyItem_Children_ObjectTypedPropertyUsesTheValueConverter
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-Collections
+            title: >-
+              The unit shall recognize arrays, lists, collection interfaces and read-only collections as
+              collection properties with an element type (and not strings or dictionaries), expose one item per
+              element with an indexed path, and show a collection as one line of text.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Nested-Collections; collection properties need their
+              elements shown, edited and addressed individually.
+            tests:
+              - PropertyItem_IsCollection_RecognizesCollectionTypes
+              - PropertyItem_GetCollectionItems_ReadAndWriteElements
+              - PropertyItem_GetCollectionItems_ReadOnlyCollectionElementsAreReadOnly
+              - PropertyItem_GetCollectionItems_ExpandableElementHasChildren
+              - PropertyItem_ConvertToString_CollectionShowsCollectionText
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-Validation
+            title: >-
+              The unit shall report a null for a non-nullable value type, a value of the wrong type, a failed
+              validation annotation, a read-only property, a throwing getter or setter and an invalid text as a
+              failed result with a message instead of throwing.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Validation; a user interface must be able to show the
+              problem next to the property; exceptions from user code must never reach the UI.
+            tests:
+              - PropertyItem_TrySetValue_ReportsValidationAndSetterFailures
+              - PropertyItem_TrySetValue_ReadOnlyItemFails
+              - PropertyItem_TryGetValue_GetterFailureIsCaptured
+              - PropertyResult_SuccessAndFailure_CarryTheOutcome

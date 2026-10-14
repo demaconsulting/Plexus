@@ -1,0 +1,107 @@
+---
+# Software Unit requirements for Plexus Geometry.
+#
+# Geometry provides the points, sizes, rectangles and RGBA colors shared by every other Plexus item. The unit
+# requirements are verified by the unit tests in GeometryTests.cs.
+
+sections:
+  - title: Plexus Requirements
+    sections:
+      - title: Geometry Requirements
+        requirements:
+          - id: Plexus-Geometry-PointArithmetic
+            title: >-
+              Geometry shall provide a point with an origin value, an offset by x and y deltas, point-minus-point
+              displacement, point-plus-point translation and point-plus-size displacement.
+            justification: |
+              Moving elements, computing wire anchors and placing ports all translate points by displacements.
+              Providing the arithmetic once keeps that math consistent across the model, scene and routing code.
+            tests:
+              - Point_Operators_AddSubtractAndOffset
+
+          - id: Plexus-Geometry-RectMeasures
+            title: >-
+              Geometry shall provide a rectangle that reports its left, top, right and bottom edges, center, position
+              and size from its location and extent, and reports whether it has no area.
+            justification: |
+              Nodes, annotations and groups store their bounds as rectangles. Hit testing, layout and routing read
+              edges and centers constantly, so they must be derived identically everywhere.
+            tests:
+              - Rect_Edges_DeriveFromPositionAndSize
+              - Rect_IsEmpty_NonPositiveExtent_ReturnsTrue
+
+          - id: Plexus-Geometry-RectFromCorners
+            title: >-
+              Geometry shall build the smallest rectangle containing two corner points given in either order.
+            justification: |
+              Rubber-band selection and drag gestures produce corner points in any direction. A normalized rectangle
+              lets callers ignore which corner was picked first.
+            tests:
+              - Rect_FromPoints_ReversedCorners_ReturnsNormalizedRect
+
+          - id: Plexus-Geometry-RectRelations
+            title: >-
+              Geometry shall determine whether a rectangle contains a point or another rectangle, with edges
+              included, whether two rectangles overlap or touch, and shall compute the union of two rectangles.
+            justification: |
+              Selection, hit testing, group framing and obstacle detection all depend on containment, intersection
+              and union. Inclusive edges make touching elements count as selected or overlapping, which matches how
+              the editor treats them.
+            tests:
+              - Rect_Contains_PointsAndRects_HonorsEdges
+              - Rect_IntersectsUnionInflateOffset_ProduceExpectedRects
+
+          - id: Plexus-Geometry-RectTransforms
+            title: >-
+              Geometry shall return a copy of a rectangle grown or shrunk by a margin on every side, moved by deltas,
+              or placed at a new top-left corner, leaving the original unchanged.
+            justification: |
+              Routing margins, group padding and element moves derive new bounds from old ones. Returning copies
+              keeps the immutable bounds stored in the model safe to share.
+            tests:
+              - Rect_IntersectsUnionInflateOffset_ProduceExpectedRects
+
+          - id: Plexus-Geometry-ValueSemantics
+            title: >-
+              Geometry shall compare points, sizes, rectangles and colors by value, so values with equal components
+              are equal and produce equal hash codes.
+            justification: |
+              Undo commands, snapshots and tests compare geometry values. Value equality makes unchanged positions
+              and bounds recognizable and lets the values serve as dictionary keys.
+            tests:
+              - Geometry_ValueTypes_CompareByValueAndHashConsistently
+
+          - id: Plexus-Geometry-ColorParsing
+            title: >-
+              Geometry shall parse a "#RRGGBB" hexadecimal string as an opaque color and a "#AARRGGBB" string as a
+              color with alpha, accepting upper and lower case digits.
+            justification: |
+              Colors reach Plexus as text in host code, property defaults and JSON snapshots. Both the opaque and
+              the translucent notation are common UI conventions that hosts expect to work.
+            tests:
+              - Color_Parse_RgbHex_ReturnsOpaqueColor
+              - Color_Parse_ArgbHex_ReturnsColorWithAlpha
+              - Color_Parse_LowercaseHex_ParsesAndFormatsUppercase
+
+          - id: Plexus-Geometry-ColorParseErrors
+            title: >-
+              Geometry shall reject color text that is not a "#" followed by exactly six or eight hexadecimal digits,
+              reporting a format error from Parse and failure from TryParse, and shall reject null text.
+            justification: |
+              Color text from snapshots and clipboards is untrusted. Strict validation, with a non-throwing variant,
+              stops malformed or hostile text from becoming a silently wrong color.
+            tests:
+              - Color_Parse_InvalidText_ThrowsFormatException
+              - Color_Parse_Null_ThrowsArgumentNullException
+              - Color_TryParse_Null_ReturnsFalse
+
+          - id: Plexus-Geometry-ColorFormatting
+            title: >-
+              Geometry shall format a color as "#RRGGBB" when opaque and "#AARRGGBB" otherwise, such that parsing the
+              formatted text returns the same color.
+            justification: |
+              Snapshots store colors as text and must restore them exactly. A lossless round trip between the
+              textual and the numeric form is required for faithful save and load.
+            tests:
+              - Color_ToString_RoundTripsThroughParse
+              - Color_Parse_LowercaseHex_ParsesAndFormatsUppercase
