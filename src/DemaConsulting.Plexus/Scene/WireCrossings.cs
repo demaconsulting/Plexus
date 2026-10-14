@@ -18,6 +18,14 @@ internal readonly record struct WireHop(double X, double Y, double Radius);
 internal sealed record WireRun(IReadOnlyList<Point> Points, object Net, double Thickness, IReadOnlyList<Point> Junctions);
 
 /// <summary>
+///     A vertical segment of a wire, indexed for crossing detection.
+/// </summary>
+/// <param name="X">The X coordinate of the segment.</param>
+/// <param name="Wire">The index of the wire.</param>
+/// <param name="Segment">The index of the segment's first point in the wire.</param>
+internal readonly record struct VerticalSegment(double X, int Wire, int Segment);
+
+/// <summary>
 ///     Finds the crossings of wires of different nets, where the horizontal wire is drawn with a hop.
 /// </summary>
 /// <remarks>
@@ -55,6 +63,9 @@ internal static class WireCrossings
         double cornerClearance,
         double dotRadius)
     {
+        // Index every vertical segment by X once, so each horizontal segment only visits the verticals within its span
+        var verticals = CollectVerticals(wires);
+        var candidates = new List<VerticalSegment>();
         var result = new List<WireHop>[wires.Count];
         for (var w = 0; w < wires.Count; w++)
         {
@@ -70,37 +81,93 @@ internal static class WireCrossings
                     continue;
                 }
 
-                for (var o = 0; o < wires.Count; o++)
+                // Gather the verticals of other nets inside the span, then visit them in wire and segment order so
+                // the hops come out in the same order as a scan over every wire would produce
+                candidates.Clear();
+                var right = Math.Max(a.X, b.X);
+                for (var k = LowerBound(verticals, Math.Min(a.X, b.X)); k < verticals.Count && verticals[k].X < right; k++)
                 {
-                    var other = wires[o];
-                    if (ReferenceEquals(other.Net, wire.Net))
+                    if (!ReferenceEquals(wires[verticals[k].Wire].Net, wire.Net))
+                    {
+                        candidates.Add(verticals[k]);
+                    }
+                }
+
+                candidates.Sort(static (p, q) => p.Wire != q.Wire ? p.Wire.CompareTo(q.Wire) : p.Segment.CompareTo(q.Segment));
+                foreach (var candidate in candidates)
+                {
+                    var other = wires[candidate.Wire];
+                    var c = other.Points[candidate.Segment];
+                    var d = other.Points[candidate.Segment + 1];
+                    if (!IsCrossing(a, b, c, d, cornerClearance))
                     {
                         continue;
                     }
 
-                    for (var j = 0; j + 1 < other.Points.Count; j++)
+                    var hop = new WireHop(
+                        c.X,
+                        a.Y,
+                        Math.Max(radius * scale, ((wire.Thickness + other.Thickness) / 2) + Gap));
+                    if (!NearJunction(wire.Junctions, hop, dotRadius) && !AtJunction(other.Junctions, hop))
                     {
-                        var c = other.Points[j];
-                        var d = other.Points[j + 1];
-                        if (!IsCrossing(a, b, c, d, cornerClearance))
-                        {
-                            continue;
-                        }
-
-                        var hop = new WireHop(
-                            c.X,
-                            a.Y,
-                            Math.Max(radius * scale, ((wire.Thickness + other.Thickness) / 2) + Gap));
-                        if (!NearJunction(wire.Junctions, hop, dotRadius) && !AtJunction(other.Junctions, hop))
-                        {
-                            result[w].Add(hop);
-                        }
+                        result[w].Add(hop);
                     }
                 }
             }
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     Collects the vertical segments of every wire, sorted by X.
+    /// </summary>
+    /// <param name="wires">The wires.</param>
+    /// <returns>The vertical segments in ascending X.</returns>
+    private static List<VerticalSegment> CollectVerticals(IReadOnlyList<WireRun> wires)
+    {
+        var verticals = new List<VerticalSegment>();
+        for (var w = 0; w < wires.Count; w++)
+        {
+            var points = wires[w].Points;
+            for (var j = 0; j + 1 < points.Count; j++)
+            {
+                var c = points[j];
+                var d = points[j + 1];
+                if (Math.Abs(c.X - d.X) < Epsilon && Math.Abs(c.Y - d.Y) >= Epsilon)
+                {
+                    verticals.Add(new VerticalSegment(c.X, w, j));
+                }
+            }
+        }
+
+        verticals.Sort(static (p, q) => p.X.CompareTo(q.X));
+        return verticals;
+    }
+
+    /// <summary>
+    ///     Finds the first vertical segment whose X is not below a value.
+    /// </summary>
+    /// <param name="verticals">The vertical segments in ascending X.</param>
+    /// <param name="x">The value.</param>
+    /// <returns>The index of the first segment with an X of at least <paramref name="x"/>, or the count when there is none.</returns>
+    private static int LowerBound(List<VerticalSegment> verticals, double x)
+    {
+        var (low, high) = (0, verticals.Count);
+        while (low < high)
+        {
+            var mid = (low + high) >> 1;
+            if (verticals[mid].X < x)
+            {
+                low = mid + 1;
+            }
+            else
+            {
+                high = mid;
+            }
+        }
+
+        return low;
     }
 
     /// <summary>

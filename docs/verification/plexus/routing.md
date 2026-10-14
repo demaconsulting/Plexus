@@ -29,6 +29,14 @@ default router's wires must not cross the box of any node other than at its own 
 - **Wire routes around a node placed between its ports**
   (`DiagramPage_Connect_NodeBetweenPorts_RoutesAroundIt`): the routed wire is orthogonal, has bend points and does not
   cross the blocker's box.
+- **Nodes changed after earlier wires**
+  (`DiagramPage_Connect_NodeMovedOrAddedAfterEarlierWires_IsAvoided`): after a wire is routed, a node moved into the
+  way of a new wire and a node added in the way of another are each avoided at their current position.
+- **Theme changed after wires were routed**
+  (`DiagramPage_Connect_AfterThemeChange_UsesTheNewTheme`): on a page whose wires were routed with the default theme,
+  the obstacle margin is widened, once while the page stays in the diagram and once while it is removed (the removal is
+  then undone); a new wire on either page takes the route of a page that had the wide margin from the start, which
+  differs from the default-margin route.
 - **Wires leave and enter through horizontal stubs**
   (`Routing_ConnectedWires_LeaveAndEnterPortsHorizontallyThroughStubs`): the first and last segments of connected
   wires are horizontal and at least one stub long, for both routers, ahead and behind.
@@ -50,6 +58,10 @@ default router's wires must not cross the box of any node other than at its own 
   (`DiagramPage_Connect_TwoNetsToAdjacentInputs_DoNotRunAlongEachOther`, `DiagramPage_RerouteAll_TwoNets_KeepsNetsApartAndIsRepeatable`):
   two producers feeding adjacent inputs of one mixer get wires that share no collinear stretch, also after re-routing
   the whole page, which is repeatable.
+- **Wire by wire equals re-routing the page**
+  (`DiagramPage_ConnectWireByWire_MatchesRerouteAll`): a lattice of thirty mixers connected wire by wire, with six
+  wires merging at one fan-in input, keeps every route when the whole page is re-routed, and re-routing records no
+  undo entry.
 - **Route cleaning and editing**
   (`Wire_SetRoute_CollinearAndZeroLengthBends_AreNormalized`, `Wire_AddJog_StraightSegment_AddsBumpAsOneUndoEntry`):
   the page-level effect of the cleaner and the editor; their geometry is verified in the OrthogonalRouter unit tests.

@@ -1,5 +1,6 @@
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Routing;
+using DemaConsulting.Plexus.Scene;
 
 namespace DemaConsulting.Plexus.Tests;
 
@@ -42,6 +43,130 @@ public class RoutingTests
         Assert.True(RouteAssertions.IsOrthogonal(points));
         Assert.False(RouteAssertions.CrossesAny(points, [blocker.Bounds]));
         Assert.NotEmpty(wire.Route);
+    }
+
+    /// <summary>
+    ///     Validates that a new wire avoids a node that was moved or added after earlier wires were routed on the page.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_Connect_NodeMovedOrAddedAfterEarlierWires_IsAvoided()
+    {
+        // Arrange: three rows of producer and consumer, and a gain node parked out of the way; one wire is already routed
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var first = page.AddNode("acme.Producer", 0, -300, "P0");
+        var firstEnd = page.AddNode("acme.Consumer", 300, -300, "C0");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P1");
+        var consumer = page.AddNode("acme.Consumer", 300, 0, "C1");
+        var lower = page.AddNode("acme.Producer", 0, 300, "P2");
+        var lowerEnd = page.AddNode("acme.Consumer", 300, 300, "C2");
+        var moved = page.AddNode("acme.Gain", 150, 600, "B1");
+        page.Connect(first.Port("value"), firstEnd.Port("in"));
+
+        // Act: move the gain node between the second row's ports, then add another between the third row's ports
+        page.Move([moved], 0, -600);
+        var aroundMoved = page.Connect(producer.Port("value"), consumer.Port("in"));
+        var added = page.AddNode("acme.Gain", 150, 300, "B2");
+        var aroundAdded = page.Connect(lower.Port("value"), lowerEnd.Port("in"));
+
+        // Assert: each new wire goes around the node in its way, at the node's current position
+        Assert.Multiple(
+            () => Assert.False(RouteAssertions.CrossesAny(aroundMoved.GetPoints(), [moved.Bounds])),
+            () => Assert.False(RouteAssertions.CrossesAny(aroundAdded.GetPoints(), [added.Bounds])),
+            () => Assert.NotEmpty(aroundMoved.Route),
+            () => Assert.NotEmpty(aroundAdded.Route));
+    }
+
+    /// <summary>
+    ///     Validates that a page re-themed while attached, or restored by undo after the theme changed, routes new wires with the new theme.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_Connect_AfterThemeChange_UsesTheNewTheme()
+    {
+        // Arrange: the same page three times - default theme, a wide obstacle margin from the start, and a page
+        // whose earlier wire was routed with the default theme before it was removed, re-themed and restored
+        var wide = DiagramTheme.Classic with { ObstacleMargin = 40 };
+        static (Diagram Diagram, DiagramPage Page) Build(DiagramTheme theme)
+        {
+            var diagram = TestModel.CreateDiagram();
+            diagram.Theme = theme;
+            var page = diagram.Pages.Add("Main");
+            diagram.Pages.Add("Other");
+            page.AddNode("acme.Producer", 0, 0, "P");
+            page.AddNode("acme.Gain", 300, 0, "B");
+            page.AddNode("acme.Consumer", 600, 0, "C");
+            page.AddNode("acme.Producer", 0, 400, "Q");
+            page.AddNode("acme.Consumer", 600, 400, "R");
+            page.Connect("Q.value", "R.in");
+            return (diagram, page);
+        }
+
+        var (_, plain) = Build(DiagramTheme.Classic);
+        var (_, fresh) = Build(wide);
+        var (live, attached) = Build(DiagramTheme.Classic);
+        var (restored, page) = Build(DiagramTheme.Classic);
+
+        // Act
+        live.Theme = wide;
+        var attachedRoute = attached.Connect("P.value", "C.in").Route;
+        restored.Pages.Remove(page);
+        restored.Theme = wide;
+        restored.History.Undo();
+        var route = page.Connect("P.value", "C.in").Route;
+
+        // Assert: the margin changes the route, and both re-themed pages route like the page that always had it
+        Assert.NotEqual(plain.Connect("P.value", "C.in").Route, fresh.Connect("P.value", "C.in").Route);
+        Assert.Equal(fresh.Wires[^1].Route, attachedRoute);
+        Assert.Equal(fresh.Wires[^1].Route, route);
+    }
+
+    /// <summary>
+    ///     Validates that connecting a dense page wire by wire, including wires that merge at a fan-in input, gives the routes that re-routing the whole page gives.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_ConnectWireByWire_MatchesRerouteAll()
+    {
+        // Arrange: a 5 x 6 lattice of mixers wired to the next column, and the last column merging into one fan-in input
+        const int columns = 5;
+        const int rows = 6;
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var nodes = new Node[columns, rows];
+        for (var c = 0; c < columns; c++)
+        {
+            for (var r = 0; r < rows; r++)
+            {
+                nodes[c, r] = page.AddNode("acme.Mixer", c * 240, r * 180, $"M{c}_{r}");
+            }
+        }
+
+        var merger = page.AddNode("acme.Merger", columns * 240, rows * 90, "Merge");
+        for (var c = 0; c < columns - 1; c++)
+        {
+            for (var r = 0; r < rows; r++)
+            {
+                page.Connect(nodes[c, r].Port("out"), nodes[c + 1, r].Port("a"));
+                if (r + 1 < rows)
+                {
+                    page.Connect(nodes[c, r].Port("out"), nodes[c + 1, r + 1].Port("b"));
+                }
+            }
+        }
+
+        for (var r = 0; r < rows; r++)
+        {
+            page.Connect(nodes[columns - 1, r].Port("out"), merger.Port("in"));
+        }
+
+        var connected = page.Wires.Select(w => w.Route.ToArray()).ToList();
+        var undoCount = diagram.History.UndoCount;
+
+        // Act
+        page.RerouteAll();
+
+        // Assert: no route changed, so re-routing recorded nothing
+        Assert.Equal(undoCount, diagram.History.UndoCount);
+        Assert.Equal(connected, page.Wires.Select(w => w.Route.ToArray()));
     }
 
     /// <summary>

@@ -206,7 +206,7 @@ public sealed partial class DiagramPage
 
         // Wires that only translate (or are untouched) keep their shape and form the traffic the re-routed
         // wires keep clear of; wires that need a new route are collected and routed afterwards, in page order
-        List<Rect>? obstacles = null;
+        IReadOnlyList<Rect>? obstacles = null;
         var traffic = new WireTraffic();
         var rerouted = new List<Wire>();
         foreach (var wire in _wires)

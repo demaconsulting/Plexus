@@ -309,8 +309,18 @@ public sealed partial class DiagramPage
     /// <param name="target">The input port.</param>
     /// <param name="replacing">The wire being re-routed, which must not count as traffic, or null for a new wire.</param>
     /// <returns>The interior bend points.</returns>
-    internal Point[] ComputeRoute(Port source, Port target, Wire? replacing = null) =>
-        ComputeRoute(source, target, BuildObstacles(null), null, BuildTraffic(replacing), BuildGroupObstacles());
+    internal Point[] ComputeRoute(Port source, Port target, Wire? replacing = null)
+    {
+        // A new wire routes against the cached traffic of the whole page; a re-routed wire must leave itself out,
+        // and a wire that would merge two nets must not change the cache, so both get a fresh traffic
+        var traffic = replacing is null ? _trafficCache ??= BuildTraffic(null) : BuildTraffic(replacing);
+        if (replacing is null && traffic.WouldMerge(source, target))
+        {
+            traffic = BuildTraffic(null);
+        }
+
+        return ComputeRoute(source, target, BuildObstacles(null), null, traffic, BuildGroupObstacles());
+    }
 
     /// <summary>
     ///     Computes a route for a wire with the diagram's router.
@@ -380,12 +390,76 @@ public sealed partial class DiagramPage
     /// <summary>
     ///     Builds the obstacle list handed to routers: every visible node box inflated by the theme margin, plus the port label strips.
     /// </summary>
+    /// <remarks>
+    ///     The list for the current layout is cached until a node, group or the theme changes (see
+    ///     <see cref="OnElementChanging"/>), so routing many wires does not rebuild it for each one.
+    /// </remarks>
     /// <param name="overrides">Hypothetical node bounds that replace the current ones, or null.</param>
-    /// <returns>The obstacle boxes.</returns>
-    internal List<Rect> BuildObstacles(IReadOnlyDictionary<Node, Rect>? overrides)
+    /// <returns>The obstacle boxes; read-only.</returns>
+    internal IReadOnlyList<Rect> BuildObstacles(IReadOnlyDictionary<Node, Rect>? overrides)
     {
+        if (overrides is null && _obstacleCache is { } cached)
+        {
+            return cached;
+        }
+
         var theme = Diagram.Theme;
-        return [.. _nodes.Where(n => !n.IsHiddenByCollapse).SelectMany(n => NodeGeometry.RoutingObstacles(BoundsOf(n, overrides), n.Type, theme))];
+        List<Rect> obstacles = [.. _nodes.Where(n => !n.IsHiddenByCollapse).SelectMany(n => NodeGeometry.RoutingObstacles(BoundsOf(n, overrides), n.Type, theme))];
+        if (overrides is not null)
+        {
+            return obstacles;
+        }
+
+        // The shared list is handed to routers, so it is wrapped to keep it unchanged
+        _obstacleCache = obstacles.AsReadOnly();
+        return _obstacleCache;
+    }
+
+    /// <summary>
+    ///     Discards the routing caches; they are rebuilt on the next route.
+    /// </summary>
+    internal void InvalidateRoutingCaches()
+    {
+        _obstacleCache = null;
+        _groupCache = null;
+        _trafficCache = null;
+    }
+
+    /// <summary>
+    ///     Keeps the routing caches in step with an element that is about to be changed, attached or detached.
+    /// </summary>
+    /// <remarks>
+    ///     Called before any notification, so a handler that routes a wire never sees a stale cache.
+    ///     Obstacles depend on nodes, groups and the theme, never on wires; the traffic depends on
+    ///     everything that moves a wire or an anchor.
+    /// </remarks>
+    /// <param name="element">The element.</param>
+    internal void OnElementChanging(DiagramElement element)
+    {
+        if (element is Wire)
+        {
+            _trafficCache = null;
+        }
+        else
+        {
+            InvalidateRoutingCaches();
+        }
+    }
+
+    /// <summary>
+    ///     Adds a wire that is about to be appended at the end of the page to the cached traffic.
+    /// </summary>
+    /// <remarks>
+    ///     The wire joins the traffic in the same order a fresh build would add it, so building a page
+    ///     wire by wire does not rebuild the traffic for every wire.
+    /// </remarks>
+    /// <param name="wire">The wire.</param>
+    private void AppendTraffic(Wire wire)
+    {
+        if (_trafficCache is { } traffic && !wire.Source.Node.IsHiddenByCollapse && !wire.Target.Node.IsHiddenByCollapse)
+        {
+            traffic.Add(wire.Source, wire.Target, wire.Source.Anchor, wire.Route, wire.Target.Anchor);
+        }
     }
 
     /// <summary>
@@ -397,7 +471,7 @@ public sealed partial class DiagramPage
     ///     exempt from that group anyway.
     /// </remarks>
     /// <returns>The group frames.</returns>
-    internal GroupObstacles BuildGroupObstacles() => new(_groups, Diagram.Theme, includeCollapsed: true);
+    internal GroupObstacles BuildGroupObstacles() => _groupCache ??= new(_groups, Diagram.Theme, includeCollapsed: true);
 
     /// <summary>
     ///     Gets a node's bounds, honoring hypothetical overrides.

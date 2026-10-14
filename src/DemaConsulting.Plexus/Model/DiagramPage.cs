@@ -77,6 +77,21 @@ public sealed partial class DiagramPage : INotifyPropertyChanged
     private string _name;
 
     /// <summary>
+    ///     The routing obstacles of the current layout, or null when they must be rebuilt.
+    /// </summary>
+    private ReadOnlyCollection<Geometry.Rect>? _obstacleCache;
+
+    /// <summary>
+    ///     The prepared group frames of the current layout, or null when they must be rebuilt.
+    /// </summary>
+    private GroupObstacles? _groupCache;
+
+    /// <summary>
+    ///     The traffic of every visible wire, in page order, for routing new wires, or null when it must be rebuilt.
+    /// </summary>
+    private WireTraffic? _trafficCache;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="DiagramPage"/> class.
     /// </summary>
     /// <param name="diagram">The owning diagram.</param>
@@ -176,11 +191,21 @@ public sealed partial class DiagramPage : INotifyPropertyChanged
     /// <returns>The positions actually used.</returns>
     internal (int TypedIndex, int ZIndex) AttachCore(DiagramElement element, int typedIndex, int zIndex)
     {
-        // Finish attaching before any notification so observers see a fully attached element
+        // Finish attaching before any notification so observers see a fully attached element, and bring the
+        // routing caches up to date first so an observer that routes a wire sees the new element
         element.Page = this;
         if (IsAttached)
         {
             Diagram.RegisterElement(element);
+        }
+
+        if (element is Wire appended && (typedIndex < 0 || typedIndex == _wires.Count))
+        {
+            AppendTraffic(appended);
+        }
+        else
+        {
+            OnElementChanging(element);
         }
 
         var typed = element switch
@@ -214,6 +239,7 @@ public sealed partial class DiagramPage : INotifyPropertyChanged
             Diagram.UnregisterElement(element);
         }
 
+        OnElementChanging(element);
         element.Page = null;
         var typed = element switch
         {

@@ -183,7 +183,9 @@ Wire polish (tests in `WireVisualsTests.cs`):
   and none for the same net, for ends and bends, near a corner of the vertical wire or at junctions
   (`WireCrossings_Find_SameNet_HasNoHop`, `WireCrossings_Find_EndsAndBends_HaveNoHop`,
   `WireCrossings_Find_CrossingNearVerticalCorner_HasNoHop`, `WireCrossings_Find_JunctionAtCrossing_HasNoHop`); the radius
-  grows with the thickness of either wire (`WireCrossings_Find_ThickWires_GrowTheRadius`). The path of one hop is two
+  grows with the thickness of either wire (`WireCrossings_Find_ThickWires_GrowTheRadius`); a lattice of thirty by thirty
+  wires reports all nine hundred crossings, each wire's hops in the order the crossed wires were listed
+  (`WireCrossings_Find_ManyWires_ReportsEveryCrossingInWireOrder`). The path of one hop is two
   cubic quarter arcs of the radius over the crossing, also right to left
   (`WirePaths_Rounded_SingleHop_IsASemicircleOverTheCrossing`, `WirePaths_Rounded_RightToLeftWire_HopsOverTheCrossing`);
   crossings 6 apart merge into one flat-topped hop, those 40 apart stay separate, and a hop that does not fit near a
