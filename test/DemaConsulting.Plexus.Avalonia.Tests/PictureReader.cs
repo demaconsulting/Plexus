@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 
 namespace DemaConsulting.Plexus.Avalonia.Tests;
 
@@ -52,11 +53,13 @@ internal static class PictureReader
             handle.Free();
         }
 
-        // Skia bitmaps are BGRA
+        // The decoded bitmap uses the platform's native layout: BGRA on most platforms, RGBA on macOS arm64
+        var rgba = decoded.Format == PixelFormats.Rgba8888;
+        var (red, blue) = rgba ? (0, 2) : (2, 0);
         var result = new (byte R, byte G, byte B)[size.Width * size.Height];
         for (var i = 0; i < result.Length; i++)
         {
-            result[i] = (buffer[(i * 4) + 2], buffer[(i * 4) + 1], buffer[i * 4]);
+            result[i] = (buffer[(i * 4) + red], buffer[(i * 4) + 1], buffer[(i * 4) + blue]);
         }
 
         return new Picture(result, size.Width, size.Height);

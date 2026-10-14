@@ -226,7 +226,8 @@ public class AutomationServerTests
     ///     Creates a unique automation name so parallel tests never share a pipe.
     /// </summary>
     /// <returns>The name.</returns>
-    private static string UniqueName() => $"test-{Guid.NewGuid():N}";
+    // Kept short: macOS limits Unix domain socket paths (TMPDIR + CoreFxPipe_ + name) to 104 bytes.
+    private static string UniqueName() => $"t{Guid.NewGuid():N}"[..13];
 
     /// <summary>
     ///     Connects a client and exchanges lines.
