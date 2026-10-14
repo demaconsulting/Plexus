@@ -108,6 +108,7 @@ sections:
               Decomposes PlexusRendering-Render-BackgroundAndGrid; grid dots line up with grid-snapped nodes.
             tests:
               - ScenePainter_Paint_Grid_DrawsDotsAtSpacing
+              - ScenePainter_Paint_LargeGrid_DrawsDotsAtHighCoordinates
 
           - id: PlexusRendering-ScenePainter-Placement
             title: >-

@@ -314,6 +314,23 @@ public class ScenePainterTests
     }
 
     /// <summary>
+    ///     Validates that a grid over a very large surface (about 71,000 dots) still paints its dots at high coordinates.
+    /// </summary>
+    [Fact]
+    public void ScenePainter_Paint_LargeGrid_DrawsDotsAtHighCoordinates()
+    {
+        // Arrange: a 4000 x 4000 surface with a dot every 15 units
+        var (surface, painter) = Create(4000, 4000);
+        using var _ = surface;
+
+        // Act
+        painter.Paint(new GridPrimitive(new Rect(0, 0, 4000, 4000), 15, Color.Black));
+
+        // Assert: a dot far from the origin is fully covered
+        Assert.Equal(new Rgba32(0, 0, 0, 255), surface[1500, 1500]);
+    }
+
+    /// <summary>
     ///     Validates that the painter's scale multiplies positions, sizes and stroke widths.
     /// </summary>
     [Fact]
