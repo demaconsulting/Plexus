@@ -6,6 +6,37 @@ namespace DemaConsulting.Plexus;
 /// <summary>
 ///     What a loader does with a node whose type is not in the <see cref="NodeTypeRegistry"/>.
 /// </summary>
+/// <remarks>
+///     A file written by a newer version of the application, or by one with plug-ins, can mention node types this
+///     application has not registered. Choose <see cref="Fail"/> to refuse such a file, or <see cref="Skip"/> to open what is
+///     understood and tell the user what was left out (<see cref="Diagram.LoadReport"/>). To test either path, save a diagram
+///     and change a node's <c>TypeKey</c> (the <c>typeKey</c> member of each node in the JSON) to a key the registry lacks;
+///     the example shows how to do that on the snapshot without editing text.
+/// </remarks>
+/// <example>
+///     Simulate a file from a newer version by renaming a node's type key, then load it both ways.
+///     <code>
+///     using DemaConsulting.Plexus;
+///
+///     // types: your NodeTypeRegistry, which contains the key "demo.Source"
+///     var diagram = new Diagram(types);
+///     diagram.Pages.Add("Main").AddNode("demo.Source", 0, 0, name: "A");
+///
+///     DiagramSnapshot snapshot = diagram.ToSnapshot();
+///     PageSnapshot page = snapshot.Pages[0];
+///     DiagramSnapshot future = snapshot with
+///     {
+///         Pages = [page with { Nodes = [.. page.Nodes.Select(n => n with { TypeKey = "demo.FromTheFuture" })] }],
+///     };
+///
+///     var skip = new DiagramOptions { UnknownNodeTypes = UnknownNodeTypeHandling.Skip };
+///     Diagram opened = Diagram.FromSnapshot(future, types, skip);
+///     Console.WriteLine(opened.LoadReport.Message);                // Skipped 1 node(s) of unknown type(s) demo.FromTheFuture, ...
+///
+///     try { Diagram.FromSnapshot(future, types); }                 // the default is Fail
+///     catch (SnapshotException ex) { Console.WriteLine(ex.Message); }
+///     </code>
+/// </example>
 public enum UnknownNodeTypeHandling
 {
     /// <summary>Refuse the whole document with a <see cref="SnapshotException"/> that lists every missing type (the default).</summary>
@@ -55,6 +86,13 @@ public enum UnknownNodeTypeHandling
 public sealed record DiagramOptions
 {
     /// <summary>
+    ///     Initializes a new instance of the <see cref="DiagramOptions"/> record with every member unset, so a diagram keeps all defaults.
+    /// </summary>
+    public DiagramOptions()
+    {
+        // Nothing to initialize: every member has a usable default
+    }
+    /// <summary>
     ///     Gets the theme, or null to keep <see cref="DiagramTheme.Classic"/> (or the current theme for <see cref="Diagram.Apply"/>).
     /// </summary>
     public DiagramTheme? Theme { get; init; }
@@ -92,4 +130,44 @@ public sealed record DiagramOptions
     ///     read this member; <see cref="Diagram.Apply"/> and the constructor ignore it. The clipboard is always strict.
     /// </remarks>
     public UnknownNodeTypeHandling UnknownNodeTypes { get; init; } = UnknownNodeTypeHandling.Fail;
+
+    /// <summary>
+    ///     Gets a callback invoked with every diagram the options create or configure, so per-instance setup (event handlers) lives in one place; null (the default) means none.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Event handlers such as <see cref="Diagram.NodeRenaming"/> belong to one diagram instance and are not part of a saved file, so a host
+    ///         that opens or creates diagrams in several places would otherwise have to remember to subscribe after each one.
+    ///         The callback runs after the diagram is complete: at the end of <c>new Diagram(types, options)</c>, once
+    ///         <see cref="Diagram.FromJson(string, NodeTypeRegistry, DiagramOptions?)"/>, <see cref="Diagram.FromSnapshot"/> or <see cref="Diagram.FromTree"/>
+    ///         have loaded the whole document (with an empty undo history), and last in <see cref="Diagram.Apply"/>.
+    ///     </para>
+    ///     <para>
+    ///         <see cref="Diagram.Apply"/> runs it on every call, so only use <see cref="Diagram.Apply"/> with options that carry an
+    ///         initializer on a diagram that has not been initialized before, otherwise handlers are attached twice.
+    ///         Exceptions thrown by the callback propagate to the caller of the entry point.
+    ///     </para>
+    /// </remarks>
+    /// <example>
+    ///     Install one rename rule on every diagram of the application.
+    ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     var options = new DiagramOptions
+    ///     {
+    ///         Initialize = diagram =&gt; diagram.NodeRenaming += (_, e) =&gt;
+    ///         {
+    ///             if (e.ProposedName.Contains(' '))
+    ///             {
+    ///                 e.Cancel = true;
+    ///                 e.Reason = "Names cannot contain spaces.";
+    ///             }
+    ///         },
+    ///     };
+    ///
+    ///     var fresh = new Diagram(types, options);                                      // rule installed
+    ///     var opened = Diagram.FromJson(File.ReadAllText("diagram.json"), types, options);   // rule installed here too
+    ///     </code>
+    /// </example>
+    public Action<Diagram>? Initialize { get; init; }
 }

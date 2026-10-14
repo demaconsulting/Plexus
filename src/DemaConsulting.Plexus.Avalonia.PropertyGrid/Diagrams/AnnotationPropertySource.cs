@@ -1,7 +1,7 @@
 using AvaloniaColor = Avalonia.Media.Color;
 using PlexusColor = DemaConsulting.Plexus.Geometry.Color;
 
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     Shows and edits one Plexus <see cref="Annotation"/> in a property grid: its text and its fill color.
@@ -16,6 +16,10 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     // annotation: an Annotation of a diagram page. The text and the fill color are editable rows; each edit is one undo entry.
 ///     var grid = new PropertyGrid { EditMode = PropertyEditMode.Live, SelectedObject = annotation };
 ///     ]]></code>
 /// </example>

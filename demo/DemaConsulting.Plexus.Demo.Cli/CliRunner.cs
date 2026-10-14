@@ -150,17 +150,26 @@ internal static class CliRunner
     }
 
     /// <summary>
+    ///     Characters replaced in page names when they become file names: everything Windows rejects (which includes
+    ///     the only characters Linux and macOS reject), so a page gets the same file name on every platform.
+    /// </summary>
+    private const string ReservedFileNameChars = "<>:\"/\\|?*";
+
+    /// <summary>
     ///     Turns a page name into a file name that is valid and unique among the files written so far.
     /// </summary>
+    /// <remarks>
+    ///     The replaced set is fixed rather than <see cref="Path.GetInvalidFileNameChars"/>, which is platform-specific
+    ///     (on Linux only <c>/</c> and NUL): rendered output is often shared between machines, so names must be portable.
+    /// </remarks>
     /// <param name="pageName">The page name.</param>
     /// <param name="index">The page's index, used to disambiguate duplicates.</param>
     /// <param name="used">The file names already taken; updated with the returned name.</param>
     /// <returns>The file name including the <c>.png</c> extension.</returns>
     internal static string UniqueFileName(string pageName, int index, ISet<string> used)
     {
-        // Replace characters the file system rejects; an empty result falls back to the index
-        var invalid = Path.GetInvalidFileNameChars();
-        var stem = string.Concat(pageName.Select(c => Array.IndexOf(invalid, c) >= 0 ? '_' : c)).Trim();
+        // Replace reserved and control characters; an empty result falls back to the index
+        var stem = string.Concat(pageName.Select(c => char.IsControl(c) || ReservedFileNameChars.Contains(c) ? '_' : c)).Trim();
         if (stem.Length == 0)
         {
             stem = $"page{index}";

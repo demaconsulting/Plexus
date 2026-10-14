@@ -168,6 +168,11 @@ To read it from a restored package, open the package folder under the NuGet cach
 `~/.nuget/packages/demaconsulting.plexus/{version}/api/api.md`), or unzip the `.nupkg`. When building this repository,
 the same files are written to the `api/` folder of each project under `src/` (ignored by git).
 
+The Rendering, Avalonia and PropertyGrid references link the `DemaConsulting.Plexus` types they mention (for example
+`DiagramPage` and `Node`) to the core package's reference of the same version, which sits beside them in the NuGet cache
+(`~/.nuget/packages/demaconsulting.plexus/{version}/api/`). Those links resolve once the core package is restored, as it
+always is for a dependent package, but not in the `api/` folders written by a build from source.
+
 ## Next Steps
 
 The chapters build on each other in the order of the table of contents; pick the ones that match your goal:

@@ -71,6 +71,7 @@ sections:
               - Plexus-Types-NodeTypeRegistry-PortDeclarations
               - Plexus-Types-NodeTypeRegistry-PortFanIn
               - Plexus-Types-NodeTypeRegistry-PresentationHints
+              - Plexus-Types-NodeTypeRegistry-CreateData
             tests:
               - Types_NodeDefaults_AddNode_UsesDeclaredPortsAndSize
 

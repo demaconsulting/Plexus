@@ -32,7 +32,8 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         others; it stays pending with <see cref="PendingEdit.Error"/>, and <see cref="CommitResult.Succeeded"/> is
 ///         <see langword="false"/>. If the scope itself throws or never runs the action, no edit counts as
 ///         committed. A source that implements <see cref="IPropertyCommitScope"/> brackets the commit as well, outside
-///         the host's scope; throwing a <see cref="PropertyCommitRefusedException"/> from a scope marks that property's row.
+///         the host's scope; throwing a <see cref="PropertyCommitRefusedException"/> from a scope marks that property's row,
+///         lists it in <see cref="CommitResult.Failed"/> and makes the whole commit atomic: nothing is applied and nothing is recorded in the undo history.
 ///     </para>
 ///     <para>
 ///         <b>Threading.</b> A session is not thread-safe; use it from the UI thread.
@@ -40,11 +41,17 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     // history: the diagram's undo history (diagram.History)
+///     var history = new UndoHistory();
+///     var person = new Person { Age = 36 };
 ///     using var source = new ReflectionPropertySource(person);
 ///     var session = new PropertyEditSession(
 ///         source,
 ///         PropertyEditMode.Staged,
-///         apply => { using var t = history.BeginTransaction("Edit person"); apply(); });
+///         apply => history.Transact("Edit person", apply));      // the writes of one commit become one undo step
 ///
 ///     PropertyItem age = session.FindItem("Age")!;
 ///     session.SetText(age, "37");            // pending; person.Age is unchanged
@@ -52,6 +59,11 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     if (session.HasChanges)
 ///     {
 ///         CommitResult result = session.Commit();   // writes inside one undo step
+///     }
+///
+///     public class Person
+///     {
+///         public int Age { get; set; }
 ///     }
 ///     ]]></code>
 /// </example>
@@ -136,15 +148,36 @@ public sealed class PropertyEditSession
 
     /// <summary>
     ///     Finds an item of the source by path (<c>Name</c>, <c>Address.City</c>, <c>Tags[2]</c>,
-    ///     <c>Items[0].Name</c>).
+    ///     <c>Items[0].Name</c>; for the Plexus node source <c>Node.Name</c>, <c>Property.Gain</c>, <c>Data.Contact.Email</c>).
     /// </summary>
+    /// <remarks>
+    ///     The path is matched against the <see cref="PropertyItem.Path"/> of the top-level items first (the longest match
+    ///     wins, so a root path may itself contain dots), then nested properties and collection elements are followed.
+    /// </remarks>
     /// <param name="path">The path.</param>
     /// <returns>The item, or <see langword="null"/> when the path does not lead to an item.</returns>
     public PropertyItem? FindItem(string path)
     {
         ArgumentNullException.ThrowIfNull(path);
+
+        // The root is the top-level item whose path is the longest prefix of the path that ends at a segment boundary
         PropertyItem? current = null;
-        var position = 0;
+        foreach (var item in Source.GetItems())
+        {
+            var root = item.Path;
+            var boundary = path.Length == root.Length || (path.Length > root.Length && path[root.Length] is '.' or '[');
+            if (path.StartsWith(root, StringComparison.Ordinal) && boundary && (current is null || root.Length > current.Path.Length))
+            {
+                current = item;
+            }
+        }
+
+        if (current is null)
+        {
+            return null;
+        }
+
+        var position = current.Path.Length;
         while (position < path.Length)
         {
             if (path[position] == '[')
@@ -451,6 +484,20 @@ public sealed class PropertyEditSession
     /// <summary>
     ///     Writes the pending edits to the target in order, inside the commit scope.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         With a plain source a failed edit does not stop the others: the edits that worked are applied, the ones that failed stay
+    ///         pending with their <see cref="PendingEdit.Error"/> and are listed in <see cref="CommitResult.Failed"/>.
+    ///     </para>
+    ///     <para>
+    ///         When the commit scope refuses the commit because of one property (it throws a <see cref="PropertyCommitRefusedException"/>, as the
+    ///         Plexus node source does for a <c>NodeRenaming</c> veto or a value its property definition rejects) the whole commit is atomic:
+    ///         nothing is applied, no undo entry is recorded, <see cref="CommitResult.Applied"/> is 0 and every edit stays pending.
+    ///         <see cref="CommitResult.Failed"/> then lists the refused property (with <see cref="PendingEdit.Path"/> and <see cref="PendingEdit.Error"/>
+    ///         holding the message) and <see cref="CommitResult.Error"/> repeats the message; the grid marks the row. Any other failure of the
+    ///         scope has no row: <see cref="CommitResult.Error"/> is set and <see cref="CommitResult.Failed"/> lists only edits that failed by themselves.
+    ///     </para>
+    /// </remarks>
     /// <returns>
     ///     The outcome. Applied edits are no longer pending; failed edits stay pending with their error.
     /// </returns>
@@ -464,20 +511,34 @@ public sealed class PropertyEditSession
         var batch = _pending.ToList();
         var applied = new List<PendingEdit>();
         var failed = new List<PendingEdit>();
-        var scopeError = RunScoped(() =>
-        {
-            foreach (var edit in batch)
+        var scopeError = RunScoped(
+            () =>
             {
-                var result = Apply(edit);
-                edit.Error = result.Error;
-                (result.Succeeded ? applied : failed).Add(edit);
-            }
-        });
+                foreach (var edit in batch)
+                {
+                    var result = Apply(edit);
+                    edit.Error = result.Error;
+                    (result.Succeeded ? applied : failed).Add(edit);
+                }
+            },
+            out var refusedPath);
 
         if (scopeError is not null)
         {
+            // Nothing was committed; name the refused row (when the refusal named one) next to the edits that failed on their own
+            if (refusedPath is not null && !failed.Any(e => e.Path == refusedPath) && FindRefused(batch, refusedPath) is { } refused)
+            {
+                refused.Error = scopeError;
+                failed.Add(refused);
+            }
+
+            foreach (var edit in failed)
+            {
+                _errors[edit.Path] = edit.Error!;
+            }
+
             Raise(PropertySessionChangeKind.Committed, null, false);
-            return new CommitResult(0, [], scopeError);
+            return new CommitResult(0, failed, scopeError);
         }
 
         foreach (var edit in applied)
@@ -495,6 +556,17 @@ public sealed class PropertyEditSession
         Raise(PropertySessionChangeKind.Committed, null, applied.Any(e => e.Item.RefreshMode == System.ComponentModel.RefreshProperties.All));
         return new CommitResult(applied.Count, failed, null);
     }
+
+    /// <summary>
+    ///     Finds the edit a commit refusal names: the pending edit of that path or, when the refusal names a property that
+    ///     was not edited, a transient edit for its item.
+    /// </summary>
+    /// <param name="batch">The edits of the commit.</param>
+    /// <param name="path">The refused path.</param>
+    /// <returns>The edit, or <see langword="null"/> when the path does not lead to an item.</returns>
+    private PendingEdit? FindRefused(List<PendingEdit> batch, string path) =>
+        batch.Find(e => e.Path == path) ??
+        (FindItem(path) is { } item ? new PendingEdit(item, PendingEditKind.Value, null, null) : null);
 
     /// <summary>
     ///     Creates an element for a collection editor.
@@ -594,7 +666,7 @@ public sealed class PropertyEditSession
     private PropertyResult ApplyLive(PropertyItem item, Action write)
     {
         var result = PropertyResult.Success;
-        var scopeError = RunScoped(() => result = PropertyErrors.Run(write));
+        var scopeError = RunScoped(() => result = PropertyErrors.Run(write), out _);
         if (scopeError is not null)
         {
             result = PropertyResult.Failure(scopeError);
@@ -614,9 +686,11 @@ public sealed class PropertyEditSession
     ///     Runs a body inside the commit scope.
     /// </summary>
     /// <param name="body">The body.</param>
+    /// <param name="refusedPath">The path a <see cref="PropertyCommitRefusedException"/> named, or <see langword="null"/>.</param>
     /// <returns>An error message when the scope failed or did not run the body; otherwise <see langword="null"/>.</returns>
-    private string? RunScoped(Action body)
+    private string? RunScoped(Action body, out string? refusedPath)
     {
+        refusedPath = null;
         var scope = ComposeScope();
         if (scope is null)
         {
@@ -638,6 +712,7 @@ public sealed class PropertyEditSession
             // A refusal that names a property is shown on that property's row
             _errors[refused.Path] = refused.Message;
             Raise(PropertySessionChangeKind.ErrorChanged, refused.Path, false);
+            refusedPath = refused.Path;
             return refused.Message;
         }
         catch (Exception ex) when (!PropertyErrors.IsFatal(ex))

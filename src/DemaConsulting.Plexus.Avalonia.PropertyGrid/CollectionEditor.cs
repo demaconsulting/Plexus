@@ -27,11 +27,23 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     var settings = new Settings();
+///     using var source = new ReflectionPropertySource(settings);
+///     var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+///     var tagsItem = session.FindItem("Tags")!;                 // a collection property
+///
 ///     CollectionEditor editor = session.BeginCollectionEdit(tagsItem);
 ///     editor.Add("draft");                 // a new element
 ///     editor.Move(0, editor.Count - 1);    // reorder
 ///     editor.RemoveAt(1);
 ///     session.Commit();                    // staged: the target list changes now
+///
+///     public class Settings
+///     {
+///         public List<string> Tags { get; set; } = ["a", "b", "c"];
+///     }
 ///     ]]></code>
 /// </example>
 public sealed class CollectionEditor

@@ -40,7 +40,10 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///                 <b>Custom editors</b>: <see cref="PropertyEditorAttribute"/> (or the dependency-free
 ///                 <c>[UIHint("key")]</c> data annotation) names an editor and
 ///                 <see cref="PropertyEditorRegistry{TEditor}"/> maps keys and types to editor factories
-///                 (<c>Func&lt;PropertyEditorContext, Control&gt;</c>). WinForms <c>UITypeEditor</c> classes cannot be reused.
+///                 (<c>Func&lt;PropertyEditorContext, Control&gt;</c>). Register your factories once at start-up on
+///                 <see cref="PropertyGrid.DefaultEditors"/> (every grid and dialog uses them), or on one grid's own registry
+///                 (<see cref="PropertyGrid.EditorRegistry"/>); <see cref="PropertyEditorContext"/> is what a factory writes through.
+///                 WinForms <c>UITypeEditor</c> classes cannot be reused.
 ///             </description>
 ///         </item>
 ///         <item>
@@ -57,17 +60,36 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     <para>
 ///         Text conversion uses the current culture unless a culture is passed explicitly; see <see cref="PropertyItem"/>.
 ///         The generic layers do not depend on Plexus types; the Plexus adapters (a source for nodes, annotations and groups
-///         and the node properties dialog) live in the <c>DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus</c> namespace.
-///         Use the controls from the UI thread.
+///         and the node properties dialog) live in the <c>DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams</c> namespace.
+///         Use the controls from the UI thread. The application must include <c>&lt;FluentTheme /&gt;</c> in App.axaml: the grid is built from
+///         the Fluent theme's control styles.
+///     </para>
+///     <para>
+///         <b>Packages and where to read next.</b> This package, <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c>, is separate from
+///         <c>DemaConsulting.Plexus.Avalonia</c> (the diagram editor and node palette) and from the core model in <c>DemaConsulting.Plexus</c>; it uses the core
+///         model only in the <c>Diagrams</c> namespace. To edit a node's properties from a diagram editor, read <see cref="Diagrams.NodePropertiesDialog"/>
+///         (a one-line modal dialog) and <see cref="Diagrams.NodePropertySource"/> (the rows and their paths). To edit your own objects, start with
+///         <see cref="PropertyGrid"/> and the annotations it honors (<see cref="ReflectionPropertySource"/>), then <see cref="PropertyEditSession"/> for live versus staged
+///         edits and undo. To plug in editors, read <see cref="PropertyGrid.DefaultEditors"/>.
 ///     </para>
 /// </remarks>
 /// <example>
 ///     <para>
-///         Show an object in a grid (live editing, as in a properties panel) and register a custom editor:
+///         Show an object in a grid (live editing, as in a properties panel). The grid is an ordinary Avalonia control; in XAML map the CLR namespace
+///         (<c>xmlns:pg="clr-namespace:DemaConsulting.Plexus.Avalonia.PropertyGrid;assembly=DemaConsulting.Plexus.Avalonia.PropertyGrid"</c>, then
+///         <c>&lt;pg:PropertyGrid x:Name="MixerGrid" /&gt;</c>; see <see cref="PropertyGrid"/> for a complete window):
 ///     </para>
 ///     <code><![CDATA[
 ///     using System.ComponentModel;
+///     using Avalonia.Controls;
 ///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     var grid = new PropertyGrid
+///     {
+///         SelectedObject = new Mixer(),   // category bands, bold changed values, description pane, search
+///         SortMode = PropertySortMode.Categorized,
+///     };
+///     var window = new Window { Content = grid, Width = 420, Height = 560 };
 ///
 ///     public class Mixer
 ///     {
@@ -83,37 +105,70 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         [Browsable(false)]
 ///         public string Id { get; set; } = "";
 ///     }
+///     ]]></code>
+///     <para>
+///         Register a custom editor once at start-up so every grid and dialog offers it; <c>Gain</c> is then annotated with
+///         <c>[PropertyEditor("slider")]</c> (the complete slider editor is on <see cref="PropertyGrid.DefaultEditors"/>):
+///     </para>
+///     <code><![CDATA[
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///
-///     var grid = new PropertyGrid
+///     PropertyGrid.DefaultEditors.Register("slider", context =>
 ///     {
-///         SelectedObject = new Mixer(),   // category bands, bold changed values, description pane, search
-///         SortMode = PropertySortMode.Categorized,
-///     };
-///     grid.EditorRegistry = PropertyGrid.CreateEditorRegistry();
-///     grid.EditorRegistry.Register("slider", context => new Slider { Value = (double)(context.Value ?? 0.0) });
+///         double Current() => Convert.ToDouble(context.Value ?? 0.0);
+///         var slider = new Slider { Minimum = 0, Maximum = 100, Value = Current() };
+///         slider.ValueChanged += (_, e) =>
+///         {
+///             if (e.NewValue != Current()) { context.SetValue(e.NewValue); }   // write only user changes, not the value just shown
+///         };
+///         context.Refreshed += (_, _) => slider.Value = Current();
+///         return slider;
+///     });
 ///     ]]></code>
 ///     <para>
 ///         Edit an object in a dialog: OK commits (here inside the host's undo transaction), Cancel discards:
 ///     </para>
 ///     <code><![CDATA[
-///     var mixer = new Mixer();
-///     bool changed = await PropertyGridDialog.ShowAsync(
-///         owner,
-///         mixer,
-///         commitScope: apply =>
-///         {
-///             using var step = history.BeginTransaction("Edit mixer");
-///             apply();
-///         });
+///     using System.ComponentModel;
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     public static class MixerDialogSample
+///     {
+///         // owner: the window that opens the dialog; history: the diagram's undo history (diagram.History)
+///         public static async Task<bool> EditAsync(Window owner, UndoHistory history, Mixer mixer) =>
+///             await PropertyGridDialog.ShowAsync(
+///                 owner,
+///                 mixer,
+///                 commitScope: apply => history.Transact("Edit mixer", apply));
+///     }
+///
+///     public class Mixer
+///     {
+///         [Category("Levels"), DefaultValue(0.0)]
+///         public double Gain { get; set; }
+///     }
 ///     ]]></code>
 ///     <para>
 ///         Without the controls, a staged session edits an object through code:
 ///     </para>
 ///     <code><![CDATA[
+///     using System.ComponentModel;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     var mixer = new Mixer();
 ///     using var source = new ReflectionPropertySource(mixer);
 ///     var session = new PropertyEditSession(source, PropertyEditMode.Staged);
 ///     session.SetText(session.FindItem("Gain")!, "6.5");   // pending: mixer.Gain is still 0
 ///     session.Commit();                                    // mixer.Gain is now 6.5
+///
+///     public class Mixer
+///     {
+///         [Category("Levels"), DefaultValue(0.0)]
+///         public double Gain { get; set; }
+///     }
 ///     ]]></code>
 /// </example>
 internal static class NamespaceDoc

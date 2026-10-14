@@ -60,15 +60,30 @@ namespace DemaConsulting.Plexus;
 ///         collapsible <see cref="Group"/> (groups nest) and <see cref="DiagramPage.AddAnnotation"/> adds a free text <see cref="Annotation"/>.
 ///         Every such call is validated, automatically routed and recorded as one entry
 ///         in <see cref="Diagram.History"/> (an <see cref="UndoHistory"/>), so undo and redo need no extra work; wrap several
-///         calls in <see cref="UndoHistory.BeginTransaction"/> to undo them as one step. Port types are strings you define and register
+///         calls in <see cref="UndoHistory.Transact(string, System.Action)"/> to undo them as one step and to roll them back if one fails
+///         (<see cref="UndoHistory.BeginTransaction"/> is the advanced form). Port types are strings you define and register
 ///         with <see cref="NodeTypeRegistry.PortTypes"/> for their color (nothing is predefined), and a property with a list of choices is a string
 ///         property with <see cref="PropertyDefinition.Choices"/> (there is no separate choice type). Listen to <see cref="Diagram.Changed"/> to
 ///         react to every change and to <see cref="Diagram.NodeRenaming"/> to correct or veto a rename.
 ///     </para>
 ///     <para>
-///         Persistence is <see cref="Diagram.ToJson(bool)"/> and <see cref="Diagram.FromJson(string, NodeTypeRegistry, DiagramOptions?)"/> for a whole document, and
+///         Persistence is <see cref="Diagram.ToJson(bool)"/> and <see cref="Diagram.FromJson(string, NodeTypeRegistry, DiagramOptions?)"/> for a whole document
+///         (<see cref="Diagram.ToTree"/> and <see cref="Diagram.FromTree"/> for other formats), and
 ///         <see cref="PlexusClipboard"/> for copy and paste of a selection between pages, diagrams and applications.
-///         The library does no file or clipboard I/O of its own.
+///         A file that mentions node types your registry lacks is refused, or opened without them when you set
+///         <see cref="DiagramOptions.UnknownNodeTypes"/> to <see cref="UnknownNodeTypeHandling.Skip"/> (see <see cref="LoadReport"/>).
+///         Themes, stylers, connection rules and the router are not saved, and neither are event handlers such as <see cref="Diagram.NodeRenaming"/> (they belong to one
+///         <see cref="Diagram"/> instance); bundle the configuration in a <see cref="DiagramOptions"/> and pass it to
+///         every constructor and loader, and subscribe handlers in <see cref="DiagramOptions.Initialize"/> so every new or opened diagram gets them. The library does no file or clipboard I/O of its own.
+///     </para>
+///     <para>
+///         <b>Packages.</b> This package (<c>DemaConsulting.Plexus</c>) is the UI-free core and the only one you need to build,
+///         validate, save and load diagrams. <c>DemaConsulting.Plexus.Rendering</c> paints a <see cref="DiagramPage"/> to a PNG file or bitmap without any
+///         UI framework (<c>PlexusRenderer.SavePng</c>), for reports, thumbnails and tests. <c>DemaConsulting.Plexus.Avalonia</c> is the interactive
+///         editor control (<c>DiagramEditor</c>) and node palette (<c>NodePalette</c>) for Avalonia applications.
+///         <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c> is a reusable property grid with a ready-made node properties dialog
+///         (<c>NodePropertiesDialog</c>). Read the namespace page of the package you add next; the <c>DemaConsulting.Plexus.Scene</c>
+///         namespace of this package describes how pages are turned into drawing primitives and styled.
 ///     </para>
 ///     <para>
 ///         The main extension points are a custom <see cref="ConnectionValidator"/> assigned to

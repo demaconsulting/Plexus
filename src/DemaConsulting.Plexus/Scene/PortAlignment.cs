@@ -22,5 +22,8 @@ public enum PortAlignment
     /// <summary>
     ///     Each stack starts <see cref="DiagramTheme.FirstPortOffset"/> below the header and runs downwards.
     /// </summary>
+    /// <remarks>
+    ///     This is a vertical placement only: it does not move ports to the top edge of the node. Inputs stay on the left edge and outputs on the right edge.
+    /// </remarks>
     Top,
 }

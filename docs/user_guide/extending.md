@@ -72,7 +72,12 @@ if (hit.Kind == HitKind.Node)
 
 A `HitResult` says what is under a point (`HitKind` is one of Node, NodeName, Port, Wire, WireBend, WireSourceHandle,
 WireTargetHandle, Annotation, AnnotationResizeHandle, Group, GroupHeader, GroupCollapseToggle, CollapsedGroup or
-Canvas), with the element, the port, the wire's segment index or the bend index where they apply. The scene also
+Canvas), with the element, the port, the wire's segment index or the bend index where they apply. The handles are drawn
+and hit **only for selected elements**: a bend or an end of a wire is reported as `WireBend`, `WireSourceHandle` or
+`WireTargetHandle` only when the wire is in `SceneOptions.Selection` (and the resize handle of an annotation as
+`AnnotationResizeHandle` only for a selected annotation); an unselected wire is hit as a plain `Wire` with its segment
+index. A headless test or tool that wants to grab a handle builds the scene with the wire selected,
+`new SceneOptions { Selection = [wire] }`, and hit tests that scene. The scene also
 answers `TryGetNodeLayout`, `TryGetGroupLayout` and `TryGetWirePoints` (the polyline a wire is displayed with), `Query`
 (the primitives in a region) and `Bounds`. In the Avalonia editor, `Editor.HitTest(point)` takes a point relative to the
 control and `Editor.Scene` is the scene it currently shows, so a host can build overlays and drop targets on the same

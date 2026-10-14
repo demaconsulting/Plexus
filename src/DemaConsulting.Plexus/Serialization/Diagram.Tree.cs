@@ -52,13 +52,28 @@ public sealed partial class Diagram
     ///     <see cref="IDictionary{TKey, TValue}"/> or the non-generic <see cref="System.Collections.IDictionary"/> for nested objects, and
     ///     any <see cref="System.Collections.IEnumerable"/> for lists. Everything after that is exactly <see cref="FromJson(string, NodeTypeRegistry, DiagramOptions?)"/>,
     ///     including its validation. Unlike the JSON loaders, shape problems are reported as <see cref="SnapshotException"/> as well, so a host needs no JSON knowledge.
+    ///     Node types the registry does not know fail the load, or are skipped with <see cref="UnknownNodeTypeHandling.Skip"/>
+    ///     (see <see cref="UnknownNodeTypeHandling"/> and <see cref="LoadReport"/>).
     /// </remarks>
     /// <example>
-    ///     See <see cref="ToTree"/>.
+    ///     Restore a tree, here the one just captured; a tree that a foreign serializer read back is passed the same way.
+    ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     // types: your NodeTypeRegistry
+    ///     var source = new Diagram(types);
+    ///     source.Pages.Add("Main");
+    ///     IDictionary&lt;string, object?&gt; tree = source.ToTree();
+    ///
+    ///     var options = new DiagramOptions { UnknownNodeTypes = UnknownNodeTypeHandling.Skip };
+    ///     Diagram restored = Diagram.FromTree(tree, types, options);
+    ///     Console.WriteLine(restored.Pages.Count);                        // 1
+    ///     Console.WriteLine(restored.LoadReport.HasSkipped);              // False: nothing unknown in this tree
+    ///     </code>
     /// </example>
     /// <param name="tree">The tree root (the dictionary that <see cref="ToTree"/> returned, or its equivalent from another format).</param>
     /// <param name="types">The registry providing the node types the tree refers to.</param>
-    /// <param name="options">Optional; defaults to null (every default). The configuration to install on the loaded diagram and how to treat unknown node types.</param>
+    /// <param name="options">The configuration to install on the loaded diagram and how to treat unknown node types; null uses every default.</param>
     /// <returns>The new diagram, with an empty undo history.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="tree"/> or <paramref name="types"/> is null.</exception>
     /// <exception cref="SnapshotException">Thrown when the tree holds unsupported values, has the wrong shape, an unsupported format version, unknown node types (unless skipping), or invalid content.</exception>

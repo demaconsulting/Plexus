@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests;
 
@@ -57,10 +57,10 @@ public class NodePropertiesDialogTests
         Assert.Equal("Osc - Properties", dialog.Title);
         Assert.Equal(PropertyEditMode.Staged, dialog.Grid.EditMode);
         var paths = GridHarness.PropertyPaths(dialog.Grid);
-        Assert.Equal("Name", paths[0]);
-        Assert.Contains("Frequency", paths);
-        Assert.Contains("Level", paths);
-        Assert.NotNull(GridHarness.Find<Control>(dialog, "PropertyGrid_Row_Name"));
+        Assert.Equal(NodePropertySource.NamePath, paths[0]);
+        Assert.Contains(NodePropertySource.PropertyPath("Frequency"), paths);
+        Assert.Contains(NodePropertySource.DataPath("Level"), paths);
+        Assert.NotNull(GridHarness.Find<Control>(dialog, "PropertyGrid_Row_Node.Name"));
         Assert.False(task.IsCompleted);
         dialog.Close(false);
         GridHarness.Pump(owner);
@@ -80,9 +80,9 @@ public class NodePropertiesDialogTests
         var task = Open(node, out var owner, out var dialog);
 
         // Act
-        Type(dialog, dialog.Grid, "Name", "Lead");
-        Type(dialog, dialog.Grid, "Frequency", "880 Hz");
-        Type(dialog, dialog.Grid, "Level", "9");
+        Type(dialog, dialog.Grid, NodePropertySource.NamePath, "Lead");
+        Type(dialog, dialog.Grid, NodePropertySource.PropertyPath("Frequency"), "880 Hz");
+        Type(dialog, dialog.Grid, NodePropertySource.DataPath("Level"), "9");
         Assert.Equal("Osc", node.Name);
         GridHarness.Click(GridHarness.Get<Button>(dialog, "PropertyGridDialog_OK"));
         GridHarness.Pump(owner);
@@ -114,8 +114,8 @@ public class NodePropertiesDialogTests
         var task = Open(node, out var owner, out var dialog);
 
         // Act
-        Type(dialog, dialog.Grid, "Name", "Lead");
-        Type(dialog, dialog.Grid, "Level", "9");
+        Type(dialog, dialog.Grid, NodePropertySource.NamePath, "Lead");
+        Type(dialog, dialog.Grid, NodePropertySource.DataPath("Level"), "9");
         GridHarness.Click(GridHarness.Get<Button>(dialog, "PropertyGridDialog_Cancel"));
         GridHarness.Pump(owner);
 
@@ -140,16 +140,16 @@ public class NodePropertiesDialogTests
         var task = Open(node, out var owner, out var dialog);
 
         // Act
-        Type(dialog, dialog.Grid, "Name", "Other");
+        Type(dialog, dialog.Grid, NodePropertySource.NamePath, "Other");
         var accepted = dialog.Accept();
 
         // Assert
         Assert.False(accepted);
         Assert.False(task.IsCompleted);
-        Assert.Equal("The name 'Other' is already used by another node.", dialog.Grid.Session!.GetErrors()["Name"]);
+        Assert.Equal("The name 'Other' is already used by another node.", dialog.Grid.Session!.GetErrors()[NodePropertySource.NamePath]);
         Assert.Equal("The name 'Other' is already used by another node.", GridHarness.Get<TextBlock>(dialog, "PropertyGridDialog_Status").Text);
 
-        Type(dialog, dialog.Grid, "Name", "Fixed");
+        Type(dialog, dialog.Grid, NodePropertySource.NamePath, "Fixed");
         Assert.True(dialog.Accept());
         GridHarness.Pump(owner);
         Assert.True(task.Result);
@@ -173,8 +173,8 @@ public class NodePropertiesDialogTests
         };
         var before = diagram.History.UndoCount;
         var task = Open(node, out var owner, out var dialog);
-        Type(dialog, dialog.Grid, "Name", "Lead");
-        Type(dialog, dialog.Grid, "Frequency", "880");
+        Type(dialog, dialog.Grid, NodePropertySource.NamePath, "Lead");
+        Type(dialog, dialog.Grid, NodePropertySource.PropertyPath("Frequency"), "880");
 
         // Act
         var accepted = dialog.Accept();
@@ -182,7 +182,7 @@ public class NodePropertiesDialogTests
         // Assert
         Assert.False(accepted);
         Assert.False(task.IsCompleted);
-        Assert.Equal("Renaming is locked.", dialog.Grid.Session!.GetErrors()["Name"]);
+        Assert.Equal("Renaming is locked.", dialog.Grid.Session!.GetErrors()[NodePropertySource.NamePath]);
         Assert.Equal("Osc", node.Name);
         Assert.Equal(440.0, node.Properties["Frequency"]);
         Assert.Equal(before, diagram.History.UndoCount);
@@ -221,8 +221,8 @@ public class NodePropertiesDialogTests
         var window = GridHarness.Host(grid);
 
         // Act
-        Type(window, grid, "Frequency", "880");
-        Type(window, grid, "Level", "9");
+        Type(window, grid, NodePropertySource.PropertyPath("Frequency"), "880");
+        Type(window, grid, NodePropertySource.DataPath("Level"), "9");
 
         // Assert
         Assert.Equal(before + 2, diagram.History.UndoCount);
@@ -231,13 +231,83 @@ public class NodePropertiesDialogTests
 
         diagram.History.Undo();
         GridHarness.Pump(window);
-        Assert.Equal("5", GridHarness.Inner<TextBox>(GridHarness.Editor(grid, "Level")).Text);
+        Assert.Equal("5", GridHarness.Inner<TextBox>(GridHarness.Editor(grid, NodePropertySource.DataPath("Level"))).Text);
         diagram.History.Undo();
         GridHarness.Pump(window);
-        Assert.Equal("440", GridHarness.Inner<TextBox>(GridHarness.Editor(grid, "Frequency")).Text);
+        Assert.Equal("440", GridHarness.Inner<TextBox>(GridHarness.Editor(grid, NodePropertySource.PropertyPath("Frequency"))).Text);
 
         // Showing another node (or nothing) detaches from the first one
         grid.SelectedObject = null;
+        window.Close();
+    });
+
+    /// <summary>
+    ///     A source the grid created for SelectedObject is disposed when the content changes; a source assigned to Source is never disposed by the grid.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PropertyGrid_SelectedObjectSource_IsDisposedByTheGridButHostSourceIsNot() => UiTest.Run(() =>
+    {
+        // Arrange: the grid creates a source for the node
+        var (_, node) = NodeFixture.Create();
+        var grid = new PropertyGrid { SelectedObject = node };
+        var window = GridHarness.Host(grid);
+        var created = Assert.IsType<NodePropertySource>(grid.Session!.Source);
+        var createdRaised = 0;
+        created.Changed += (_, _) => createdRaised++;
+        node.Properties["Frequency"] = 100.0;
+        Assert.True(createdRaised > 0);
+
+        // Act: replace the content with a host-owned source
+        using var hosted = new NodePropertySource(node);
+        var hostedRaised = 0;
+        hosted.Changed += (_, _) => hostedRaised++;
+        grid.Source = hosted;
+        var afterReplace = createdRaised;
+        node.Properties["Frequency"] = 200.0;
+        var hostedWhileShown = hostedRaised;
+        grid.Source = null;
+        node.Properties["Frequency"] = 300.0;
+
+        // Assert: the created source stopped listening, the host source still works after the grid let go of it
+        Assert.Equal(afterReplace, createdRaised);
+        Assert.True(hostedWhileShown > 0);
+        Assert.True(hostedRaised > hostedWhileShown);
+        window.Close();
+    });
+
+    /// <summary>
+    ///     A source the grid created is released while the grid is out of the visual tree and created again, showing the same node, when it returns.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PropertyGrid_SelectedObjectSource_IsReleasedWhileDetachedAndRecreatedOnAttach() => UiTest.Run(() =>
+    {
+        // Arrange
+        var (_, node) = NodeFixture.Create();
+        var grid = new PropertyGrid { SelectedObject = node };
+        var window = GridHarness.Host(grid);
+        var first = Assert.IsType<NodePropertySource>(grid.Session!.Source);
+        var firstRaised = 0;
+        first.Changed += (_, _) => firstRaised++;
+        grid.SetExpanded(NodePropertySource.DataPath("Tags"), true);
+
+        // Act: take the grid out of the window, change the node, put the grid back
+        window.Content = null;
+        GridHarness.Pump(window);
+        node.Properties["Frequency"] = 100.0;
+        var whileDetached = firstRaised;
+        window.Content = grid;
+        GridHarness.Pump(window);
+
+        // Assert
+        Assert.Equal(0, whileDetached);
+        var second = Assert.IsType<NodePropertySource>(grid.Session.Source);
+        Assert.NotSame(first, second);
+        Assert.Same(node, second.Node);
+        Assert.Same(node, grid.SelectedObject);
+        Assert.Contains(NodePropertySource.PropertyPath("Frequency"), GridHarness.PropertyPaths(grid));
+        Assert.True(grid.IsExpanded(NodePropertySource.DataPath("Tags")));
         window.Close();
     });
 }

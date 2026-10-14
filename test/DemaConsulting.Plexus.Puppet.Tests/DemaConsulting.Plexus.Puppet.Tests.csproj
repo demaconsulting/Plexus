@@ -9,8 +9,16 @@
 
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
-    <IsTestProject>true</IsTestProject>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <!-- The Puppet is Windows-only (UI Automation via FlaUI, which references the Windows Desktop framework).
+         EnableWindowsTargeting lets Linux and macOS builds compile these tests; they only run on Windows, where the
+         Windows Desktop runtime exists, so elsewhere the project is not treated as a test project. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <IsTestProject Condition="$([MSBuild]::IsOSPlatform('Windows'))">true</IsTestProject>
+    <IsTestProject Condition="!$([MSBuild]::IsOSPlatform('Windows'))">false</IsTestProject>
+    <!-- xunit.v3 marks the project as a Testing Platform application, which is what 'dotnet test' runs; clear it too -->
+    <IsTestingPlatformApplication Condition="!$([MSBuild]::IsOSPlatform('Windows'))">false</IsTestingPlatformApplication>
 
     <!-- Code Quality Configuration -->
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

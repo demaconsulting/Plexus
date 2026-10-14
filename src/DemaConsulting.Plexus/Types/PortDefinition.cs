@@ -63,7 +63,7 @@ public sealed class PortDefinition
     public string TypeKey { get; }
 
     /// <summary>
-    ///     Gets or initializes the text drawn next to the port; defaults to <see cref="Name"/>. Set with an object initializer.
+    ///     Gets or initializes the text drawn next to the port; defaults to <see cref="Name"/>.
     /// </summary>
     public string Label
     {
@@ -72,7 +72,7 @@ public sealed class PortDefinition
     }
 
     /// <summary>
-    ///     Gets or initializes a value indicating whether an input port made from this definition accepts more than one wire (fan-in); the default is false. Set with an object initializer.
+    ///     Gets or initializes a value indicating whether an input port made from this definition accepts more than one wire (fan-in); the default is false.
     /// </summary>
     /// <remarks>
     ///     False by default: <see cref="ConnectionRules.Default"/> refuses a second wire into an input

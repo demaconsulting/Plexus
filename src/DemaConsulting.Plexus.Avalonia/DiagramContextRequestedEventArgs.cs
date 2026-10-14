@@ -89,7 +89,7 @@ public sealed class DiagramContextRequestedEventArgs : EventArgs
     }
 
     /// <summary>
-    ///     Gets the element under the pointer, or null for the empty canvas (the declared type is non-nullable in the generated signature but the value may be null).
+    ///     Gets the element under the pointer, or null for the empty canvas.
     /// </summary>
     public DiagramElement? Element { get; }
 

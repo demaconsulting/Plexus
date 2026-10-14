@@ -130,7 +130,7 @@ To edit a node's properties, open the ready-made dialog of the property grid pac
 double-clicks a node (OK applies the rename, the changed properties and the host data as one undo step):
 
 ```csharp
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(window, e.Node);
 ```

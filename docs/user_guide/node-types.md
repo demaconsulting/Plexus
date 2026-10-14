@@ -29,7 +29,7 @@ types.Add(new NodeType("math.Sine")
     Title = "SINE",                   // the header text; defaults to the last segment of the key
     DisplayName = "Sine wave",        // the host-facing name used by palettes, menus and accessibility
     Category = "Math",                // the palette groups types under category headers
-    DefaultSize = new Size(90, 105),  // otherwise the theme's default size, grown to fit the ports
+    DefaultSize = new Size(90, 105),  // otherwise the theme's default size, grown to fit the ports and the title
     Icon = IconSource.FromSvg("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'>" +
                               "<path d='M1 8 C4 0 7 0 8 8 S12 16 15 8' fill='none' stroke='#FFB04D'/></svg>"),
     Outputs = { new PortDefinition("value", "number") },
@@ -47,6 +47,10 @@ Notes:
   files and to the clipboard, so choose keys that never change; a paste into another application requires an exact
   match.
 - A type is frozen when it is added to the registry: its port and property lists cannot change afterwards.
+- Without a `DefaultSize`, a new node is as wide as the theme's `DefaultNodeWidth` (90) or wider: the width grows, in
+  steps of the grid size, until the title fits the header on one line (measured with the deterministic
+  `ApproximateTextMeasurer`), and the height grows to fit the longer port column. A declared `DefaultSize` is
+  authoritative: a title wider than it wraps onto further lines, or shrinks, instead of widening the node.
 - `NodeType.Category` is `null` for an uncategorized type. The `NodePalette` shows categories in registration order and
   uncategorized types last.
 - `IsResizable` is a hint for hosts that let users resize nodes of a type; the editor does not resize nodes itself.
@@ -183,10 +187,34 @@ var details = (TaskDetails?)task.Data;
 ```
 
 Assigning `Data` replaces the payload and is one undo step, so prefer immutable records: change a payload by assigning
-a modified copy (`task.Data = details with { Priority = 5 }`). A type without `DataType` or `DataSerializer` has its
+a modified copy (`task.Data = details with { Priority = 5 }`). When the type declares a `DataType`, assigning an
+instance of an incompatible type throws `ArgumentException` immediately (a derived type and `null` are fine), instead of
+failing later when the diagram is saved. `DataType` is optional when a `DataSerializer` is set: a serializer alone is
+enough to persist the payload (then `Data` accepts any object; declare both only when you also want the type check). A
+type with neither `DataType` nor `DataSerializer` has its
 `Data` left out of files and of the clipboard. The demo's workflow `Task` node does exactly this, with a mutable class
 whose properties carry `System.ComponentModel` annotations: the property grid (see *The Property Grid*) shows and edits
 such host data next to the declared properties, working on a copy made with `node.CloneData()`.
+
+### Starting Data for New Nodes
+
+A node starts with `Data == null`, which makes a property grid for a node with host data empty until the host assigns
+something. Give the type a factory and every new node gets its own payload:
+
+```csharp
+types.Add(new NodeType("flow.Task")
+{
+    DataType = typeof(TaskDetails),
+    CreateData = () => new TaskDetails("", 3),      // called once per new node; return a new instance each time
+});
+
+var task = page.AddNode("flow.Task", 0, 300);       // task.Data is already a TaskDetails
+```
+
+The factory is used for nodes added from code, dropped from the palette, added with the editor's commands and for pasted
+or duplicated nodes whose source carried no data. Nodes loaded from a file keep exactly what was saved, including no data,
+and undo and redo of the add keep the same payload object. A factory result that does not fit `DataType` throws
+`InvalidOperationException` when the node is added.
 
 ![The workflow sample: tasks, decisions and approvals joined by flow wires](images/workflow.png)
 

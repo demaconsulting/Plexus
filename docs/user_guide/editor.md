@@ -167,7 +167,7 @@ The host observes the editor through events and decides what each one means:
 ```csharp
 using Avalonia.Controls;
 using DemaConsulting.Plexus.Avalonia;
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 // window: the owner Window
 Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(window, e.Node);
@@ -218,7 +218,7 @@ chapter *The Property Grid*). The dialog is one line in the host window, and the
 host data are all in it:
 
 ```csharp
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(window, e.Node);
 ```

@@ -139,6 +139,7 @@ reviews:
       - "src/DemaConsulting.Plexus/Connections/*.cs"
       - "test/DemaConsulting.Plexus.Tests/ConnectionTests.cs"
       - "test/DemaConsulting.Plexus.Tests/Connections/ConnectionRulesTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Connections/ReconnectRulesTests.cs"
 
   # Plexus-Model Review (one per subsystem)
   - id: Plexus-Model
@@ -235,6 +236,7 @@ reviews:
       - "test/DemaConsulting.Plexus.Tests/SharedPortNameTests.cs"
       - "test/DemaConsulting.Plexus.Tests/ElementConvenienceTests.cs"
       - "test/DemaConsulting.Plexus.Tests/Model/NodeTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/NodeDataTests.cs"
 
   # Plexus-Model-Wire Review (one per unit)
   - id: Plexus-Model-Wire
@@ -343,6 +345,7 @@ reviews:
       - "test/DemaConsulting.Plexus.Tests/TypesAndGeometryTests.cs"
       - "test/DemaConsulting.Plexus.Tests/Types/NodeTypeRegistryTests.cs"
       - "test/DemaConsulting.Plexus.Tests/Types/NodeTypeCategoryTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/NodeDataTests.cs"
 
   # Plexus-Types-IconSource Review (one per unit)
   - id: Plexus-Types-IconSource
@@ -490,6 +493,7 @@ reviews:
       - "src/DemaConsulting.Plexus/Scene/PortAlignment.cs"
       - "test/DemaConsulting.Plexus.Tests/Scene/DiagramThemeTests.cs"
       - "test/DemaConsulting.Plexus.Tests/Scene/PortAlignmentTests.cs"
+      - "test/DemaConsulting.Plexus.Tests/Scene/DefaultNodeWidthTests.cs"
 
   # Plexus-Scene-NodeLayout Review (one per unit)
   - id: Plexus-Scene-NodeLayout
@@ -1163,15 +1167,15 @@ reviews:
       - "docs/reqstream/plexus-avalonia-property-grid/plexus-node-source.yaml"
       - "docs/design/plexus-avalonia-property-grid/plexus-node-source.md"
       - "docs/verification/plexus-avalonia-property-grid/plexus-node-source.md"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/NodePropertySource.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/AnnotationPropertySource.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/GroupPropertySource.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/ElementEditing.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/ElementPropertyItem.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/WorkingValues.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/DefinitionConverter.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/PlexusSourceRegistration.cs"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/NamespaceDoc.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/NodePropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/AnnotationPropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/GroupPropertySource.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/ElementEditing.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/ElementPropertyItem.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/WorkingValues.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/DefinitionConverter.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/PlexusSourceRegistration.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/NamespaceDoc.cs"
       - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/NodePropertySourceTests.cs"
 
   # PlexusAvaloniaPropertyGrid-NodePropertiesDialog Review (one per unit)
@@ -1184,7 +1188,7 @@ reviews:
       - "docs/reqstream/plexus-avalonia-property-grid/node-properties-dialog.yaml"
       - "docs/design/plexus-avalonia-property-grid/node-properties-dialog.md"
       - "docs/verification/plexus-avalonia-property-grid/node-properties-dialog.md"
-      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Plexus/NodePropertiesDialog.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/NodePropertiesDialog.cs"
       - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/NodePropertiesDialogTests.cs"
 
   # OTS-ApiMark Review (one per OTS item)

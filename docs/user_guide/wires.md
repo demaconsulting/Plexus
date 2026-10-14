@@ -27,14 +27,29 @@ input policy stays in force:
 // The demo's policy: ports must have the same type (a number cannot drive an audio input)
 diagram.ConnectionRules = ConnectionRules.All(ConnectionRules.Default, ConnectionRules.SameType);
 
+// Degree limits are built in: at most two wires leave an output, at most three end at an input
+diagram.ConnectionRules = ConnectionRules.All(
+    ConnectionRules.Default,
+    ConnectionRules.MaxOutgoingWires(2),
+    ConnectionRules.MaxIncomingWires(3));
+
 // Your own rule: a ConnectionValidator receives (output, input) and returns Allowed or Denied(reason)
 diagram.ConnectionRules = ConnectionRules.All(
     ConnectionRules.Default,
     ConnectionRules.SameType,
-    (output, input) => output.Wires.Count >= 3
+    (output, input) => output.CountWiresIgnoringReconnect() >= 3
         ? ConnectionCheck.Denied($"{output} already feeds three inputs.")
         : ConnectionCheck.Allowed);
 ```
+
+When a rule counts wires, use `Port.CountWiresIgnoringReconnect()` (or the built-in `MaxOutgoingWires` and
+`MaxIncomingWires`) and not `port.Wires.Count`. Dragging the end of a wire asks `DiagramPage.CanReconnect`, which
+judges a
+wire that is still attached to its old ports; counted naively, that wire would count against the port it is being moved
+to or kept on, and keeping a wire on a port that is "full" would be refused. While the rule runs,
+`page.WireBeingReconnected` is the wire under check (null for `CanConnect` and `Connect`), for rules that need to
+ignore it in another way. `CanReconnect(wire, null, null)`, or with the wire's current ports, means "no change" and is
+always allowed. The rule always receives the ports as (output, input): its first argument is never an input.
 
 `ConnectionRules.SingleInputWire` is the same single-wire rule under a name for explicit compositions. A host that
 assigns a rule built **without** `Default` or `SingleInputWire` (for example `ConnectionRules.SameType` alone, or its own

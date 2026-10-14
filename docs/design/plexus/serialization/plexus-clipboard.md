@@ -40,7 +40,8 @@ all unknown node types together, validates every rectangle, collapsed position a
 non-negative), computes the translation (the target position applied to the top-left of the union of node, annotation and
 collapsed group boxes, else the default offset), then creates detached nodes (claiming ids: fresh GUIDs when cloning, the
 stored ids when restoring, rejecting empty and repeated ids; resolving names; loading properties by coercion; reading
-payloads), annotations (validating fill colors) and groups, links group membership after checking for unknown members,
+payloads, where a node without any payload gets `NodeType.CreateData` when cloning and keeps no payload when
+restoring), annotations (validating fill colors) and groups, links group membership after checking for unknown members,
 members in two groups, cycles and depth beyond 64, creates wires (checking nodes, port names and directions, self
 connections and duplicate port pairs, translating routes) and fixes the z-order (a stored z-order must name every element
 exactly once; otherwise groups, nodes, annotations, wires). Any problem aborts with a message and nothing is applied.

@@ -50,17 +50,24 @@
            because the public surface is identical across target frameworks.
          - ApiMarkPackDocs ships the generated api/ tree inside the NuGet package.
          - ApiMarkEnforceDocs fails the build on any public API member lacking an XML doc summary,
-           so the shipped reference cannot silently develop gaps. -->
+           so the shipped reference cannot silently develop gaps.
+         - ApiMarkVisibility is left at its C# default (PublicAndProtected), which also documents the
+           protected/virtual extension points of public types (e.g. StandardNodeVisual.AddBox).
+         - ApiMarkExternalLinks renders types from the Core package (DemaConsulting.Plexus) as links into
+           that package's own api/ tree instead of listing them as external types. NuGet extracts packages
+           side by side as <packages>/<lowercase id>/<version>/ and Core is always packed at the same version
+           as this package, so the link target relative to this package's api/ folder is
+           ../../../demaconsulting.plexus/<version>/api. The links resolve in a consumer's package cache;
+           in a source build (version 0.0.0) they point at a folder that does not exist. -->
     <ApiMarkPackDocs>true</ApiMarkPackDocs>
-    <!-- PublicAndProtected also documents the protected/virtual extension points of public types (e.g. StandardNodeVisual.AddBox). -->
-    <ApiMarkVisibility>PublicAndProtected</ApiMarkVisibility>
     <ApiMarkEnforceDocs>Public</ApiMarkEnforceDocs>
     <ApiMarkEnforceDocsSeverity>Error</ApiMarkEnforceDocsSeverity>
+    <ApiMarkExternalLinks>DemaConsulting.Plexus=../../../demaconsulting.plexus/$(Version.ToLowerInvariant())/api</ApiMarkExternalLinks>
   </PropertyGroup>
 
   <!-- Build Tool Dependencies -->
   <ItemGroup>
-    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.7" PrivateAssets="All" />
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.8" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.13" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
   </ItemGroup>

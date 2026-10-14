@@ -130,15 +130,15 @@ internal static class AutomationIds
     /// <summary>
     ///     Gets the id of the row of a property in the properties dialog or the panel (the library's <c>PropertyGrid</c> assigns it).
     /// </summary>
-    /// <param name="path">The property path: <c>Name</c>, a property name, a host data property such as <c>Priority</c>, or a nested path such as <c>Contact.Email</c> or <c>Checklist[0].Text</c>.</param>
-    /// <returns>The AutomationId, for example <c>PropertyGrid_Row_Name</c>.</returns>
+    /// <param name="path">The row path of the library's node source: <c>Node.Name</c>, <c>Property.&lt;name&gt;</c> for a declared property such as <c>Property.Capacity</c>, or <c>Data.&lt;path&gt;</c> for host data such as <c>Data.Priority</c>, <c>Data.Contact.Email</c> or <c>Data.Checklist[0].Text</c>; annotations use <c>Text</c> and <c>Fill</c>, groups <c>Title</c> and <c>IsCollapsed</c>.</param>
+    /// <returns>The AutomationId, for example <c>PropertyGrid_Row_Node.Name</c>.</returns>
     public static string PropertiesRow(string path) => $"PropertyGrid_Row_{path}";
 
     /// <summary>
     ///     Gets the id of the editor control inside the row of a property in the properties dialog or the panel.
     /// </summary>
-    /// <param name="path">The property path.</param>
-    /// <returns>The AutomationId, for example <c>PropertyGrid_Editor_Name</c>.</returns>
+    /// <param name="path">The property path, see <see cref="PropertiesRow"/>.</param>
+    /// <returns>The AutomationId, for example <c>PropertyGrid_Editor_Node.Name</c>.</returns>
     public static string PropertiesEditor(string path) => $"PropertyGrid_Editor_{path}";
     /// <summary>
     ///     Gets the id of a message dialog button.

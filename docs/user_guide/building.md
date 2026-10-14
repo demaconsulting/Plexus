@@ -32,7 +32,8 @@ total.Name = "Subtotal";                                     // goes through the
 page.Remove(extra);                                          // removes the node and its wires
 ```
 
-`node.Bounds` is the box of the node in diagram units; the node size comes from `NodeType.DefaultSize` or the theme.
+`node.Bounds` is the box of the node in diagram units; the node size comes from `NodeType.DefaultSize` or the theme
+(grown to fit the ports and the title).
 `node.Type` is the node type, `node.Inputs` and `node.Outputs` list the ports, and `node.Wires` lists the connected
 wires.
 
@@ -169,5 +170,9 @@ bool renamed = diagram.TryRename(sum, "Main sum", out string? reason);    // rea
 for being non-empty and (by default) unique before the event is raised, and a corrected name is checked again.
 `Diagram.NodeRenamed` is raised after a rename was applied, including by undo and redo. The editor's inline rename uses
 the same pipeline and shows the reason as a tooltip while the user keeps editing.
+
+`NodeRenaming` is an event of one diagram instance. An application that opens and creates diagrams in several places
+attaches the handler once with `DiagramOptions.Initialize` (see *Saving, Loading and the Clipboard*), so every new,
+opened or imported diagram gets it.
 
 ![Renaming a node in place in the editor](images/inline-rename.png)

@@ -62,8 +62,14 @@ public sealed class PasteResult
     /// </remarks>
     /// <example>
     ///     <code>
-    ///     var result = PlexusClipboard.Paste(page, text, at: null);   // page: a DiagramPage; text: the clipboard text
-    ///     statusBar.Text = result.Message;                            // whether it worked or not
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     // page: a DiagramPage; text: the clipboard text as written by PlexusClipboard.Copy
+    ///     var diagram = new Diagram(types);                           // types: the registry of the DemaConsulting.Plexus example
+    ///     var page = diagram.Pages.Add("Main");
+    ///     string text = "";
+    ///     var result = PlexusClipboard.Paste(page, text, at: null);
+    ///     Console.WriteLine(result.Message);                          // whether it worked or not: show it in a status bar
     ///     </code>
     /// </example>
     public string Message

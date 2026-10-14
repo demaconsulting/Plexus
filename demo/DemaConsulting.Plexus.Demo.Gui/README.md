@@ -212,8 +212,10 @@ across the five demo domains) in the menu ids; `<index>` is zero-based.
   `PropertyGridDialog_Cancel`, `PropertyGridDialog_Status` (why OK was refused). It replaces the former `Properties_Dialog`,
   `Properties_Name`, `Properties_Prop_<name>`, `Properties_Details_*`, `Properties_Ok` and `Properties_Cancel` ids.
 - Property grid rows (in the dialog and in the panel; the library assigns them): `PropertyGrid` (the grid),
-  `PropertyGrid_Row_<path>` (a row: `Name`, a property name such as `Capacity`, a host data property such as `Priority`,
-  a nested path such as `Contact.Email` or `Checklist[0].Text`), `PropertyGrid_Editor_<path>` (the editor control of that
+  `PropertyGrid_Row_<path>` (a row; node rows are `Node.Name`, `Property.<name>` for a declared property such as
+  `Property.Capacity` and `Data.<path>` for host data such as `Data.Priority`, `Data.Contact.Email` or
+  `Data.Checklist[0].Text`; annotation rows are `Text` and `Fill`, group rows `Title` and `IsCollapsed`),
+  `PropertyGrid_Editor_<path>` (the editor control of that
   row: a text box, combo box, check box, slider, ...), `PropertyGrid_Category_<category>` (a category band, for example
   `PropertyGrid_Category_General`), `PropertyGrid_Search`, `PropertyGrid_SortCategorized` and
   `PropertyGrid_SortAlphabetical`. A collection row opens `CollectionEditorDialog` (`CollectionEditorDialog_OK`,

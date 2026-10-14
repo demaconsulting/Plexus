@@ -56,10 +56,28 @@ public sealed partial class DiagramEditor
     ///     Occurs when the body of a node is double-clicked. Double-clicking the node's name renames it instead.
     /// </summary>
     /// <remarks>
-    ///     The editor selects nothing special and opens nothing: handle it to show your own property dialog for <see cref="NodeDoubleClickedEventArgs.Node"/>,
-    ///     for example <c>editor.NodeDoubleClicked += async (_, e) => await new PropertiesWindow(e.Node).ShowDialog(window);</c> (see the namespace example). Not raised
+    ///     The editor selects nothing special and opens nothing: handle it to show a property dialog for <see cref="NodeDoubleClickedEventArgs.Node"/>.
+    ///     The <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c> package provides a ready-made modal dialog (name, properties and host data, applied as one undo entry); a custom
+    ///     window works the same way. Not raised
     ///     for annotations, groups or wires, and not when a double-click lands on a port, name or handle.
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     using Avalonia.Controls;
+    ///     using DemaConsulting.Plexus.Avalonia;
+    ///     using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+    ///
+    ///     // Inside a Window (this): double-click a node to edit it
+    ///     public sealed class EditorWindow : Window
+    ///     {
+    ///         public EditorWindow(DiagramEditor editor)
+    ///         {
+    ///             Content = editor;
+    ///             editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(this, e.Node);
+    ///         }
+    ///     }
+    ///     </code>
+    /// </example>
     public event EventHandler<NodeDoubleClickedEventArgs>? NodeDoubleClicked;
 
     /// <summary>
@@ -81,7 +99,7 @@ public sealed partial class DiagramEditor
     ///         set <c>PlacementTarget</c> to the editor, <c>Placement</c> to <c>AnchorAndGravity</c>, <c>PlacementAnchor</c> to <c>TopLeft</c> and <c>PlacementGravity</c> to <c>BottomRight</c>,
     ///         <c>PlacementRect</c> to a 1 by 1 rectangle at that point, then call <c>menu.Open(editor)</c> (see <see cref="DiagramContextRequestedEventArgs"/> for the code).
     ///         <see cref="DiagramContextRequestedEventArgs.Position"/> (diagram coordinates) is what
-    ///         you pass to <c>DiagramPage.AddNode</c> for an "Add here" entry. A complete handler is in the namespace example.
+    ///         you pass to <c>DiagramPage.AddNode</c> for an "Add here" entry. A complete handler is in the application example of the <see cref="DiagramEditor"/> type.
     ///     </para>
     /// </remarks>
     public event EventHandler<DiagramContextRequestedEventArgs>? DiagramContextRequested;

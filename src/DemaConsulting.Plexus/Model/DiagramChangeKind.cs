@@ -26,6 +26,6 @@ public enum DiagramChangeKind
     /// <summary>A property of an element changed; <see cref="DiagramChangedEventArgs.PropertyName"/> names it.</summary>
     ElementChanged,
 
-    /// <summary>A diagram setting (theme, router, connection rules) changed; <see cref="DiagramChangedEventArgs.PropertyName"/> names it.</summary>
+    /// <summary>A diagram setting (theme, router, connection rules, wire or node styler, unique-name requirement) or a request to redraw (<see cref="Diagram.RefreshAppearance"/>) changed; <see cref="DiagramChangedEventArgs.PropertyName"/> names it.</summary>
     SettingsChanged,
 }

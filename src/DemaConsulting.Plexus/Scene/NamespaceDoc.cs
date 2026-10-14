@@ -60,6 +60,7 @@ namespace DemaConsulting.Plexus.Scene;
 ///         Avalonia editor paint the same scene, and <see cref="DiagramScene.HitTest"/> answers from the very geometry that
 ///         was drawn. <see cref="DiagramTheme"/> carries every metric, color and font; <see cref="WireStyle"/> and
 ///         <see cref="NodeStyle"/> override it per wire and per node (members left null fall back to the theme).
+///         The painters live in other packages: <c>DemaConsulting.Plexus.Rendering</c> (PNG files, no UI) and <c>DemaConsulting.Plexus.Avalonia</c> (the interactive editor).
 ///     </para>
 ///     <para>
 ///         The main extension points are <see cref="Diagram.WireStyler"/> and <see cref="Diagram.NodeStyler"/> (compose them with

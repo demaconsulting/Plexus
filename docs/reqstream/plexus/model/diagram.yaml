@@ -241,3 +241,17 @@ sections:
                   - Diagram_Loaders_WithOptions_InstallThemOnTheLoadedDiagram
                   - Diagram_Apply_ReplacesOnlySetMembers_NotUndoable
                   - Diagram_Apply_FullOptions_InstallsEveryMember
+
+              - id: Plexus-Model-Diagram-Initialize
+                title: >-
+                  The options object shall carry an initialize callback that is invoked with every diagram the options
+                  create or load, once the diagram is complete and (for a loaded diagram) has a clean history, and
+                  last when options are applied to an existing diagram.
+                justification: |
+                  Event handlers such as a rename veto belong to one diagram instance and are not saved in documents;
+                  a single place that runs for new and opened diagrams prevents a diagram that lacks the host's rules
+                  after Open.
+                tests:
+                  - Diagram_Constructor_WithInitialize_InvokesItOnceWithTheConfiguredDiagram
+                  - Diagram_Loaders_WithInitialize_InvokeItAfterTheLoadAndAttachPerInstanceHandlers
+                  - Diagram_Apply_WithInitialize_InvokesItAfterTheSettings

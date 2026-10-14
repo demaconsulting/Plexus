@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using DemaConsulting.Plexus.Demo.Gui.Dialogs;
 using DemaConsulting.Plexus.Demo.Model;
 

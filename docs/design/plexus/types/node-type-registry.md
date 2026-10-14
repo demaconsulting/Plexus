@@ -19,7 +19,9 @@ visual. The unit covers the files `NodeType`, `NodeTypeRegistry`, `PortDefinitio
   key), `DisplayName` (explicit and non-empty, otherwise `Title`), `Category` (optional group name for palettes and
   menus; null means uncategorized), `Icon` (optional `IconSource`), `Inputs`, `Outputs` and `Properties` (frozen
   lists), `DefaultSize` (optional), `IsResizable`, `Summary` (optional function), `DataType`,
-  `DataSerializer` (takes precedence over `DataType`) and `Visual` (optional `INodeVisual`, declared in a separate
+  `DataSerializer` (takes precedence over `DataType`; `DataType` is optional when a serializer is set), `CreateData`
+  (optional `Func<object>` that produces the initial payload of every new node; init-only) and `Visual` (optional
+  `INodeVisual`, declared in a separate
   partial-class file). Most members are init-only so a type is described with an object initializer.
 - **PortDefinition**: `Name`, `TypeKey` (both non-blank), `Label` (defaults to the name) and `AllowsMultipleWires`
   (init-only, false by default: whether an input accepts more than one wire; ignored for outputs, which always fan

@@ -17,8 +17,12 @@ internal static class PropertyErrors
         exception is OutOfMemoryException or StackOverflowException or AccessViolationException or ThreadAbortException;
 
     /// <summary>
-    ///     Gets the message of the innermost reflection-wrapped exception.
+    ///     Gets the user-facing message of the innermost reflection-wrapped exception.
     /// </summary>
+    /// <remarks>
+    ///     The " (Parameter 'value')" suffix that <see cref="ArgumentException"/> appends to its message is removed, because it names
+    ///     an implementation detail a user cannot act on.
+    /// </remarks>
     /// <param name="exception">The exception.</param>
     /// <returns>A non-empty message.</returns>
     internal static string Message(Exception exception)
@@ -29,7 +33,13 @@ internal static class PropertyErrors
             current = inner;
         }
 
-        return string.IsNullOrWhiteSpace(current.Message) ? current.GetType().Name : current.Message;
+        var message = current.Message;
+        if (current is ArgumentException { ParamName: { Length: > 0 } parameter })
+        {
+            message = message.Replace($" (Parameter '{parameter}')", string.Empty, StringComparison.Ordinal);
+        }
+
+        return string.IsNullOrWhiteSpace(message) ? current.GetType().Name : message;
     }
 
     /// <summary>

@@ -33,10 +33,14 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///     <para>
 ///         The editor opens no dialogs or menus: hosts react to <see cref="NodeDoubleClicked"/>,
 ///         <see cref="DiagramContextRequested"/>, <see cref="SelectionChanged"/>, <see cref="PasteFailed"/> and <see cref="ClipboardFailed"/>.
+///         For a properties dialog on double-click use <c>NodePropertiesDialog.ShowAsync(window, e.Node)</c> from the <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c> package.
+///         The application must include a full Avalonia theme such as <c>&lt;FluentTheme /&gt;</c> in App.axaml.
+///         The editor derives from Avalonia's <c>Control</c> (a <c>Visual</c> and <c>InputElement</c>), so all of that is available too and is not repeated in the member tables of this page: for example
+///         <c>Bounds</c>, <c>IsVisible</c>, <c>IsEnabled</c>, <c>Width</c>, <c>Height</c>, <c>Focusable</c>, <c>Focus()</c>, <c>InvalidateVisual()</c> and <c>ContextMenu</c>.
 ///         It must be used on the UI thread, like the model it shows. Its AutomationId defaults to
 ///         <c>DiagramEditor</c>; give it an <c>x:Name</c> or <c>AutomationProperties.AutomationId</c> when a
 ///         window holds more than one. The editor shows exactly one page: bind a tab strip to <c>Diagram.Pages</c> and set <see cref="Page"/> from the selected tab
-///         (see the namespace example). While the editor is in the visual tree it follows the removal of the shown page, including undoing "Add page": it switches to the nearest remaining page
+///         (see the complete application in the example below). While the editor is in the visual tree it follows the removal of the shown page, including undoing "Add page": it switches to the nearest remaining page
 ///         (the page now at the same index, or the last one) or to none when no page is left, and the selection is cleared. It never switches back when the page returns through undo or redo, and it does not
 ///         jump when pages are added or reordered. <see cref="ZoomToFit"/> may be called before the first layout (for example in a window constructor): it is applied once the editor has a size.
 ///     </para>
@@ -61,7 +65,7 @@ namespace DemaConsulting.Plexus.Avalonia;
 /// </remarks>
 /// <example>
 ///     The editor can also be created and configured from code (<c>types</c> is the registry of the <c>DemaConsulting.Plexus</c> namespace example);
-///     in XAML it is just <c>&lt;plexus:DiagramEditor Page="{Binding CurrentPage}"/&gt;</c>.
+///     in XAML it is just <c>&lt;plexus:DiagramEditor Page="{Binding CurrentPage}"/&gt;</c>. The complete application below the sample shows it in a window.
 ///     <code><![CDATA[
 ///     using Avalonia.Controls;
 ///     using DemaConsulting.Plexus;
@@ -96,6 +100,294 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///             await editor.CopyAsync();                                 // uses the system clipboard by default
 ///             await editor.PasteAsync();
 ///             if (editor.Undo()) { Console.WriteLine("undone"); }       // the editor shares the diagram's undo history
+///         }
+///     }
+///     ]]></code>
+///     <para>
+///         <b>A complete first application</b>: a window with a node palette next to an editor, page tabs, File Open/Save, Edit Undo/Redo/Copy/Paste,
+///         Group selection, Move selection to page 2, Zoom to fit, the ready-made node properties dialog on double-click, a context menu on right-click, and a
+///         status bar for failures. It was compiled against Avalonia 12 with <c>ImplicitUsings</c> and <c>Nullable</c> enabled and the packages
+///         <c>DemaConsulting.Plexus.Avalonia</c> and <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c> (the second one provides <c>NodePropertiesDialog</c>).
+///         The application needs a full Avalonia theme, so App.axaml contains <c>&lt;FluentTheme /&gt;</c> in its styles (the palette's search box, context menus
+///         and dialogs use the theme's control styles). First the XAML for MainWindow.axaml:
+///     </para>
+///     <code lang="xml"><![CDATA[
+///     <Window xmlns="https://github.com/avaloniaui"
+///             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+///             xmlns:plexus="https://github.com/demaconsulting/plexus"
+///             xmlns:core="clr-namespace:DemaConsulting.Plexus;assembly=DemaConsulting.Plexus"
+///             x:Class="MyApp.MainWindow"
+///             Title="My diagram" Width="1100" Height="700">
+///         <DockPanel>
+///             <Menu DockPanel.Dock="Top">
+///                 <MenuItem Header="_File">
+///                     <MenuItem Header="_Open..." Click="OnOpen" />
+///                     <MenuItem Header="_Save..." Click="OnSave" />
+///                 </MenuItem>
+///                 <MenuItem Header="_Edit">
+///                     <MenuItem x:Name="UndoItem" Header="_Undo" InputGesture="Ctrl+Z" Click="OnUndo" />
+///                     <MenuItem x:Name="RedoItem" Header="_Redo" InputGesture="Ctrl+Y" Click="OnRedo" />
+///                     <Separator />
+///                     <MenuItem Header="_Copy" Click="OnCopy" />
+///                     <MenuItem Header="_Paste" Click="OnPaste" />
+///                     <Separator />
+///                     <MenuItem Header="_Group selection" Click="OnGroup" />
+///                     <MenuItem Header="_Add page" Click="OnAddPage" />
+///                     <MenuItem Header="Move selection to page _2" Click="OnMoveToPage2" />
+///                 </MenuItem>
+///                 <MenuItem Header="_View">
+///                     <MenuItem Header="Zoom to _fit" Click="OnZoomToFit" />
+///                 </MenuItem>
+///             </Menu>
+///             <Border DockPanel.Dock="Bottom" Padding="6,3" Background="#22808080">
+///                 <TextBlock x:Name="Status" Text="Ready" />
+///             </Border>
+///             <!-- The splitter resizes the palette column; do not set a Width on the palette itself -->
+///             <Grid ColumnDefinitions="220,5,*">
+///                 <plexus:NodePalette Grid.Column="0" Editor="{Binding #Editor}" />
+///                 <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+///                 <DockPanel Grid.Column="2">
+///                     <!-- One tab per page: bind the tabs to Diagram.Pages (set in code) and two-way bind the selected tab to the editor's page,
+///                          so choosing a tab shows that page and the editor switching pages by itself (a removed page) moves the tab -->
+///                     <TabControl x:Name="Tabs" DockPanel.Dock="Top" Height="38" SelectedItem="{Binding #Editor.Page, Mode=TwoWay}">
+///                         <TabControl.ItemTemplate>
+///                             <DataTemplate x:DataType="core:DiagramPage">
+///                                 <TextBlock Text="{Binding Name}" />
+///                             </DataTemplate>
+///                         </TabControl.ItemTemplate>
+///                     </TabControl>
+///                     <plexus:DiagramEditor x:Name="Editor" />
+///                 </DockPanel>
+///             </Grid>
+///         </DockPanel>
+///     </Window>
+///     ]]></code>
+///     <para>
+///         The node types of the application (MyTypes.cs). Your own domain goes here; see <c>NodeType</c> for everything a type can declare.
+///         Port types are strings you define, nothing is predefined:
+///     </para>
+///     <code><![CDATA[
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Geometry;
+///
+///     namespace MyApp;
+///
+///     public static class MyTypes
+///     {
+///         public static NodeTypeRegistry Create()
+///         {
+///             var types = new NodeTypeRegistry();
+///             types.PortTypes.Add(new PortType("number", Color.Parse("#FF8C00")));
+///             types.Add(new NodeType("demo.Source")
+///             {
+///                 Title = "SOURCE",
+///                 Category = "Demo",
+///                 Outputs = { new PortDefinition("out", "number") },
+///                 Properties =
+///                 {
+///                     new PropertyDefinition("Value", 1.0) { ShowInSummary = true },
+///                     new PropertyDefinition("Mode", "Fast") { Choices = ["Fast", "Slow"] },
+///                     new PropertyDefinition("Enabled", true),
+///                 },
+///             });
+///             types.Add(new NodeType("demo.Sink")
+///             {
+///                 Title = "SINK",
+///                 Category = "Demo",
+///                 Inputs = { new PortDefinition("in", "number") },
+///             });
+///             return types;
+///         }
+///     }
+///     ]]></code>
+///     <para>
+///         The code-behind (MainWindow.axaml.cs). The editor shows what you set as <c>Editor.Page</c> (here the tab strip does that through its binding); the palette follows the editor, so it needs nothing more.
+///         The editor follows the removal of its page by itself (for example when the user undoes "Add page"), so no page handling is needed. <c>ZoomToFit</c> may be called in the constructor:
+///         it is applied when the editor gets its first layout.
+///         Open and Save use the window's storage provider and <c>Diagram.ToJson</c> / <c>Diagram.FromJson</c>; rules, stylers, the theme and event handlers are not part of the
+///         JSON, so configure a loaded diagram again (here all of it is in one <c>DiagramOptions</c> that every new or opened diagram receives).
+///         Menu handlers that touch the clipboard catch platform failures (<c>CopyAsync</c> and <c>PasteAsync</c> let
+///         exceptions from the operating system clipboard reach you; a shortcut such as Ctrl+C reports them through <c>ClipboardFailed</c> instead).
+///         The properties dialog is one line: <c>NodePropertiesDialog.ShowAsync</c> edits the node's name, properties and host data in a staged
+///         property grid and applies them as one undo entry.
+///     </para>
+///     <code><![CDATA[
+///     using Avalonia;
+///     using Avalonia.Controls;
+///     using Avalonia.Controls.Primitives.PopupPositioning;
+///     using Avalonia.Interactivity;
+///     using Avalonia.Platform.Storage;
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+///     using DemaConsulting.Plexus.Scene;
+///
+///     namespace MyApp;
+///
+///     public partial class MainWindow : Window
+///     {
+///         private static readonly FilePickerFileType JsonFiles = new("Diagram JSON") { Patterns = ["*.json"] };
+///         private readonly NodeTypeRegistry _types = MyTypes.Create();
+///         private readonly DiagramOptions _options;
+///         private Diagram _diagram;
+///
+///         public MainWindow()
+///         {
+///             InitializeComponent();                      // generated from the XAML: Editor, Tabs, Status, UndoItem, RedoItem exist now
+///
+///             // Everything that is not saved in the file, configured once for new and opened diagrams alike
+///             _options = new DiagramOptions
+///             {
+///                 WireStyler = WireStylers.ByPortType(),
+///                 Initialize = diagram => diagram.NodeRenaming += (_, e) =>   // event handlers belong to one Diagram instance
+///                 {
+///                     if (e.ProposedName.Contains(' '))
+///                     {
+///                         e.Cancel = true;
+///                         e.Reason = "Names cannot contain spaces.";
+///                     }
+///                 },
+///             };
+///             _diagram = new Diagram(_types, _options);
+///             _diagram.Pages.Add("Main");
+///             ShowDiagram(_diagram);
+///
+///             Editor.SelectionChanged += (_, _) => Status.Text = $"{Editor.Selection.Count} selected";
+///             Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(this, e.Node);
+///             Editor.DiagramContextRequested += (_, e) => ShowContextMenu(e.Element, e.ScreenPosition);
+///             Editor.PasteFailed += (_, e) => Status.Text = $"Paste failed: {e.Result.Error}";
+///             Editor.ClipboardFailed += (_, e) => Status.Text = $"Clipboard failed: {e.Error.Message}";
+///         }
+///
+///         private void ShowDiagram(Diagram diagram)
+///         {
+///             _diagram = diagram;
+///             Tabs.ItemsSource = diagram.Pages;           // PageCollection implements INotifyCollectionChanged, so tabs follow add/remove/undo
+///             Editor.Page = diagram.Pages[0];             // the tab selection follows through the binding
+///             Editor.ZoomToFit();                         // fine before the window is shown: applied after the first layout
+///
+///             // Enable Undo/Redo from the history; the editor's Undo() throws only while a host transaction is open
+///             diagram.History.Changed += (_, _) => UpdateEditMenu();
+///             UpdateEditMenu();
+///         }
+///
+///         private void UpdateEditMenu()
+///         {
+///             UndoItem.IsEnabled = _diagram.History.CanUndo;
+///             RedoItem.IsEnabled = _diagram.History.CanRedo;
+///         }
+///
+///         // The editor raises DiagramContextRequested on right-button release and has selected the element under the pointer.
+///         // MenuFlyout.ShowAt(Editor, true) would open at TopLevel.LastPointerPosition (the pointer right now); a ContextMenu
+///         // with a PlacementRect opens exactly at the position the event reports, which is relative to the editor.
+///         private void ShowContextMenu(DiagramElement? element, Point position)
+///         {
+///             var menu = new ContextMenu();
+///             var delete = new MenuItem { Header = "Delete", IsEnabled = element is not null };
+///             delete.Click += (_, _) => Editor.Delete([element!]);
+///             menu.Items.Add(delete);
+///
+///             var rename = new MenuItem { Header = "Rename", IsEnabled = element is Node };
+///             rename.Click += (_, _) => Editor.BeginRename((Node)element!);
+///             menu.Items.Add(rename);
+///
+///             // The menu's top-left corner goes to the click point
+///             menu.PlacementTarget = Editor;
+///             menu.Placement = PlacementMode.AnchorAndGravity;
+///             menu.PlacementAnchor = PopupAnchor.TopLeft;
+///             menu.PlacementGravity = PopupGravity.BottomRight;
+///             menu.PlacementRect = new Rect(position, new Size(1, 1));
+///             menu.Open(Editor);
+///         }
+///
+///         private void OnGroup(object? sender, RoutedEventArgs e)
+///         {
+///             // One undo entry; null when nothing that can be grouped is selected (wires cannot be grouped)
+///             Status.Text = Editor.GroupSelection("Group") is null ? "Select the nodes to group first" : "Grouped";
+///         }
+///
+///         private void OnAddPage(object? sender, RoutedEventArgs e) =>
+///             _diagram.Pages.Add($"Page {_diagram.Pages.Count + 1}");   // the tab strip follows; undoable like everything else
+///
+///         private void OnMoveToPage2(object? sender, RoutedEventArgs e)
+///         {
+///             if (_diagram.Pages.Count < 2)
+///             {
+///                 Status.Text = "Add a second page first";
+///                 return;
+///             }
+///
+///             // One undo entry. Wires between moved nodes travel with them; wires to nodes that stay behind are removed.
+///             // Returns false (and changes nothing) when nothing is selected or the editor is read-only.
+///             Status.Text = Editor.MoveSelectionToPage(_diagram.Pages[1]) ? "Moved to page 2" : "Select elements first";
+///         }
+///
+///         private void OnUndo(object? sender, RoutedEventArgs e) => Editor.Undo();
+///
+///         private void OnRedo(object? sender, RoutedEventArgs e) => Editor.Redo();
+///
+///         private void OnZoomToFit(object? sender, RoutedEventArgs e) => Editor.ZoomToFit();
+///
+///         private async void OnCopy(object? sender, RoutedEventArgs e)
+///         {
+///             try
+///             {
+///                 await Editor.CopyAsync();
+///             }
+///             catch (Exception ex) when (ex is InvalidOperationException or IOException or System.Runtime.InteropServices.ExternalException)
+///             {
+///                 Status.Text = $"Clipboard failed: {ex.Message}";
+///             }
+///         }
+///
+///         private async void OnPaste(object? sender, RoutedEventArgs e)
+///         {
+///             try
+///             {
+///                 await Editor.PasteAsync();               // bad clipboard content never throws: PasteFailed is raised
+///             }
+///             catch (Exception ex) when (ex is InvalidOperationException or IOException or System.Runtime.InteropServices.ExternalException)
+///             {
+///                 Status.Text = $"Clipboard failed: {ex.Message}";
+///             }
+///         }
+///
+///         private async void OnSave(object? sender, RoutedEventArgs e)
+///         {
+///             var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions { DefaultExtension = "json", FileTypeChoices = [JsonFiles] });
+///             if (file is null)
+///             {
+///                 return;
+///             }
+///
+///             await using var stream = await file.OpenWriteAsync();
+///             stream.SetLength(0);
+///             await using var writer = new StreamWriter(stream);
+///             await writer.WriteAsync(_diagram.ToJson());
+///             _diagram.History.MarkClean();
+///             Status.Text = $"Saved {file.Name}";
+///         }
+///
+///         private async void OnOpen(object? sender, RoutedEventArgs e)
+///         {
+///             var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { FileTypeFilter = [JsonFiles] });
+///             if (files.Count == 0)
+///             {
+///                 return;
+///             }
+///
+///             try
+///             {
+///                 await using var stream = await files[0].OpenReadAsync();
+///                 using var reader = new StreamReader(stream);
+///                 // The registry must know every node type in the file (or set UnknownNodeTypes = Skip in the options to open the rest)
+///                 ShowDiagram(Diagram.FromJson(await reader.ReadToEndAsync(), _types, _options));
+///                 Status.Text = $"Opened {files[0].Name}";
+///             }
+///             catch (Exception ex) when (ex is SnapshotException or System.Text.Json.JsonException)
+///             {
+///                 Status.Text = $"Cannot open: {ex.Message}";
+///             }
 ///         }
 ///     }
 ///     ]]></code>
@@ -347,7 +639,7 @@ public sealed partial class DiagramEditor : Control
     ///     when the editor has no size yet (before its first layout) or shows no page, the request is remembered and applied as soon as the editor gets a size and a page
     ///     (the latest request wins, and the page's content at that moment is fitted). A pending request is dropped once applied.
     /// </remarks>
-    /// <param name="margin">Optional; defaults to 30. The empty space, in device-independent pixels, to keep around the content.</param>
+    /// <param name="margin">The empty space, in device-independent pixels, to keep around the content.</param>
     public void ZoomToFit(double margin = 30)
     {
         // Without a size or a page the request waits for the first layout (or the first page)

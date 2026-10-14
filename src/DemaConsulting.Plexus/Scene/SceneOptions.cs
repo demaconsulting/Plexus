@@ -5,9 +5,7 @@ namespace DemaConsulting.Plexus.Scene;
 /// </summary>
 /// <remarks>
 ///     Every option has a friendly default, so <c>SceneBuilder.Build(page)</c> works without
-///     Every option has a friendly default, so <c>SceneBuilder.Build(page)</c> works without
-///     configuration. Options are read once during the build; they are not retained. All options are
-///     init-only: set them with an object initializer, <c>new SceneOptions { ShowGrid = false }</c>.
+///     configuration. Options are read once during the build; they are not retained.
 /// </remarks>
 /// <example>
 ///     Build a scene for a headless hit test that matches the pixels of the PNG renderer.
@@ -41,7 +39,7 @@ public sealed class SceneOptions
     }
 
     /// <summary>
-    ///     Gets or initializes the theme to use instead of the diagram's own theme; null (the default) uses <see cref="Diagram.Theme"/>. Set with an object initializer.
+    ///     Gets or initializes the theme to use instead of the diagram's own theme; null (the default) uses <see cref="Diagram.Theme"/>.
     /// </summary>
     public DiagramTheme? Theme { get; init; }
 
@@ -63,8 +61,10 @@ public sealed class SceneOptions
     ///     set; later changes to the source collection do not affect a scene that was already built.
     ///     Pass a snapshot of the current selection (for example <c>editor.Selection.ToArray()</c>)
     ///     and rebuild the scene when the selection changes. Elements on other pages are ignored.
-    ///     Selecting a node highlights its box, a wire its stroke, and an annotation additionally
-    ///     shows (and makes hittable) its resize handle.
+    ///     Selecting a node highlights its box, a wire its stroke and draws its bend and end handles, and an annotation additionally
+    ///     shows its resize handle. Handles are drawn and made hittable <b>only</b> for selected elements: <see cref="DiagramScene.HitTest"/> reports
+    ///     <see cref="HitKind.WireBend"/>, <see cref="HitKind.WireSourceHandle"/>, <see cref="HitKind.WireTargetHandle"/> and
+    ///     <see cref="HitKind.AnnotationResizeHandle"/> only for elements in this sequence, and an unselected wire is hit as a plain <see cref="HitKind.Wire"/>.
     /// </remarks>
     public IEnumerable<DiagramElement> Selection { get; init; } = [];
 

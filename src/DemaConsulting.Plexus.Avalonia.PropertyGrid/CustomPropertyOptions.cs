@@ -8,6 +8,8 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </summary>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
 ///     var options = new CustomPropertyOptions
 ///     {
 ///         DisplayName = "Gain (dB)",
@@ -19,6 +21,13 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </example>
 public sealed record CustomPropertyOptions
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="CustomPropertyOptions"/> record with every member unset (the defaults of an unannotated property).
+    /// </summary>
+    public CustomPropertyOptions()
+    {
+        // Nothing to initialize: every member has a usable default
+    }
     /// <summary>
     ///     Gets the display name; <see langword="null"/> means the property name.
     /// </summary>

@@ -26,7 +26,7 @@ namespace DemaConsulting.Plexus;
 ///     var other = diagram.Pages.Add("Second");
 ///
 ///     // Add the nodes first, then connect: a new wire is routed around the nodes that exist at that moment.
-///     var c = page.AddNode("demo.Source", 0, 120, name: "C");        // type key, position, optional name
+///     var c = page.AddNode("demo.Source", 0, 120, name: "C");        // type key, position, then the name (generated when omitted)
 ///     var d = page.AddNode("demo.Sink", 180, 120, name: "D");
 ///
 ///     var check = page.CanConnect(c.Output("out"), d.Input("in"));   // ask first; Connect throws with the same reason

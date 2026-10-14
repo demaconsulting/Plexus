@@ -108,6 +108,8 @@ sections:
         children:
           - Plexus-OTS-ApiMark-Generate
           - Plexus-OTS-ApiMark-RenderExamples
+          - Plexus-OTS-ApiMark-RenderSignatures
+          - Plexus-OTS-ApiMark-LinkPackages
           - Plexus-OTS-ApiMark-EnforceDocs
 
       - id: Quality-SoftwareStructureModeling

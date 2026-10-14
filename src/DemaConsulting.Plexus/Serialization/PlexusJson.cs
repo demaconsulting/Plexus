@@ -38,7 +38,7 @@ public static class PlexusJson
     ///     Serializes a snapshot to JSON.
     /// </summary>
     /// <param name="snapshot">The snapshot to write.</param>
-    /// <param name="indented">Optional; defaults to true for human-readable output; false for the most compact text.</param>
+    /// <param name="indented">True for human-readable output; false for the most compact text.</param>
     /// <returns>The JSON text.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="snapshot"/> is null.</exception>
     public static string Serialize(DiagramSnapshot snapshot, bool indented = true)

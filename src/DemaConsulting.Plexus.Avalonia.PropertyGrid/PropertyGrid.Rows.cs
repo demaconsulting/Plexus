@@ -28,6 +28,11 @@ public partial class PropertyGrid
     private IPropertySource? _shownSource;
 
     /// <summary>
+    ///     Whether the grid disposed the source it created because the grid left the visual tree.
+    /// </summary>
+    private bool _ownedSourceReleased;
+
+    /// <summary>
     ///     Whether the grid created the shown source (and therefore disposes it).
     /// </summary>
     private bool _ownsSource;
@@ -121,6 +126,39 @@ public partial class PropertyGrid
 
         _shownSource = null;
         _ownsSource = false;
+    }
+
+    /// <summary>
+    ///     Disposes the source the grid created for <see cref="SelectedObject"/> while the grid is out of the visual tree, so
+    ///     the source stops listening to the object; a host-supplied <see cref="Source"/> is never touched.
+    /// </summary>
+    private void ReleaseOwnedSource()
+    {
+        if (_ownsSource && _shownSource is not null)
+        {
+            DetachSource();
+            _ownedSourceReleased = true;
+        }
+    }
+
+    /// <summary>
+    ///     Creates the source for <see cref="SelectedObject"/> again after the grid returned to the visual tree, keeping
+    ///     the expanded rows and the selection.
+    /// </summary>
+    private void ReacquireOwnedSource()
+    {
+        if (!_ownedSourceReleased)
+        {
+            return;
+        }
+
+        _ownedSourceReleased = false;
+        var expanded = _expandedPaths.ToList();
+        var selected = _selectedKey;
+        AttachSource();
+        _expandedPaths.UnionWith(expanded);
+        _selectedKey = selected;
+        RefreshRows();
     }
 
     /// <summary>

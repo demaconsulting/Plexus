@@ -43,8 +43,10 @@ changes: element presence, group membership and layout. Duplicating elements is 
   does not allow fan-in; a host that assigns a rule without it decides fan-in itself.
   **CanReconnect(wire, newSource, newTarget)**: the same checks for the wire's new pair of ports (a null argument keeps
   that end), with the wire itself ignored in the duplicate check and a preliminary direction check (only an output can
-  be a source, only an input a target); it backs `Wire.Reconnect` and the editor's drop feedback. While the rule runs
-  the wire under check is published as `WireUnderCheck` (internal) so wire-counting rules leave it out: moving a
+  be a source, only an input a target); it backs `Wire.Reconnect` and the editor's drop feedback. Naming the wire's own
+  current ports (or passing null for both) is "no change" and is allowed without asking the rule. While the rule runs
+  the wire under check is published as the public `WireBeingReconnected` so wire-counting rules leave it out
+  (`Port.CountWiresIgnoringReconnect` does so): moving a
   wire onto an input that holds another wire is refused, keeping it on its own target is not.
 - **Connect(from, to, route, id)**: requires an allowed connection (else throws with the reason), orders the ports as
   output then input, computes the route with the diagram's router when none is given (a supplied route is normalized by

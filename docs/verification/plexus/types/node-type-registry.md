@@ -92,3 +92,15 @@ All NodeTypeRegistry unit tests pass. Lookups return the registered objects, rej
 - **PortTypeRegistry_Get_UnknownKey_ReturnsNeutralGrayWithoutRegistering**: the fallback does not register anything and
   an empty key is rejected.
 - **PortTypeRegistry_Add_DuplicateKey_KeepsFirstType**: the first definition stays and the message names the key.
+
+##### Initial Data (`Plexus-Types-NodeTypeRegistry-CreateData`, `NodeDataTests.cs`)
+
+- **NodeType_CreateData_AddNode_GivesEveryNodeFreshData**: each added node gets its own payload; other types are
+  untouched.
+- **NodeType_CreateData_UndoRedoAdd_KeepsThePayload**: redo restores the same payload instance without calling the factory.
+- **NodeType_CreateData_WrongTypeFromFactory_ThrowsInvalidOperation** and
+  **NodeType_CreateData_ReturningNull_StartsWithoutData**: a factory result of the wrong type is refused and adds nothing
+  (error path); null means no data.
+- **NodeType_CreateData_PasteAndDuplicate_FillOnlyMissingData**: pasted and duplicated nodes without data get fresh data,
+  those with data get a copy.
+- **NodeType_CreateData_Load_KeepsStoredDataIncludingNone**: loading never calls the factory.

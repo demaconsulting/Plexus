@@ -12,8 +12,8 @@ namespace DemaConsulting.Plexus.Scene;
 /// <param name="FontFamily">The font family name.</param>
 /// <param name="FontSize">The font size in diagram units.</param>
 /// <param name="Color">The text color.</param>
-/// <param name="Bold">Optional; defaults to false. Whether the text is bold.</param>
-/// <param name="Alignment">Optional; defaults to <see cref="TextAlignment.Left"/>. The horizontal alignment inside the primitive's rectangle.</param>
+/// <param name="Bold">Whether the text is bold.</param>
+/// <param name="Alignment">The horizontal alignment inside the primitive's rectangle.</param>
 public sealed record TextStyle(
     string FontFamily,
     double FontSize,

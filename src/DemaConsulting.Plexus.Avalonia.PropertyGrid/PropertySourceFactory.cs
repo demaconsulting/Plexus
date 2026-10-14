@@ -13,10 +13,17 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
 ///     using IDisposable registration = PropertySourceFactory.Register(target =>
 ///         target is Gauge gauge ? new CustomPropertySource([new CustomPropertyItem("Value", typeof(double), () => gauge.Value)]) : null);
 ///
 ///     IPropertySource source = PropertySourceFactory.Create(new Gauge());
+///
+///     public sealed class Gauge
+///     {
+///         public double Value { get; set; } = 42;
+///     }
 ///     ]]></code>
 /// </example>
 public static class PropertySourceFactory

@@ -14,10 +14,21 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// <param name="Error">The human-readable error message when the operation failed; otherwise <see langword="null"/>.</param>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     var settings = new Settings();
+///     using var source = new ReflectionPropertySource(settings);
+///     PropertyItem item = source.GetItems().First(i => i.Name == "Retries");
+///
 ///     PropertyResult result = item.TrySetText("not a number");
 ///     if (!result.Succeeded)
 ///     {
-///         statusBar.Text = result.Error;
+///         Console.WriteLine(result.Error);                  // show it, for example in a status bar
+///     }
+///
+///     public class Settings
+///     {
+///         public int Retries { get; set; } = 3;
 ///     }
 ///     ]]></code>
 /// </example>

@@ -31,7 +31,10 @@ through the page API (see DiagramPage Design), so none of the classes has a publ
 - `Node.Bounds` setter and `Node.MoveTo(x, y)`: delegate to the page layout pipeline, which validates the box,
   ignores an unchanged box, and records one undoable layout command that also updates attached wire routes (see DiagramPage
   Design). The stored box changes only inside that command.
-- `Node.Data` setter: replaces the payload through an undoable value command; an equal value is ignored.
+- `Node.Data` setter: checks the value against `NodeType.DataType` first (an instance of an incompatible type throws
+  `ArgumentException`; a derived type, null and any value for a type without `DataType` pass), then replaces the payload
+  through an undoable value command; an equal value is ignored. `DiagramPage.AddNode` stores the payload produced by
+  `NodeType.CreateData` (validated against `DataType`, else `InvalidOperationException`) before the add command runs.
 - `Node.Name` setter: delegates to the diagram rename pipeline (see Diagram Design); the unit only stores the
   validated name and raises the change notification.
 - `Node.Port(name)`, `Node.Input(name)`, `Node.Output(name)`, `Node.TryGetPort(name, direction, out port)`: find a

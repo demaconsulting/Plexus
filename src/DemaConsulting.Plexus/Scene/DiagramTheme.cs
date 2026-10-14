@@ -6,8 +6,8 @@ namespace DemaConsulting.Plexus.Scene;
 /// <remarks>
 ///     <para>
 ///         The model, the wire routers and every painter read geometry from the same theme so a node's
-///         port anchors, obstacle boxes and drawn boxes always agree. This is a record with init-only
-///         properties, so an instance such as <see cref="Classic"/> is immutable and can be shared safely, and a customized copy is one
+///         port anchors, obstacle boxes and drawn boxes always agree. A theme is immutable,
+///         so an instance such as <see cref="Classic"/> can be shared safely, and a customized copy is one
 ///         expression: <c>DiagramTheme.Classic with { NodeFill = Color.Parse("#336699") }</c> (use <c>with</c> to derive
 ///         variants; an object initializer, <c>new DiagramTheme { ... }</c>, starts from the same classic values). Every property
 ///         below is read with <c>theme.Property</c> and set only through <c>with</c> or an object initializer.
@@ -30,6 +30,12 @@ namespace DemaConsulting.Plexus.Scene;
 ///         <see cref="GroupPadding"/> 30 and <see cref="GroupTitleHeight"/> 24 (group frames), <see cref="WireThickness"/> 2.
 ///         Properties are grouped by prefix: <c>Node*</c>, <c>Port*</c>, <c>Wire*</c>, <c>Group*</c>, <c>Annotation*</c>, <c>Selection*</c>/<c>Hover*</c>,
 ///         <c>*FontSize</c> and the <c>*TextStyle</c> helpers.
+///     </para>
+///     <para>
+///         Two presets exist: <see cref="Classic"/> and <see cref="Dark"/> (a dark canvas). If you derive your own dark variant from <see cref="Classic"/>,
+///         change the text colors along with the canvas: the instance name (<see cref="NodeNameText"/>, green), the summary lines
+///         (<see cref="SummaryText"/>, black) and the port labels (<see cref="PortLabelText"/>, black) are drawn straight on the canvas and
+///         are unreadable on a dark background; <see cref="Dark"/> already does this.
 ///     </para>
 ///     <para>
 ///         Assign a theme to <see cref="Diagram.Theme"/> before adding content; the editor, the hit tester and the renderers pick it up.
@@ -68,10 +74,59 @@ public sealed partial record DiagramTheme
     private static readonly DiagramTheme ClassicTheme = new();
 
     /// <summary>
+    ///     Backing store for <see cref="Dark"/>; created once because the theme is immutable.
+    /// </summary>
+    private static readonly DiagramTheme DarkTheme = new()
+    {
+        CanvasBackground = Color.Parse("#1E2228"),
+        GridDotColor = Color.Parse("#3B424D"),
+        NodeFill = Color.Parse("#3A4252"),
+        NodeBorder = Color.Parse("#7C8799"),
+        NodeHeaderText = Color.White,
+        NodeNameText = Color.Parse("#7FD67F"),
+        SummaryText = Color.Parse("#D3D8E0"),
+        PortLabelText = Color.Parse("#D3D8E0"),
+        WireColor = Color.Parse("#C9CFDA"),
+        SelectionColor = Color.Parse("#4DA3FF"),
+        HoverColor = Color.Parse("#2F6EA8"),
+        AnnotationFill = Color.Parse("#4B4630"),
+        AnnotationBorder = Color.Parse("#9A8C45"),
+        AnnotationText = Color.Parse("#F3ECC4"),
+        GroupFill = Color.Parse("#1CFFFFFF"),
+        GroupBorder = Color.Parse("#8A94A4"),
+        GroupTitleFill = Color.Parse("#D0323A47"),
+        GroupTitleText = Color.Parse("#F2F4F8"),
+    };
+
+    /// <summary>
     ///     Gets the default theme that reproduces the classic block-diagram look (see the type remarks for what that looks like).
     /// </summary>
     /// <remarks>It is the value of <see cref="Diagram.Theme"/> until you assign another; derive variants with <c>Classic with { ... }</c>.</remarks>
     public static DiagramTheme Classic => ClassicTheme;
+
+    /// <summary>
+    ///     Gets a preset for a dark canvas: every text, wire, grid and frame color is chosen to stay readable on a near-black background.
+    /// </summary>
+    /// <remarks>
+    ///     Only colors differ from <see cref="Classic"/>; all metrics are identical, so a diagram can switch between the two without
+    ///     moving anything. The canvas is dark blue-gray (<c>#1E2228</c>) with subtle grid dots; nodes are a lighter slate with a light border and
+    ///     a white title; the instance name is light green, summaries and port labels light gray; wires are light gray; selection is a bright blue;
+    ///     annotations are dim yellow notes with pale text; groups are faint light frames with a dark title bar. Port types keep the colors of the
+    ///     port type registry, so choose type colors that read on dark when you use this theme. Derive variants with <c>Dark with { ... }</c>.
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///     using DemaConsulting.Plexus.Rendering;
+    ///     using DemaConsulting.Plexus.Scene;
+    ///
+    ///     var diagram = new Diagram(new NodeTypeRegistry());
+    ///     var page = diagram.Pages.Add("Main");
+    ///     diagram.Theme = DiagramTheme.Dark;                               // before adding content; the renderer and editor pick it up
+    ///     byte[] png = PlexusRenderer.RenderPng(page);                     // or: new RenderOptions { Theme = DiagramTheme.Dark }
+    ///     </code>
+    /// </example>
+    public static DiagramTheme Dark => DarkTheme;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="DiagramTheme"/> class with the classic theme values.
@@ -93,8 +148,9 @@ public sealed partial record DiagramTheme
     public double GridSize { get; init; } = 15;
 
     /// <summary>
-    ///     Gets or initializes the width of new nodes whose type declares no <see cref="NodeType.DefaultSize"/>; the default is 90.
+    ///     Gets or initializes the minimum width of new nodes whose type declares no <see cref="NodeType.DefaultSize"/>; the default is 90.
     /// </summary>
+    /// <remarks>The width grows, in steps of <see cref="GridSize"/>, when the type's title does not fit the header on one line; see <see cref="NodeGeometry.DefaultNodeSize"/>.</remarks>
     public double DefaultNodeWidth { get; init; } = 90;
 
     /// <summary>

@@ -95,3 +95,17 @@ sections:
                   - DiagramTheme_GroupsAreObstacles_DefaultsToTrue
                   - DiagramPage_Connect_GroupsAreObstaclesOff_RoutesThroughGroupFrame
                   - DiagramPage_Connect_CollapsedGroupBetweenPorts_GroupsAreObstaclesOff_CrossesBox
+
+              - id: Plexus-Scene-DiagramTheme-Dark
+                title: >-
+                  The library shall provide a dark theme preset, shared and unmodified like the classic theme, that has
+                  the classic metrics and colors that keep texts, wires, selection, frames and annotations readable on
+                  a dark canvas, and that drives the scene when assigned to a diagram.
+                justification: |
+                  Dark editor hosts need more than a different background: the classic theme draws black text and
+                  dark frames that vanish on a dark canvas, so a ready-made, verified preset saves every host from
+                  tuning a dozen colors.
+                tests:
+                  - DiagramTheme_Dark_IsADistinctPresetWithClassicMetrics
+                  - DiagramTheme_Dark_TextsWiresAndFramesAreReadableOnTheirBackgrounds
+                  - DiagramTheme_Dark_AssignedToDiagram_DrivesTheScene

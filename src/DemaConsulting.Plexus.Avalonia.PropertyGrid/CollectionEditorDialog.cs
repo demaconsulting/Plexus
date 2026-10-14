@@ -17,8 +17,18 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
-///     var dialog = new CollectionEditorDialog(grid.Session!, grid.Session!.FindItem("Tags")!);
-///     bool applied = await dialog.ShowDialog<bool>(owner);
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     public static class TagsDialogSample
+///     {
+///         // owner: the window that opens the dialog; the grid shows an object with a collection property "Tags"
+///         public static async Task<bool> EditTagsAsync(Window owner, PropertyGrid grid)
+///         {
+///             var dialog = new CollectionEditorDialog(grid.Session!, grid.Session!.FindItem("Tags")!);
+///             return await dialog.ShowDialog<bool>(owner);       // true when the user applied the edit
+///         }
+///     }
 ///     ]]></code>
 /// </example>
 public sealed class CollectionEditorDialog : Window

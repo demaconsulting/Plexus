@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     Registers the Plexus sources with <see cref="PropertySourceFactory"/> when the package loads, so a grid can be given

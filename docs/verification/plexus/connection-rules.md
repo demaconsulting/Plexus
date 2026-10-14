@@ -76,3 +76,14 @@ documented details, and argument errors raise the documented exceptions.
   output then input, and a null rule is rejected.
 - **ConnectionRules_SameType_RejectsMismatchedTypes**: a rule assigned by the host decides the query result.
 - **DiagramPage_CanConnect_HostDenialWithoutReason_GetsDefaultReason**: the host decision is reported to the caller.
+
+#### Degree Limits (`Plexus-ConnectionRules-DegreeLimits`, `ReconnectRulesTests.cs`)
+
+- **ConnectionRules_MaxOutgoingWires_FullOutput_DeniesButMovingAWireOnTheSameOutputIsFine**: a third wire from an output
+  with a limit of two is refused in either port order and names the output; moving an existing wire's target is allowed.
+- **ConnectionRules_MaxOutgoingWires_ReconnectSourceOntoFullOutput_IsDenied**: moving a wire's source onto a full
+  output is
+  refused, onto a free output allowed.
+- **ConnectionRules_MaxIncomingWires_FullInput_DeniesButTheMovingWireIsNotCounted**: a full input refuses another wire and
+  a reconnect onto it, while a wire already on it may change its source.
+- **ConnectionRules_MaxWires_LimitBelowOne_ThrowsArgumentOutOfRange**: limits below one are refused (error path).

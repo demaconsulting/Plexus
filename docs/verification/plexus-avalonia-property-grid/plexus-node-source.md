@@ -54,3 +54,11 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
   fill (and clearing the fill), title and collapsed state, each commit one undo entry.
 - **PropertyGrid_SelectedObjectNode_LiveEditsAreUndoEntriesAndFollowUndo**: a live grid given a node makes each edit one
   entry and shows the old value after undo.
+- **NodePropertySource_Paths_NameDeclaredAndDataRowsNeverCollide** and
+  **NodePropertySource_Paths_PropertyNamedNameDoesNotTouchTheNodeName** (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-RowPaths`):
+  `Node.Name`, `Property.<name>` and `Data.<path>` are unique even when the fixture's declared `Label` and data `Label`
+  or a property called `Name` repeat a name, every row is found again by its path (including `Data.Tags[1]`), and
+  editing `Property.Name` or `Data.Name` leaves the node name alone.
+- **NodePropertySource_StagedCommit_RefusedRowIsListedWithItsPathAndNothingIsApplied**
+  (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-AtomicRefusal`): a handler's veto at commit leaves the node, the undo
+  history and both pending edits as they were, and `CommitResult.Failed` names `Node.Name` with the reason (error path).

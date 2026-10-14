@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     A property item of a Plexus diagram element (the node name, a property of the bag, an annotation text, ...): reads the
@@ -41,6 +41,11 @@ internal sealed class ElementPropertyItem : PropertyItem
     private readonly Func<object?, string?>? _check;
 
     /// <summary>
+    ///     The text put before the name in the item's path (for example <c>Property.</c>), keeping groups of rows apart.
+    /// </summary>
+    private readonly string _pathPrefix;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="ElementPropertyItem"/> class.
     /// </summary>
     /// <param name="name">The item name.</param>
@@ -49,14 +54,17 @@ internal sealed class ElementPropertyItem : PropertyItem
     /// <param name="current">Reads the element's current value.</param>
     /// <param name="options">The presentation options.</param>
     /// <param name="check">The extra validation rule, or <see langword="null"/>.</param>
+    /// <param name="pathPrefix">The text put before the name in the item's path; empty for none.</param>
     internal ElementPropertyItem(
         string name,
         Type type,
         WorkingValues work,
         Func<object?> current,
         CustomPropertyOptions options,
-        Func<object?, string?>? check = null)
+        Func<object?, string?>? check = null,
+        string pathPrefix = "")
     {
+        _pathPrefix = pathPrefix;
         _name = name;
         _type = type;
         _work = work;
@@ -67,6 +75,9 @@ internal sealed class ElementPropertyItem : PropertyItem
 
     /// <inheritdoc />
     public override string Name => _name;
+
+    /// <inheritdoc />
+    internal override string RootPath => _pathPrefix + _name;
 
     /// <inheritdoc />
     public override string DisplayName => _options.DisplayName ?? _name;
@@ -102,10 +113,10 @@ internal sealed class ElementPropertyItem : PropertyItem
     public override TypeConverter Converter => _options.Converter ?? base.Converter;
 
     /// <inheritdoc />
-    public override object? GetValue() => _work.TryGet(_name, out var written) ? written : _current();
+    public override object? GetValue() => _work.TryGet(Path, out var written) ? written : _current();
 
     /// <inheritdoc />
-    public override void SetValue(object? value) => _work.Set(_name, value);
+    public override void SetValue(object? value) => _work.Set(Path, value);
 
     /// <inheritdoc />
     protected override IEnumerable<ValidationAttribute> GetValidationAttributes() =>

@@ -28,9 +28,20 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         grid behaves the same). Pass <see cref="System.Globalization.CultureInfo.InvariantCulture"/> explicitly for
 ///         a culture-independent representation, for example for persisted text.
 ///     </para>
+///     <para>
+///         Deriving: most hosts use <see cref="CustomPropertyItem"/> instead of deriving. A derived class must implement the four abstract members
+///         <see cref="Name"/>, <see cref="PropertyType"/>, <see cref="GetValue"/> and <see cref="SetValue"/> (the constructor is protected and takes the parent item for nested
+///         items). Every other metadata member is virtual with a neutral default and can be overridden: <see cref="DisplayName"/>, <see cref="Category"/>,
+///         <see cref="CategoryOrder"/>, <see cref="Description"/>, <see cref="IsReadOnly"/>, <see cref="IsBrowsable"/>, <see cref="IsPasswordText"/>,
+///         <see cref="IsParenthesized"/>, <see cref="RefreshMode"/>, <see cref="EditorKey"/>, <see cref="EditorType"/>, <see cref="HasDefault"/>,
+///         <see cref="IsDefaultValueKnown"/>, <see cref="DefaultValue"/>, <see cref="IsChanged"/>, <see cref="CanReset"/>, <see cref="Converter"/> and <see cref="Reset"/>.
+///         <c>GetValidationAttributes</c> is the one protected virtual member: return the validation attributes that apply to the item.
+///     </para>
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
 ///     using var source = new ReflectionPropertySource(new Person { Name = "Ada", Age = 36 });
 ///     foreach (PropertyItem item in source.GetItems())
 ///     {
@@ -40,6 +51,12 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///
 ///     PropertyItem age = source.GetItems().First(i => i.Name == "Age");
 ///     PropertyResult result = age.TrySetText("abc");   // fails: "abc" is not an Int32
+///
+///     public class Person
+///     {
+///         public string Name { get; set; } = "";
+///         public int Age { get; set; }
+///     }
 ///     ]]></code>
 /// </example>
 public abstract partial class PropertyItem
@@ -178,22 +195,32 @@ public abstract partial class PropertyItem
     public virtual bool CanReset => HasDefault && IsDefaultValueKnown && !IsReadOnly;
 
     /// <summary>
-    ///     Gets the unique path of the item within its source: the name for a top-level item, with
+    ///     Gets the unique path of the item within its source: the item's root path for a top-level item (its name, unless the
+    ///     source prefixes it, as the node source does with <c>Node.</c>, <c>Property.</c> and <c>Data.</c>), with
     ///     <c>.Name</c> appended for each nested property and <c>[index]</c> for each collection element
-    ///     (for example <c>Address.City</c> or <c>Tags[2]</c>).
+    ///     (for example <c>Address.City</c>, <c>Tags[2]</c> or, in a node source, <c>Data.Address.City</c>).
     /// </summary>
+    /// <remarks>
+    ///     The path is what rows, pending edits, errors and automation ids are keyed by: grid rows expose
+    ///     <c>PropertyGrid_Row_{path}</c>. Find an item from its path with <see cref="PropertyEditSession.FindItem"/>.
+    /// </remarks>
     public string Path
     {
         get
         {
             if (Parent is null)
             {
-                return Name;
+                return RootPath;
             }
 
             return Parent.Path + (IsIndexer ? string.Empty : ".") + Name;
         }
     }
+
+    /// <summary>
+    ///     Gets the path of the item when it is top-level; the name unless a source prefixes it to keep the paths of its groups of rows apart.
+    /// </summary>
+    internal virtual string RootPath => Name;
 
     /// <summary>
     ///     Gets a value indicating whether the item's name is an index suffix such as <c>[2]</c>.

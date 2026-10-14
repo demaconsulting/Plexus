@@ -17,8 +17,7 @@ namespace DemaConsulting.Plexus.Scene;
 ///         The dash pattern starts at the source end of the wire.
 ///     </para>
 ///     <para>
-///         This is a record: derive variants with <c>style with { Thickness = 4 }</c>; every member is init-only (set it with an object
-///         initializer) and null means "use the theme". Combine two styles with <see cref="WithOverrides"/>.
+///         Derive variants with <c>style with { Thickness = 4 }</c>; a null member means "use the theme". Combine two styles with <see cref="WithOverrides"/>.
 ///     </para>
 /// </remarks>
 /// <example>

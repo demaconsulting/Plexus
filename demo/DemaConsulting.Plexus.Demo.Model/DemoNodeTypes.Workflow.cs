@@ -55,7 +55,8 @@ public static partial class DemoNodeTypes
             [new("in", Flow) { AllowsMultipleWires = true }],
             [new("out", Flow)],
             [new PropertyDefinition("Assignee", "Unassigned") { ShowInSummary = true, Description = "Who is responsible for the task." }, Summarized("Duration", 2, "h", description: "The planned effort.")],
-            dataType: typeof(TaskDetails)));
+            dataType: typeof(TaskDetails),
+            createData: () => new TaskDetails()));
         types.Add(Define(Decision, "DECISION", "Decision", WorkflowCategory, "Decision",
             [new("in", Flow) { AllowsMultipleWires = true }],
             [new("yes", Flow), new("no", Flow)],

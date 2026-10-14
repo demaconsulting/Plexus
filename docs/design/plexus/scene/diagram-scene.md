@@ -36,6 +36,9 @@ segment is at most the tolerance plus half the wire thickness and reports the ne
 Handle priority: the composer appends the targets of selected wires last, in the order segments, bend handles, end
 handles, so the backwards walk meets handles first, then the selected wire's segments, then everything drawn earlier
 (nodes, annotations, unselected wires). A rectangle handle target reports its kind with the bend index or the port.
+Handle targets (wire bends, wire ends, the annotation resize handle) exist only for elements in `SceneOptions.Selection`,
+so a wire that is not selected is hit as `Wire` even directly on a bend; this is documented on `DiagramScene.HitTest`,
+`HitKind` and `SceneOptions.Selection`.
 
 `Query(region)`: returns the primitives whose bounds intersect the region, in painting order.
 

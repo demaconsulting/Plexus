@@ -8,7 +8,8 @@ namespace DemaConsulting.Plexus;
 ///     and show <see cref="Message"/> to the user. A strict load (the default) throws instead, so its report is always empty.
 /// </remarks>
 /// <example>
-///     Open a file written by a newer version and tell the user what was dropped.
+///     Open a file written by a newer version and tell the user what was dropped. To try it without such a file, rename a node's type key first
+///     (see <see cref="UnknownNodeTypeHandling"/>).
 ///     <code>
 ///     using DemaConsulting.Plexus;
 ///

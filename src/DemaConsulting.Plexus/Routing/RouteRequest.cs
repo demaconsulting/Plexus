@@ -4,7 +4,7 @@ namespace DemaConsulting.Plexus.Routing;
 ///     Everything a wire router needs to compute the interior bend points of one wire.
 /// </summary>
 /// <remarks>
-///     A plain data holder with init-only properties (set them with an object initializer) so routers receive an immutable snapshot of the
+///     A plain data holder, so routers receive an immutable snapshot of the
 ///     page geometry and can be tested without a diagram. Obstacles are already inflated by the
 ///     theme's obstacle margin and include the boxes of the wire's own end nodes, so a router must
 ///     leave and enter ports through stub segments instead of crossing those boxes.

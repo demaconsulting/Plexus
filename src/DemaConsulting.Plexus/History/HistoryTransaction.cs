@@ -4,7 +4,9 @@ namespace DemaConsulting.Plexus;
 ///     Groups the commands executed while it is open into a single undo entry.
 /// </summary>
 /// <remarks>
-///     Obtain one from <see cref="UndoHistory.BeginTransaction"/> and wrap it in a
+///     Most code should use <see cref="UndoHistory.Transact(string, Action)"/>, which wraps this pattern and rolls back on failure;
+///     obtain a transaction object from <see cref="UndoHistory.BeginTransaction"/> only when the edits cannot be one delegate,
+///     and wrap it in a
 ///     <see langword="using"/> statement: disposing commits the group. Transactions nest by
 ///     flattening - only the outermost commit creates a history entry - while
 ///     <see cref="Rollback"/> on any level reverts just the commands recorded since that

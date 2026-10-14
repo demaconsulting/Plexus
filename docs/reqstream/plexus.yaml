@@ -177,6 +177,7 @@ sections:
           - Plexus-ConnectionRules-Combination
           - Plexus-ConnectionRules-DenialReasons
           - Plexus-ConnectionRules-HostRule
+          - Plexus-ConnectionRules-DegreeLimits
         tests:
           - Plexus_ConnectionRules_StructuralAndHostRules_DenyWithReasonBeforeAndOnConnect
 

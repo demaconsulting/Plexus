@@ -16,12 +16,17 @@ entry no matter which mode the grid is in or which host shows it.
 ### Data Model
 
 - **Rows (`NodePropertySource`)**: the name item (category General with rank -1, parenthesized so it is first), one item
-  per declared property and one item per browsable property of the host data. Declared properties use the category of the
+  per declared property and one item per browsable property of the host data. Row paths are collision-free: `Node.Name`
+  for the name row, `Property.<name>` for declared properties and `Data.<path>` for host data (nested objects and
+  collection elements extend the data path), built with `NamePath`, `PropertyPath` and `DataPath`; items keep their bare
+  `Name`, and the path prefix is applied through the internal `PropertyItem.RootPath`. A data property can therefore not
+  hide a declared one. Declared properties use the category of the
   definition (General when it has none), the display name with the unit in parentheses, the description, read-only, a
   default (so a changed value is bold), a text converter built on `PropertyDefinition.TryParse` and
   `FormatForEdit` for numbers and choices (choices are an exclusive list), booleans as `bool`, colors as
   `Avalonia.Media.Color` and the editor hint as the editor key. Data rows are descriptor-backed items over a working copy.
-- **Working state**: a `WorkingValues` dictionary of the values the grid wrote during the running commit, and a
+- **Working state**: a `WorkingValues` dictionary of the values the grid wrote during the running commit (keyed by row
+  path), and a
   working copy of the host data made on demand with `Node.CloneData` and thrown away after every commit and every
   outside change. An `ElementPropertyItem` reads the element until a value was written, then the written value.
 - **`ElementEditing`**: the commit plumbing shared by the three sources: the element, its diagram, the publish and discard
@@ -35,7 +40,9 @@ entry no matter which mode the grid is in or which host shows it.
   `UndoHistory.Transact`, lets the session write (`apply`, which writes into the working state), then publishes: the name
   through `Diagram.TryRename` (a refusal throws `PropertyCommitRefusedException` for the name row), the changed properties
   with `PropertyBag.TrySetAll`, and the working copy of the data as `Node.Data` when its serialized form differs from the
-  live data. A refusal rolls the transaction back (nothing changes). Afterwards the working state is cleared and `Changed`
+  live data. A refusal rolls the transaction back (nothing changes: the commit is atomic) and the refusal names the row
+  (`Node.Name` or `Property.<name>`), which the session lists in `CommitResult.Failed`. Afterwards the working state is
+  cleared and `Changed`
   is raised so the grid reads again.
 - **Name validation** — while the name is typed: not empty, and unique across the diagram when
   `Diagram.RequireUniqueNodeNames` is set (the same messages as the rename pipeline); a host veto is only known on commit.

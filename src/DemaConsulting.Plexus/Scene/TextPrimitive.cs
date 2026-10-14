@@ -7,6 +7,7 @@ namespace DemaConsulting.Plexus.Scene;
 ///     The text is aligned horizontally according to <see cref="Style"/> and centered vertically
 ///     in <see cref="Rect"/>. Painters do not wrap or clip; the scene builder has already
 ///     broken long text into one primitive per line.
+///     Inherited from <see cref="ScenePrimitive"/>: <see cref="ScenePrimitive.Bounds"/> and <see cref="ScenePrimitive.Element"/> (the owning model element, or null).
 /// </remarks>
 public sealed class TextPrimitive : ScenePrimitive
 {
@@ -16,7 +17,7 @@ public sealed class TextPrimitive : ScenePrimitive
     /// <param name="text">The text.</param>
     /// <param name="rect">The layout rectangle.</param>
     /// <param name="style">The text style.</param>
-    /// <param name="element">Optional; defaults to null. The owning model element. May be null.</param>
+    /// <param name="element">The owning model element.</param>
     public TextPrimitive(string text, Rect rect, TextStyle style, DiagramElement? element = null)
         : base(rect, element)
     {

@@ -130,3 +130,16 @@ sections:
               - PropertyGrid_Screenshot_CategorizedDark
               - PropertyGrid_Screenshot_AlphabeticalDark
               - PropertyGrid_Screenshot_CategorizedLight
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridControl-SourceOwnership
+            title: >-
+              The grid shall dispose a source it created for its selected object when the content changes and while
+              the grid is out of the visual tree (creating it again, with the expanded rows kept, when it returns), and
+              shall never dispose a source assigned by the host.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Display; a source that listens to the edited object would
+              otherwise keep it alive and keep reacting after the grid is gone, while a host-owned source must stay
+              usable.
+            tests:
+              - PropertyGrid_SelectedObjectSource_IsDisposedByTheGridButHostSourceIsNot
+              - PropertyGrid_SelectedObjectSource_IsReleasedWhileDetachedAndRecreatedOnAttach

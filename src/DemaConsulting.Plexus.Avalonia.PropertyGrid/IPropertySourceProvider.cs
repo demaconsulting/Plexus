@@ -6,6 +6,8 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </summary>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
 ///     public sealed class Gauge : IPropertySourceProvider
 ///     {
 ///         public double Value { get; set; }

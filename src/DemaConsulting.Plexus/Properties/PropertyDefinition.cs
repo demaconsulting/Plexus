@@ -131,7 +131,7 @@ public sealed class PropertyDefinition
     }
 
     /// <summary>
-    ///     Gets or initializes the label shown in UIs and summaries; defaults to <see cref="Name"/>. Set with an object initializer.
+    ///     Gets or initializes the label shown in UIs and summaries; defaults to <see cref="Name"/>.
     /// </summary>
     public string DisplayName
     {

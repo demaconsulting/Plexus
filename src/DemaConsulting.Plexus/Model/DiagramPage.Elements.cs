@@ -11,11 +11,14 @@ public sealed partial class DiagramPage
     /// <summary>
     ///     Adds a node of a registered type at a position (undoable).
     /// </summary>
+    /// <remarks>
+    ///     When the type declares <see cref="NodeType.CreateData"/>, the new node starts with a fresh payload from it.
+    /// </remarks>
     /// <param name="typeKey">The key of a type registered in <see cref="Diagram.Types"/>.</param>
     /// <param name="x">The left edge of the node.</param>
     /// <param name="y">The top edge of the node.</param>
-    /// <param name="name">Optional; defaults to null, which generates a unique <c>{TypeKeyLastSegment}{n}</c> name (for example <c>Source1</c>). May be null.</param>
-    /// <param name="id">Optional; defaults to null, which generates an element id. May be null.</param>
+    /// <param name="name">The node name; null generates a unique <c>{TypeKeyLastSegment}{n}</c> name (for example <c>Source1</c>).</param>
+    /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new node.</returns>
     /// <exception cref="ArgumentException">Thrown when the type key is unknown, the name is invalid or duplicated, or the id is in use.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the page is removed from its diagram.</exception>
@@ -33,10 +36,13 @@ public sealed partial class DiagramPage
     /// <summary>
     ///     Adds a node of a registered type at a position (undoable).
     /// </summary>
+    /// <remarks>
+    ///     When the type declares <see cref="NodeType.CreateData"/>, the new node starts with a fresh payload from it.
+    /// </remarks>
     /// <param name="type">A node type registered in <see cref="Diagram.Types"/>.</param>
     /// <param name="position">The top-left corner of the node.</param>
-    /// <param name="name">Optional; defaults to null, which generates a unique <c>{TypeKeyLastSegment}{n}</c> name (for example <c>Source1</c>). May be null.</param>
-    /// <param name="id">Optional; defaults to null, which generates an element id. May be null.</param>
+    /// <param name="name">The node name; null generates a unique <c>{TypeKeyLastSegment}{n}</c> name (for example <c>Source1</c>).</param>
+    /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new node.</returns>
     /// <exception cref="ArgumentException">Thrown when the type is not registered, the name is invalid or duplicated, or the id is in use.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the page is removed from its diagram.</exception>
@@ -71,6 +77,9 @@ public sealed partial class DiagramPage
 
         var size = NodeGeometry.DefaultNodeSize(type, Diagram.Theme);
         var node = new Node(elementId, type, nodeName, new Rect(position, size));
+
+        // New nodes start with the type's default payload (restored nodes keep what was stored instead)
+        node.InitializeData(type.CreateInitialData());
         Diagram.History.Execute(new ElementPresenceCommand("Add node", this, node, add: true));
         return node;
     }
@@ -80,7 +89,7 @@ public sealed partial class DiagramPage
     /// </summary>
     /// <param name="text">The note text.</param>
     /// <param name="bounds">The note's bounding box.</param>
-    /// <param name="id">Optional; defaults to null, which generates an element id. May be null.</param>
+    /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new annotation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="text"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the bounds are invalid or the id is in use.</exception>
@@ -113,7 +122,7 @@ public sealed partial class DiagramPage
     ///     to <see cref="Diagram.ConnectionRules"/> to require matching types. The structural checks always run first;
     ///     the diagram's rule is then asked with the output as source and the input as target.
     /// </remarks>
-    /// <param name="a">One port.</param>
+    /// <param name="a">One of the two ports (an output or an input); the order of the two does not matter.</param>
     /// <param name="b">The other port.</param>
     /// <returns>The decision; a denial always carries a reason.</returns>
     public ConnectionCheck CanConnect(Port a, Port b) => CheckConnection(a, b, null);
@@ -125,8 +134,11 @@ public sealed partial class DiagramPage
     ///     The same rules as <see cref="CanConnect"/> apply to the wire's new ports, except that the wire
     ///     itself does not count as a duplicate of its own connection, so keeping one end and moving the
     ///     other is judged on the new pair alone. A null port keeps the wire's current source or target.
+    ///     Passing null for both, or the wire's current ports, is "no change" and is always allowed.
     ///     Moving the target onto an input that already holds another wire is refused unless that input
     ///     allows fan-in, while keeping the wire on its own current target is fine.
+    ///     While the connection rule runs, <see cref="WireBeingReconnected"/> is the wire under check and the rule is called as
+    ///     <c>(output, input)</c>: the first argument is the new (or kept) source output, the second the new (or kept) target input.
     /// </remarks>
     /// <param name="wire">The wire that would be reconnected.</param>
     /// <param name="newSource">The new output port, or null to keep the current one.</param>
@@ -144,6 +156,12 @@ public sealed partial class DiagramPage
         // Each end must keep its direction: only an output can be a source and only an input a target
         var source = newSource ?? wire.Source;
         var target = newTarget ?? wire.Target;
+        if (ReferenceEquals(source, wire.Source) && ReferenceEquals(target, wire.Target))
+        {
+            // Nothing moves, so there is nothing to judge (a host rule must not veto a wire for existing)
+            return ConnectionCheck.Allowed;
+        }
+
         if (source.Direction != PortDirection.Output || target.Direction != PortDirection.Input)
         {
             return ConnectionCheck.Denied("A wire must connect an output to an input.");
@@ -153,13 +171,31 @@ public sealed partial class DiagramPage
     }
 
     /// <summary>
-    ///     Gets the wire a <see cref="CanReconnect"/> check is currently moving, or null outside a reconnect check.
+    ///     Gets the wire a <see cref="CanReconnect"/> check is currently moving, or null when no reconnect is being checked.
     /// </summary>
     /// <remarks>
-    ///     Set only for the duration of the connection-rule call, so a rule that counts the wires of a port
-    ///     (see <see cref="Port.CountWiresExceptChecked"/>) can leave the moving wire out.
+    ///     Set only for the duration of the call to the connection rule (<see cref="ConnectionValidator"/>), on the page the wire is on:
+    ///     read it as <c>from.Node.Page?.WireBeingReconnected</c>. A rule that counts the wires of a port must leave this wire out, because it is
+    ///     still attached to its old ports while it is judged; <see cref="Port.CountWiresIgnoringReconnect"/> does that for you.
+    ///     It is null while <see cref="CanConnect"/> and <see cref="Connect(Port, Port, IReadOnlyList{Point}?, string?)"/> run.
     /// </remarks>
-    internal Wire? WireUnderCheck { get; private set; }
+    /// <example>
+    ///     A rule that allows at most two wires per output, written by hand.
+    ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///     using DemaConsulting.Plexus.Geometry;
+    ///
+    ///     // A rule that allows at most two wires per output; it also runs when a wire is moved, hence the check for the wire being reconnected
+    ///     ConnectionValidator atMostTwo = (source, target) =&gt;
+    ///     {
+    ///         var moving = source.Node.Page?.WireBeingReconnected;                     // null unless a reconnect is checked
+    ///         var others = source.Wires.Count(w =&gt; !ReferenceEquals(w, moving));        // ignore the wire being moved
+    ///         return others &lt; 2 ? ConnectionCheck.Allowed : ConnectionCheck.Denied($"{source} already feeds two inputs.");
+    ///     };
+    ///     // or simply: ConnectionRules.MaxOutgoingWires(2)
+    ///     </code>
+    /// </example>
+    public Wire? WireBeingReconnected { get; private set; }
 
     /// <summary>
     ///     Applies the connection rules to a pair of ports, optionally ignoring one wire when looking for duplicates.
@@ -200,8 +236,8 @@ public sealed partial class DiagramPage
 
         // Structural checks passed; delegate policy to the connection rules. While a reconnect is judged the
         // wire being moved is published so rules that count wires (single-input) do not count it against itself
-        var previous = WireUnderCheck;
-        WireUnderCheck = ignored;
+        var previous = WireBeingReconnected;
+        WireBeingReconnected = ignored;
         ConnectionCheck hostResult;
         try
         {
@@ -209,7 +245,7 @@ public sealed partial class DiagramPage
         }
         finally
         {
-            WireUnderCheck = previous;
+            WireBeingReconnected = previous;
         }
 
         return hostResult.IsAllowed || hostResult.Reason is not null
@@ -231,10 +267,10 @@ public sealed partial class DiagramPage
     ///     <see cref="RerouteAll"/>), so when building a diagram in code add the nodes first and
     ///     connect them afterwards.
     /// </remarks>
-    /// <param name="from">One port.</param>
-    /// <param name="to">The other port.</param>
-    /// <param name="route">Optional; defaults to null, which routes automatically. The interior bend points otherwise (the stored route is normalized). May be null.</param>
-    /// <param name="id">Optional; defaults to null, which generates an element id. May be null.</param>
+    /// <param name="from">The output (or input) port to connect; the order is normalized so the wire always runs output to input.</param>
+    /// <param name="to">The input (or output) port to connect.</param>
+    /// <param name="route">The interior bend points (the stored route is normalized); null routes automatically.</param>
+    /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new wire.</returns>
     /// <exception cref="InvalidOperationException">Thrown, with the reason, when the connection is not allowed or the page is removed.</exception>
     /// <exception cref="ArgumentException">Thrown when the id is in use.</exception>

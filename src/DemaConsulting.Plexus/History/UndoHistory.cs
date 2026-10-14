@@ -5,13 +5,15 @@ namespace DemaConsulting.Plexus;
 /// </summary>
 /// <remarks>
 ///     Every public model mutation executes a command through this class, so hosts get undo for
-///     free and normally only call <see cref="Undo"/>, <see cref="Redo"/>, transactions and the
-///     dirty-tracking members. Hosts can also record their own changes with
+///     free and normally only call <see cref="Undo"/>, <see cref="Redo"/>, <see cref="Transact(string, Action)"/> and the
+///     dirty-tracking members. <see cref="Transact(string, Action)"/> is the way to make several edits one undo step (it also
+///     rolls the edits back when one of them throws); <see cref="BeginTransaction"/> is the lower-level form for code that cannot
+///     be written as one delegate. Hosts can also record their own changes with
 ///     <see cref="Execute(string, Action, Action)"/>. The history is single-threaded and not safe for
 ///     concurrent use; all calls must come from the thread that owns the diagram.
 /// </remarks>
 /// <example>
-///     Undo and redo, group edits into one step, and record your own changes.
+///     Undo and redo, group edits into one step with <c>Transact</c>, and record your own changes.
 ///     <code>
 ///     using DemaConsulting.Plexus;
 ///
@@ -19,25 +21,31 @@ namespace DemaConsulting.Plexus;
 ///     var page = diagram.Pages.Add("Main");
 ///     var history = diagram.History;
 ///
-///     // Several edits become one undo step; disposing the transaction commits it
-///     using (history.BeginTransaction("Add pair"))
+///     // Several edits become one undo step; if the delegate throws, everything it did is rolled back
+///     history.Transact("Add pair", () =>
 ///     {
 ///         var x = page.AddNode("demo.Source", 0, 240);
 ///         var y = page.AddNode("demo.Sink", 180, 240);
 ///         page.Connect(x.Output("out"), y.Input("in"));
-///     }
+///     });
 ///
 ///     history.Undo();                                       // removes both nodes and the wire together
 ///     history.Redo();
 ///
 ///     // Property edits work the same way: two assignments, one undo entry
 ///     var source = diagram.FindNode("Source1")!;            // generated name of the first node above
-///     using (history.BeginTransaction("Edit Source1"))
+///     history.Transact("Edit Source1", () =>
 ///     {
 ///         source.Properties["Value"] = 3.0;
 ///         source.Name = "Feed";
-///     }
+///     });
 ///     history.Undo();                                       // both edits revert together
+///
+///     // The advanced form: dispose the transaction to commit, or call Rollback() to cancel
+///     using (history.BeginTransaction("Rename"))
+///     {
+///         source.Name = "Feed2";
+///     }
 ///
 ///     // Record a change of your own with a do and an undo delegate
 ///     var title = "Draft";
@@ -332,9 +340,28 @@ public sealed class UndoHistory
     ///     Opens a transaction that groups subsequent commands into one undo entry.
     /// </summary>
     /// <remarks>
+    ///     This is the advanced form: prefer <see cref="Transact(string, Action)"/>, which commits, rolls back on failure and
+    ///     cannot be forgotten. Use a transaction object when the edits span code that cannot be one delegate (for example
+    ///     an event handler that starts it and another that completes it).
     ///     Nested transactions flatten: only the outermost one creates an entry, and it uses the
     ///     outermost description. Empty transactions record nothing.
     /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     var diagram = new Diagram(types);              // types: the registry of the DemaConsulting.Plexus example
+    ///     var page = diagram.Pages.Add("Main");
+    ///     using (var transaction = diagram.History.BeginTransaction("Add source"))
+    ///     {
+    ///         page.AddNode("demo.Source", 0, 0);
+    ///         if (page.Nodes.Count > 5)
+    ///         {
+    ///             transaction.Rollback();                // undo what the transaction did so far
+    ///         }
+    ///     }                                              // disposing commits one undo entry
+    ///     </code>
+    /// </example>
     /// <param name="description">Description of the combined entry.</param>
     /// <returns>The transaction; dispose it to commit.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="description"/> is null.</exception>
@@ -364,14 +391,33 @@ public sealed class UndoHistory
     ///     An action that changes nothing records nothing.
     /// </remarks>
     /// <example>
+    ///     Two edits, one undo step; a failure undoes the part that already ran.
     ///     <code>
-    ///     diagram.History.Transact("Edit properties", () =&gt;
-    ///     {
-    ///         node.Properties["Gain"] = 3.0;
-    ///         node.Properties["Mode"] = "Slow";     // throws: not a choice, so the Gain change is undone as well
-    ///     });
+    ///     using DemaConsulting.Plexus;
     ///
-    ///     int count = diagram.History.Transact("Add two", () =&gt; { page.AddNode("demo.Source", 0, 0); page.AddNode("demo.Sink", 200, 0); return 2; });
+    ///     var diagram = new Diagram(types);              // types: the registry of the DemaConsulting.Plexus example
+    ///     var page = diagram.Pages.Add("Main");
+    ///     var node = page.AddNode("demo.Source", 0, 0, name: "A");
+    ///
+    ///     diagram.History.Transact("Edit node", () =>
+    ///     {
+    ///         node.Properties["Value"] = 3.0;
+    ///         node.Name = "Feed";
+    ///     });
+    ///     diagram.History.Undo();                        // Value and Name revert together
+    ///
+    ///     try
+    ///     {
+    ///         diagram.History.Transact("Edit node", () =>
+    ///         {
+    ///             node.Properties["Value"] = 4.0;
+    ///             throw new InvalidOperationException("The second edit failed.");
+    ///         });
+    ///     }
+    ///     catch (InvalidOperationException)
+    ///     {
+    ///         Console.WriteLine(node.Properties["Value"]);   // 1: the first assignment was rolled back
+    ///     }
     ///     </code>
     /// </example>
     /// <param name="description">Description of the combined entry.</param>
@@ -394,6 +440,21 @@ public sealed class UndoHistory
     /// <remarks>
     ///     See <see cref="Transact(string, Action)"/>.
     /// </remarks>
+    /// <example>
+    ///     Add two nodes as one undo step and return how many were added.
+    ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     var diagram = new Diagram(types);              // types: the registry of the DemaConsulting.Plexus example
+    ///     var page = diagram.Pages.Add("Main");
+    ///     int count = diagram.History.Transact("Add two", () =>
+    ///     {
+    ///         page.AddNode("demo.Source", 0, 0);
+    ///         page.AddNode("demo.Sink", 200, 0);
+    ///         return 2;
+    ///     });
+    ///     </code>
+    /// </example>
     /// <typeparam name="T">The result type.</typeparam>
     /// <param name="description">Description of the combined entry.</param>
     /// <param name="function">The edits to apply.</param>

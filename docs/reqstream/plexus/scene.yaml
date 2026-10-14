@@ -25,6 +25,7 @@ sections:
               - Plexus-Scene-SceneBuilder-Grid
               - Plexus-Scene-NodeLayout-NodeText
               - Plexus-Scene-NodeLayout-Icon
+              - Plexus-Scene-NodeLayout-DefaultWidth
               - Plexus-Scene-NodeLayout-Bounds
               - Plexus-Scene-NodeLayout-TextWrapping
             tests:
@@ -190,6 +191,7 @@ sections:
               metrics so that boxes, anchors and obstacles agree.
             children:
               - Plexus-Scene-DiagramTheme-Classic
+              - Plexus-Scene-DiagramTheme-Dark
               - Plexus-Scene-DiagramTheme-Customizable
               - Plexus-Scene-DiagramTheme-TextStyles
               - Plexus-Scene-DiagramTheme-WireMetrics

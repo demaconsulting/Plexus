@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     The text conversion of a declared Plexus property: it parses what a user typed with

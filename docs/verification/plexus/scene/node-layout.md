@@ -55,6 +55,15 @@ tolerance.
   (`NodeLayout_Compute_Bounds_CoverEverythingDrawn`): bounds contain box, name, summary, triangles and labels.
 - **Null arguments**
   (`NodeLayout_Compute_NullArguments_ThrowArgumentNullException`): node, theme and measurer.
+- **Default width** (`Plexus-Scene-NodeLayout-DefaultWidth`, `DefaultNodeWidthTests.cs`:
+  `NodeGeometry_DefaultNodeSize_ShortTitle_KeepsThemeDefaultWidth`,
+  `NodeGeometry_DefaultNodeSize_LongTitle_GrowsWidthToFitSnappedToTheGrid`,
+  `NodeGeometry_DefaultNodeSize_DeclaredSize_WinsOverTheTitle`,
+  `NodeGeometry_DefaultNodeSize_WideThemeMinimumAndNoGrid_AreHonored`,
+  `SceneBuilder_Build_LongTitleWithDefaultSize_DrawsTheTitleOnOneLine`): a short title keeps 90 units, THERMOMETER widens
+  the node to a grid multiple at which the measured title fits the header margins and which is the smallest such
+  multiple, a declared size is returned unchanged, a larger theme width or a theme without a grid is honored, and the scene
+  draws the whole title as one text primitive.
 - **Text wrapping**
   (`TextWrapper_Wrap_BreaksAtWordsAndSplitsLongWords`): words wrap at a width of five characters, explicit line
   breaks are kept and a long word is split by character.

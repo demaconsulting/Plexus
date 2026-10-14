@@ -17,6 +17,28 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         presses Escape; an editor that holds uncommitted input should honor both.
 ///     </para>
 /// </remarks>
+/// <example>
+///     A text editor written from scratch: it shows the row's text (or the rejected text the user still has to fix), writes through the context, and honors Enter and
+///     Escape. Register it as described on <see cref="PropertyGrid.DefaultEditors"/> (all grids) or <see cref="PropertyGrid.EditorRegistry"/> (one grid), for example
+///     <c>PropertyGrid.DefaultEditors.Register("plain-text", TextEditorSample.Create);</c>. A slider that writes a number is shown on <see cref="PropertyGrid.DefaultEditors"/>.
+///     <code><![CDATA[
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     public static class TextEditorSample
+///     {
+///         public static Control Create(PropertyEditorContext context)
+///         {
+///             var box = new TextBox { Text = context.PendingText ?? context.Text, IsReadOnly = context.IsReadOnly };
+///             box.LostFocus += (_, _) => context.SetText(box.Text ?? "");       // validated and converted by the item; a failure becomes the row's error
+///             context.CommitRequested += (_, _) => context.SetText(box.Text ?? "");   // Enter
+///             context.CancelRequested += (_, _) => context.Cancel();                   // Escape: drops the pending edit and shows the value again
+///             context.Refreshed += (_, _) => box.Text = context.PendingText ?? context.Text;
+///             return box;
+///         }
+///     }
+///     ]]></code>
+/// </example>
 public sealed class PropertyEditorContext
 {
     /// <summary>

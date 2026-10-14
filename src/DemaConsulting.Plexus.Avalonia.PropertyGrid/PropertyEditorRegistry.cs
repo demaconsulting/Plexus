@@ -7,8 +7,10 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     editors without the generic layers knowing any UI type.
 /// </summary>
 /// <typeparam name="TEditor">
-///     The editor representation chosen by the UI layer (for example an editor factory); the registry only stores and
-///     returns it.
+///     The editor representation chosen by the UI layer; the registry only stores and returns it. The grid uses
+///     <c>Func&lt;PropertyEditorContext, Control&gt;</c> (a factory that receives the row's <see cref="PropertyEditorContext"/>
+///     and returns the editor control), which is the type of <see cref="PropertyGrid.EditorRegistry"/> and
+///     <see cref="PropertyGrid.DefaultEditors"/>.
 /// </typeparam>
 /// <remarks>
 ///     <para>
@@ -22,18 +24,26 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         <c>typeof(List&lt;&gt;)</c> serves every <c>List&lt;T&gt;</c>).
 ///     </para>
 ///     <para>
+///         You normally do not create a registry: register on <see cref="PropertyGrid.DefaultEditors"/> once at start-up (every grid and dialog
+///         uses it) or on a grid's own registry from <see cref="PropertyGrid.CreateEditorRegistry"/> (that grid only). See
+///         <see cref="PropertyGrid.EditorRegistry"/> for the two routes and a complete slider editor.
 ///         WinForms <c>UITypeEditor</c> classes cannot be reused here (see <see cref="PropertyEditorAttribute"/>).
 ///         The registry is thread-safe.
 ///     </para>
 /// </remarks>
 /// <example>
+///     A registry of grid editors: keys, property types and a fallback. Keys are matched case-insensitively.
 ///     <code><![CDATA[
-///     var registry = new PropertyEditorRegistry<Func<PropertyItem, Control>>();
-///     registry.Register("color-swatch", item => new ColorSwatchEditor(item));
-///     registry.Register(typeof(Enum), item => new EnumDropDownEditor(item));
-///     registry.Fallback = item => new TextEditor(item);
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///
-///     Func<PropertyItem, Control>? create = registry.Resolve(someItem);
+///     var registry = new PropertyEditorRegistry<Func<PropertyEditorContext, Control>>();
+///     registry.Register("color-swatch", context => new TextBlock { Text = context.Text });     // chosen by [PropertyEditor("color-swatch")]
+///     registry.Register(typeof(Enum), context => new ComboBox());                              // every enumeration
+///     registry.Fallback = context => new TextBox { Text = context.Text };
+///
+///     // Resolution returns the factory (or null); the grid calls it with the row's context
+///     Func<PropertyEditorContext, Control>? factory = registry.Resolve("color-swatch");
 ///     ]]></code>
 /// </example>
 public sealed class PropertyEditorRegistry<TEditor>
@@ -48,6 +58,17 @@ public sealed class PropertyEditorRegistry<TEditor>
     ///     The editors by property type.
     /// </summary>
     private readonly ConcurrentDictionary<Type, TEditor> _byType = new();
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PropertyEditorRegistry{TEditor}"/> class as an empty registry: no editors and no fallback.
+    /// </summary>
+    /// <remarks>
+    ///     Grids start from <see cref="PropertyGrid.CreateEditorRegistry"/> instead, which also holds the built-in editors.
+    /// </remarks>
+    public PropertyEditorRegistry()
+    {
+        // Nothing to initialize: the registry starts empty
+    }
 
     /// <summary>
     ///     Gets or sets the editor used when nothing else matches; <see langword="null"/> means none.

@@ -48,7 +48,7 @@ public static class PlexusRenderer
     ///     Renders a page to PNG bytes.
     /// </summary>
     /// <param name="page">The page to render. Must not be null.</param>
-    /// <param name="options">Optional; defaults to null, which uses the default <see cref="RenderOptions"/>. May be null.</param>
+    /// <param name="options">The render options; null uses the default <see cref="RenderOptions"/>.</param>
     /// <returns>The PNG file contents; opaque backgrounds are written without an alpha channel.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when the options are invalid or the image would be larger than 8192 pixels on a side.</exception>
@@ -68,7 +68,7 @@ public static class PlexusRenderer
     /// <remarks>The folder of <paramref name="path"/> must already exist; it is not created (a missing folder throws <see cref="DirectoryNotFoundException"/>).</remarks>
     /// <param name="page">The page to render. Must not be null.</param>
     /// <param name="path">The destination file path. Must not be null or empty.</param>
-    /// <param name="options">Optional; defaults to null, which uses the default <see cref="RenderOptions"/>. May be null.</param>
+    /// <param name="options">The render options; null uses the default <see cref="RenderOptions"/>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is empty or the options are invalid.</exception>
     public static void SavePng(DiagramPage page, string path, RenderOptions? options = null)
@@ -86,7 +86,7 @@ public static class PlexusRenderer
     ///     RGBA; the surface is fully opaque unless a translucent background was requested.
     /// </remarks>
     /// <param name="page">The page to render. Must not be null.</param>
-    /// <param name="options">Optional; defaults to null, which uses the default <see cref="RenderOptions"/>. May be null.</param>
+    /// <param name="options">The render options; null uses the default <see cref="RenderOptions"/>.</param>
     /// <returns>A new surface owned by the caller.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is null.</exception>
     /// <exception cref="ArgumentException">

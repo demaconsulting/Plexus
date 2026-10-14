@@ -131,3 +131,20 @@ sections:
                   Missing arguments are programming errors that should be reported at the call site.
                 tests:
                   - NodeLayout_Compute_NullArguments_ThrowArgumentNullException
+
+              - id: Plexus-Scene-NodeLayout-DefaultWidth
+                title: >-
+                  The default size of a node type without a declared size shall be at least the theme's default width
+                  and wide enough, in whole grid steps, for its title to fit the header on one line when measured by
+                  the deterministic text measurer, while a declared size stays authoritative.
+                justification: |
+                  A title that wraps in the middle of a word, such as a long uppercase title split after its last
+                  few letters, looks like a defect; sizing the
+                  default box from the title fixes that without every host declaring sizes, and measuring with the
+                  deterministic measurer keeps the model, routers and painters in agreement.
+                tests:
+                  - NodeGeometry_DefaultNodeSize_ShortTitle_KeepsThemeDefaultWidth
+                  - NodeGeometry_DefaultNodeSize_LongTitle_GrowsWidthToFitSnappedToTheGrid
+                  - NodeGeometry_DefaultNodeSize_DeclaredSize_WinsOverTheTitle
+                  - NodeGeometry_DefaultNodeSize_WideThemeMinimumAndNoGrid_AreHonored
+                  - SceneBuilder_Build_LongTitleWithDefaultSize_DrawsTheTitleOnOneLine

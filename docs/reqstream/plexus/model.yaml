@@ -45,6 +45,7 @@ sections:
               - Plexus-Model-DiagramPage-AddAnnotation
               - Plexus-Model-Node-Ports
               - Plexus-Model-Node-Data
+              - Plexus-Model-Node-DataTypeCheck
               - Plexus-Model-Node-CloneData
               - Plexus-Model-Annotation-Initial
               - Plexus-Model-Annotation-Text
@@ -115,6 +116,7 @@ sections:
               connection is denied so it can give feedback while the user is still dragging.
             children:
               - Plexus-Model-DiagramPage-CanConnect
+              - Plexus-Model-DiagramPage-ReconnectContext
               - Plexus-Model-Diagram-ConnectionRulesSetting
             tests:
               - Model_ConnectionRules_StructureAndHostRule_DenyWithReasons
@@ -217,6 +219,7 @@ sections:
               - Plexus-Model-Diagram-ChangeNotification
               - Plexus-Model-Diagram-Settings
               - Plexus-Model-Diagram-Options
+              - Plexus-Model-Diagram-Initialize
               - Plexus-Model-PageCollection-Notification
               - Plexus-Model-PageCollection-NotificationOrder
               - Plexus-Model-PageCollection-ListBinding

@@ -1,4 +1,4 @@
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     The values a grid has written into a Plexus source during one commit, before the source publishes them to the

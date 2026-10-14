@@ -169,7 +169,7 @@ public sealed partial class DiagramEditor
     ///     Failures of the operating system clipboard itself are different: they are not caught here and reach the caller as exceptions
     ///     (see <see cref="CopyAsync"/>); the Ctrl+V shortcut reports them through <see cref="ClipboardFailed"/>.
     /// </remarks>
-    /// <returns>A task producing the paste result (<c>Task&lt;PasteResult?&gt;</c>: the result is null when the editor is read-only, shows no page, or has no clipboard).</returns>
+    /// <returns>A task producing the paste result, or null when the editor is read-only, shows no page, or has no clipboard.</returns>
     public Task<PasteResult?> PasteAsync() => PasteCoreAsync(useAt: false, at: default);
 
     /// <summary>

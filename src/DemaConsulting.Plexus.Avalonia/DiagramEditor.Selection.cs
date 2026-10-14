@@ -50,7 +50,7 @@ public sealed partial class DiagramEditor
     ///     Elements that are not on the shown page are ignored, so stale references are harmless.
     /// </remarks>
     /// <param name="elements">The elements to select.</param>
-    /// <param name="add">Optional; defaults to false. When true the elements are added to the selection; when false they replace it.</param>
+    /// <param name="add">When true the elements are added to the selection; when false they replace it.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="elements"/> is null.</exception>
     public void Select(IEnumerable<DiagramElement> elements, bool add = false)
     {

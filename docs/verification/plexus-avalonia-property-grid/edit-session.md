@@ -96,3 +96,13 @@ Source commit scope and refusals (`CommitScopeTests.cs`; a test source records t
   reported (error path).
 - **PropertyCommitRefusedException_Constructor_KeepsPathAndMessage**: the exception carries the path and rejects a blank
   path (error path).
+- **PropertyEditSession_Commit_RefusedExceptionForAnUneditedRowIsListedAsFailed**
+  (`PlexusAvaloniaPropertyGrid-EditSession-CommitFailures`): a refusal naming a row that was not edited is listed in
+  `CommitResult.Failed` with its path and message, and the edit that was made stays pending
+  (`PropertyEditSession_Commit_RefusedExceptionMarksTheNamedProperty` checks the same list, `Applied` 0 and the item).
+- **PropertyEditSession_SetText_ArgumentExceptionMessage_HasNoParameterSuffix**: an argument exception from a setter or
+  a
+  converter produces a message without " (Parameter 'value')" (error path).
+- **PropertyEditSession_FindItem_PrefixedRootPaths_AreResolvedByTheirFullPath**
+  (`PlexusAvaloniaPropertyGrid-EditSession-PrefixedRoots`): a root item is found by its whole path, unknown and empty
+  paths give null.

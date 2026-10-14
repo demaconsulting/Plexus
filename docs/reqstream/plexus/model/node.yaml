@@ -132,3 +132,17 @@ sections:
                   - Node_CloneData_ReturnsIndependentCopy
                   - Node_CloneData_TypeWithoutSerializer_Throws
                   - Node_CloneData_CommittedWithPropertiesInOneTransaction_IsOneUndoEntry
+
+              - id: Plexus-Model-Node-DataTypeCheck
+                title: >-
+                  Assigning a host payload to a node whose type declares a data type shall throw an argument
+                  exception at once, recording nothing, when the payload is not an instance of that type, while the
+                  declared type, a derived type and null are accepted; a type that declares only a serializer or
+                  nothing shall accept any payload.
+                justification: |
+                  A payload of the wrong type would otherwise fail much later, when the diagram is saved or copied,
+                  far from the code that caused it. Failing at the assignment names the mistake where it was made.
+                tests:
+                  - Node_Data_IncompatibleType_ThrowsArgumentException
+                  - Node_Data_DeclaredDerivedOrNull_IsAccepted
+                  - Node_Data_SerializerOnlyOrUndeclared_AcceptsAnyObject

@@ -10,6 +10,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using DemaConsulting.Plexus.Avalonia;
 using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using DemaConsulting.Plexus.Demo.Gui;
 using DemaConsulting.Plexus.Demo.Gui.Dialogs;
 using DemaConsulting.Plexus.Demo.Model;
@@ -701,9 +702,9 @@ public class MainWindowTests
         host.DoubleClick(point);
         var dialog = host.Window.OwnedWindows.OfType<PropertyGridDialog>().Single();
         var title = dialog.Title;
-        host.TypeIntoRow(dialog, "Name", "Triage");
-        host.TypeIntoRow(dialog, "Duration", "9");
-        host.TypeIntoRow(dialog, "Notes", "Look at it twice");
+        host.TypeIntoRow(dialog, NodePropertySource.NamePath, "Triage");
+        host.TypeIntoRow(dialog, NodePropertySource.PropertyPath("Duration"), "9");
+        host.TypeIntoRow(dialog, NodePropertySource.DataPath("Notes"), "Look at it twice");
         host.Get<Button>(AutomationIds.PropertiesOk, dialog).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         host.Flush();
 
@@ -736,8 +737,8 @@ public class MainWindowTests
         var dialog = host.Window.OwnedWindows.OfType<PropertyGridDialog>().Single();
 
         // Act: a duplicate name and a number with its unit
-        host.TypeIntoRow(dialog, "Name", other.Name);
-        host.TypeIntoRow(dialog, "Capacity", "800 L");
+        host.TypeIntoRow(dialog, NodePropertySource.NamePath, other.Name);
+        host.TypeIntoRow(dialog, NodePropertySource.PropertyPath("Capacity"), "800 L");
         host.Get<Button>(AutomationIds.PropertiesOk, dialog).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         host.Flush();
 
@@ -772,11 +773,11 @@ public class MainWindowTests
         host.Choose("Menu_Edit_Properties");
         var dialog = host.Window.OwnedWindows.OfType<PropertyGridDialog>().Single();
         var session = dialog.Grid.Session!;
-        PropertyItem Item(string path) => session.FindItem(path) ?? throw new InvalidOperationException($"No item {path}");
+        PropertyItem Item(string name) => session.FindItem(NodePropertySource.DataPath(name)) ?? throw new InvalidOperationException($"No data item {name}");
 
         // Act
         var categories = PropertyOrdering.Group(session.Source.GetItems(), PropertySortMode.Categorized).Select(g => g.Category).ToList();
-        dialog.Grid.SetExpanded("Contact", true);
+        dialog.Grid.SetExpanded(NodePropertySource.DataPath("Contact"), true);
         host.Flush();
 
         // Assert: the model of the rows
@@ -799,11 +800,11 @@ public class MainWindowTests
         Assert.Equal(["Assignee", "Duration"], session.Source.GetItems().Where(i => i.Category == "General" && i.Name != "Name").Select(i => i.Name).Order());
 
         // Assert: the controls
-        Assert.NotNull(host.Find(AutomationIds.PropertiesRow("Name"), dialog));
-        Assert.NotNull(host.Find(AutomationIds.PropertiesRow("Contact.Email"), dialog));
-        Assert.Contains(host.Get<Control>(AutomationIds.PropertiesEditor("Progress"), dialog).GetSelfAndVisualDescendants(), c => c is Slider);
-        Assert.Contains(host.Get<Control>(AutomationIds.PropertiesEditor("Team"), dialog).GetSelfAndVisualDescendants(), c => c is ComboBox);
-        Assert.Contains(host.Get<Control>(AutomationIds.PropertiesEditor("AccessCode"), dialog).GetSelfAndVisualDescendants(), c => c is TextBox { PasswordChar: not '\0' });
+        Assert.NotNull(host.Find(AutomationIds.PropertiesRow(NodePropertySource.NamePath), dialog));
+        Assert.NotNull(host.Find(AutomationIds.PropertiesRow(NodePropertySource.DataPath("Contact.Email")), dialog));
+        Assert.Contains(host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.DataPath("Progress")), dialog).GetSelfAndVisualDescendants(), c => c is Slider);
+        Assert.Contains(host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.DataPath("Team")), dialog).GetSelfAndVisualDescendants(), c => c is ComboBox);
+        Assert.Contains(host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.DataPath("AccessCode")), dialog).GetSelfAndVisualDescendants(), c => c is TextBox { PasswordChar: not '\0' });
         dialog.Close(false);
     });
 
@@ -825,9 +826,9 @@ public class MainWindowTests
         var session = dialog.Grid.Session!;
 
         // Act: add a step with a remark in the collection editor's working copy, edit the first step, press OK
-        var editor = session.BeginCollectionEdit(session.FindItem("Checklist")!);
+        var editor = session.BeginCollectionEdit(session.FindItem(NodePropertySource.DataPath("Checklist"))!);
         editor.Add(new ChecklistItem { Text = "Sign off", Remarks = ["Needs two signatures"] });
-        session.SetText(session.FindItem("Checklist[0].Text")!, "Read the whole request");
+        session.SetText(session.FindItem(NodePropertySource.DataPath("Checklist[0].Text"))!, "Read the whole request");
         var accepted = dialog.Accept();
         host.Flush();
 
@@ -868,8 +869,8 @@ public class MainWindowTests
         host.Editor.Select(task);
         host.Flush();
         var before = host.Session.Diagram.History.UndoCount;
-        host.TypeIntoRow(host.Window, "Duration", "6");
-        host.TypeIntoRow(host.Window, "Notes", "Edited in the panel");
+        host.TypeIntoRow(host.Window, NodePropertySource.PropertyPath("Duration"), "6");
+        host.TypeIntoRow(host.Window, NodePropertySource.DataPath("Notes"), "Edited in the panel");
 
         // Assert: the panel shows the task and each edit was applied at once, as its own undo entry
         Assert.True(hiddenAtStart);
@@ -883,7 +884,7 @@ public class MainWindowTests
         // Act / Assert: undo is followed by the panel
         host.Editor.Undo();
         host.Flush();
-        Assert.Equal("Check the request for completeness", host.Get<Control>(AutomationIds.PropertiesEditor("Notes")).GetSelfAndVisualDescendants().OfType<TextBox>().First().Text);
+        Assert.Equal("Check the request for completeness", host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.DataPath("Notes"))).GetSelfAndVisualDescendants().OfType<TextBox>().First().Text);
 
         // Act / Assert: another node, an annotation, several elements, nothing
         host.Editor.Select(other);

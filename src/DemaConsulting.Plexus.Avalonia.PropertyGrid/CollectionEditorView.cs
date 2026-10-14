@@ -31,10 +31,19 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
-///     var view = new CollectionEditorView(grid.Session!, grid.Session!.FindItem("Tags")!);
-///     panel.Children.Add(view);
-///     // ... later, when the host's own OK button is pressed:
-///     PropertyResult result = view.Apply();
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     public static class TagsViewSample
+///     {
+///         // panel: a container in the host's own dialog; the grid shows an object with a collection property "Tags"
+///         public static Func<PropertyResult> Embed(Panel panel, PropertyGrid grid)
+///         {
+///             var view = new CollectionEditorView(grid.Session!, grid.Session!.FindItem("Tags")!);
+///             panel.Children.Add(view);
+///             return () => view.Apply();     // call when the host's own OK button is pressed
+///         }
+///     }
 ///     ]]></code>
 /// </example>
 public sealed class CollectionEditorView : UserControl

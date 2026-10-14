@@ -290,3 +290,17 @@ sections:
                   - DiagramPage_ContentLists_AreObservable
                   - DiagramPage_Remove_ElementIsDetachedBeforeNotifications
                   - DiagramPage_UndoRemove_ElementIsAttachedBeforeNotifications
+
+              - id: Plexus-Model-DiagramPage-ReconnectContext
+                title: >-
+                  A reconnect check that changes nothing, by passing no new port or the wire's own ports, shall be
+                  allowed without consulting the connection rule; while the rule judges a real move the page shall
+                  expose the wire being moved, so that a rule can leave it out of its counts, and the rule shall
+                  receive the output first and the input second.
+                justification: |
+                  A wire must not be vetoed for existing, and degree-limiting rules would otherwise count the moving
+                  wire against the very port it is being moved to, refusing legitimate end drags.
+                tests:
+                  - DiagramPage_CanReconnect_NoChange_IsAllowedWithoutAskingTheRule
+                  - DiagramPage_WireBeingReconnected_IsTheMovingWireOnlyDuringTheCheck
+                  - ConnectionRules_HostRule_AlwaysReceivesOutputThenInput

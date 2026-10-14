@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     The properties dialog of a Plexus node: a modal window that shows the node's name, properties and host data in a
@@ -9,23 +9,40 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 /// <remarks>
 ///     <para>
 ///         It is a thin layer over <see cref="PropertyGridDialog"/> and <see cref="NodePropertySource"/>: the title is
-///         "&lt;Name&gt; - Properties", the grid is staged, and the node adapter makes the commit one undo entry (the
+///         <c>"{Name} - Properties"</c>, the grid is staged, and the node adapter makes the commit one undo entry (the
 ///         rename, the changed properties and the edited host data together). OK is refused with the reason shown while a
 ///         value is invalid or the rename is vetoed. Custom editors named by <see cref="PropertyDefinition.EditorHint"/> or
-///         <see cref="PropertyEditorAttribute"/> are looked up in <see cref="PropertyGrid.DefaultEditors"/>, so register
-///         them there once at start-up.
+///         <see cref="PropertyEditorAttribute"/> come from <see cref="PropertyGrid.DefaultEditors"/>, so register
+///         them there once at start-up (see <see cref="PropertyGrid.EditorRegistry"/> for giving a single grid its own, which the dialog's
+///         <see cref="PropertyGridDialog.Grid"/> from <see cref="Create"/> also accepts).
 ///     </para>
 ///     <para>
 ///         The dialog's controls carry the automation ids of the grid and its dialog: <c>PropertyGridDialog</c>,
 ///         <c>PropertyGridDialog_OK</c>, <c>PropertyGridDialog_Cancel</c>, <c>PropertyGridDialog_Status</c> and, for every
-///         row, <c>PropertyGrid_Row_&lt;path&gt;</c> and <c>PropertyGrid_Editor_&lt;path&gt;</c> (for example
-///         <c>PropertyGrid_Row_Name</c>).
+///         row, <c>PropertyGrid_Row_{path}</c> and <c>PropertyGrid_Editor_{path}</c> (for example
+///         <c>PropertyGrid_Row_Node.Name</c>, see <see cref="NodePropertySource"/> for the row paths).
 ///     </para>
 /// </remarks>
 /// <example>
+///     One line in the window that hosts a <c>DiagramEditor</c>: double-click a node to edit it. The host data of the node (<c>Node.Data</c>) appears
+///     in the dialog as rows when its node type declares a <c>DataType</c> (see <see cref="NodePropertySource"/>).
 ///     <code><![CDATA[
-///     // One line in the host window: double-click a node to edit it
-///     editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(this, e.Node);
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus.Avalonia;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+///
+///     // Inside a Window (this), with the editor of the window
+///     public sealed class EditorWindow : Window
+///     {
+///         public EditorWindow(DiagramEditor editor)
+///         {
+///             Content = editor;
+///             editor.NodeDoubleClicked += async (_, e) =>
+///             {
+///                 bool changed = await NodePropertiesDialog.ShowAsync(this, e.Node);   // true when OK applied the edits as one undo entry
+///             };
+///         }
+///     }
 ///     ]]></code>
 /// </example>
 public static class NodePropertiesDialog
@@ -72,7 +89,7 @@ public static class NodePropertiesDialog
     }
 
     /// <summary>
-    ///     Gets the title of a node's dialog: "&lt;Name&gt; - Properties".
+    ///     Gets the title of a node's dialog: <c>"{Name} - Properties"</c>.
     /// </summary>
     /// <param name="node">The node.</param>
     /// <returns>The title.</returns>

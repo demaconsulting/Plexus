@@ -112,7 +112,11 @@ public sealed class DiagramScene
     ///     win over wires and wires over group frames, so exactly at a port's anchor the port wins over the wire stub that ends there.
     ///     Expanded group interiors are transparent so
     ///     only the title bar, toggle and border band of a group are hit. The annotation resize
-    ///     handle is only hittable while its annotation is selected, matching what is drawn.
+    ///     handle and the bend and end handles of a wire (<see cref="HitKind.WireBend"/>, <see cref="HitKind.WireSourceHandle"/>,
+    ///     <see cref="HitKind.WireTargetHandle"/>) are only hittable while their element is selected, matching what is drawn: a wire that is not in
+    ///     <see cref="SceneOptions.Selection"/> is hit as <see cref="HitKind.Wire"/> (with the segment index) even directly on a bend or end.
+    ///     A headless test or tool that wants to grab a handle must therefore build the scene with the wire selected
+    ///     (<c>new SceneOptions { Selection = [wire] }</c>) and hit test that scene.
     ///     <c>tolerance</c> is a distance in diagram units that widens thin targets: a wire is hit when the point is
     ///     within <c>tolerance</c> of its polyline (a point 3 units off a wire hits with the default, one 30 units off does not).
     ///     Name and label rectangles come from the scene's text measurer; build the scene with the painter's measurer
@@ -151,7 +155,7 @@ public sealed class DiagramScene
     ///     </code>
     /// </example>
     /// <param name="point">The point in diagram coordinates.</param>
-    /// <param name="tolerance">Optional; defaults to 3. The extra reach, in diagram units, for thin targets such as wires and group borders.</param>
+    /// <param name="tolerance">The extra reach, in diagram units, for thin targets such as wires and group borders.</param>
     /// <returns>What was hit; <see cref="HitResult.Canvas"/> when nothing was.</returns>
     public HitResult HitTest(Point point, double tolerance = 3)
     {

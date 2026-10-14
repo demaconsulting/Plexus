@@ -10,16 +10,28 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     The mandatory members are given to the constructor; metadata comes from <see cref="CustomPropertyOptions"/>.
 ///     The item is read-only when no setter is supplied (or <see cref="CustomPropertyOptions.ForceReadOnly"/> is set).
 ///     Text conversion, standard values, expandable objects and collections come from the converter and the property
-///     type exactly as for reflection items.
+///     type exactly as for reflection items. The class is sealed: it overrides the abstract and virtual members of <see cref="PropertyItem"/>
+///     from the constructor arguments, and the member tables of this page list only what it declares itself. Inherited from <see cref="PropertyItem"/>, among others:
+///     <see cref="PropertyItem.Label"/>, <see cref="PropertyItem.Path"/>, <see cref="PropertyItem.IsChanged"/>, <see cref="PropertyItem.TryGetValue"/>,
+///     <see cref="PropertyItem.TrySetValue"/>, <see cref="PropertyItem.TrySetText"/>, <see cref="PropertyItem.ConvertToString"/>, <see cref="PropertyItem.Children"/>
+///     and <see cref="PropertyItem.GetCollectionItems"/>. Derive from <see cref="PropertyItem"/> directly only when delegates are not enough.
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     var gain = new Gain();
 ///     var item = new CustomPropertyItem(
 ///         "Gain",
 ///         typeof(double),
-///         () => node.Gain,
-///         v => node.Gain = (double)v!,
+///         () => gain.Value,
+///         v => gain.Value = (double)v!,
 ///         new CustomPropertyOptions { DisplayName = "Gain (dB)", Category = "Audio", HasDefault = true, DefaultValue = 0.0 });
+///
+///     public sealed class Gain
+///     {
+///         public double Value { get; set; }
+///     }
 ///     ]]></code>
 /// </example>
 public sealed class CustomPropertyItem : PropertyItem

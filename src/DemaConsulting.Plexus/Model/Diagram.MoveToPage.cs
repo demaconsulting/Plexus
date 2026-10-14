@@ -17,8 +17,16 @@ public sealed partial class Diagram
     ///     <paramref name="elements"/> are ignored; elements already on the target page are skipped.
     /// </remarks>
     /// <example>
-    ///     Move two connected nodes to a new page (<c>diagram</c>, <c>a</c> and <c>b</c> are from the <c>DemaConsulting.Plexus</c> namespace example).
+    ///     Move two connected nodes to a new page.
     ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     var diagram = new Diagram(types);                      // types: the registry of the DemaConsulting.Plexus example
+    ///     var first = diagram.Pages.Add("Main");
+    ///     var a = first.AddNode("demo.Source", 0, 0, name: "A");
+    ///     var b = first.AddNode("demo.Sink", 180, 0, name: "B");
+    ///     first.Connect("A.out", "B.in");
+    ///
     ///     var second = diagram.Pages.Add("Second");
     ///     diagram.MoveToPage([a, b], second);                    // one undo entry; the wire A.out -> B.in moves with them
     ///     diagram.History.Undo();                                // everything is back on the first page

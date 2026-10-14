@@ -114,7 +114,7 @@ public static class PlexusClipboard
     /// </remarks>
     /// <param name="target">The page to paste into.</param>
     /// <param name="json">The clipboard text produced by <see cref="Copy"/>; untrusted.</param>
-    /// <param name="at">Optional; defaults to null, which offsets the content by one grid step from its original position. Otherwise the diagram position of the top-left corner of the pasted content's bounds. May be null.</param>
+    /// <param name="at">The diagram position of the top-left corner of the pasted content's bounds; null offsets the content by one grid step from its original position.</param>
     /// <returns>The outcome; invalid content yields a failed result rather than an exception.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="target"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="at"/> is not finite or exceeds 1e9 in magnitude.</exception>

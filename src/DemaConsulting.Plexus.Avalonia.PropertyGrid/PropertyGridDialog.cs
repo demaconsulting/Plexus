@@ -19,20 +19,40 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         the whole dialog becomes one undo step.
 ///     </para>
 ///     <para>
-///         The title defaults to "&lt;DisplayName or type name&gt; - Properties", where the display name is the
+///         The title defaults to <c>"{DisplayName or type name} - Properties"</c>, where the display name is the
 ///         <c>DisplayName</c> annotation of the object's type.
+///     </para>
+///     <para>
+///         The dialog's grid uses the shared <see cref="PropertyGrid.DefaultEditors"/>, so custom editors registered there at start-up work in
+///         every dialog. To give one dialog its own editors, construct it, assign <c>dialog.Grid.EditorRegistry</c> and show it yourself.
+///         The dialog derives from Avalonia's <c>Window</c>: <c>Show()</c>, <c>ShowDialog()</c>, <c>Close()</c>, <c>Title</c>, <c>Width</c> and the rest of the window API are available but are not
+///         repeated in the member tables of this page.
 ///     </para>
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
-///     bool changed = await PropertyGridDialog.ShowAsync(
-///         owner,
-///         settings,
-///         commitScope: apply =>
+///     using System.ComponentModel;
+///     using Avalonia.Controls;
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     public static class SettingsDialogSample
+///     {
+///         // owner: the window that opens the dialog; history: the diagram's undo history (diagram.History)
+///         public static async Task<bool> EditAsync(Window owner, UndoHistory history, Settings settings)
 ///         {
-///             using var step = history.BeginTransaction("Edit settings");
-///             apply();
-///         });
+///             return await PropertyGridDialog.ShowAsync(
+///                 owner,
+///                 settings,
+///                 commitScope: apply => history.Transact("Edit settings", apply));   // OK becomes one undo step; apply is run exactly once
+///         }
+///     }
+///
+///     public class Settings
+///     {
+///         [Category("General"), DefaultValue(10)]
+///         public int Retries { get; set; } = 10;
+///     }
 ///     ]]></code>
 /// </example>
 public sealed class PropertyGridDialog : Window
@@ -119,7 +139,7 @@ public sealed class PropertyGridDialog : Window
     }
 
     /// <summary>
-    ///     Gets the default dialog title: "&lt;DisplayName or type name&gt; - Properties".
+    ///     Gets the default dialog title: <c>"{DisplayName or type name} - Properties"</c>.
     /// </summary>
     /// <param name="target">The edited object.</param>
     /// <returns>The title.</returns>
@@ -157,7 +177,13 @@ public sealed class PropertyGridDialog : Window
             var result = session.Commit();
             if (!result.Succeeded)
             {
-                _status.Text = result.Error ?? session.GetErrors().Values.FirstOrDefault() ?? "The changes could not be applied.";
+                // Show the failing row, then the reason
+                if (result.Failed.FirstOrDefault() is { } failed)
+                {
+                    Grid.SelectItem(failed.Item);
+                }
+
+                _status.Text = result.Error ?? result.Failed.Select(f => f.Error).FirstOrDefault(e => e is not null) ?? session.GetErrors().Values.FirstOrDefault() ?? "The changes could not be applied.";
                 return false;
             }
         }

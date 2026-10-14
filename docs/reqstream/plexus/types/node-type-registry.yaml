@@ -158,3 +158,21 @@ sections:
                 tests:
                   - PortTypeRegistry_Get_RegisteredAndUnknownKeys
                   - PortTypeRegistry_Add_DuplicateKey_KeepsFirstType
+
+              - id: Plexus-Types-NodeTypeRegistry-CreateData
+                title: >-
+                  A node type shall be able to declare a factory for the initial host payload, and every node added
+                  to a diagram, pasted or duplicated without a payload of its own shall start with a new payload from
+                  it, while nodes restored from a snapshot keep exactly their stored payload, a payload of the wrong
+                  type is refused, and a factory that returns nothing leaves the node without data.
+                justification: |
+                  Property editors and host code expect a node of a data-carrying type to have its data object;
+                  a factory on the type gives every creation path the same default without host workarounds, and
+                  restoring must not invent data that the document did not contain.
+                tests:
+                  - NodeType_CreateData_AddNode_GivesEveryNodeFreshData
+                  - NodeType_CreateData_UndoRedoAdd_KeepsThePayload
+                  - NodeType_CreateData_WrongTypeFromFactory_ThrowsInvalidOperation
+                  - NodeType_CreateData_ReturningNull_StartsWithoutData
+                  - NodeType_CreateData_PasteAndDuplicate_FillOnlyMissingData
+                  - NodeType_CreateData_Load_KeepsStoredDataIncludingNone

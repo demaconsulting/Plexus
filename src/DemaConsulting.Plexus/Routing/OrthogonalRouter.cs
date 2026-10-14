@@ -48,7 +48,7 @@ public sealed class OrthogonalRouter : IWireRouter
     /// </summary>
     /// <remarks>
     ///     Larger values give straighter wires at the price of longer detours; 20 means the router accepts a detour of up to
-    ///     20 diagram units to save one bend. Set it with an object initializer: <c>new OrthogonalRouter { BendPenalty = 40 }</c>.
+    ///     20 diagram units to save one bend; for example <c>new OrthogonalRouter { BendPenalty = 40 }</c>.
     /// </remarks>
     public double BendPenalty { get; init; } = 20;
 

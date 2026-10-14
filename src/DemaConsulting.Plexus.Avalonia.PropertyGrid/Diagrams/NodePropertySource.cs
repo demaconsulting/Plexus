@@ -2,7 +2,7 @@ using System.Text.Json;
 using AvaloniaColor = Avalonia.Media.Color;
 using PlexusColor = DemaConsulting.Plexus.Geometry.Color;
 
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     Shows and edits one Plexus <see cref="Node"/> in a property grid: its name, its declared properties and its host
@@ -10,13 +10,17 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         <b>Rows.</b> The <c>(Name)</c> row and the node's properties without a category are listed under "General"
-///         (shown first); properties with a <see cref="PropertyDefinition.Category"/> are listed under it. A property's
+///         <b>Rows and paths.</b> The <c>(Name)</c> row and the node's properties without a category are listed under "General"
+///         (shown first); properties with a <see cref="PropertyDefinition.Category"/> are listed under it. Every row has a
+///         collision-free <see cref="PropertyItem.Path"/>: <c>Node.Name</c> (<see cref="NamePath"/>), <c>Property.&lt;name&gt;</c>
+///         for declared properties (<see cref="PropertyPath"/>) and <c>Data.&lt;path&gt;</c> for host data properties
+///         (<see cref="DataPath"/>); the row's automation id is <c>PropertyGrid_Row_{path}</c>. A property
 ///         row follows its <see cref="PropertyDefinition"/>: the display name (with the unit in parentheses), the
 ///         description, read-only, a bold value when it differs from the default (reset restores the default), a
 ///         drop-down for choices, a check box for booleans, a color editor for colors, text that is parsed with
 ///         <see cref="PropertyDefinition.TryParse"/> (invariant culture, a trailing unit is accepted, a mistake is shown
-///         as the reason) and the custom editor named by <see cref="PropertyDefinition.EditorHint"/> (register it with
+///         as the reason) and the custom editor named by <see cref="PropertyDefinition.EditorHint"/> (a key registered on
+///         <see cref="PropertyGrid.DefaultEditors"/> once at start-up, which the dialog and every grid use, or on a single grid's
 ///         <see cref="PropertyGrid.EditorRegistry"/>). Colors appear as <c>Avalonia.Media.Color</c>.
 ///     </para>
 ///     <para>
@@ -24,6 +28,8 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 ///         <see cref="Node.CloneData"/>), the properties of the data object are listed with all their annotations
 ///         (<c>Category</c>, <c>DefaultValue</c>, <c>TypeConverter</c>, nested objects, collections, ...). The grid edits a
 ///         working copy, so the live data is never mutated; the copy replaces <see cref="Node.Data"/> on commit.
+///         A node whose <see cref="Node.Data"/> is null shows no data rows, so give new nodes a payload with <see cref="NodeType.CreateData"/>.
+///         The data class must be a mutable class with public setters and a parameterless constructor (see <see cref="NodeType.DataType"/>).
 ///     </para>
 ///     <para>
 ///         <b>Name.</b> The name is validated while it is typed (not empty, unique when
@@ -35,7 +41,9 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 ///         <b>Undo.</b> The source is an <see cref="IPropertyCommitScope"/>: each commit is one undo entry that holds the
 ///         rename, the changed properties (applied with <see cref="PropertyBag.TrySetAll"/>) and the data, whatever the
 ///         grid's <see cref="PropertyEditMode"/>. A staged dialog therefore makes OK one undo step; a live panel makes each
-///         edit its own step. When the node changes from elsewhere (undo, redo, another editor) the source raises
+///         edit its own step. When one row is refused at commit time (a <see cref="Diagram.NodeRenaming"/> veto, a value its
+///         property definition rejects) the whole commit is atomic: nothing is applied, no undo entry is recorded, every edit stays
+///         pending and <see cref="CommitResult.Failed"/> names the refused row with its message. When the node changes from elsewhere (undo, redo, another editor) the source raises
 ///         <see cref="Changed"/> so the grid shows the new values. Dispose the source to detach from the node.
 ///     </para>
 ///     <para>
@@ -44,10 +52,15 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+///
+///     // node: a Node that is on a page of a diagram
 ///     // The grid picks the node adapter itself; a live grid makes every edit one undo entry
 ///     var grid = new PropertyGrid { EditMode = PropertyEditMode.Live, SelectedObject = node };
 ///
-///     // The same through the source, for example to change the grid's content later
+///     // The same through the source, for example to change the grid's content later; the host owns and disposes a source assigned to Source
 ///     using var source = new NodePropertySource(node);
 ///     grid.Source = source;
 ///     ]]></code>
@@ -55,9 +68,38 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, IDisposable
 {
     /// <summary>
+    ///     The path of the row that edits the node's name: <c>Node.Name</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Row paths never collide. The three groups of rows each have their own prefix: the name row is <c>Node.Name</c>, the
+    ///     properties declared by the node type are <c>Property.&lt;name&gt;</c> (see <see cref="PropertyPath"/>) and the properties of the host data are
+    ///     <c>Data.&lt;path&gt;</c> (see <see cref="DataPath"/>), with <c>.Name</c> and <c>[index]</c> appended for nested objects and collection elements (for example
+    ///     <c>Data.Contact.Email</c> or <c>Data.Checklist[0].Text</c>). A node property that is itself called <c>Name</c> is therefore <c>Property.Name</c>,
+    ///     and a data property cannot hide a declared one. Grid rows and editors carry the automation ids <c>PropertyGrid_Row_{path}</c> and
+    ///     <c>PropertyGrid_Editor_{path}</c>; <see cref="PropertyEditSession.FindItem"/>, <see cref="PropertyEditSession.GetErrors"/>,
+    ///     <see cref="CommitResult.Failed"/> and <see cref="PropertyCommitRefusedException.Path"/> use the same paths.
+    /// </remarks>
+    public const string NamePath = "Node.Name";
+
+    /// <summary>
     ///     The name of the name item.
     /// </summary>
     private const string NameItem = "Name";
+
+    /// <summary>
+    ///     The prefix of the paths of the declared properties.
+    /// </summary>
+    private const string PropertyPrefix = "Property.";
+
+    /// <summary>
+    ///     The prefix of the paths of the host data properties.
+    /// </summary>
+    private const string DataPrefix = "Data.";
+
+    /// <summary>
+    ///     The prefix of the path of the name row.
+    /// </summary>
+    private const string NodePrefix = "Node.";
 
     /// <summary>
     ///     The category of the name and of the properties without a category.
@@ -128,10 +170,63 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
     /// </summary>
     public Node Node => _node;
 
-    /// <inheritdoc />
+    /// <summary>
+    ///     Gets the row path of a property declared by the node type: <c>Property.&lt;name&gt;</c>.
+    /// </summary>
+    /// <example>
+    ///     <code>
+    ///     using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+    ///
+    ///     string path = NodePropertySource.PropertyPath("Gain");        // "Property.Gain"; the automation id of the row is PropertyGrid_Row_Property.Gain
+    ///     // grid.Session!.FindItem(path) then returns the Gain row of a grid that shows a node
+    ///     </code>
+    /// </example>
+    /// <param name="propertyName">The property name as declared by the node type.</param>
+    /// <returns>The path, see <see cref="NamePath"/> for the scheme.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="propertyName"/> is <see langword="null"/>.</exception>
+    public static string PropertyPath(string propertyName)
+    {
+        ArgumentNullException.ThrowIfNull(propertyName);
+        return PropertyPrefix + propertyName;
+    }
+
+    /// <summary>
+    ///     Gets the row path of a host data property: <c>Data.&lt;path&gt;</c>.
+    /// </summary>
+    /// <example>
+    ///     <code>
+    ///     using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+    ///
+    ///     NodePropertySource.DataPath("Priority");           // "Data.Priority"
+    ///     NodePropertySource.DataPath("Contact.Email");      // "Data.Contact.Email" (a nested property of the data)
+    ///     NodePropertySource.DataPath("Checklist[0].Text");  // "Data.Checklist[0].Text" (a collection element)
+    ///     </code>
+    /// </example>
+    /// <param name="dataPath">The path within the data object: a property name, nested names separated by dots and collection indices in brackets.</param>
+    /// <returns>The path, see <see cref="NamePath"/> for the scheme.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="dataPath"/> is <see langword="null"/>.</exception>
+    public static string DataPath(string dataPath)
+    {
+        ArgumentNullException.ThrowIfNull(dataPath);
+        return DataPrefix + dataPath;
+    }
+
+    /// <summary>
+    ///     Gets the rows of the node: the name row, one row per property the node type declares, and one per property of the host data (see the type remarks for the paths).
+    /// </summary>
+    /// <returns>The rows, unsorted.</returns>
     public IReadOnlyList<PropertyItem> GetItems() => _items;
 
-    /// <inheritdoc />
+    /// <summary>
+    ///     Brackets one commit in a single undo entry of the node's diagram, then publishes the edited host data copy.
+    /// </summary>
+    /// <remarks>
+    ///     A <see cref="PropertyEditSession"/> calls this around its writes; hosts do not call it themselves. It invokes
+    ///     <paramref name="apply"/> exactly once inside an undo transaction, so the rename, the property changes and the data replacement are
+    ///     one entry, and the whole commit is rolled back when a row is refused.
+    /// </remarks>
+    /// <param name="apply">The action that performs the grid's writes.</param>
+    /// <exception cref="PropertyCommitRefusedException">Thrown when one row is refused (a rename veto, a rejected value); nothing is applied.</exception>
     public void RunCommit(Action apply) => _editing.RunCommit(apply);
 
     /// <summary>
@@ -201,7 +296,8 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
                 Description = "The name of the node, as shown on the diagram.",
                 IsParenthesized = true,
             },
-            CheckName));
+            CheckName,
+            NodePrefix));
 
         foreach (var definition in _node.Type.Properties)
         {
@@ -238,7 +334,8 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
             ItemType(definition.ValueKind),
             work,
             () => _node.Properties.TryGetValue(definition.Name, out var value) ? ToItemValue(value) : ToItemValue(definition.DefaultValue),
-            options);
+            options,
+            pathPrefix: PropertyPrefix);
     }
 
     /// <summary>
@@ -247,16 +344,16 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
     private void BuildItems()
     {
         var items = new List<PropertyItem>(_declaredItems);
-        var names = new HashSet<string>(items.Select(i => i.Name), StringComparer.Ordinal);
         var data = WorkingData;
         _dataType = _node.Data?.GetType();
         if (data is not null)
         {
             foreach (System.ComponentModel.PropertyDescriptor descriptor in System.ComponentModel.TypeDescriptor.GetProperties(data))
             {
-                if (descriptor.IsBrowsable && names.Add(descriptor.Name))
+                // Data rows have their own path prefix, so a data property never collides with a declared property or the name row
+                if (descriptor.IsBrowsable)
                 {
-                    items.Add(new ReflectionPropertyItem(descriptor, () => WorkingData, null));
+                    items.Add(new ReflectionPropertyItem(descriptor, () => WorkingData, null, DataPrefix));
                 }
             }
         }
@@ -298,10 +395,10 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
     /// </summary>
     private void PublishName()
     {
-        if (_editing.Work.TryGet(NameItem, out var written) && written is string name &&
+        if (_editing.Work.TryGet(NamePath, out var written) && written is string name &&
             !_editing.Diagram.TryRename(_node, name, out var reason))
         {
-            throw new PropertyCommitRefusedException(NameItem, reason ?? "The name was refused.");
+            throw new PropertyCommitRefusedException(NamePath, reason ?? "The name was refused.");
         }
     }
 
@@ -311,18 +408,18 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
     private void PublishProperties()
     {
         var changes = new Dictionary<string, object?>(StringComparer.Ordinal);
-        foreach (var (name, value) in _editing.Work.Values)
+        foreach (var (path, value) in _editing.Work.Values)
         {
-            if (_definitions.ContainsKey(name))
+            if (path.StartsWith(PropertyPrefix, StringComparison.Ordinal) && _definitions.ContainsKey(path[PropertyPrefix.Length..]))
             {
-                changes[name] = FromItemValue(value);
+                changes[path[PropertyPrefix.Length..]] = FromItemValue(value);
             }
         }
 
         if (changes.Count > 0 && !_node.Properties.TrySetAll(changes, out var errors))
         {
             var first = errors.First();
-            throw new PropertyCommitRefusedException(first.Key, first.Value);
+            throw new PropertyCommitRefusedException(PropertyPath(first.Key), first.Value);
         }
     }
 

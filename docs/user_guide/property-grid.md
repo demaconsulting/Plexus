@@ -163,12 +163,26 @@ public class Playback
 
 PropertyGrid.DefaultEditors.Register("slider", context =>
 {
-    var slider = new Slider { Minimum = 0, Maximum = 100, Value = Convert.ToDouble(context.Value ?? 0) };
-    slider.ValueChanged += (_, e) => context.SetValue((int)Math.Round(e.NewValue));
-    context.Refreshed += (_, _) => slider.Value = Convert.ToDouble(context.Value ?? 0);
+    double Current() => Convert.ToDouble(context.Value ?? 0);
+    var slider = new Slider { Minimum = 0, Maximum = 100, Value = Current() };
+    slider.ValueChanged += (_, e) =>
+    {
+        // Showing a value raises ValueChanged too: write only what differs from the row's value, or the
+        // refresh below would write the value straight back
+        if (Math.Round(e.NewValue) != Current())
+        {
+            context.SetValue((int)Math.Round(e.NewValue));
+        }
+    };
+    context.Refreshed += (_, _) => slider.Value = Current();
     return slider;
 });
 ```
+
+Registering on `PropertyGrid.DefaultEditors` once at start-up is the recommended route: every grid, and every dialog the
+package creates (`PropertyGridDialog`, `NodePropertiesDialog`), uses it. To customize a single grid, assign
+`grid.EditorRegistry = PropertyGrid.CreateEditorRegistry()` first and register on `grid.EditorRegistry`; registering on
+`grid.EditorRegistry` without assigning a new registry changes the shared one.
 
 `PropertyEditorRegistry` also maps property types to editors (`Register(typeof(MyType), factory)`), with the same
 resolution as for keys: the key of the annotation first, then the type, then the grid's fallback. WinForms
@@ -218,7 +232,7 @@ The package registers its Plexus adapters with the source factory when it loads,
 using Avalonia.Controls;
 using DemaConsulting.Plexus.Avalonia;
 using DemaConsulting.Plexus.Avalonia.PropertyGrid;
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 public class EditorWindow : Window
 {
@@ -243,16 +257,18 @@ up in the panel. A wire is not an element the adapters know; show only nodes, an
 
 ### What a Node Shows
 
-- **The name**, first, as `(Name)`. It is validated while it is typed (not empty, unique when
+- **The name**, first, as `(Name)` (path `Node.Name`). It is validated while it is typed (not empty, unique when
   `RequireUniqueNodeNames` is set) and goes through the rename pipeline on commit, so a `NodeRenaming` handler can still
   veto it; the reason appears on the name row and the dialog stays open.
-- **The declared properties**, each from its `PropertyDefinition`: the category (properties without one are listed under
+- **The declared properties** (paths `Property.<name>`), each from its `PropertyDefinition`: the category (properties
+  without one are listed under
   "General", with the name), the display name with the unit in parentheses, the description, read-only, a bold value
   when it differs from the default (and a reset), a drop-down for `Choices`, a check box for booleans, a color editor for
   colors, text for numbers and strings that is parsed with `definition.TryParse` (invariant culture, a trailing unit
   such as `880 Hz` is accepted, a mistake is shown as `'abc' is not a number.`), and the custom editor named by
   `EditorHint` (register it as shown above).
-- **The host data** (`Node.Data`), when the node type declares a `DataType` or `DataSerializer`: its properties with all
+- **The host data** (`Node.Data`, paths `Data.<path>`), when the node type declares a `DataType` or `DataSerializer`:
+  its properties with all
   their annotations, as in the first section. The grid edits a copy made with `node.CloneData()`, so the live object is
   never mutated; OK replaces `Node.Data` with the edited copy, and only when it changed.
 
@@ -297,7 +313,8 @@ changed.
 
 Every commit through the Plexus sources is one undo entry (`UndoHistory.Transact`), whichever mode the grid is in and
 whichever host shows it, so no commit scope is needed. If anything in the commit is refused, for example a vetoed rename,
-the whole commit is rolled back and the reason is shown on the row:
+the whole commit is atomic: nothing is applied, no undo entry is recorded, every edit stays pending and the reason is
+shown on the row:
 
 ```csharp
 diagram.NodeRenaming += (_, e) =>
@@ -310,12 +327,44 @@ diagram.NodeRenaming += (_, e) =>
 };
 ```
 
+A host that commits through the session itself reads the failing rows from the result. `CommitResult.Failed` lists
+each refused row with its `Path` and the message in `Error` (`CommitResult.Error` repeats the message), so there is no
+need to parse text:
+
+```csharp
+CommitResult result = grid.Session!.Commit();
+if (!result.Succeeded)
+{
+    foreach (PendingEdit failure in result.Failed)
+    {
+        Console.WriteLine($"{failure.Path}: {failure.Error}");   // Node.Name: Names that start with tmp are reserved.
+    }
+}
+```
+
+Messages are clean text for the user: the framework's "(Parameter 'value')" suffix is removed from error messages.
+
+### Who Disposes the Source
+
+A grid that is given `SelectedObject` creates the source itself (for a node a `NodePropertySource`, which listens to the
+node) and disposes it: when `SelectedObject` or `Source` changes, and while the grid is out of the visual tree (it
+creates the
+source again, keeping the expanded rows, when the grid returns). A source you assign to `Source` is yours: the grid never
+disposes it, so dispose it yourself when the grid no longer shows it.
+
 ### Automation Ids
 
 The grid and its dialogs carry automation ids so tests and scripts can drive them: `PropertyGrid`, one
-`PropertyGrid_Row_<path>` and `PropertyGrid_Editor_<path>` per row (the path is `Name`, a property name, a host data
-property, `Contact.Email` for a nested property or `Checklist[0].Text` for a collection member),
-`PropertyGrid_Category_<category>`, `PropertyGridDialog`, `PropertyGridDialog_OK`, `PropertyGridDialog_Cancel` and
+`PropertyGrid_Row_<path>` and `PropertyGrid_Editor_<path>` per row, `PropertyGrid_Category_<category>`,
+`PropertyGridDialog`, `PropertyGridDialog_OK`, `PropertyGridDialog_Cancel` and
 `PropertyGridDialog_Status` (why OK was refused), and `CollectionEditorDialog_OK` and `CollectionEditorDialog_Cancel`.
+
+The path of a node row never collides with another row: the name row is `Node.Name`, a declared property is
+`Property.<name>`, and a host data property is `Data.<path>`, with `.Name` and `[index]` appended for nested objects and
+collection members (`Data.Contact.Email`, `Data.Checklist[0].Text`). A property that is itself called `Name` is
+`Property.Name`, and a data property can never hide a declared one. The same paths are the keys of
+`PropertyEditSession.FindItem`, `GetErrors`, `CommitResult.Failed` and `PropertyCommitRefusedException.Path`; build them
+with `NodePropertySource.NamePath`, `NodePropertySource.PropertyPath("Gain")` and `NodePropertySource.DataPath("Priority")`.
+Annotation rows are `Text` and `Fill`, group rows `Title` and `IsCollapsed`.
 
 ![The collection editor of a Task's checklist: the members, and the properties of the selected member](images/property-grid-collection-editor.png)

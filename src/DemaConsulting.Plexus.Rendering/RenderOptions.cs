@@ -8,7 +8,7 @@ namespace DemaConsulting.Plexus.Rendering;
 ///     <c>new RenderOptions()</c> (or passing null) renders the whole page at 1:1.
 /// </summary>
 /// <remarks>
-///     Options are immutable after construction (init-only; set them with an object initializer) so one instance can be shared between
+///     Options are immutable after construction so one instance can be shared between
 ///     renders and threads.
 /// </remarks>
 /// <example>

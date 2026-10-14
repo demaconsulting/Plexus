@@ -7,10 +7,9 @@ namespace DemaConsulting.Plexus.Scene;
 /// </summary>
 /// <remarks>
 ///     Each helper returns a plain <c>Func&lt;Wire, WireStyle?&gt;</c>, so they can be assigned directly,
-///     combined, or called from a hand-written styler. Nullability: <see cref="Diagram.WireStyler"/> has the same type,
-///     <c>Func&lt;Wire, WireStyle?&gt;?</c>, where the first <c>?</c> says the property itself may be null (no styler) and the second says
-///     the styler may return null for a wire (use the theme for that wire). Parameters named <c>map</c> take a
-///     <c>Func&lt;object?, WireStyle?&gt;</c>: the value may be null and so may the style you return.
+///     combined, or called from a hand-written styler. <see cref="Combine"/> takes its stylers as a <c>params</c> array: pass them as separate arguments,
+///     <c>WireStylers.Combine(first, second)</c>. A styler may return null for a wire to use the theme for that wire;
+///     parameters named <c>map</c> receive a property value, which may be null.
 /// </remarks>
 /// <example>
 ///     Color wires by the type they carry and dash the wires leaving disabled nodes.

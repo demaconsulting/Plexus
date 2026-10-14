@@ -13,7 +13,7 @@ namespace DemaConsulting.Plexus;
 ///     <see cref="Source"/> is always an output and <see cref="Target"/> an input, whichever order the ports were
 ///     passed in. Not thread-safe.
 ///     <para>
-///         Inherited from <see cref="DiagramElement"/> (generated API pages do not list inherited members): <see cref="DiagramElement.Id"/>,
+///         Inherited from <see cref="DiagramElement"/> (the member tables of this page list only what <see cref="Wire"/> declares): <see cref="DiagramElement.Id"/>,
 ///         <see cref="DiagramElement.Page"/> (null while the wire is removed), <see cref="DiagramElement.Parent"/> (always null: wires are not group members),
 ///         <see cref="DiagramElement.IsVisible"/>, <see cref="DiagramElement.GetBounds"/> (the bounding box of the whole polyline), <see cref="DiagramElement.Remove"/>
 ///         and the <see cref="DiagramElement.PropertyChanged"/> event.

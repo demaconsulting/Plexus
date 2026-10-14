@@ -154,22 +154,4 @@ public class DuplicateTests
         Assert.Throws<ArgumentOutOfRangeException>(() => page.Duplicate([node], 1, double.PositiveInfinity));
         Assert.Throws<ArgumentOutOfRangeException>(() => page.Duplicate([node], 2e9, 1));
     }
-
-    /// <summary>
-    ///     Validates that duplicate fails with a clear message when a payload no longer matches its declared type.
-    /// </summary>
-    [Fact]
-    public void DiagramPage_Duplicate_PayloadOfWrongType_ThrowsInvalidOperation()
-    {
-        // Arrange: the sensor type declares SensorData but holds another type
-        var diagram = SerializationFixtures.CreateDiagram();
-        var page = diagram.Pages.Add("P");
-        var sensor = page.AddNode("acme.Sensor", 0, 0);
-        sensor.Data = new CustomData("wrong");
-
-        // Act / Assert
-        var exception = Assert.Throws<InvalidOperationException>(() => page.Duplicate([sensor], 1, 1));
-        Assert.Contains("SensorData", exception.Message, StringComparison.Ordinal);
-        Assert.Single(page.Nodes);
-    }
 }

@@ -11,9 +11,19 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
-///     if (!diagram.TryRename(node, proposedName, out string? reason))
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     public static class RenameCommitSample
 ///     {
-///         throw new PropertyCommitRefusedException("Name", reason ?? "The name was refused.");
+///         // The body of a commit scope (IPropertyCommitScope.RunCommit) of a node adapter: refuse the rename with the reason on the row
+///         public static void ApplyRename(Diagram diagram, Node node, string proposedName)
+///         {
+///             if (!diagram.TryRename(node, proposedName, out string? reason))
+///             {
+///                 throw new PropertyCommitRefusedException("Name", reason ?? "The name was refused.");
+///             }
+///         }
 ///     }
 ///     ]]></code>
 /// </example>

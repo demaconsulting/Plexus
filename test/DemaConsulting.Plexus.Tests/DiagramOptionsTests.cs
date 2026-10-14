@@ -137,4 +137,85 @@ public class DiagramOptionsTests
         Assert.Same(options.NodeStyler, diagram.NodeStyler);
         Assert.Same(options.Theme, diagram.Theme);
     }
+
+    /// <summary>
+    ///     Validates that the initialize callback runs once for a diagram created with the options, after the configuration is installed.
+    /// </summary>
+    [Fact]
+    public void Diagram_Constructor_WithInitialize_InvokesItOnceWithTheConfiguredDiagram()
+    {
+        // Arrange
+        var calls = new List<(Diagram Diagram, bool ThemeInstalled)>();
+        var options = CreateOptions() with { Initialize = d => calls.Add((d, Math.Abs(d.Theme.GridSize - 20) < 0.5)) };
+
+        // Act
+        var diagram = new Diagram(TestModel.CreateTypes(), options);
+
+        // Assert
+        var call = Assert.Single(calls);
+        Assert.Same(diagram, call.Diagram);
+        Assert.True(call.ThemeInstalled);
+        Assert.Equal(0, diagram.Version);
+    }
+
+    /// <summary>
+    ///     Validates that every loader runs the callback after the whole document is loaded, so a rename rule attached there applies to the loaded diagram.
+    /// </summary>
+    [Fact]
+    public void Diagram_Loaders_WithInitialize_InvokeItAfterTheLoadAndAttachPerInstanceHandlers()
+    {
+        // Arrange: a callback that records what the diagram holds and attaches a rename veto
+        var source = TestModel.CreateDiagram();
+        source.Pages.Add("Main").AddNode("acme.Producer", 0, 0, "Original");
+        var seen = new List<(int Pages, int Nodes, bool CanUndo)>();
+        var options = new DiagramOptions
+        {
+            Initialize = d =>
+            {
+                seen.Add((d.Pages.Count, d.Pages.SelectMany(p => p.Nodes).Count(), d.History.CanUndo));
+                d.NodeRenaming += (_, e) =>
+                {
+                    e.Cancel = true;
+                    e.Reason = "Renaming is disabled.";
+                };
+            },
+        };
+
+        // Act
+        var loaded = new[]
+        {
+            Diagram.FromJson(source.ToJson(), TestModel.CreateTypes(), options),
+            Diagram.FromSnapshot(source.ToSnapshot(), TestModel.CreateTypes(), options),
+            Diagram.FromTree(source.ToTree(), TestModel.CreateTypes(), options),
+        };
+
+        // Assert: one call per load, after the content exists and with a clean history; the handler is live on each diagram
+        Assert.Equal(3, seen.Count);
+        Assert.All(seen, s => Assert.Equal((1, 1, false), s));
+        Assert.All(loaded, d =>
+        {
+            Assert.False(d.TryRename(d.FindNode("Original")!, "Other", out var reason));
+            Assert.Equal("Renaming is disabled.", reason);
+        });
+    }
+
+    /// <summary>
+    ///     Validates that Apply invokes the callback last, on every call, and that a null callback does nothing.
+    /// </summary>
+    [Fact]
+    public void Diagram_Apply_WithInitialize_InvokesItAfterTheSettings()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDiagram();
+        var themeAtCall = new List<double>();
+        var options = new DiagramOptions { Theme = DiagramTheme.Classic with { GridSize = 45 }, Initialize = d => themeAtCall.Add(d.Theme.GridSize) };
+
+        // Act
+        diagram.Apply(options);
+        diagram.Apply(options);
+        diagram.Apply(new DiagramOptions());
+
+        // Assert
+        Assert.Equal([45.0, 45.0], themeAtCall);
+    }
 }

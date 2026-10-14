@@ -1,4 +1,4 @@
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     Shows and edits one Plexus <see cref="Group"/> in a property grid: its title and whether it is collapsed.
@@ -11,6 +11,10 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     // group: a Group of a diagram page
 ///     var grid = new PropertyGrid { EditMode = PropertyEditMode.Live, SelectedObject = group };
 ///     ]]></code>
 /// </example>

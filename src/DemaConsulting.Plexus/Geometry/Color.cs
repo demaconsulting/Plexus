@@ -12,7 +12,7 @@ namespace DemaConsulting.Plexus.Geometry;
 ///     <para>
 ///         Channel order warning: the constructor takes <c>(R, G, B, A)</c> with alpha LAST and optional (255 is opaque), whereas
 ///         <see cref="FromArgb"/> and the <c>#AARRGGBB</c> text put alpha FIRST. <c>new Color(255, 0, 0, 128)</c> is half-transparent red;
-///         <c>Color.FromArgb(128, 255, 0, 0)</c> is the same color. This is a record struct: derive a variant with
+///     <c>Color.FromArgb(128, 255, 0, 0)</c> is the same color. Derive a variant with
 ///         <c>color with { A = 128 }</c>. When in doubt use <see cref="Parse"/> or <see cref="FromArgb"/>.
 ///     </para>
 /// </remarks>
@@ -32,7 +32,7 @@ namespace DemaConsulting.Plexus.Geometry;
 /// <param name="R">Red channel (0-255).</param>
 /// <param name="G">Green channel (0-255).</param>
 /// <param name="B">Blue channel (0-255).</param>
-/// <param name="A">Alpha channel (0 transparent - 255 opaque). Optional; defaults to 255 (opaque). It comes LAST, unlike <see cref="Color.FromArgb"/>.</param>
+/// <param name="A">Alpha channel (0 transparent - 255 opaque). It comes LAST, unlike <see cref="Color.FromArgb"/>.</param>
 public readonly record struct Color(byte R, byte G, byte B, byte A = 255)
 {
     /// <summary>
@@ -112,7 +112,7 @@ public readonly record struct Color(byte R, byte G, byte B, byte A = 255)
     /// <summary>
     ///     Attempts to parse a <c>#RRGGBB</c> or <c>#AARRGGBB</c> hexadecimal color string.
     /// </summary>
-    /// <param name="text">The text to parse; may be null.</param>
+    /// <param name="text">The text to parse.</param>
     /// <param name="color">Receives the parsed color, or the default value on failure.</param>
     /// <returns><see langword="true"/> when parsing succeeded.</returns>
     public static bool TryParse(string? text, out Color color)

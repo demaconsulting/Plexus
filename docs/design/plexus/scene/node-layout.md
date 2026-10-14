@@ -10,8 +10,11 @@ of annotation text (`TextWrapper`).
 
 #### Data Model
 
-- `NodeGeometry` (static): default node size (a size declared by the node type wins, else the theme's width and a height
-  that fits the longer port column), required height for a port column, port edge point (left edge for inputs, right
+- `NodeGeometry` (static): default node size (a size declared by the node type wins, else the theme's default height
+  grown to fit the longer port column and the theme's default width grown to fit the title on one line: the title is
+  measured with the header text style by the approximate measurer, widened by the 5% safety factor, the horizontal title
+  margins of the standard node visual are added and the result is rounded up to a multiple of the grid size), required
+  height for a port column, port edge point (left edge for inputs, right
   edge for outputs, at the row; given the column's port count, because centered rows depend on it), port label width
   (estimated by the approximate measurer, widened by a 5% safety factor
   and rounded up), port reach (triangle plus gaps plus label), port anchor (the outer end of triangle and label where wires

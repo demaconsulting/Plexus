@@ -20,19 +20,19 @@ public enum HitKind
     /// <summary>A wire; the segment index tells which segment.</summary>
     Wire,
 
-    /// <summary>The handle at a bend of a selected wire; the bend index tells which bend.</summary>
+    /// <summary>The handle at a bend of a wire; the bend index tells which bend. Only reported for a wire that is selected (<see cref="SceneOptions.Selection"/>); an unselected wire reports <see cref="Wire"/> instead.</summary>
     WireBend,
 
-    /// <summary>The handle at the source (output) end of a selected wire.</summary>
+    /// <summary>The handle at the source (output) end of a wire. Only reported for a wire that is selected (<see cref="SceneOptions.Selection"/>).</summary>
     WireSourceHandle,
 
-    /// <summary>The handle at the target (input) end of a selected wire.</summary>
+    /// <summary>The handle at the target (input) end of a wire. Only reported for a wire that is selected (<see cref="SceneOptions.Selection"/>).</summary>
     WireTargetHandle,
 
     /// <summary>The body of an annotation.</summary>
     Annotation,
 
-    /// <summary>The resize handle in the corner of a selected annotation.</summary>
+    /// <summary>The resize handle in the corner of an annotation. Only reported for an annotation that is selected (<see cref="SceneOptions.Selection"/>).</summary>
     AnnotationResizeHandle,
 
     /// <summary>The border of an expanded group's frame.</summary>

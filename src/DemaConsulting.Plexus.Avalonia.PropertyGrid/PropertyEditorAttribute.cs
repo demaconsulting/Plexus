@@ -20,11 +20,26 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     </para>
 /// </remarks>
 /// <example>
+///     Name an editor on a property (the key is matched case-insensitively against the registry) or on a type. The attribute only
+///     names the editor; register the factory for the key once at start-up, for example
+///     <c>PropertyGrid.DefaultEditors.Register("color-swatch", ...)</c> (see <see cref="PropertyGrid.DefaultEditors"/> and <see cref="PropertyGrid.EditorRegistry"/>).
 ///     <code><![CDATA[
+///     using System.ComponentModel.DataAnnotations;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
 ///     public class Appearance
 ///     {
 ///         [PropertyEditor("color-swatch")]
 ///         public string Tint { get; set; } = "#FF8800";
+///
+///         [UIHint("color-swatch")]                 // the same key without a reference to this package
+///         public string Border { get; set; } = "#000000";
+///     }
+///
+///     [PropertyEditor("percent")]                  // every property of this type uses the "percent" editor
+///     public struct Percent
+///     {
+///         public double Value { get; set; }
 ///     }
 ///     ]]></code>
 /// </example>

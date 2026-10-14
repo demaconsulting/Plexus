@@ -35,7 +35,9 @@ migrating from it feel at home.
 
 - **Content change** — `OnContentChanged` keeps `SelectedObject` and `Source` exclusive, then `AttachSource` creates the
   source (disposing sources it created), starts a new session whose commit scope and element factory call the grid's
-  current properties, and rebuilds the rows.
+  current properties, and rebuilds the rows. A source passed through `Source` is never disposed by the grid. While the
+  grid is out of the visual tree it disposes a source it created (so the source stops listening to the object) and creates
+  it again, keeping the expanded rows and the selection, when the grid is attached again.
 - **`RefreshRows`** — builds the row specs (`PropertyOrdering.Group`, the filter, the category and nested expansion
   state), reuses the row view of every row whose item is unchanged (so editors keep their text and focus), replaces the
   panel children only when the sequence changed, then updates selection, the description pane and the empty message. It

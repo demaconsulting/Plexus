@@ -15,7 +15,7 @@ public sealed partial class DiagramPage
     ///     port name must be unambiguous on the node (an input and an output of the same name need a direction).
     /// </remarks>
     /// <param name="path">The path, for example <c>"Mixer1.sum"</c>.</param>
-    /// <param name="direction">Optional; defaults to null, which accepts either direction when the port name is unambiguous. May be null.</param>
+    /// <param name="direction">The direction to accept; null accepts either direction when the port name is unambiguous.</param>
     /// <returns>The port, or null when no node or port matches.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="path"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no direction was given and an input and an output of the node share the port name.</exception>
@@ -82,8 +82,8 @@ public sealed partial class DiagramPage
     /// </example>
     /// <param name="from">The source path; an output is preferred.</param>
     /// <param name="to">The target path; an input is preferred.</param>
-    /// <param name="route">Optional; defaults to null, which routes automatically. The interior bend points otherwise. May be null.</param>
-    /// <param name="id">Optional; defaults to null, which generates an element id. May be null.</param>
+    /// <param name="route">The interior bend points; null routes automatically.</param>
+    /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new wire.</returns>
     /// <exception cref="ArgumentNullException">Thrown when a path is null.</exception>
     /// <exception cref="ArgumentException">Thrown when a path does not name a port on this page, or the id is in use.</exception>

@@ -17,11 +17,11 @@ namespace DemaConsulting.Plexus.Scene;
 ///     </para>
 ///     <para>
 ///         <see cref="IconTint"/> recolors the icon as a silhouette: every pixel the icon paints takes
-///         the tint color, and the icon's own alpha (times the tint's alpha) decides how much of it
+///         the tint color, and the icon's own alpha (times the tint's alpha) decides how much of it shows,
+///         so the icon's shape is kept while its original colors are lost.
 ///     </para>
 ///     <para>
-///         This is a record: derive variants with <c>style with { Opacity = 0.5 }</c>; every member is init-only (set it with an object
-///         initializer) and null means "use the theme". Combine two styles with <see cref="WithOverrides"/>.
+///         Derive variants with <c>style with { Opacity = 0.5 }</c>; a null member means "use the theme". Combine two styles with <see cref="WithOverrides"/>.
 ///     </para>
 /// </remarks>
 /// <example>

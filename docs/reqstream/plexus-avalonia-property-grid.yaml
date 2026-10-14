@@ -108,6 +108,7 @@ sections:
           - PlexusAvaloniaPropertyGrid-EditSession-StagedCommit
           - PlexusAvaloniaPropertyGrid-EditSession-StagedCancel
           - PlexusAvaloniaPropertyGrid-EditSession-Paths
+          - PlexusAvaloniaPropertyGrid-EditSession-PrefixedRoots
         tests:
           - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
 
@@ -121,6 +122,7 @@ sections:
         children:
           - PlexusAvaloniaPropertyGrid-EditSession-CommitScope
           - PlexusAvaloniaPropertyGrid-EditSession-SourceScope
+          - PlexusAvaloniaPropertyGrid-EditSession-CommitFailures
           - PlexusAvaloniaPropertyGrid-PropertySources-CommitScope
         tests:
           - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
@@ -194,6 +196,7 @@ sections:
           - PlexusAvaloniaPropertyGrid-PropertyGridControl-Keyboard
           - PlexusAvaloniaPropertyGrid-PropertyGridControl-Automation
           - PlexusAvaloniaPropertyGrid-PropertyGridControl-Session
+          - PlexusAvaloniaPropertyGrid-PropertyGridControl-SourceOwnership
           - PlexusAvaloniaPropertyGrid-PropertyGridControl-Theme
         tests:
           - PlexusAvaloniaPropertyGrid_PropertyGrid_ShowsAndEditsAnAnnotatedObject
@@ -259,6 +262,8 @@ sections:
         tags: [system]
         children:
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Rows
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-RowPaths
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-AtomicRefusal
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Validation
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Commit
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Refusal

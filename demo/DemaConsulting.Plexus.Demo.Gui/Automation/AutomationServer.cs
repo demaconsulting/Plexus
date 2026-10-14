@@ -87,37 +87,74 @@ internal sealed class AutomationServer : IDisposable
     /// <summary>
     ///     Accepts clients one after another until cancelled.
     /// </summary>
+    /// <remarks>
+    ///     The next listening instance is created before the connected client is served. On Linux and macOS .NET
+    ///     implements a named pipe as a Unix domain socket shared by every server instance of that name; disposing the
+    ///     only instance closes the socket, resetting a client that connected in the gap between two instances. Keeping
+    ///     one instance listening at all times avoids that race (Windows pipe instances are independent either way).
+    /// </remarks>
     /// <param name="token">The cancellation token.</param>
     /// <returns>A task that completes when the server stops.</returns>
     private async Task AcceptLoopAsync(CancellationToken token)
     {
-        while (!token.IsCancellationRequested)
+        var listening = CreateServerInstance();
+        try
         {
-            try
+            while (!token.IsCancellationRequested)
             {
-                // A fresh server instance per client; the current-user-only option restricts who may connect
-                await using var pipe = new NamedPipeServerStream(
-                    PipeName,
-                    PipeDirection.InOut,
-                    1,
-                    PipeTransmissionMode.Byte,
-                    PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-                await pipe.WaitForConnectionAsync(token).ConfigureAwait(false);
-                if (await ServeAsync(pipe, token).ConfigureAwait(false))
+                var pipe = listening;
+                try
                 {
-                    return;
+                    await pipe.WaitForConnectionAsync(token).ConfigureAwait(false);
+
+                    // Start listening for the next client before serving this one (see remarks)
+                    listening = CreateServerInstance();
+                    if (await ServeAsync(pipe, token).ConfigureAwait(false))
+                    {
+                        return;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Stopping: the loop condition sees the cancelled token and ends
+                }
+                catch (IOException)
+                {
+                    // A client went away mid-request, or listening itself failed; either way the next client may
+                    // connect, but a failed listening instance must be replaced (the finally block disposes it)
+                    if (ReferenceEquals(pipe, listening))
+                    {
+                        listening = CreateServerInstance();
+                    }
+                }
+                finally
+                {
+                    if (!ReferenceEquals(pipe, listening))
+                    {
+                        await pipe.DisposeAsync().ConfigureAwait(false);
+                    }
                 }
             }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-            catch (IOException)
-            {
-                // A client went away mid-request; the next client may connect
-            }
+        }
+        finally
+        {
+            await listening.DisposeAsync().ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    ///     Creates one listening server instance of the automation pipe.
+    /// </summary>
+    /// <returns>The server instance, not yet connected.</returns>
+    private NamedPipeServerStream CreateServerInstance() =>
+
+        // Several instances may exist (one serving, one listening); the current-user-only option restricts who may connect
+        new(
+            PipeName,
+            PipeDirection.InOut,
+            NamedPipeServerStream.MaxAllowedServerInstances,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
     /// <summary>
     ///     Serves one connected client until it disconnects.

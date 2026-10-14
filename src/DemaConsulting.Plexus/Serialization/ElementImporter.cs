@@ -464,8 +464,9 @@ internal static class ElementImporter
         {
             if (snapshot.Data is null)
             {
-                // Only in-process duplicates carry a reference; it is shared, as documented
-                node.InitializeData(snapshot.DataReference);
+                // Only in-process duplicates carry a reference; it is shared, as documented. A pasted or duplicated node with no
+                // payload at all gets the type's default, like a new node; a restored one keeps exactly what was stored
+                node.InitializeData(snapshot.DataReference ?? (_options.Restore ? null : node.Type.CreateInitialData()));
                 return;
             }
 

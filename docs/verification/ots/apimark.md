@@ -7,11 +7,12 @@ item are defined in the ApiMark OTS Software Requirements document.
 
 `DemaConsulting.ApiMark.MSBuild` reads each compiled shipped assembly and its XML documentation file and writes a
 gradual-disclosure Markdown API reference — an `api.md` index, a page per namespace, a page per type and a page
-per member — into the project's `api/` folder, which is packed into the NuGet package. Beyond existence, three
+per member — into the project's `api/` folder, which is packed into the NuGet package. Beyond existence, these
 properties of that output are relied upon: namespace documentation (with its usage example first) reaches the
-namespace pages, documented examples render as fenced code blocks a reader can copy, and — for PlexusRendering,
-PlexusAvalonia and PlexusAvaloniaPropertyGrid, which set `ApiMarkEnforceDocs=Public` and
-`ApiMarkEnforceDocsSeverity=Error` — a public member
+namespace pages, documented examples render as fenced code blocks a reader can copy (in the language the example
+declares), signatures carry parameter defaults, nullability, record and init-only forms and generic type parameters,
+the core types that the dependent packages mention link to the core package's own reference, and — for all four
+shipped packages, which set `ApiMarkEnforceDocs=Public` and `ApiMarkEnforceDocsSeverity=Error` — a public member
 without an XML doc summary fails the build. ApiMark contributes no runtime asset to any shipped package.
 
 ### Verification Approach
@@ -36,8 +37,7 @@ honest evidence.
 Several assertions check content rather than existence, because existence alone would not detect the failure
 modes that matter: a reference whose examples rendered as prose, or whose namespace documentation was dropped,
 would still produce a complete-looking file tree. Documentation-coverage enforcement is verified by the build
-itself — with severity `Error`, a single undocumented public member of PlexusRendering, PlexusAvalonia or
-PlexusAvaloniaPropertyGrid fails the
+itself — with severity `Error`, a single undocumented public member of any shipped package fails the
 build, so a green build cannot coexist with one — and the assertions add the positive half: that members flagged
 during adoption are now documented and reach the generated reference.
 
@@ -104,6 +104,52 @@ and `plexus:NodePalette` XAML; the PropertyGrid page shows the `SelectedObject =
 
 **Requirement coverage**: `Plexus-OTS-ApiMark-RenderExamples`.
 
+#### ApiMark_ExampleLanguageRendered
+
+**Scenario**: The XAML examples of the Avalonia package declare `<code lang="xml">`.
+
+**Expected**: The `NodePalette` type page contains the palette XAML (`Grid`, `plexus:NodePalette`, `GridSplitter`)
+in a fenced `xml` block and no longer carries the "XAML, not C#" workaround comment; the Avalonia namespace page
+contains the `MainWindow.axaml` window markup in a fenced `xml` block while its C# examples stay fenced as `csharp`.
+
+**Requirement coverage**: `Plexus-OTS-ApiMark-RenderExamples`.
+
+#### ApiMark_SignaturesRendered
+
+**Scenario**: ApiMark renders C# signatures from the compiled assembly instead of relying on the doc comments to
+describe them.
+
+**Expected**: The `DiagramPage.Connect` page shows the optional parameters as
+`IReadOnlyList<Geometry.Point>? route = null, string? id = null` under a breadcrumb line back to the namespace and
+type; the `Diagram.WireStyler` page shows `Func<Wire, Scene.WireStyle?>?`; the `DiagramTheme` page declares
+`public sealed record DiagramTheme` and its `NodeFill` page shows `{ get; init; }`; the `PropertyBag.Get` page shows
+the generic signature `public T Get<T>(string name)`.
+
+**Requirement coverage**: `Plexus-OTS-ApiMark-RenderSignatures`.
+
+#### ApiMark_CrossPackageLinksRendered
+
+**Scenario**: The Rendering, Avalonia and PropertyGrid projects set `ApiMarkExternalLinks` to map the core assembly to
+the core package's `api/` folder.
+
+**Expected**: The `PlexusRenderer.SavePng` page (Rendering), the `NodeDoubleClickedEventArgs` page (Avalonia) and the
+`NodePropertySource` page (PropertyGrid) each contain a Markdown link whose target is
+`../…/demaconsulting.plexus/{version}/api/DemaConsulting.Plexus/{Type}.md`, the layout of the core package beside the
+dependent package in the NuGet package cache. The assertion proves that the link is generated; ApiMark does not
+verify that the target exists, and it exists only where the core package is restored.
+
+**Requirement coverage**: `Plexus-OTS-ApiMark-LinkPackages`.
+
+#### ApiMark_CoreMembersDocumented
+
+**Scenario**: Documentation-coverage enforcement is active for the core package, whose public delegate
+`ConnectionValidator` has compiler-synthesized members that earlier ApiMark versions reported as undocumented.
+
+**Expected**: The generated `ConnectionValidator` page declares the delegate signature and contains its summary and
+no "No description provided" placeholder.
+
+**Requirement coverage**: `Plexus-OTS-ApiMark-EnforceDocs`.
+
 #### ApiMark_RenderingMembersDocumented
 
 **Scenario**: Documentation-coverage enforcement is active for the rendering package and the implicit
@@ -136,19 +182,23 @@ their own summary prose ("Re-reads the source's items and values", "Writes the p
 
 ### Evidence Limitations
 
-- **Core package enforcement.** `ApiMarkEnforceDocs` is not enabled for the core package. ApiMark 0.5.7 reports the
-  compiler-synthesized members of the public delegate `ConnectionValidator` (`Invoke`, `BeginInvoke`, `EndInvoke`
-  and the constructor) as undocumented, and they cannot be documented in source. The core package is still
-  covered by the C# compiler's CS1591, which is an error through `TreatWarningsAsErrors`.
+- **Virtual modifiers.** ApiMark does not show `virtual`, `override` or `abstract` in a signature, and the generated
+  pages do not list inherited members; the documentation text states both where they matter, and the assertions do
+  not cover that text beyond its presence.
+- **Cross-package link targets.** The link assertions show that ApiMark generated the link, not that its target
+  exists: the target resolves only where the core package of the same version sits beside the dependent package, as in
+  the NuGet package cache, and not in a build from source.
 - **Example correctness.** That an example compiles and behaves as described is a property of the doc comments, not
-  of ApiMark, and is not asserted by these tests; the examples were compiled and run against the shipped assemblies
-  when they were written.
-- **Language tag.** ApiMark labels every example code block `csharp`, including the XAML examples.
+  of ApiMark, and is not asserted by these tests; the examples were compiled against the shipped assemblies when
+  ApiMark 0.5.8 was adopted.
 
 ### Requirements Coverage
 
 - **`Plexus-OTS-ApiMark-Generate`**: ApiMark_CoreApiDocsPacked, ApiMark_RenderingApiDocsPacked,
   ApiMark_AvaloniaApiDocsPacked, ApiMark_PropertyGridApiDocsPacked
-- **`Plexus-OTS-ApiMark-RenderExamples`**: ApiMark_NamespaceDocRendered, ApiMark_ExampleCodeRendered
-- **`Plexus-OTS-ApiMark-EnforceDocs`**: ApiMark_RenderingMembersDocumented, ApiMark_AvaloniaMembersDocumented,
-  ApiMark_PropertyGridMembersDocumented
+- **`Plexus-OTS-ApiMark-RenderExamples`**: ApiMark_NamespaceDocRendered, ApiMark_ExampleCodeRendered,
+  ApiMark_ExampleLanguageRendered
+- **`Plexus-OTS-ApiMark-RenderSignatures`**: ApiMark_SignaturesRendered
+- **`Plexus-OTS-ApiMark-LinkPackages`**: ApiMark_CrossPackageLinksRendered
+- **`Plexus-OTS-ApiMark-EnforceDocs`**: ApiMark_CoreMembersDocumented, ApiMark_RenderingMembersDocumented,
+  ApiMark_AvaloniaMembersDocumented, ApiMark_PropertyGridMembersDocumented

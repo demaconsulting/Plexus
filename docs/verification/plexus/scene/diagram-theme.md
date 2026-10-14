@@ -42,5 +42,12 @@ All scenarios pass on every target framework; documented defaults compare equal 
   (`DiagramTheme_GroupsAreObstacles_DefaultsToTrue`, `DiagramPage_Connect_GroupsAreObstaclesOff_RoutesThroughGroupFrame`,
   `DiagramPage_Connect_CollapsedGroupBetweenPorts_GroupsAreObstaclesOff_CrossesBox`): the option is on in the classic
   and in a new theme; a `with` copy that switches it off lets wires run through an expanded frame and a collapsed box.
+- **Dark preset** (`Plexus-Scene-DiagramTheme-Dark`, `DefaultNodeWidthTests.cs`:
+  `DiagramTheme_Dark_IsADistinctPresetWithClassicMetrics`,
+  `DiagramTheme_Dark_TextsWiresAndFramesAreReadableOnTheirBackgrounds`, `DiagramTheme_Dark_AssignedToDiagram_DrivesTheScene`):
+  the preset is a shared instance with a dark canvas and the classic metrics; the instance name, summary, port label, title,
+  annotation and group title texts reach a 4.5:1 contrast ratio on what they are drawn on, and wires, selection and
+  frame borders 3:1, with grid dots visible but quieter than wires; a diagram with the theme draws the dark node fill and
+  name color.
 
 Boundary values: copy versus original, default versus customized.

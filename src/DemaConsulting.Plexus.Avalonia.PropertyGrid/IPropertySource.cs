@@ -19,14 +19,21 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
 ///     // A source over values the host keeps itself, without reflection
 ///     public sealed class SettingsSource : IPropertySource
 ///     {
-///         private readonly CustomPropertySource _inner = new(
-///         [
-///             new CustomPropertyItem("Volume", typeof(int), () => volume, v => volume = (int)v!) { Category = "Audio" },
-///         ]);
-///         private int volume = 5;
+///         private readonly CustomPropertySource _inner;
+///         private int _volume = 5;
+///
+///         public SettingsSource()
+///         {
+///             _inner = new CustomPropertySource(
+///             [
+///                 new CustomPropertyItem("Volume", typeof(int), () => _volume, v => _volume = (int)v!, new CustomPropertyOptions { Category = "Audio" }),
+///             ]);
+///         }
 ///
 ///         public IReadOnlyList<PropertyItem> GetItems() => _inner.GetItems();
 ///         public event EventHandler<PropertySourceChangedEventArgs>? Changed { add { _inner.Changed += value; } remove { _inner.Changed -= value; } }
@@ -36,8 +43,7 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 public interface IPropertySource
 {
     /// <summary>
-    ///     Gets the browsable items of the source (non-browsable items are omitted unless the source was asked to include
-    ///     them).
+    ///     Gets the items the grid shows; a source leaves out the items that must not be shown (for example non-browsable properties).
     /// </summary>
     /// <returns>The items, unsorted.</returns>
     IReadOnlyList<PropertyItem> GetItems();

@@ -80,3 +80,11 @@ history entry exists per change, no entry exists for a no-op, and undo and redo 
 - `Node_CloneData_TypeWithoutSerializer_Throws`: the message names the node type.
 - `Node_CloneData_CommittedWithPropertiesInOneTransaction_IsOneUndoEntry`: the documented pattern is one undo entry that
   restores both the data and the property.
+
+**Data type check** (`Plexus-Model-Node-DataTypeCheck`, `NodeDataTests.cs`)
+
+- `Node_Data_IncompatibleType_ThrowsArgumentException`: a payload of another type throws at the assignment, the message
+  names both types and neither the payload nor the history changes (error path).
+- `Node_Data_DeclaredDerivedOrNull_IsAccepted`: the declared type, a derived type and null pass.
+- `Node_Data_SerializerOnlyOrUndeclared_AcceptsAnyObject`: a type with only a serializer, or with nothing, accepts any
+  object.

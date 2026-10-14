@@ -10,6 +10,10 @@
     <AssemblyName>plexus-puppet</AssemblyName>
     <RootNamespace>DemaConsulting.Plexus.Puppet</RootNamespace>
 
+    <!-- The Puppet drives Windows UI Automation (FlaUI, which references the Windows Desktop framework), so it only
+         runs on Windows. EnableWindowsTargeting lets Linux and macOS builds (CI, CodeQL) still compile it. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
     <!-- The Puppet is a development tool and is never published as a package -->
     <IsPackable>false</IsPackable>
 

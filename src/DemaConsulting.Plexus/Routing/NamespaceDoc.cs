@@ -13,7 +13,8 @@ namespace DemaConsulting.Plexus.Routing;
 ///     using DemaConsulting.Plexus.Routing;
 ///
 ///     diagram.Router = new OverTheTopRouter();                   // wires connected or moved from now on use it
-///     diagram.Router = new OrthogonalRouter { BendPenalty = 40 };  // or tune the default: fewer bends, longer detours
+///     // ... or, instead of the line above, tune the default router: fewer bends, longer detours
+///     diagram.Router = new OrthogonalRouter { BendPenalty = 40 };  // replaces the router assigned before
 ///     page.RerouteAll();                                         // re-route the wires that already exist
 ///
 ///     // A custom router: go straight unless a node box is in the way, then run over the top of the blockers.

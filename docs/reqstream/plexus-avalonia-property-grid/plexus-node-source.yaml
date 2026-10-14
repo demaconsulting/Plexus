@@ -86,3 +86,28 @@ sections:
               - PropertySourceFactory_Create_PlexusElements_UsesThePlexusSources
               - AnnotationPropertySource_StagedCommit_IsOneUndoEntry
               - GroupPropertySource_StagedCommit_IsOneUndoEntry
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-RowPaths
+            title: >-
+              The rows of a node shall have documented, collision-free paths: Node.Name for the name, Property.name
+              for each declared property and Data.path for the host data (nested members and collection elements
+              extending it), so that a data property can neither hide a declared property nor the name row, and a
+              property called Name is edited independently of the node name.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; automation ids, errors, pending edits and failed
+              rows are keyed by path, so equal bare names in different groups of rows must not collide.
+            tests:
+              - NodePropertySource_Paths_NameDeclaredAndDataRowsNeverCollide
+              - NodePropertySource_Paths_PropertyNamedNameDoesNotTouchTheNodeName
+              - PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry
+
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-AtomicRefusal
+            title: >-
+              A commit through a node source in which one row is refused shall apply nothing and record no undo
+              entry, keep every edit pending, and list the refused row with its path in the commit result.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; a half-applied dialog would leave the node in a
+              state the user never confirmed.
+            tests:
+              - NodePropertySource_StagedCommit_RefusedRowIsListedWithItsPathAndNothingIsApplied
+              - NodePropertySource_StagedCommit_RenameVetoedRefusesTheCommitAndMarksTheNameRow

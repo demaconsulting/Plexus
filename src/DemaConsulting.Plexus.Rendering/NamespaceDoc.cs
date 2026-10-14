@@ -22,6 +22,12 @@ namespace DemaConsulting.Plexus.Rendering;
 ///         encode in another format. Appearance comes from the diagram (its theme, stylers and node visuals), so
 ///         there is nothing to configure here for a custom look; the default look is described on <c>DiagramTheme</c>.
 ///     </para>
+///     <para>
+///         Packages: this package renders pages of the model in <c>DemaConsulting.Plexus</c> (the core: node types, diagrams, themes and stylers; start with its
+///         namespace page). It does not depend on Avalonia. For an interactive editor in an Avalonia application use <c>DemaConsulting.Plexus.Avalonia</c>
+///         (<c>DiagramEditor</c> and <c>NodePalette</c>), which draws the same scenes. To hit-test the pixels of a rendered image, build the scene with
+///         <c>SceneOptions.TextMeasurer</c> set to a <see cref="CanvasTextMeasurer"/> (see <c>SceneOptions</c>).
+///     </para>
 /// </remarks>
 /// <example>
 ///     Render a page to a PNG file (<c>types</c> is the registry of the <c>DemaConsulting.Plexus</c> namespace example).

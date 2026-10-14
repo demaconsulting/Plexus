@@ -110,4 +110,13 @@ ReqStream trace matrix.
 - **DiagramPage_Remove_ElementIsDetachedBeforeNotifications**, **DiagramPage_UndoRemove_ElementIsAttachedBeforeNotifications**:
   handlers see a settled model.
 
+##### Reconnect context (`Plexus-Model-DiagramPage-ReconnectContext`, `ReconnectRulesTests.cs`)
+
+- **DiagramPage_CanReconnect_NoChange_IsAllowedWithoutAskingTheRule**: passing no ports or the wire's own ports is
+  allowed and the rule is not asked; a real move is still judged.
+- **DiagramPage_WireBeingReconnected_IsTheMovingWireOnlyDuringTheCheck**: the property is null for a plain check, the moving
+  wire inside a reconnect check and null again afterwards.
+- **ConnectionRules_HostRule_AlwaysReceivesOutputThenInput**: connect with reversed ports, `CanConnect` and
+  `CanReconnect` all call the rule with the output first.
+
 **Expected**: each test passes, proving the DiagramPage requirements.

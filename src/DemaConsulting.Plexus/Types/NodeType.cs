@@ -8,6 +8,12 @@ namespace DemaConsulting.Plexus;
 ///     Registration validates the declaration and freezes the port and property lists, because live
 ///     nodes derive their ports from them. A frozen type is immutable, so the same instance may be shared
 ///     by several registries (and therefore diagrams). Not thread-safe.
+///     <para>
+///         <b>Node size.</b> Unless you set <see cref="DefaultSize"/>, a new node gets the theme's default width (a minimum) and a height that fits the
+///         longer port column; the width grows until the title fits the header on one line, so long titles do not wrap by default. Set
+///         <see cref="DefaultSize"/> to fix the box: a title wider than a declared width then wraps onto further lines (or shrinks)
+///         instead of widening it. Size only decides how new nodes start; a node's <see cref="Node.Bounds"/> can be changed afterwards.
+///     </para>
 /// </remarks>
 /// <example>
 ///     A node type with two typed inputs, one output, editable properties, an icon and a summary shown on the node.
@@ -95,7 +101,6 @@ public sealed partial class NodeType
     /// <summary>
     ///     Gets or initializes the heading drawn in the node's header; defaults to the last segment of <see cref="Key"/>.
     /// </summary>
-    /// <remarks>Set with an object initializer.</remarks>
     public string Title
     {
         get => _title ?? ShortName;
@@ -103,7 +108,7 @@ public sealed partial class NodeType
     }
 
     /// <summary>
-    ///     Gets or initializes the host-facing name for palettes, menus and accessibility names; defaults to <see cref="Title"/>. Set with an object initializer.
+    ///     Gets or initializes the host-facing name for palettes, menus and accessibility names; defaults to <see cref="Title"/>.
     /// </summary>
     /// <remarks>
     ///     Several types may share the same <see cref="Title"/> in the node header (for example two
@@ -118,7 +123,7 @@ public sealed partial class NodeType
     }
 
     /// <summary>
-    ///     Gets or initializes the optional group name hosts use to organize types in palettes and menus; null (the default) means uncategorized. Set with an object initializer.
+    ///     Gets or initializes the optional group name hosts use to organize types in palettes and menus; null (the default) means uncategorized.
     /// </summary>
     /// <remarks>
     ///     The library never draws or interprets it on a node: it is a presentation hint, like
@@ -129,7 +134,7 @@ public sealed partial class NodeType
     public string? Category { get; init; }
 
     /// <summary>
-    ///     Gets or initializes the optional icon drawn in the node's header; null (the default) draws no icon. Set with an object initializer.
+    ///     Gets or initializes the optional icon drawn in the node's header; null (the default) draws no icon.
     /// </summary>
     /// <remarks>
     ///     The icon is an SVG scaled into a small square slot of the node header. It is drawn as authored on the dark node fill
@@ -155,9 +160,12 @@ public sealed partial class NodeType
     public IList<PropertyDefinition> Properties => PropertyList;
 
     /// <summary>
-    ///     Gets the size new nodes of this type start with; null (the default) means the theme's default node size, grown to fit the ports.
+    ///     Gets the size new nodes of this type start with; null (the default) means the theme's default node size, grown to fit the ports and the title on one line.
     /// </summary>
-    /// <remarks>Set with an object initializer. Existing nodes are not affected when it changes.</remarks>
+    /// <remarks>
+    ///     Existing nodes are not affected when it changes. A declared size is authoritative:
+    ///     a title wider than it wraps onto further lines (or shrinks) instead of widening the box. See <see cref="Scene.NodeGeometry.DefaultNodeSize"/>.
+    /// </remarks>
     public Size? DefaultSize { get; init; }
 
     /// <summary>
@@ -188,10 +196,26 @@ public sealed partial class NodeType
     ///         <c>System.Text.Json</c> with its default options (property names as declared, public properties and positional
     ///         record constructors; no custom converters or naming policy) plus a maximum nesting depth. The declared type is
     ///         always the one deserialized: no type name is read from the JSON, so a document cannot choose what gets created.
-    ///         A payload that is not an instance of this type (an instance of a derived type is accepted, but is written as the declared type) makes <see cref="Diagram.ToJson(bool)"/> throw
-    ///         <see cref="InvalidOperationException"/>. When reading JSON back, text that cannot be turned into the type makes
+    ///         A payload that is not an instance of this type is refused when it is assigned to <see cref="Node.Data"/>
+    ///         (an instance of a derived type is accepted, but is written as the declared type). When reading JSON back, text that cannot be turned into the type makes
     ///         <see cref="Diagram.FromJson(string, NodeTypeRegistry, DiagramOptions?)"/> throw <see cref="SnapshotException"/>; when pasting from the clipboard the node is pasted without data and the
     ///         <see cref="PasteResult"/> carries a warning.
+    ///     </para>
+    ///     <para>
+    ///         Assigning <see cref="Node.Data"/> an instance of an incompatible type throws <see cref="ArgumentException"/> at once (a derived type is accepted).
+    ///         <see cref="DataType"/> is optional when a <see cref="DataSerializer"/> is set: a serializer alone is enough to persist the payload, and then
+    ///         <see cref="Node.Data"/> accepts any object; declare both only when you also want the type check.
+    ///         Use <see cref="CreateData"/> to give new nodes a default payload.
+    ///     </para>
+    ///     <para>
+    ///         <b>A mutable host class.</b> The payload does not have to be a record. A class that a property grid edits (see
+    ///         <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c>) needs, for <c>System.Text.Json</c> to round-trip it: a public parameterless
+    ///         constructor, public properties with public setters (a get-only <see cref="List{T}"/> is not filled when reading), and the same
+    ///         for every nested object and collection element type (enumerations are stored as numbers). Annotations such as
+    ///         <c>[ReadOnly]</c>, <c>[Browsable(false)]</c> or <c>[Category]</c> only affect the grid; read-only properties are still saved.
+    ///         An editor works on a copy made by <see cref="Node.CloneData"/> (a JSON round trip, so the copy is a different instance with equal
+    ///         values) and commits it by assigning <see cref="Node.Data"/>, which is one undo entry; mutating the object that
+    ///         <see cref="Node.Data"/> returns changes the node without any undo entry or change notification.
     ///     </para>
     ///     <para>
     ///         Use <see cref="DataSerializer"/> instead when you need other JSON settings. Nodes whose type declares neither have
@@ -199,6 +223,48 @@ public sealed partial class NodeType
     ///     </para>
     /// </remarks>
     public Type? DataType { get; init; }
+
+    /// <summary>
+    ///     Gets or initializes a factory producing the initial host payload of every new node of this type; null (the default) means new nodes start without data.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         The factory is called once per node created through the API or the editor: <see cref="DiagramPage.AddNode(string, double, double, string?, string?)"/>,
+    ///         a drop from the palette, the editor's add commands, and pasting or duplicating a node whose source carried no data.
+    ///         Each call must return a new instance (never a shared one), so nodes do not alias each other's payload. The value is stored like
+    ///         any other payload, so with <see cref="DataType"/> it must be an instance of that type (otherwise adding the node throws
+    ///         <see cref="InvalidOperationException"/>). Returning null starts the node without data.
+    ///     </para>
+    ///     <para>
+    ///         Nodes restored from a snapshot or JSON keep exactly what was stored (including no data): the factory only
+    ///         supplies defaults for new nodes. Because an undone add keeps its node object, redo restores the same payload instance rather than calling the factory again.
+    ///     </para>
+    /// </remarks>
+    /// <example>
+    ///     Every new Task node gets its own details object, ready to edit in a property grid.
+    ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     var types = new NodeTypeRegistry();
+    ///     types.Add(new NodeType("demo.Task")
+    ///     {
+    ///         DataType = typeof(TaskDetails),
+    ///         CreateData = () =&gt; new TaskDetails { Notes = "", Priority = 3 },
+    ///     });
+    ///
+    ///     var page = new Diagram(types).Pages.Add("Main");
+    ///     var task = page.AddNode("demo.Task", 0, 0);
+    ///     var details = (TaskDetails)task.Data!;           // never null here
+    ///
+    ///     // A mutable host class: public parameterless constructor and public setters, so it round-trips as JSON
+    ///     public sealed class TaskDetails
+    ///     {
+    ///         public string Notes { get; set; } = "";
+    ///         public int Priority { get; set; }
+    ///     }
+    ///     </code>
+    /// </example>
+    public Func<object>? CreateData { get; init; }
 
     /// <summary>
     ///     Gets or initializes a custom serializer for the host payload; takes precedence over <see cref="DataType"/>. Null (the default) means none.
@@ -272,6 +338,29 @@ public sealed partial class NodeType
                 .Where(p => p.ShowInSummary)
                 .Select(p => p.FormatSummary(node.Properties[p.Name])),
         ];
+    }
+
+    /// <summary>
+    ///     Checks a payload against <see cref="DataType"/>.
+    /// </summary>
+    /// <param name="value">The payload (null always fits).</param>
+    /// <returns>A message describing the mismatch, or null when the payload fits.</returns>
+    internal string? DescribeDataMismatch(object? value) =>
+        value is null || DataType is null || DataType.IsInstanceOfType(value)
+            ? null
+            : $"Node type '{Key}' declares its data as '{DataType.Name}', but a '{value.GetType().Name}' was supplied.";
+
+    /// <summary>
+    ///     Produces the initial payload of a new node by calling <see cref="CreateData"/>.
+    /// </summary>
+    /// <returns>The payload, or null when the type declares no factory or the factory returned null.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the factory returns an instance that does not fit <see cref="DataType"/>.</exception>
+    internal object? CreateInitialData()
+    {
+        var data = CreateData?.Invoke();
+        return DescribeDataMismatch(data) is { } problem
+            ? throw new InvalidOperationException($"The CreateData factory is wrong: {problem}")
+            : data;
     }
 
     /// <summary>

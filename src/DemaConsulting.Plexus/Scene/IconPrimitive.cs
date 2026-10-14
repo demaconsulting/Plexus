@@ -14,6 +14,9 @@ namespace DemaConsulting.Plexus.Scene;
 ///         as coverage. <see cref="Opacity"/> then scales the whole result. Both painters follow
 ///         exactly these rules, so a tinted icon looks the same in the PNG and in the editor.
 ///     </para>
+///     <para>
+///         Inherited from <see cref="ScenePrimitive"/>: <see cref="ScenePrimitive.Bounds"/> and <see cref="ScenePrimitive.Element"/> (the owning model element, or null).
+///     </para>
 /// </remarks>
 public sealed class IconPrimitive : ScenePrimitive
 {
@@ -22,9 +25,9 @@ public sealed class IconPrimitive : ScenePrimitive
     /// </summary>
     /// <param name="icon">The icon.</param>
     /// <param name="rect">The rectangle to draw it in.</param>
-    /// <param name="element">Optional; defaults to null. The owning model element. May be null.</param>
-    /// <param name="tint">Optional; defaults to null, which draws the icon as authored. Otherwise the silhouette color. May be null.</param>
-    /// <param name="opacity">Optional; defaults to 1. The opacity of the whole icon, from 0 to 1.</param>
+    /// <param name="element">The owning model element.</param>
+    /// <param name="tint">The silhouette color; null draws the icon as authored.</param>
+    /// <param name="opacity">The opacity of the whole icon, from 0 to 1.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="icon"/> is null.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="opacity"/> is outside 0 to 1 or not finite.</exception>
     public IconPrimitive(IconSource icon, Rect rect, DiagramElement? element = null, Color? tint = null, double opacity = 1)

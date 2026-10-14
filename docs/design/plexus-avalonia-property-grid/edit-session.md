@@ -31,16 +31,22 @@ an OK / Cancel dialog needs. A host-supplied commit scope wraps the writes, typi
 - **`Reset`** — requires `CanReset`; live resets at once, staged records a `Reset` edit.
 - **`GetValue` / `GetText` / `IsPending` / `GetError` / `GetErrors` / `GetPendingEdits`** — read the session state; the
   pending value is shown instead of the target's value. A pending collection edit shows the working copy.
-- **`FindItem(path)`** — resolves `Name`, `Name.Child`, `Name[index]` and combinations through the source's items,
-  children and collection elements.
+- **`FindItem(path)`** — resolves a path through the source's items, children and collection elements: first the
+  top-level item whose `Path` is the longest prefix of the path that ends at a segment boundary (a root path may contain
+  dots, as `Property.Gain` of the node source does), then `.Child` and `[index]` segments.
 - **Commit scope** — the writes of a commit (staged) or of one edit (live) run inside the commit scope of the source when
   the source implements `IPropertyCommitScope` (outermost), and then inside the host's commit scope. A
   `PropertyCommitRefusedException` thrown by a scope names the refused property: the session records the message as that
-  property's error, commits nothing and reports the reason.
+  property's error, commits nothing (the commit is atomic: no edit is applied and, for the Plexus sources, no undo
+  entry is
+  recorded), lists the refused property in `CommitResult.Failed` and reports the reason in `CommitResult.Error`.
 - **`Commit`** — snapshots the pending edits and applies them in order inside the commit scope. Failed edits stay pending
   with their error; the others are removed and their collection editors end. If the scope throws or does not run the
-  action, nothing counts as committed and the scope error is reported. Commit with nothing pending does not call the
-  scope.
+  action, nothing counts as committed and the scope error is reported; `Failed` then lists the edits that failed by
+  themselves and the edit the refusal named (a transient edit of its item when that row was not edited). Commit with
+  nothing pending does not call the scope.
+- **Error messages** — `PropertyErrors.Message` unwraps reflection exceptions and removes the framework's
+  " (Parameter 'name')" suffix of an `ArgumentException`, so reasons are clean text.
 - **`Cancel` / `Discard`** — drop all, or one item's, pending edits and errors; collection editors end.
 - **`BeginCollectionEdit`** — creates a `CollectionEditor` (or returns the active one of a pending collection edit).
   Editor mutations validate the element type and the index, then update the working copy and call back into the session:

@@ -98,3 +98,18 @@ sections:
               - ConnectionRules_Default_AllowsAndHostRuleReceivesOutputThenInput
               - ConnectionRules_SameType_RejectsMismatchedTypes
               - DiagramPage_CanConnect_HostDenialWithoutReason_GetsDefaultReason
+
+          - id: Plexus-ConnectionRules-DegreeLimits
+            title: >-
+              ConnectionRules shall provide rules that limit the number of wires leaving an output port and ending at an
+              input port, whose denial reason names the port, that do not count the wire a reconnect check is
+              moving, and
+              that reject a limit below one.
+            justification: |
+              Degree limits are the most common domain rule after type matching. Built-in rules that already account
+              for the wire being moved spare every host the subtle mistake of counting it against its new port.
+            tests:
+              - ConnectionRules_MaxOutgoingWires_FullOutput_DeniesButMovingAWireOnTheSameOutputIsFine
+              - ConnectionRules_MaxOutgoingWires_ReconnectSourceOntoFullOutput_IsDenied
+              - ConnectionRules_MaxIncomingWires_FullInput_DeniesButTheMovingWireIsNotCounted
+              - ConnectionRules_MaxWires_LimitBelowOne_ThrowsArgumentOutOfRange

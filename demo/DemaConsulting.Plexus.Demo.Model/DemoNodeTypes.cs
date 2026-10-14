@@ -154,6 +154,7 @@ public static partial class DemoNodeTypes
     /// <param name="visual">A custom visual replacing the standard node template, or null.</param>
     /// <param name="dataType">The type of the host data payload, or null when nodes carry none.</param>
     /// <param name="size">The default node size, or null for the demo's shared size.</param>
+    /// <param name="createData">Creates the initial host data of every new node, or null when nodes start without data.</param>
     /// <returns>The node type.</returns>
     private static NodeType Define(
         string key,
@@ -166,7 +167,8 @@ public static partial class DemoNodeTypes
         PropertyDefinition[] properties,
         INodeVisual? visual = null,
         Type? dataType = null,
-        Size? size = null)
+        Size? size = null,
+        Func<object>? createData = null)
     {
         var type = new NodeType(key)
         {
@@ -177,8 +179,10 @@ public static partial class DemoNodeTypes
             DefaultSize = size ?? NodeSize,
             Visual = visual,
 
-            // Registering the exact payload type lets snapshots and the clipboard carry node.Data
+            // Registering the exact payload type lets snapshots and the clipboard carry node.Data;
+            // the factory gives every new node (added, dropped or pasted) its own payload object
             DataType = dataType,
+            CreateData = createData,
         };
 
         // Ports and properties are added after construction because the type is immutable once registered

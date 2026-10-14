@@ -1,5 +1,5 @@
 using System.Reflection;
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests;
 
@@ -113,7 +113,7 @@ public class PlexusAvaloniaPropertyGridTests
     [Fact]
     public void PlexusAvaloniaPropertyGrid_Dependencies_GenericLayers_UseNoPlexusTypes()
     {
-        const string adapterNamespace = "DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus";
+        const string adapterNamespace = "DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams";
         const BindingFlags all = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
         var generic = typeof(PropertyItem).Assembly.GetTypes()
             .Where(t => t.Namespace is not null && !t.Namespace.StartsWith(adapterNamespace, StringComparison.Ordinal) && !t.Name.StartsWith('<'))
@@ -273,16 +273,16 @@ public class PlexusAvaloniaPropertyGridTests
         var staged = new PropertyEditSession(source, PropertyEditMode.Staged);
 
         // Act: staged
-        staged.SetText(staged.FindItem("Name")!, "Lead");
-        staged.SetText(staged.FindItem("Frequency")!, "880 Hz");
-        staged.SetText(staged.FindItem("Level")!, "9");
+        staged.SetText(staged.FindItem(NodePropertySource.NamePath)!, "Lead");
+        staged.SetText(staged.FindItem(NodePropertySource.PropertyPath("Frequency"))!, "880 Hz");
+        staged.SetText(staged.FindItem(NodePropertySource.DataPath("Level"))!, "9");
         var committed = staged.Commit();
         var stagedEntries = diagram.History.UndoCount - before;
 
         // Act: live
         var live = new PropertyEditSession(source, PropertyEditMode.Live);
-        live.SetText(live.FindItem("Level")!, "4");
-        live.SetText(live.FindItem("Frequency")!, "100");
+        live.SetText(live.FindItem(NodePropertySource.DataPath("Level"))!, "4");
+        live.SetText(live.FindItem(NodePropertySource.PropertyPath("Frequency"))!, "100");
 
         // Assert
         Assert.True(committed.Succeeded);
@@ -308,7 +308,7 @@ public class PlexusAvaloniaPropertyGridTests
         var cancelled = NodePropertiesDialog.ShowAsync(owner, node);
         GridHarness.Pump(owner);
         var first = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
-        first.Grid.Session!.SetText(first.Grid.Session.FindItem("Name")!, "Dropped");
+        first.Grid.Session!.SetText(first.Grid.Session.FindItem(NodePropertySource.NamePath)!, "Dropped");
 
         // Act: Cancel
         GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(first, "PropertyGridDialog_Cancel"));
@@ -316,8 +316,8 @@ public class PlexusAvaloniaPropertyGridTests
         var accepted = NodePropertiesDialog.ShowAsync(owner, node);
         GridHarness.Pump(owner);
         var second = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
-        second.Grid.Session!.SetText(second.Grid.Session.FindItem("Name")!, "Kept");
-        second.Grid.Session.SetText(second.Grid.Session.FindItem("Level")!, "8");
+        second.Grid.Session!.SetText(second.Grid.Session.FindItem(NodePropertySource.NamePath)!, "Kept");
+        second.Grid.Session.SetText(second.Grid.Session.FindItem(NodePropertySource.DataPath("Level"))!, "8");
         GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(second, "PropertyGridDialog_OK"));
         GridHarness.Pump(owner);
 

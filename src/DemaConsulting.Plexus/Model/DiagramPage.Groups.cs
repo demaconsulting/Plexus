@@ -15,7 +15,7 @@ public sealed partial class DiagramPage
     /// </remarks>
     /// <param name="members">Nodes, annotations and groups of this page.</param>
     /// <param name="title">The group title.</param>
-    /// <param name="id">Optional; defaults to null, which generates an element id. May be null.</param>
+    /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new group.</returns>
     /// <exception cref="ArgumentException">Thrown when no members are supplied, a member is on another page, or the id is in use.</exception>
     /// <exception cref="InvalidOperationException">Thrown when members belong to different groups, or the page is removed.</exception>

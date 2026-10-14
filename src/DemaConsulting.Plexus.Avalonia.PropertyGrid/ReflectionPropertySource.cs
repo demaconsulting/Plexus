@@ -30,6 +30,19 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using System.ComponentModel;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     using var source = new ReflectionPropertySource(new Person { Name = "Ada", Age = 36 });
+///     foreach (PropertyGroup group in PropertyOrdering.Group(source.GetItems(), PropertySortMode.Categorized))
+///     {
+///         Console.WriteLine(group.Category);
+///         foreach (PropertyItem item in group.Items)
+///         {
+///             Console.WriteLine($"  {item.Label} = {item.ConvertToString(item.GetValue())}");
+///         }
+///     }
+///
 ///     public class Person
 ///     {
 ///         [Category("Identity"), Description("The full name.")]
@@ -40,16 +53,6 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///
 ///         [Browsable(false)]
 ///         public string InternalId { get; set; } = "";
-///     }
-///
-///     using var source = new ReflectionPropertySource(new Person { Name = "Ada", Age = 36 });
-///     foreach (PropertyGroup group in PropertyOrdering.Group(source.GetItems(), PropertySortMode.Categorized))
-///     {
-///         Console.WriteLine(group.Category);
-///         foreach (PropertyItem item in group.Items)
-///         {
-///             Console.WriteLine($"  {item.Label} = {item.GetText()}");
-///         }
 ///     }
 ///     ]]></code>
 /// </example>

@@ -75,8 +75,8 @@ Duplicate:
   (`DiagramPage_Duplicate_Data_DeepCopiedWhenSerializableOtherwiseShared`), **independent properties**
   (`DiagramPage_Duplicate_Properties_AreCopiedIndependently`), **empty selection**
   (`DiagramPage_Duplicate_EmptySelection_DoesNothing`), **argument checking**
-  (`DiagramPage_Duplicate_InvalidArguments_Throw`) and **mismatching payload**
-  (`DiagramPage_Duplicate_PayloadOfWrongType_ThrowsInvalidOperation`).
+  (`DiagramPage_Duplicate_InvalidArguments_Throw`). A payload of the wrong type can no longer reach a duplicate because
+  `Node.Data` refuses it at assignment (`Node_Data_IncompatibleType_ThrowsArgumentException`).
 
 Boundary values: exactly 10,000 elements accepted and 10,001 rejected, sizes at the byte limit, extreme coordinates,
 nesting depth at and beyond the limit. Error paths: all rejection and argument scenarios.

@@ -61,16 +61,23 @@ internal sealed class ReflectionPropertyItem : PropertyItem
     private bool? _hasShouldSerialize;
 
     /// <summary>
+    ///     The text put before the name in the path of a top-level item.
+    /// </summary>
+    private readonly string _pathPrefix;
+
+    /// <summary>
     ///     Initializes a new instance of the <see cref="ReflectionPropertyItem"/> class.
     /// </summary>
     /// <param name="descriptor">The descriptor.</param>
     /// <param name="ownerProvider">Supplies the object whose property this is.</param>
     /// <param name="parent">The parent item, or <see langword="null"/> for a top-level item.</param>
-    internal ReflectionPropertyItem(PropertyDescriptor descriptor, Func<object?> ownerProvider, PropertyItem? parent)
+    /// <param name="pathPrefix">The text put before the name in the path of a top-level item (for example <c>Data.</c>).</param>
+    internal ReflectionPropertyItem(PropertyDescriptor descriptor, Func<object?> ownerProvider, PropertyItem? parent, string pathPrefix = "")
         : base(parent)
     {
         _descriptor = descriptor;
         _ownerProvider = ownerProvider;
+        _pathPrefix = pathPrefix;
         _defaultValue = descriptor.Attributes.OfType<DefaultValueAttribute>().FirstOrDefault();
         _display = descriptor.Attributes.OfType<DisplayAttribute>().FirstOrDefault();
         var propertyEditor = descriptor.Attributes.OfType<PropertyEditorAttribute>().FirstOrDefault();
@@ -85,6 +92,9 @@ internal sealed class ReflectionPropertyItem : PropertyItem
 
     /// <inheritdoc />
     public override string Name => _descriptor.Name;
+
+    /// <inheritdoc />
+    internal override string RootPath => _pathPrefix + Name;
 
     /// <inheritdoc />
     public override string DisplayName

@@ -40,7 +40,7 @@ public sealed partial class Diagram
     ///     string compact = diagram.ToJson(indented: false);                          // smallest text, e.g. for a database
     ///     </code>
     /// </example>
-    /// <param name="indented">Optional; defaults to true for human-readable output; false for the most compact text.</param>
+    /// <param name="indented">True for human-readable output; false for the most compact text.</param>
     /// <returns>The JSON text.</returns>
     /// <exception cref="InvalidOperationException">Thrown when a node payload does not match its declared data type or serializes to invalid JSON.</exception>
     public string ToJson(bool indented = true) => PlexusJson.Serialize(ToSnapshot(), indented);
@@ -67,7 +67,7 @@ public sealed partial class Diagram
     ///     </code>
     /// </example>
     /// <param name="stream">A writable stream; it is not closed.</param>
-    /// <param name="indented">Optional; defaults to true for human-readable output; false for the most compact text.</param>
+    /// <param name="indented">True for human-readable output; false for the most compact text.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when a node payload does not match its declared data type or serializes to invalid JSON.</exception>
     public void ToJson(Stream stream, bool indented = true)
@@ -79,6 +79,11 @@ public sealed partial class Diagram
     /// <summary>
     ///     Rebuilds a diagram from JSON text written by <see cref="ToJson(bool)"/>: shorthand for <see cref="PlexusJson.Deserialize"/> followed by <see cref="FromSnapshot"/>.
     /// </summary>
+    /// <remarks>
+    ///     A file that mentions node types the registry does not know is refused with a <see cref="SnapshotException"/> that lists them, unless
+    ///     <see cref="DiagramOptions.UnknownNodeTypes"/> is <see cref="UnknownNodeTypeHandling.Skip"/>: then those nodes, their wires and group memberships are left out
+    ///     and <see cref="LoadReport"/> says what (see <see cref="UnknownNodeTypeHandling"/> for how to produce such a file for a test).
+    /// </remarks>
     /// <example>
     ///     The registry is not stored in the JSON, so pass one that contains every node type the file uses. Stylers, the
     ///     theme and other configuration are not stored either; pass them in a <see cref="DiagramOptions"/>.
@@ -104,7 +109,7 @@ public sealed partial class Diagram
     /// </example>
     /// <param name="json">The JSON text.</param>
     /// <param name="types">The registry providing the node types the JSON refers to.</param>
-    /// <param name="options">Optional; defaults to null (every default). The configuration to install on the loaded diagram and how to treat unknown node types.</param>
+    /// <param name="options">The configuration to install on the loaded diagram and how to treat unknown node types; null uses every default.</param>
     /// <returns>The new diagram, with an empty undo history.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="json"/> or <paramref name="types"/> is null.</exception>
     /// <exception cref="System.Text.Json.JsonException">Thrown when the text is not valid JSON of the expected shape.</exception>
@@ -125,7 +130,7 @@ public sealed partial class Diagram
     /// </remarks>
     /// <param name="stream">A readable stream positioned at the start of the document; it is not closed.</param>
     /// <param name="types">The registry providing the node types the JSON refers to.</param>
-    /// <param name="options">Optional; defaults to null (every default). The configuration to install on the loaded diagram and how to treat unknown node types.</param>
+    /// <param name="options">The configuration to install on the loaded diagram and how to treat unknown node types; null uses every default.</param>
     /// <returns>The new diagram, with an empty undo history.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="stream"/> or <paramref name="types"/> is null.</exception>
     /// <exception cref="System.Text.Json.JsonException">Thrown when the content is not valid JSON of the expected shape.</exception>
@@ -144,11 +149,14 @@ public sealed partial class Diagram
     ///     Ids, names, bounds, stored wire routes (the router is never consulted), z-order, groups and
     ///     their collapsed state, property values and node payloads are restored exactly. The new
     ///     diagram's undo history is empty and clean. Node names are restored as stored; uniqueness is
-    ///     not re-checked so snapshots of diagrams that allowed duplicate names still load.
+    ///     not re-checked so snapshots of diagrams that allowed duplicate names still load. Node payloads are restored as stored:
+    ///     <see cref="NodeType.CreateData"/> is not consulted, so a node saved without data loads without data.
+    ///     <see cref="DiagramOptions.Initialize"/> is invoked once the diagram is completely loaded. Node types the registry does not know fail the load with a
+    ///     <see cref="SnapshotException"/> unless <see cref="DiagramOptions.UnknownNodeTypes"/> is <see cref="UnknownNodeTypeHandling.Skip"/> (see <see cref="LoadReport"/>).
     /// </remarks>
     /// <param name="snapshot">The snapshot to load.</param>
     /// <param name="types">The registry providing the node types the snapshot refers to.</param>
-    /// <param name="options">Optional; defaults to null (every default). The configuration to install on the new diagram and how to treat unknown node types.</param>
+    /// <param name="options">The configuration to install on the new diagram and how to treat unknown node types; null uses every default.</param>
     /// <returns>The new diagram.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="snapshot"/> or <paramref name="types"/> is null.</exception>
     /// <exception cref="SnapshotException">Thrown when the format version is unsupported, node types are missing (all listed in the exception; unless skipping), or the content is invalid.</exception>
@@ -178,7 +186,8 @@ public sealed partial class Diagram
         }
 
         // Loading is not a user edit, so apply everything without recording history
-        var diagram = new Diagram(types, options) { LoadReport = report };
+        // The initialize callback runs after the load (below), so handlers never observe a half-built diagram
+        var diagram = new Diagram(types, options is null ? null : options with { Initialize = null }) { LoadReport = report };
         using (diagram.History.Suspend())
         {
             foreach (var pageSnapshot in pages)
@@ -189,6 +198,7 @@ public sealed partial class Diagram
 
         // Suspended changes leave the history marked dirty; a fresh load must be empty and clean
         diagram.History.Clear();
+        options?.Initialize?.Invoke(diagram);
         return diagram;
     }
 

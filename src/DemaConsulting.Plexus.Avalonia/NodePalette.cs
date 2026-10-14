@@ -42,14 +42,14 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///         arrow keys move the selection. When the sequence given as <see cref="Types"/> is not a
 ///         <see cref="NodeTypeRegistry"/>, its port types are unknown and ports are drawn neutral grey;
 ///         pass the registry for the exact port colors. A registry that changes after it was given
-///         (types added or removed) is picked up by <see cref="Refresh"/>. It must be used on the UI thread.
+///         (types added or removed) is picked up by <see cref="Refresh"/>. It must be used on the UI thread. The palette derives from Avalonia's <c>Control</c>,
+///         so the members every control has (<c>Bounds</c>, <c>IsVisible</c>, <c>Width</c>, <c>Focus()</c>, ...) are available but not repeated in the member tables of this page.
 ///     </para>
 /// </remarks>
 /// <example>
 ///     In XAML, bind the palette to the editor; it follows the editor's diagram, theme and zoom. When a <c>GridSplitter</c> resizes the
-///     palette, the width belongs to the grid column, so do not set a <c>Width</c> on the palette itself (the block below is XAML, not C#, even though the generated page fences it as csharp):
-///     <code><![CDATA[
-///     <!-- XAML, not C# -->
+///     palette, the width belongs to the grid column, so do not set a <c>Width</c> on the palette itself:
+///     <code lang="xml"><![CDATA[
 ///     <Grid ColumnDefinitions="220,5,*">
 ///         <plexus:NodePalette Grid.Column="0" Editor="{Binding #Editor}" />
 ///         <GridSplitter Grid.Column="1" ResizeDirection="Columns" />

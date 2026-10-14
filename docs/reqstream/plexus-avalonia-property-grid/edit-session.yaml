@@ -214,3 +214,29 @@ sections:
               - PropertyEditSession_LiveEdit_RefusedExceptionIsAnInlineError
               - PropertyEditSession_Commit_SourceScopeThatSkipsTheActionFails
               - PropertyCommitRefusedException_Constructor_KeepsPathAndMessage
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CommitFailures
+            title: >-
+              When a commit is refused because of one row, the commit result shall list the failing row with its path
+              and message, also when that row was not edited, as well as the edits that failed on their own, with
+              nothing
+              counted as applied; and error messages shall be clean user-facing text without the framework's parameter
+              name suffix.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; a host that commits through the session must be
+              able to select the failing row and show its reason without parsing a message.
+            tests:
+              - PropertyEditSession_Commit_RefusedExceptionMarksTheNamedProperty
+              - PropertyEditSession_Commit_RefusedExceptionForAnUneditedRowIsListedAsFailed
+              - PropertyEditSession_SetText_ArgumentExceptionMessage_HasNoParameterSuffix
+
+          - id: PlexusAvaloniaPropertyGrid-EditSession-PrefixedRoots
+            title: >-
+              The session shall find an item by the path of a top-level item even when that path contains dots, and
+              continue through nested properties and collection elements from there.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Staged; sources that prefix their row paths to keep groups of
+              rows apart rely on the lookup resolving whole root paths.
+            tests:
+              - PropertyEditSession_FindItem_PrefixedRootPaths_AreResolvedByTheirFullPath
+              - NodePropertySource_Paths_NameDeclaredAndDataRowsNeverCollide

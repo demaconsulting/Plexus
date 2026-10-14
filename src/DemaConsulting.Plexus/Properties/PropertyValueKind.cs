@@ -16,19 +16,23 @@ namespace DemaConsulting.Plexus;
 ///     <code>
 ///     using DemaConsulting.Plexus;
 ///
-///     // texts: what the dialog's edit boxes hold, by property name (node: the Node being edited)
-///     var texts = node.Type.Properties.Where(p =&gt; !p.IsReadOnly)
+///     var diagram = new Diagram(types);                     // types: the registry of the DemaConsulting.Plexus example
+///     var node = diagram.Pages.Add("Main").AddNode("demo.Source", 0, 0, name: "A");
+///
+///     // texts: what the dialog's edit boxes hold, by property name
+///     var dialogTexts = new Dictionary&lt;string, string&gt; { ["Value"] = "abc" };
+///     var texts = node.Type.Properties.Where(p =&gt; !p.IsReadOnly &amp;&amp; dialogTexts.ContainsKey(p.Name))
 ///         .ToDictionary(p =&gt; p.Name, p =&gt; (object?)dialogTexts[p.Name]);
 ///
 ///     if (!node.Properties.TrySetAll(texts, out var errors))
 ///     {
 ///         foreach (var (name, message) in errors)
 ///         {
-///             Console.WriteLine($"{name}: {message}");       // e.g. "Gain: 'abc' is not a number." Nothing was changed.
+///             Console.WriteLine($"{name}: {message}");       // e.g. "Value: 'abc' is not a number." Nothing was changed.
 ///         }
 ///     }
 ///
-///     string shown = PropertyDefinition.FormatForEdit(node.Properties["Gain"]);   // the text to put into the edit box
+///     string shown = PropertyDefinition.FormatForEdit(node.Properties["Value"]);   // the text to put into the edit box
 ///     </code>
 /// </example>
 public enum PropertyValueKind
@@ -51,6 +55,6 @@ public enum PropertyValueKind
     /// <summary>A string constrained to a fixed list of options.</summary>
     Choice,
 
-    /// <summary>A <see cref="Color"/> value.</summary>
+    /// <summary>A Plexus <see cref="DemaConsulting.Plexus.Geometry.Color"/> (an ARGB color, written as <c>"#AARRGGBB"</c> in JSON).</summary>
     Color,
 }

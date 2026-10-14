@@ -3,6 +3,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using DemaConsulting.Plexus.Demo.Gui;
 
 namespace DemaConsulting.Plexus.Demo.Tests;
@@ -70,7 +71,7 @@ public class AltEnterShortcutTests
         Release(host, Key.LeftAlt, RawInputModifiers.None);
         var dialogs = Dialogs(host);
         var dialog = dialogs.Single();
-        host.TypeIntoRow(dialog, "Name", "Renamed");
+        host.TypeIntoRow(dialog, NodePropertySource.NamePath, "Renamed");
         host.Get<Button>(AutomationIds.PropertiesOk, dialog).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         host.Flush();
         var renamed = node.Name;

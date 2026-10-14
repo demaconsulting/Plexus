@@ -7,11 +7,15 @@ namespace DemaConsulting.Plexus;
 ///     Rules run after the structural checks Plexus always enforces (one output and one input, same
 ///     page, no connection of a node to itself, no duplicate wire), so implementations only express domain policy and never
 ///     need to test for a self-loop. The validator is always called as <c>(output, input)</c>, even when the caller
-///     passed the two ports in the opposite order. The
+///     passed the two ports in the opposite order, and this order is guaranteed: <paramref name="from"/> is never an input.
+///     <see cref="DiagramPage.CanReconnect"/> calls it with the wire's new (or kept) ports in the same order.
+///     The
 ///     diagram's initial rule, <see cref="ConnectionRules.Default"/>, refuses fan-in (a second wire into
 ///     an input) unless the input opts in with <see cref="PortDefinition.AllowsMultipleWires"/>; a rule that
 ///     replaces it takes over that decision too, so combine custom rules with the default using <see cref="ConnectionRules.All"/>.
-///     Use <c>port.Wires.Count</c> to express degree limits.
+///     Express degree limits with <see cref="ConnectionRules.MaxOutgoingWires"/> and <see cref="ConnectionRules.MaxIncomingWires"/>, or
+///     count wires yourself with <see cref="Port.CountWiresIgnoringReconnect"/> (not <c>port.Wires.Count</c>): while a wire is being moved it is
+///     still attached to its old ports and must not count against its new ones; <see cref="DiagramPage.WireBeingReconnected"/> names it.
 ///     A rule must be fast and free of side effects: editors call it repeatedly while the user drags a wire over candidate ports.
 /// </remarks>
 /// <example>

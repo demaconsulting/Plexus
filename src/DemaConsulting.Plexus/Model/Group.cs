@@ -21,10 +21,13 @@ namespace DemaConsulting.Plexus;
 ///         <see cref="DiagramPage.Move"/> (which moves every member, and a collapsed group's box). In the Avalonia
 ///         <c>DiagramEditor</c> the user collapses and expands a group by clicking the toggle in its title bar (which sets
 ///         <see cref="IsCollapsed"/>) and drags a group by its title bar. Wires to nodes inside a collapsed group are
-///         drawn to the collapsed box.
+///         drawn to the collapsed box, which shows read-only proxy ports: one triangle per distinct inner port whose wires cross the group boundary,
+///         inputs on the left edge and outputs on the right edge, labeled with the inner port's path <c>Node.port</c> (for example <c>Ctrl2.fan</c>).
+///         They are display only: they are not <see cref="Port"/>s of the group and cannot be connected (wires stay connected to the real node ports); see
+///         <see cref="GroupProxyPortLayout"/>.
 ///     </para>
 ///     <para>
-///         Inherited from <see cref="DiagramElement"/> (generated API pages do not list inherited members): <see cref="DiagramElement.Id"/>,
+///         Inherited from <see cref="DiagramElement"/> (the member tables of this page list only what <see cref="Group"/> declares): <see cref="DiagramElement.Id"/>,
 ///         <see cref="DiagramElement.Page"/> (null while the group is removed), <see cref="DiagramElement.Parent"/> (the enclosing group of a nested group, or null),
 ///         <see cref="DiagramElement.IsVisible"/>, <see cref="DiagramElement.GetBounds"/> (the same rectangle as <see cref="Bounds"/>), <see cref="DiagramElement.Remove"/>
 ///         and the <see cref="DiagramElement.PropertyChanged"/> event.

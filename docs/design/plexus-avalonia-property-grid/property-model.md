@@ -19,7 +19,8 @@ belongs to this unit because nested items are built from it.
 - **Item state**: an item holds its parent (for nested items), and caches its child items together with the value
   instance (reference types) or runtime type (value types) they were built for. Everything else is derived on demand
   from the descriptor or from the subclass, so an item is always consistent with the target.
-- **Path**: the name for a top-level item, `Parent.Name` for a nested property and `Parent[index]` for a collection
+- **Path**: the item's root path for a top-level item (its name, unless the source prefixes it, as the Plexus node source
+  does with `Node.`, `Property.` and `Data.`), `Parent.Name` for a nested property and `Parent[index]` for a collection
   element. The path is the key of edits and errors in the edit session.
 - **PropertyResult**: a success flag with an error message; all `Try...` members return it.
 - **StandardValue**: a value with its display text.

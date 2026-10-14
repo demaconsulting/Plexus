@@ -70,8 +70,18 @@ public sealed partial class DiagramEditor
     /// </remarks>
     /// <example>
     ///     <code>
-    ///     var group = editor.GroupSelection("Input stage");     // null when nothing that can be grouped is selected
-    ///     if (group is null) { statusBar.Text = "Select the nodes to group first."; }
+    ///     using Avalonia.Controls;
+    ///     using DemaConsulting.Plexus.Avalonia;
+    ///
+    ///     public static class GroupSample
+    ///     {
+    ///         // editor: the window's DiagramEditor; status: a TextBlock for messages
+    ///         public static void Group(DiagramEditor editor, TextBlock status)
+    ///         {
+    ///             var group = editor.GroupSelection("Input stage");     // null when nothing that can be grouped is selected
+    ///             if (group is null) { status.Text = "Select the nodes to group first."; }
+    ///         }
+    ///     }
     ///     </code>
     /// </example>
     /// <param name="title">The title shown in the group's title bar.</param>

@@ -73,6 +73,29 @@ Members you leave out keep their defaults (or, for `Apply`, the current value). 
 The demo has one such object, `DemoAppearance.Options`, which its samples, `New`, `Open` and the command-line renderer
 all use.
 
+Event handlers belong to one diagram instance and are not part of a file, so they are attached after each diagram is made.
+`DiagramOptions.Initialize` does that in the same place: it is called with every diagram the options create or load,
+once the
+diagram is complete (a loaded diagram has its content and a clean undo history by then):
+
+```csharp
+var options = new DiagramOptions
+{
+    Initialize = diagram => diagram.NodeRenaming += (_, e) =>
+    {
+        if (e.ProposedName.Contains(' '))
+        {
+            e.Cancel = true;
+            e.Reason = "Names cannot contain spaces.";
+        }
+    },
+};
+```
+
+`new Diagram(types, options)`, `FromJson`, `FromSnapshot` and `FromTree` call it once; `Apply` calls it on every call,
+so use
+`Apply` with an initializer only on a diagram that was not initialized yet, otherwise the handlers are attached twice.
+
 ### Files With Unknown Node Types
 
 A file may use node types that this application does not have (a newer version wrote it, or another set of plug-ins).

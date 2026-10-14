@@ -52,7 +52,7 @@ public static class SceneBuilder
     ///     Builds the scene of a page.
     /// </summary>
     /// <param name="page">The page to draw.</param>
-    /// <param name="options">Optional; defaults to null, which uses the default <see cref="SceneOptions"/> (the diagram's theme, approximate text measurer, grid on, nothing selected). May be null.</param>
+    /// <param name="options">The scene options; null uses the default <see cref="SceneOptions"/> (the diagram's theme, approximate text measurer, grid on, nothing selected).</param>
     /// <returns>The scene.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is null.</exception>
     public static DiagramScene Build(DiagramPage page, SceneOptions? options = null)

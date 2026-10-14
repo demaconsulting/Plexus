@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 
 /// <summary>
 ///     The commit plumbing shared by the Plexus sources: runs the grid's writes and the source's publish step inside one

@@ -13,13 +13,21 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     using var source = new ReflectionPropertySource(new Person { Name = "Ada" });
 ///     foreach (PropertyGroup group in PropertyOrdering.Group(source.GetItems(), PropertySortMode.Categorized))
 ///     {
-///         AddHeading(group.Category);
+///         Console.WriteLine(group.Category);                  // a heading in your own UI
 ///         foreach (PropertyItem item in group.Items)
 ///         {
-///             AddRow(item);
+///             Console.WriteLine($"  {item.Label}");           // a row in your own UI
 ///         }
+///     }
+///
+///     public class Person
+///     {
+///         public string Name { get; set; } = "";
 ///     }
 ///     ]]></code>
 /// </example>

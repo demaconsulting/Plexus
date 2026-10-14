@@ -15,7 +15,7 @@ editor registry.
 ## Architecture
 
 The system consists of ten software units in the `DemaConsulting.Plexus.Avalonia.PropertyGrid` package. The generic
-layers do not depend on Plexus types; the Plexus adapter (the `DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus`
+layers do not depend on Plexus types; the diagram adapter (the `DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams`
 namespace) is a separate layer that plugs in through the source abstraction and registers itself with the source factory
 when the package loads.
 

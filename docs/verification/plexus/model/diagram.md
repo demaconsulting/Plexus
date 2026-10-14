@@ -113,5 +113,10 @@ ReqStream trace matrix.
 - **Diagram_Apply_ReplacesOnlySetMembers_NotUndoable** and **Diagram_Apply_FullOptions_InstallsEveryMember**: only
   members that are set are replaced, each raises a `SettingsChanged` notification, nothing enters the history and null
   is refused (`DiagramOptionsTests.cs`).
+- **Diagram_Constructor_WithInitialize_InvokesItOnceWithTheConfiguredDiagram**,
+  **Diagram_Loaders_WithInitialize_InvokeItAfterTheLoadAndAttachPerInstanceHandlers** and
+  **Diagram_Apply_WithInitialize_InvokesItAfterTheSettings** (`Plexus-Model-Diagram-Initialize`): the callback runs once
+  per created or loaded diagram after the configuration (and, for loaders, after the content is loaded and the history
+  is clean), a rename veto attached in it is live on every loaded diagram, and `Apply` calls it last on every call.
 
 **Expected**: each test passes, proving the Diagram requirements.

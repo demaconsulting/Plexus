@@ -23,7 +23,20 @@ diagram.Theme = DiagramTheme.Classic with
 };
 ```
 
-A complete dark theme needs the text colors as well, since the classic theme draws black text on a gray canvas:
+A complete dark theme needs the text colors as well, since the classic theme draws black text on a gray canvas. Plexus
+ships one, `DiagramTheme.Dark`: a near-black canvas with quiet grid dots, slate nodes with a white title, light green
+instance names, light gray summaries, port labels and wires, a bright blue selection, dim yellow annotations with pale
+text, and faint frames for groups. Only colors differ from `Classic`, so a diagram can switch between the two without
+anything moving:
+
+```csharp
+diagram.Theme = DiagramTheme.Dark;                                   // before adding content
+Editor.DiagramTheme = DiagramTheme.Dark;                             // or for the editor's display only
+byte[] png = PlexusRenderer.RenderPng(page, new RenderOptions { Theme = DiagramTheme.Dark });
+```
+
+Port type colors come from the registry (`PortType`), so pick type colors that read on dark when you use this theme.
+Derive your own variant with `DiagramTheme.Dark with { ... }`, or build one from `Classic` as below:
 
 ```csharp
 diagram.Theme = DiagramTheme.Classic with

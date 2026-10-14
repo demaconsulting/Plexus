@@ -5,6 +5,8 @@ namespace DemaConsulting.Plexus.Scene;
 /// </summary>
 /// <remarks>
 ///     The stroke is centered on the rectangle's edge. A null fill or stroke means "not drawn".
+///     Inherited from <see cref="ScenePrimitive"/>: <see cref="ScenePrimitive.Bounds"/> (the rectangle drawn in, stroke included) and
+///     <see cref="ScenePrimitive.Element"/> (the owning model element, or null).
 /// </remarks>
 public sealed class RectPrimitive : ScenePrimitive
 {
@@ -14,9 +16,9 @@ public sealed class RectPrimitive : ScenePrimitive
     /// <param name="rect">The rectangle.</param>
     /// <param name="fill">The fill color, or null for no fill.</param>
     /// <param name="stroke">The stroke color, or null for no stroke.</param>
-    /// <param name="strokeThickness">Optional; defaults to 1. The stroke thickness.</param>
-    /// <param name="cornerRadius">Optional; defaults to 0 (square corners). The corner radius.</param>
-    /// <param name="element">Optional; defaults to null. The owning model element. May be null.</param>
+    /// <param name="strokeThickness">The stroke thickness.</param>
+    /// <param name="cornerRadius">The corner radius; 0 gives square corners.</param>
+    /// <param name="element">The owning model element.</param>
     public RectPrimitive(
         Rect rect,
         Color? fill,

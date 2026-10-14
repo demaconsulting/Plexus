@@ -8,20 +8,18 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///     never opens any property UI.
 /// </remarks>
 /// <example>
-///     Open a host-built dialog for the double-clicked node (see the namespace example for a complete properties dialog).
+///     Open the ready-made properties dialog of the <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c> package for the double-clicked node:
+///     it edits the name, properties and host data and applies them as one undo entry on OK.
 ///     <code><![CDATA[
 ///     using Avalonia.Controls;
 ///     using DemaConsulting.Plexus.Avalonia;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 ///
 ///     static class DoubleClickSample
 ///     {
 ///         public static void Wire(DiagramEditor editor, Window owner)
 ///         {
-///             editor.NodeDoubleClicked += async (_, e) =>
-///             {
-///                 var dialog = new Window { Title = $"Properties - {e.Node.Name}", Width = 300, Height = 200 };
-///                 await dialog.ShowDialog(owner);
-///             };
+///             editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(owner, e.Node);
 ///         }
 ///     }
 ///     ]]></code>

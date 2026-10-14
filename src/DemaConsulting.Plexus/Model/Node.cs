@@ -14,7 +14,7 @@ namespace DemaConsulting.Plexus;
 ///     <see cref="PropertyBag"/> of typed values (<see cref="Properties"/>) and an optional host payload
 ///     (<see cref="Data"/>). Not thread-safe.
 ///     <para>
-///         Inherited from <see cref="DiagramElement"/> (generated API pages do not list inherited members): <see cref="DiagramElement.Id"/>,
+///         Inherited from <see cref="DiagramElement"/> (the member tables of this page list only what <see cref="Node"/> declares): <see cref="DiagramElement.Id"/>,
 ///         <see cref="DiagramElement.Page"/> (the page the node is on; null while it is removed, so <c>node.Page!.Diagram</c> reaches the diagram and its history),
 ///         <see cref="DiagramElement.Parent"/> (the group it belongs to, or null), <see cref="DiagramElement.IsVisible"/>, <see cref="DiagramElement.GetBounds"/>,
 ///         <see cref="DiagramElement.Remove"/> and the <see cref="DiagramElement.PropertyChanged"/> event.
@@ -155,28 +155,37 @@ public sealed partial class Node : DiagramElement
     public PropertyBag Properties { get; }
 
     /// <summary>
-    ///     Gets or sets the host payload: any application object attached to the node (undoable; replace semantics, so immutable records are recommended).
+    ///     Gets or sets the host payload: any application object attached to the node (undoable; replace semantics: assign a new or copied object rather than mutating the current one).
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The setter accepts any object and does not check it against <see cref="NodeType.DataType"/>; assigning an equal value
-    ///         (by <see cref="object.Equals(object?)"/>) records nothing. To change a record payload assign a modified copy:
-    ///         <c>node.Data = (MyData)node.Data! with { Level = 3 };</c> (one undo entry).
+    ///         The setter accepts any object unless the node type declares <see cref="NodeType.DataType"/>: then an instance of an
+    ///         incompatible type throws <see cref="ArgumentException"/> immediately (a derived type and null are accepted), instead of failing
+    ///         later in <see cref="Diagram.ToJson(bool)"/>. A type that declares only a <see cref="NodeType.DataSerializer"/> accepts any object.
+    ///         Assigning an equal value
+    ///         (by <see cref="object.Equals(object?)"/>) records nothing. Immutable records are the simplest payload: assign a modified copy,
+    ///         <c>node.Data = (MyData)node.Data! with { Level = 3 };</c> (one undo entry). A mutable class (the kind a property grid edits) is edited on a
+    ///         copy from <see cref="CloneData"/> that is assigned back afterwards; see <see cref="NodeType.DataType"/> for what such a class needs.
+    ///         New nodes start with the payload produced by <see cref="NodeType.CreateData"/>, if the type declares one.
     ///     </para>
     ///     <para>
     ///         The payload takes part in JSON persistence, copy and paste only when the node type declares
     ///         <see cref="NodeType.DataType"/> or <see cref="NodeType.DataSerializer"/>; otherwise it is silently left out
-    ///         of JSON and of the clipboard (an in-process duplicate shares the reference). A payload whose type
-    ///         does not match <see cref="NodeType.DataType"/> makes <see cref="Diagram.ToJson(bool)"/> throw
-    ///         <see cref="InvalidOperationException"/>. See <see cref="NodeType.DataType"/> for a worked example.
+    ///         of JSON and of the clipboard (an in-process duplicate shares the reference). See <see cref="NodeType.DataType"/> for a worked example.
     ///     </para>
     /// </remarks>
+    /// <exception cref="ArgumentException">Thrown when the node type declares a <see cref="NodeType.DataType"/> and the value is an instance of an incompatible type.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the node is removed from its page.</exception>
     public object? Data
     {
         get => _data;
         set
         {
+            if (Type.DescribeDataMismatch(value) is { } mismatch)
+            {
+                throw new ArgumentException(mismatch, nameof(value));
+            }
+
             var page = RequirePage();
             if (Equals(_data, value))
             {

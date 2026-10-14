@@ -20,17 +20,20 @@ when an editor previews a drag, so a drop target can be refused with an explanat
   `Allowed` property is the allowed result (null reason); `Denied(reason)` creates a denial. A `default` value is a
   denial with no reason, which callers must tolerate (see Error Handling).
 - **ConnectionValidator**: a delegate `ConnectionCheck (Port from, Port to)`. `from` is always the output (source)
-  port and `to` the input (target) port.
+  port and `to` the input (target) port, for connects and for reconnects (the wire's new or kept ports), and this order
+  is guaranteed.
 - **ConnectionRules**: a static class that exposes the ready-made rules as static properties holding delegates:
-  `Default`, `SameType`, `SingleInputWire`, plus the `All` combinator. The rules hold no state. A private helper
+  `Default`, `SameType`, `SingleInputWire`, the degree-limit factories `MaxOutgoingWires` and `MaxIncomingWires`, plus
+  the `All` combinator. The rules hold no state. A private helper
   implements the single-input check shared by `Default` and `SingleInputWire`.
 
 ### Key Methods
 
 - **ConnectionRules.Default**: allows the connection unless the target input already has a wire and its definition
   does not allow fan-in, in which case it denies with "Input 'Node.in' already has a wire; it does not accept more
-  than one." Outputs are unrestricted. The wires of the input are counted with `Port.CountWiresExceptChecked`, which
-  leaves out the wire a `CanReconnect` check is moving (published by the page as `WireUnderCheck`), so a reconnect
+  than one." Outputs are unrestricted. The wires of the input are counted with `Port.CountWiresIgnoringReconnect`, which
+  leaves out the wire a `CanReconnect` check is moving (published by the page as the public `WireBeingReconnected`),
+  so a reconnect
   onto the wire's own target, or a change of only its source, is not refused by itself. A diagram uses `Default`
   until the host assigns its own rule. Because the policy lives in the rule and not in the structural checks, a host
   that assigns a rule built without `Default` (or `SingleInputWire`) takes over the decision completely and may allow
@@ -38,6 +41,12 @@ when an editor previews a drag, so a drop target can be refused with an explanat
   `All(ConnectionRules.Default, ...)`.
 - **ConnectionRules.SameType**: allows the connection when the ordinal comparison of the two ports' type keys is
   equal; otherwise denies with a reason that names both keys.
+- **ConnectionRules.MaxOutgoingWires(max)** and **ConnectionRules.MaxIncomingWires(max)**: factories (max at least 1,
+  else `ArgumentOutOfRangeException`) of degree limits. They count the wires of the output (or input) with
+  `Port.CountWiresIgnoringReconnect` and deny, with a reason naming the port and the limit, when the count has reached
+  `max`; because the wire a reconnect check is moving is not counted, moving a wire along the same output or input and
+  changing only one end is never refused by the limit itself. They do not include `Default`; hosts compose them with
+  `All`.
 - **ConnectionRules.SingleInputWire**: the same rule as `Default`, kept as a named building block: allows the
   connection when the target input port has no wires or allows several; otherwise denies with the reason above, which
   names the input port and its node.
@@ -59,7 +68,7 @@ Exceptions thrown by a host rule are not caught here and propagate to the caller
 
 ConnectionRules uses the Model subsystem's `Port` type to read the type key, name, owning node and wire list of the
 ports it is given. The ready-made rules depend on `Port.TypeKey`, `Port.AllowsMultipleWires`,
-`Port.CountWiresExceptChecked` and `Port.ToString` (`Node.port`). It
+`Port.CountWiresIgnoringReconnect` and `Port.ToString` (`Node.port`). It
 has no other dependencies.
 
 ### Callers

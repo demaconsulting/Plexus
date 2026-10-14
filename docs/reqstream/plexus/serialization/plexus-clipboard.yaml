@@ -236,7 +236,6 @@ sections:
                   - DiagramPage_Duplicate_NodesAndWire_ClonesAtOffsetAsOneUndoEntry
                   - DiagramPage_Duplicate_EmptySelection_DoesNothing
                   - DiagramPage_Duplicate_InvalidArguments_Throw
-                  - DiagramPage_Duplicate_PayloadOfWrongType_ThrowsInvalidOperation
 
               - id: Plexus-Serialization-PlexusClipboard-DuplicateGroups
                 title: Duplicating a group shall duplicate its members and nesting structure.

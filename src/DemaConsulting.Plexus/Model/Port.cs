@@ -107,16 +107,24 @@ public sealed class Port
             : [];
 
     /// <summary>
-    ///     Counts the wires connected to this port, leaving out the wire a reconnect check is moving.
+    ///     Counts the wires connected to this port, leaving out the wire that a reconnect check is moving.
     /// </summary>
     /// <remarks>
-    ///     Connection rules run while <see cref="DiagramPage.CanReconnect"/> judges a wire that is still attached
-    ///     to its old ports; that wire must not count against the port it is being moved to (or kept on).
+    ///     <para>
+    ///         Use this instead of <see cref="Wires"/><c>.Count</c> in a <see cref="ConnectionValidator"/> that limits the number of wires
+    ///         per port. <see cref="DiagramPage.CanReconnect"/> (and so every wire-end drag in the editor) judges a wire that is still attached to its
+    ///         old ports; counted naively, that wire would count against the port it is being moved to or kept on, so keeping a wire on a port
+    ///         that is "full" would be refused. Outside a reconnect check the result equals <c>Wires.Count</c>. The built-in
+    ///         <see cref="ConnectionRules.MaxOutgoingWires"/>, <see cref="ConnectionRules.MaxIncomingWires"/> and <see cref="ConnectionRules.SingleInputWire"/> use it.
+    ///     </para>
+    ///     <para>
+    ///         For other rules read <see cref="DiagramPage.WireBeingReconnected"/> directly.
+    ///     </para>
     /// </remarks>
     /// <returns>The number of wires, not counting the wire under a reconnect check.</returns>
-    internal int CountWiresExceptChecked() =>
+    public int CountWiresIgnoringReconnect() =>
         Node.Page is { } page
-            ? page.Wires.Count(w => (ReferenceEquals(w.Source, this) || ReferenceEquals(w.Target, this)) && !ReferenceEquals(w, page.WireUnderCheck))
+            ? page.Wires.Count(w => (ReferenceEquals(w.Source, this) || ReferenceEquals(w.Target, this)) && !ReferenceEquals(w, page.WireBeingReconnected))
             : 0;
 
     /// <summary>

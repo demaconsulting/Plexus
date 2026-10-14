@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.VisualTree;
 using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using DemaConsulting.Plexus.Demo.Gui;
 using DemaConsulting.Plexus.Demo.Model;
 
@@ -47,7 +48,7 @@ public class DemoPropertyGridTests
         host.Editor.Select(speaker);
         host.Flush();
         var before = host.Session.Diagram.History.UndoCount;
-        var slider = host.Get<Control>(AutomationIds.PropertiesEditor("Volume")).GetSelfAndVisualDescendants().OfType<Slider>().Single();
+        var slider = host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.PropertyPath("Volume"))).GetSelfAndVisualDescendants().OfType<Slider>().Single();
 
         // Act
         slider.Value = 30;
@@ -59,7 +60,7 @@ public class DemoPropertyGridTests
         Assert.Equal(before + 1, host.Session.Diagram.History.UndoCount);
         host.Editor.Undo();
         host.Flush();
-        Assert.Equal(50, host.Get<Control>(AutomationIds.PropertiesEditor("Volume")).GetSelfAndVisualDescendants().OfType<Slider>().Single().Value);
+        Assert.Equal(50, host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.PropertyPath("Volume"))).GetSelfAndVisualDescendants().OfType<Slider>().Single().Value);
     });
 
     /// <summary>
@@ -79,7 +80,7 @@ public class DemoPropertyGridTests
         var before = host.Session.Diagram.History.UndoCount;
 
         // Act
-        host.Get<Control>(AutomationIds.PropertiesEditor("Progress")).GetSelfAndVisualDescendants().OfType<Slider>().Single().Value = 80;
+        host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.DataPath("Progress"))).GetSelfAndVisualDescendants().OfType<Slider>().Single().Value = 80;
         host.Flush();
 
         // Assert
@@ -103,11 +104,11 @@ public class DemoPropertyGridTests
         host.Choose("Menu_Edit_Properties");
         var dialog = host.Window.OwnedWindows.OfType<PropertyGridDialog>().Single();
         dialog.Height = 920;
-        dialog.Grid.SetExpanded("Contact", true);
+        dialog.Grid.SetExpanded(NodePropertySource.DataPath("Contact"), true);
 
         // Act
         var dialogShot = Capture(host, dialog, "task-dialog");
-        _ = dialog.Grid.EditCollectionAsync(dialog.Grid.Session!.FindItem("Checklist")!);
+        _ = dialog.Grid.EditCollectionAsync(dialog.Grid.Session!.FindItem(NodePropertySource.DataPath("Checklist"))!);
         host.Flush();
         var collection = dialog.OwnedWindows.OfType<CollectionEditorDialog>().Single();
         var collectionShot = Capture(host, collection, "checklist-collection-editor");

@@ -13,11 +13,21 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     // node: a Node of a diagram; Settings is an annotated class of your own
+///     var settings = new Settings();
 ///     var nameSource = new CustomPropertySource([new CustomPropertyItem("Name", typeof(string), () => node.Name)]);
-///     var targetSource = new ReflectionPropertySource(node.Settings);
+///     var targetSource = new ReflectionPropertySource(settings);
 ///
 ///     using var merged = new CompositePropertySource(nameSource, targetSource);
 ///     IReadOnlyList<PropertyItem> items = merged.GetItems();   // Name first, then the settings
+///
+///     public class Settings
+///     {
+///         public int Retries { get; set; } = 3;
+///     }
 ///     ]]></code>
 /// </example>
 public sealed class CompositePropertySource : IPropertySource, IPropertyCommitScope, IDisposable
@@ -28,7 +38,7 @@ public sealed class CompositePropertySource : IPropertySource, IPropertyCommitSc
     private readonly List<IPropertySource> _sources = [];
 
     /// <summary>
-    ///     Initializes a new instance of the <see cref="CompositePropertySource"/> class.
+    ///     Initializes a new instance of the <see cref="CompositePropertySource"/> class from separate sources (a <c>params</c> array: <c>new CompositePropertySource(first, second)</c>).
     /// </summary>
     /// <param name="sources">The sources to merge, in order.</param>
     /// <exception cref="ArgumentNullException"><paramref name="sources"/> is <see langword="null"/> or contains <see langword="null"/>.</exception>

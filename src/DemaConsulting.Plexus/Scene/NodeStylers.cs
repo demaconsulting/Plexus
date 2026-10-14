@@ -7,9 +7,8 @@ namespace DemaConsulting.Plexus.Scene;
 /// </summary>
 /// <remarks>
 ///     Each helper returns a plain <c>Func&lt;Node, NodeStyle?&gt;</c>, so they can be assigned directly,
-///     combined, or called from a hand-written styler. They mirror <see cref="WireStylers"/>. Nullability: <see cref="Diagram.NodeStyler"/> has the same type,
-///     <c>Func&lt;Node, NodeStyle?&gt;?</c>; the styler may return null for a node (use the theme for that node), and the <c>map</c> parameter of
-///     <see cref="ByProperty"/> is a <c>Func&lt;object?, NodeStyle?&gt;</c>: its value may be null and so may the style it returns.
+///     combined, or called from a hand-written styler. They mirror <see cref="WireStylers"/>. A styler may return null for a node to use the
+///     theme for that node; the <c>map</c> parameter of <see cref="ByProperty"/> receives the property value, which may be null.
 /// </remarks>
 /// <example>
 ///     Fade disabled nodes and give the node named "Output" a green halo.
@@ -22,6 +21,24 @@ namespace DemaConsulting.Plexus.Scene;
 ///     diagram.NodeStyler = NodeStylers.Combine(
 ///         NodeStylers.ByProperty("Enabled", v =&gt; v is false ? new NodeStyle { Opacity = 0.5 } : null),
 ///         NodeStylers.When(node =&gt; node.Name == "Output", new NodeStyle { Glow = Color.Parse("#40FF80") }));
+///     </code>
+///     <para>
+///         A style that depends on another node, here a node that glows while the node wired into it has <c>Mode</c> "Manual": a styler receives
+///         only the node being styled, so follow <see cref="Node.Wires"/> to its neighbors (see <see cref="PerPage"/> to do that work once per page).
+///     </para>
+///     <code>
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Geometry;
+///     using DemaConsulting.Plexus.Scene;
+///
+///     var diagram = new Diagram(types);                    // types: the registry of the DemaConsulting.Plexus example
+///     var hot = new NodeStyle { Fill = Color.Parse("#7A2E1E"), Glow = Color.Parse("#FF6A3D") };
+///     diagram.NodeStyler = node =&gt;
+///     {
+///         // Wire.Source is the output port that drives the wire, Wire.Target the input port it feeds
+///         var driver = node.Wires.Where(w =&gt; w.Target.Node == node).Select(w =&gt; w.Source.Node);
+///         return driver.Any(d =&gt; d.Properties.TryGetValue("Mode", out var mode) &amp;&amp; Equals(mode, "Manual")) ? hot : null;
+///     };
 ///     </code>
 /// </example>
 public static class NodeStylers
@@ -121,6 +138,7 @@ public static class NodeStylers
     ///     Combines stylers so that later ones override the members earlier ones set.
     /// </summary>
     /// <remarks>
+    ///     The stylers are a <c>params</c> array: pass them as separate arguments, <c>NodeStylers.Combine(first, second)</c>.
     ///     Every styler is evaluated for every node; a member left null by a later styler keeps the
     ///     value from the earlier ones (see <see cref="NodeStyle.WithOverrides"/>). The result is null
     ///     when no styler returned a style.

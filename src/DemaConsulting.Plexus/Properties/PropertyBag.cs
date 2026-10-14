@@ -34,12 +34,12 @@ namespace DemaConsulting.Plexus;
 ///         Console.WriteLine(comment);
 ///     }
 ///
-///     // Several edits as ONE undo entry: wrap them in a transaction
-///     using (diagram.History.BeginTransaction("Tune source"))
+///     // Several edits as ONE undo entry: wrap them in Transact (it also rolls everything back if one of them throws)
+///     diagram.History.Transact("Tune source", () =>
 ///     {
 ///         props["Value"] = 9;
 ///         props["Comment"] = "final";
-///     }
+///     });
 ///
 ///     diagram.History.Undo();                               // reverts both edits at once
 ///     props.Reset("Value");                                 // back to the declared default (undoable)
@@ -129,7 +129,7 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     }
 
     /// <summary>
-    ///     Gets a property value converted to the requested type; call it with an explicit type argument, for example <c>Get&lt;double&gt;("Gain")</c> (generic methods are listed without their type parameter in the generated tables).
+    ///     Gets a property value converted to the requested type; call it with an explicit type argument, for example <c>Get&lt;double&gt;("Gain")</c>.
     /// </summary>
     /// <typeparam name="T">The wanted type; numeric properties convert when no precision is lost.</typeparam>
     /// <param name="name">The property name.</param>

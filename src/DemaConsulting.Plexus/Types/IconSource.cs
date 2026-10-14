@@ -29,8 +29,8 @@ namespace DemaConsulting.Plexus;
 ///     // 2. A file, read immediately (throws IOException when it cannot be read)
 ///     // var fromFile = IconSource.FromSvgFile(Path.Combine(AppContext.BaseDirectory, "icons", "valve.svg"));
 ///
-///     // 3. An embedded resource. The name is "{DefaultNamespace}.{folder path with dots}.{file name}", for a project with
-///     //    <EmbeddedResource Include="Icons\valve.svg" /> and root namespace MyApp it is "MyApp.Icons.valve.svg".
+///     // 3. An embedded resource. The name is "{DefaultNamespace}.{folder path with dots}.{file name}": for a project with the item
+///     //    &lt;EmbeddedResource Include="Icons\valve.svg" /&gt; and the root namespace MyApp it is "MyApp.Icons.valve.svg".
 ///     //    Check the exact names with Assembly.GetManifestResourceNames().
 ///     // var fromResource = IconSource.FromSvgResource(typeof(Program).Assembly, "MyApp.Icons.valve.svg");
 ///

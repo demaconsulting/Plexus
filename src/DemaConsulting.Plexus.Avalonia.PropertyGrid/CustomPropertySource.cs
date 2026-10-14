@@ -11,10 +11,14 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
+///     using DemaConsulting.Plexus;
+///     using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+///
+///     // node: a Node of a diagram
 ///     var source = new CustomPropertySource();
 ///     source.Add(new CustomPropertyItem("Name", typeof(string), () => node.Name, v => node.Name = (string)v!));
-///     source.Add(new CustomPropertyItem("Id", typeof(string), () => node.Id));   // read-only
-///     source.Changed += (_, e) => RefreshRows(e.PropertyName);
+///     source.Add(new CustomPropertyItem("Id", typeof(string), () => node.Id));   // read-only: no setter
+///     source.Changed += (_, e) => Console.WriteLine($"changed: {e.PropertyName}");
 ///     ]]></code>
 /// </example>
 public sealed class CustomPropertySource : IPropertySource

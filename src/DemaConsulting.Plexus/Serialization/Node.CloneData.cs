@@ -15,11 +15,14 @@ public sealed partial class Node
     ///         Edit the copy freely, then commit it together with property changes as one undo entry:
     ///     </para>
     ///     <code>
+    ///     using DemaConsulting.Plexus;
+    ///
+    ///     // node: a node whose type declares DataType (a mutable class, for example); diagram: its diagram
     ///     var copy = node.CloneData();                          // null when the node has no data
     ///     // ... a dialog edits copy ...
     ///     diagram.History.Transact("Edit node", () =&gt;
     ///     {
-    ///         node.Properties.TrySetAll(changes, out _);
+    ///         node.Properties["Value"] = 2.0;
     ///         node.Data = copy;                                  // one undo entry for both
     ///     });
     ///     </code>

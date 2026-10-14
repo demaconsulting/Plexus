@@ -1,5 +1,5 @@
 using Avalonia.Media;
-using DemaConsulting.Plexus.Avalonia.PropertyGrid.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using PlexusColor = DemaConsulting.Plexus.Geometry.Color;
 using PlexusRect = DemaConsulting.Plexus.Geometry.Rect;
 
@@ -11,12 +11,14 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests;
 public class NodePropertySourceTests
 {
     /// <summary>
-    ///     Gets the item with a path.
+    ///     Gets the item with a name: the name row or a declared property first, else a host data property.
     /// </summary>
     /// <param name="source">The source.</param>
     /// <param name="path">The name of the item.</param>
     /// <returns>The item.</returns>
-    private static PropertyItem Item(IPropertySource source, string path) => source.GetItems().Single(i => i.Name == path);
+    private static PropertyItem Item(IPropertySource source, string path) =>
+        source.GetItems().FirstOrDefault(i => i.Name == path && !i.Path.StartsWith("Data.", StringComparison.Ordinal))
+        ?? source.GetItems().Single(i => i.Name == path);
 
     /// <summary>
     ///     The name row and the uncategorized properties are listed under General (first), the others under their category.
@@ -286,6 +288,9 @@ public class NodePropertySourceTests
         // Assert
         Assert.False(result.Succeeded);
         Assert.Equal("Names starting with L are reserved.", result.Error);
+        Assert.Equal(0, result.Applied);
+        var failure = Assert.Single(result.Failed);
+        Assert.Equal((NodePropertySource.NamePath, "Names starting with L are reserved."), (failure.Path, failure.Error));
         Assert.Equal("Names starting with L are reserved.", session.GetError(Item(source, "Name")));
         Assert.Equal("Osc", node.Name);
         Assert.Equal(440.0, node.Properties["Frequency"]);
@@ -461,5 +466,111 @@ public class NodePropertySourceTests
         diagram.History.Undo();
         Assert.Equal("Frame", group.Title);
         Assert.False(group.IsCollapsed);
+    }
+
+    /// <summary>
+    ///     Every row has a collision-free path: the name row, declared properties and host data properties each have their own prefix, even when names repeat.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_Paths_NameDeclaredAndDataRowsNeverCollide()
+    {
+        // Arrange: the fixture declares "Label" as a property and its data has a "Label" property too
+        var (_, node) = NodeFixture.Create();
+        using var source = new NodePropertySource(node);
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+
+        // Act
+        var paths = source.GetItems().Select(i => i.Path).ToList();
+
+        // Assert: documented scheme, no duplicates, both Label rows are present and distinct
+        Assert.Equal("Node.Name", NodePropertySource.NamePath);
+        Assert.Equal("Property.Gain", NodePropertySource.PropertyPath("Gain"));
+        Assert.Equal("Data.Contact.Email", NodePropertySource.DataPath("Contact.Email"));
+        Assert.Equal(paths.Count, paths.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(NodePropertySource.NamePath, paths[0]);
+        Assert.Contains("Property.Label", paths);
+        Assert.Contains("Data.Label", paths);
+        Assert.Contains("Data.Level", paths);
+        Assert.All(source.GetItems(), item => Assert.Same(item, session.FindItem(item.Path)));
+
+        // Nested members and collection elements extend the data path
+        Assert.Equal("b", session.FindItem("Data.Tags[1]")!.GetValue());
+        Assert.Equal("Data.Tags[1]", session.FindItem("Data.Tags[1]")!.Path);
+        Assert.Null(session.FindItem("Level"));
+        Assert.Null(session.FindItem("Data.Missing"));
+    }
+
+    /// <summary>
+    ///     A declared property that is called Name, and a data property of the same name, are edited independently of the name row.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_Paths_PropertyNamedNameDoesNotTouchTheNodeName()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("test.Named")
+        {
+            Properties = { new PropertyDefinition("Name", "declared") },
+            DataType = typeof(NamedData),
+        });
+        var diagram = new Diagram(types);
+        var node = diagram.Pages.Add("Main").AddNode("test.Named", 0, 0, "Node1");
+        node.Data = new NamedData();
+        using var source = new NodePropertySource(node);
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+
+        // Act
+        session.SetText(session.FindItem("Property.Name")!, "changed property");
+        session.SetText(session.FindItem("Data.Name")!, "changed data");
+        var result = session.Commit();
+
+        // Assert: three different rows, three different targets
+        Assert.True(result.Succeeded);
+        Assert.Equal("Node1", node.Name);
+        Assert.Equal("changed property", node.Properties["Name"]);
+        Assert.Equal("changed data", ((NamedData)node.Data).Name);
+        Assert.Equal(["Node.Name", "Property.Name", "Data.Name"], source.GetItems().Select(i => i.Path));
+    }
+
+    /// <summary>
+    ///     A row refused at commit time is listed with the path of its row, nothing is applied and no undo entry is recorded.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_StagedCommit_RefusedRowIsListedWithItsPathAndNothingIsApplied()
+    {
+        // Arrange: two edits, one of which a rename handler refuses at commit
+        var (diagram, node) = NodeFixture.Create();
+        var before = diagram.History.UndoCount;
+        using var source = new NodePropertySource(node);
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(session.FindItem(NodePropertySource.NamePath)!, "Lead");
+        session.SetText(session.FindItem(NodePropertySource.PropertyPath("Frequency"))!, "880");
+        diagram.NodeRenaming += (_, e) =>
+        {
+            e.Cancel = true;
+            e.Reason = "Locked.";
+        };
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: atomic: nothing applied, no undo entry, both edits still pending, the refused row named
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.Applied);
+        Assert.Equal([NodePropertySource.NamePath], result.Failed.Select(f => f.Path));
+        Assert.Equal("Locked.", result.Failed[0].Error);
+        Assert.Equal("Osc", node.Name);
+        Assert.Equal(440.0, node.Properties["Frequency"]);
+        Assert.Equal(before, diagram.History.UndoCount);
+        Assert.Equal(2, session.GetPendingEdits().Count);
+    }
+
+    /// <summary>
+    ///     A data class with a Name property, used to prove that data rows cannot collide with the name row.
+    /// </summary>
+    public sealed class NamedData
+    {
+        /// <summary>Gets or sets the name.</summary>
+        public string Name { get; set; } = "data";
     }
 }

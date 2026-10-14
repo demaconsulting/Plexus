@@ -73,12 +73,17 @@ data classes. JSON snapshots are further partial members of the same class that 
   their source pages in z-order, and attaches them to the target in the same relative order followed by the carried
   wires. Presence and membership commands remember positions, so undo restores every list position and membership.
 
-`DiagramOptions` (immutable record: theme, router, connection rule, wire and node stylers, unique-names flag and the
-unknown-node-type policy used by loaders) and `LoadReport` (what a skipping load left out): `Diagram(types, options)`
+`DiagramOptions` (immutable record: theme, router, connection rule, wire and node stylers, unique-names flag, the
+unknown-node-type policy used by loaders and the `Initialize` callback) and `LoadReport` (what a skipping load left
+out): `Diagram(types, options)`
 writes the members that are set straight into the fields, because a constructor raises no change notification;
 `Diagram.Apply(options)` assigns each member that is set through the public setter, so it raises `SettingsChanged` per
 member and is, like every setting, not undoable. A null member always means "keep the default or the current value"; to
-remove a styler assign null to the property.
+remove a styler assign null to the property. `Initialize` (`Action<Diagram>`) lets a host attach per-instance event
+handlers in one place: the constructor invokes it last, the loaders (`FromJson`, `FromSnapshot`, `FromTree`) build the
+diagram with a copy of the options whose `Initialize` is null and invoke it after the whole document is loaded and the
+history is cleared (so a handler never sees a half-built diagram), and `Apply` invokes it after the settings, on every
+call.
 
 #### Error Handling
 

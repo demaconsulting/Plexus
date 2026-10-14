@@ -25,8 +25,12 @@ public static class NodeGeometry
     ///     Computes the default size of a node of the given type.
     /// </summary>
     /// <remarks>
-    ///     A size declared on the type wins; otherwise the theme's default width and a height large
-    ///     enough for the longer of the two port columns are used, so ports never overflow the box.
+    ///     A size declared on the type wins (a title wider than that box then wraps, or shrinks, inside it). Otherwise the height is
+    ///     the theme's default height, grown to fit the longer of the two port columns so ports never overflow the box, and the
+    ///     width is the theme's default width, grown when needed so the node's <see cref="NodeType.Title"/> fits the header on one line:
+    ///     the title is measured (with the same safety factor as port labels) by the deterministic
+    ///     <see cref="ApproximateTextMeasurer"/>, never a painter's measurer, then padded and rounded up to a multiple of
+    ///     <see cref="DiagramTheme.GridSize"/>. The default width is therefore a minimum, and short titles keep it.
     /// </remarks>
     /// <param name="type">The node type.</param>
     /// <param name="theme">The theme supplying metrics.</param>
@@ -42,9 +46,33 @@ public static class NodeGeometry
             return declared;
         }
 
-        // Otherwise grow the default height to fit the longer port column
+        // Otherwise grow the default height to fit the longer port column and the default width to fit the title
         var portCount = Math.Max(type.Inputs.Count, type.Outputs.Count);
-        return new Size(theme.DefaultNodeWidth, Math.Max(theme.DefaultNodeHeight, RequiredHeight(portCount, theme)));
+        return new Size(
+            Math.Max(theme.DefaultNodeWidth, TitleWidth(type.Title, theme)),
+            Math.Max(theme.DefaultNodeHeight, RequiredHeight(portCount, theme)));
+    }
+
+    /// <summary>
+    ///     Computes the node width at which a title fits the header band on one line, snapped up to the grid.
+    /// </summary>
+    /// <remarks>
+    ///     The title is measured with the theme's header font, widened by the label safety factor, then the
+    ///     horizontal margins the standard node visual keeps around a title (twice <see cref="DiagramTheme.TextGap"/> plus the border) are added.
+    /// </remarks>
+    /// <param name="title">The title text.</param>
+    /// <param name="theme">The theme supplying the header font and grid.</param>
+    /// <returns>The width, or 0 for an empty title.</returns>
+    private static double TitleWidth(string title, DiagramTheme theme)
+    {
+        if (title.Length == 0)
+        {
+            return 0;
+        }
+
+        var measured = AnchorMeasurer.Measure(title, theme.HeaderTextStyle).Width;
+        var width = Math.Ceiling(measured * LabelWidthSafety) + (2 * theme.TextGap) + 2;
+        return theme.GridSize > 0 ? Math.Ceiling(width / theme.GridSize) * theme.GridSize : width;
     }
 
     /// <summary>

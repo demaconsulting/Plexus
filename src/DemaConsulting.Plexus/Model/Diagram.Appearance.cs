@@ -18,7 +18,6 @@ public sealed partial class Diagram
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The type is <c>Func&lt;Wire, WireStyle?&gt;?</c>: the property may be null (no styler) and the styler may return null for a wire.
     ///         The callback is evaluated for every wire each time a scene is built, so the style follows
     ///         whatever the wire is connected to: its ports, their types, the connected nodes, node
     ///         properties or host data. Return null, or leave members of the returned
@@ -57,9 +56,9 @@ public sealed partial class Diagram
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The node equivalent of <see cref="WireStyler"/>, with the same rules; its type is <c>Func&lt;Node, NodeStyle?&gt;?</c> (the property and the returned style may each be null). The callback is
+    ///         The node equivalent of <see cref="WireStyler"/>, with the same rules. The callback is
     ///         evaluated for every visible node each time a scene is built, so the style follows the
-    ///         node's properties, its connections or host data. Return null, or leave members of the
+    ///         node's properties, its connections (follow <see cref="Node.Wires"/> to style a node by its neighbors; see <see cref="NodeStylers"/> for an example) or host data. Return null, or leave members of the
     ///         returned <see cref="NodeStyle"/> null, to use the <see cref="Theme"/> for those members.
     ///     </para>
     ///     <para>

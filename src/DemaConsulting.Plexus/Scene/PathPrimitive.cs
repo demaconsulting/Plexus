@@ -67,6 +67,7 @@ public readonly record struct PathCommand(PathCommandKind Kind, Point End, Point
 /// <remarks>
 ///     A path is a flat list of <see cref="PathCommand"/>s; each <see cref="PathCommandKind.MoveTo"/>
 ///     starts a new figure. Open figures are not implicitly closed when filled.
+///     Inherited from <see cref="ScenePrimitive"/>: <see cref="ScenePrimitive.Bounds"/> and <see cref="ScenePrimitive.Element"/> (the owning model element, or null).
 /// </remarks>
 public sealed class PathPrimitive : ScenePrimitive
 {
@@ -76,8 +77,8 @@ public sealed class PathPrimitive : ScenePrimitive
     /// <param name="commands">The path commands (copied).</param>
     /// <param name="fill">The fill color, or null for no fill.</param>
     /// <param name="stroke">The stroke color, or null for no stroke.</param>
-    /// <param name="strokeThickness">Optional; defaults to 1. The stroke thickness.</param>
-    /// <param name="element">Optional; defaults to null. The owning model element. May be null.</param>
+    /// <param name="strokeThickness">The stroke thickness.</param>
+    /// <param name="element">The owning model element.</param>
     public PathPrimitive(
         IReadOnlyList<PathCommand> commands,
         Color? fill,

@@ -78,6 +78,8 @@ public sealed partial class Diagram
     /// </summary>
     /// <remarks>
     ///     The configuration is installed before the diagram is handed out, so no <see cref="Changed"/> notification is raised for it.
+    ///     <see cref="DiagramOptions.Initialize"/>, when set, is then invoked with the new (still empty) diagram, so a host can attach its
+    ///     per-diagram event handlers in the same place it passes the options.
     /// </remarks>
     /// <param name="types">The node types (and port types) the diagram can instantiate.</param>
     /// <param name="options">The theme, router, rules and stylers to install; null keeps every default. See <see cref="DiagramOptions"/>.</param>
@@ -98,6 +100,9 @@ public sealed partial class Diagram
             _requireUniqueNodeNames = options.RequireUniqueNodeNames ?? _requireUniqueNodeNames;
             _wireStyler = options.WireStyler;
             _nodeStyler = options.NodeStyler;
+
+            // Last, so the callback sees the fully configured (still empty) diagram
+            options.Initialize?.Invoke(this);
         }
     }
 
@@ -290,7 +295,9 @@ public sealed partial class Diagram
     ///     Equivalent to assigning <see cref="Theme"/>, <see cref="Router"/>, <see cref="ConnectionRules"/>, <see cref="WireStyler"/>,
     ///     <see cref="NodeStyler"/> and <see cref="RequireUniqueNodeNames"/> one by one (each assignment raises <see cref="Changed"/>
     ///     with <see cref="DiagramChangeKind.SettingsChanged"/>). Like them it is not undoable. <see cref="DiagramOptions.UnknownNodeTypes"/> is ignored.
-    ///     To remove a styler, assign null to the property directly.
+    ///     To remove a styler, assign null to the property directly. When <see cref="DiagramOptions.Initialize"/> is set it is invoked last,
+    ///     on every call, so applying the same options twice to one diagram runs it twice (a handler it attaches would then be attached twice):
+    ///     use <see cref="Apply"/> with an <see cref="DiagramOptions.Initialize"/> only on diagrams that have not been initialized yet.
     /// </remarks>
     /// <param name="options">The configuration to install.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="options"/> is null.</exception>
@@ -326,6 +333,8 @@ public sealed partial class Diagram
         {
             NodeStyler = nodeStyler;
         }
+
+        options.Initialize?.Invoke(this);
     }
 
     /// <summary>
@@ -359,7 +368,7 @@ public sealed partial class Diagram
     ///     See <see cref="DiagramPage.FindPort"/> for the path rules; pages are searched in order and the first match wins.
     /// </remarks>
     /// <param name="path">The path, for example <c>"Mixer1.sum"</c>; the node part is a name or an element id.</param>
-    /// <param name="direction">Optional; defaults to null, which accepts either direction when the port name is unambiguous. May be null.</param>
+    /// <param name="direction">The direction to accept; null accepts either direction when the port name is unambiguous.</param>
     /// <returns>The port, or null when no node or port matches.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="path"/> is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no direction was given and an input and an output of the node share the port name.</exception>

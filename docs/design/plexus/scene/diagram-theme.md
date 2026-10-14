@@ -29,6 +29,12 @@ obstacle boxes and drawn boxes always agree, and provides the classic default lo
   `GroupTitleTextStyle`, `AnnotationTextStyle`) computed from the font and color settings; `TextStyle` pairs a font
   family, size, color, weight and `TextAlignment`.
 - `Classic`: one shared, never modified instance created once.
+- `Dark`: one shared, never modified instance created once. Only colors differ from `Classic` (canvas, grid dots, node
+  fill and border, instance name, summary, port label, wire, selection and hover, annotation fill, border and text,
+  group fill, border, title bar and title text), chosen so that texts reach a 4.5:1 contrast ratio and lines and
+  outlines a
+  3:1 ratio against their background; every metric equals the classic value so the two can be exchanged without moving
+  anything.
 
 Invariants: instances are immutable; a customized copy is made with a `with` expression, which leaves the original
 unchanged.

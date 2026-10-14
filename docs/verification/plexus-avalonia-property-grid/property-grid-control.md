@@ -46,6 +46,12 @@ light and dark themes).
 - **PropertyGrid_CustomSource_ReplacesSelectedObject** / **PropertyGrid_ObservableObject_ShowsExternalChanges**: a custom
   source replaces the object and vice versa, clearing the object removes the session; change notifications refresh values.
 - **PropertyGrid_Rows_HaveAutomationIdsAndNames**: ids and names of rows and editors, nested paths included.
+- **PropertyGrid_SelectedObjectSource_IsDisposedByTheGridButHostSourceIsNot** and
+  **PropertyGrid_SelectedObjectSource_IsReleasedWhileDetachedAndRecreatedOnAttach**
+  (`PlexusAvaloniaPropertyGrid-PropertyGridControl-SourceOwnership`, `NodePropertiesDialogTests.cs`): the source the grid
+  created stops listening when the content is replaced and while the grid is out of the visual tree, the grid shows the
+  same node with the same expansion after it returns, and a host-assigned source keeps working after the grid let go
+  of it.
 - **PropertyGrid_Keyboard_...**: Up, Down, Home, End; Left and Right on categories and nested objects; Enter and F2
   into the editor, Escape out; Enter toggling categories and nested objects; Tab and Shift+Tab between name and value;
   keys typed in the search box leave the selection alone (error path: keys the grid must not take).

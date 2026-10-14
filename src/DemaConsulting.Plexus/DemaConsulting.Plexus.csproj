@@ -49,19 +49,18 @@
          - Generation runs once per build for the first target framework only, which is correct
            because the public surface is identical across target frameworks.
          - ApiMarkPackDocs ships the generated api/ tree inside the NuGet package.
-         - ApiMarkEnforceDocs (documentation-coverage enforcement) is intentionally NOT enabled here,
-           unlike the other shipped projects: ApiMark 0.5.7 reports the compiler-synthesized members of a
-           public delegate (ConnectionValidator.Invoke/BeginInvoke/EndInvoke/.ctor) as undocumented, and
-           they cannot be documented in source. The C# compiler's CS1591 (an error here via
-           TreatWarningsAsErrors) still requires an XML doc comment on every public member. -->
+         - ApiMarkEnforceDocs fails the build on any public API member lacking an XML doc summary,
+           so the shipped reference cannot silently develop gaps (delegate members are covered since ApiMark 0.5.8).
+         - ApiMarkVisibility is left at its C# default (PublicAndProtected), which also documents the
+           protected/virtual extension points of public types (e.g. StandardNodeVisual.AddBox). -->
     <ApiMarkPackDocs>true</ApiMarkPackDocs>
-    <!-- PublicAndProtected also documents the protected/virtual extension points of public types (e.g. StandardNodeVisual.AddBox). -->
-    <ApiMarkVisibility>PublicAndProtected</ApiMarkVisibility>
+    <ApiMarkEnforceDocs>Public</ApiMarkEnforceDocs>
+    <ApiMarkEnforceDocsSeverity>Error</ApiMarkEnforceDocsSeverity>
   </PropertyGroup>
 
   <!-- Build Tool Dependencies -->
   <ItemGroup>
-    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.7" PrivateAssets="All" />
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.8" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.13" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.401" PrivateAssets="All" />
   </ItemGroup>
