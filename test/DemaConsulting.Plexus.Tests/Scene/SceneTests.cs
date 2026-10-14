@@ -373,4 +373,34 @@ public class SceneTests
         Assert.Throws<ArgumentNullException>(() => scene.TryGetNodeLayout(null!, out _));
         Assert.Throws<ArgumentNullException>(() => scene.TryGetWirePoints(null!, out _));
     }
+
+    /// <summary>
+    ///     Validates that a scene of a thousand nodes with wires is built and every node is hit at its center.
+    /// </summary>
+    [Fact]
+    public void Scene_LargePage_BuildAndHitTest_EveryNodeIsHit()
+    {
+        // Arrange: 40 x 25 gain nodes, each wired to its right neighbor
+        var (_, page) = SceneTestModel.CreatePage();
+        var nodes = new List<Node>();
+        for (var i = 0; i < 1000; i++)
+        {
+            nodes.Add(page.AddNode("acme.Gain", i % 40 * 200, i / 40 * 150, null));
+        }
+
+        for (var i = 0; i < 1000; i++)
+        {
+            if (i % 40 != 39)
+            {
+                page.Connect(nodes[i].Port("out"), nodes[i + 1].Port("in"));
+            }
+        }
+
+        // Act
+        var scene = SceneBuilder.Build(page);
+        var hits = nodes.Count(n => ReferenceEquals(scene.HitTest(n.Bounds.Center).Element, n));
+
+        // Assert
+        Assert.Equal(1000, hits);
+    }
 }

@@ -41,6 +41,9 @@ default router's wires must not cross the box of any node other than at its own 
 - **Determinism**
   (`Routing_SameRequest_BothRouters_AreDeterministic`): two instances of each router give equal results for one
   request with obstacles.
+- **Dense page**
+  (`Routing_DenseConnectedPage_RoutesEveryWireOrthogonally`): a lattice of sixty nodes gets all ninety-five connected
+  wires, and every one is orthogonal.
 - **Null request**
   (`Routing_NullRequest_BothRouters_ThrowArgumentNullException`): both routers reject a null request.
 - **Net separation**

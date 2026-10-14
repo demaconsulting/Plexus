@@ -48,6 +48,9 @@ Queries and index:
   (`SpatialIndex_Query_HugeRegion_ReturnsAllIntersecting`), negative coordinates
   (`SpatialIndex_Query_NegativeCoordinates_AreFound`) and a non-positive cell size
   (`SpatialIndex_Constructor_NonPositiveCellSize_Throws`).
+- **Large scenes**
+  (`Scene_HitTest_ThousandNodes_ManyQueriesAreCorrect`): five thousand hit tests at the centers of a thousand nodes
+  each report that node.
 
 Layouts and lookups:
 

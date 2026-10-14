@@ -196,6 +196,45 @@ public class RoutingTests
     }
 
     /// <summary>
+    ///     Validates that every wire of a densely connected page is created and routed orthogonally.
+    /// </summary>
+    [Fact]
+    public void Routing_DenseConnectedPage_RoutesEveryWireOrthogonally()
+    {
+        // Arrange: a 6 x 10 lattice of mixers, each wired to the next column on its own row and on the row below
+        const int columns = 6;
+        const int rows = 10;
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var nodes = new Node[columns, rows];
+        for (var c = 0; c < columns; c++)
+        {
+            for (var r = 0; r < rows; r++)
+            {
+                nodes[c, r] = page.AddNode("acme.Mixer", c * 240, r * 180, $"M{c}_{r}");
+            }
+        }
+
+        // Act
+        var wires = new List<Wire>();
+        for (var c = 0; c < columns - 1; c++)
+        {
+            for (var r = 0; r < rows; r++)
+            {
+                wires.Add(page.Connect(nodes[c, r].Port("out"), nodes[c + 1, r].Port("a")));
+                if (r + 1 < rows)
+                {
+                    wires.Add(page.Connect(nodes[c, r].Port("out"), nodes[c + 1, r + 1].Port("b")));
+                }
+            }
+        }
+
+        // Assert: every wire was created and each is orthogonal
+        Assert.Equal(((columns - 1) * rows) + ((columns - 1) * (rows - 1)), wires.Count);
+        Assert.All(wires, wire => Assert.True(RouteAssertions.IsOrthogonal(wire.GetPoints())));
+    }
+
+    /// <summary>
     ///     A router for tests that records every request and returns fixed bend points.
     /// </summary>
     private sealed class RecordingRouter : IWireRouter

@@ -61,8 +61,10 @@ sections:
               - Plexus-Scene-DiagramScene-GroupHits
               - Plexus-Scene-DiagramScene-EmptyCanvas
               - Plexus-Scene-DiagramScene-RenderedGeometry
+              - Plexus-Scene-DiagramScene-LargeScenes
             tests:
               - Scene_HitTest_AgreesWithDrawnGeometry
+              - Scene_LargePage_BuildAndHitTest_EveryNodeIsHit
 
           - id: Plexus-Scene-WireJunctions
             title: >-

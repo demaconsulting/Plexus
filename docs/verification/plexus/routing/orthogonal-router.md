@@ -47,6 +47,9 @@ shape, no bend points); otherwise the structural properties (orthogonal, clear o
 - **Determinism**
   (`OrthogonalRouter_Route_SameRequest_IsDeterministic`): three routes of one request, two by new instances, are
   equal.
+- **Hundreds of obstacles**
+  (`OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_AllOrthogonalAndClear`): two hundred requests among
+  a lattice of three hundred nodes all give orthogonal routes clear of every obstacle.
 - **Null request**
   (`OrthogonalRouter_Route_NullRequest_ThrowsArgumentNullException`): an argument-null exception.
 
@@ -72,6 +75,9 @@ Net separation (`NetSeparationTests.cs`, `Plexus-Routing-OrthogonalRouter-NetSep
   (`OrthogonalRouter_Route_WithExistingSegments_IsDeterministic`,
   `OrthogonalRouter_Route_ZeroOverlapPenalty_IgnoresOtherNets`): repeated routing is identical, and a zero penalty
   gives the old shared-trunk behavior.
+- **Many nets**
+  (`OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracks`): twenty nets routed in sequence, each with the
+  segments of the earlier ones, are orthogonal and no pair overlaps.
 
 Route cleaning (`RouteCleanerTests.cs`, `Plexus-Routing-OrthogonalRouter-RouteCleaning`): a collinear bend
 (`RouteCleaner_Clean_CollinearBend_IsMerged`), a cascade of collinear bends

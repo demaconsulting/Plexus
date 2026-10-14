@@ -134,6 +134,41 @@ public class NetSeparationTests
     }
 
     /// <summary>
+    ///     Validates that many parallel nets routed one after another are orthogonal and none of them runs along another.
+    /// </summary>
+    [Fact]
+    public void OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracks()
+    {
+        // Arrange: twenty nets from a column of outputs to a reversed column of inputs, routed one after the other
+        const int nets = 20;
+        var router = new OrthogonalRouter();
+        var existing = new List<RouteSegment>();
+        var all = new List<List<RouteSegment>>();
+        var polylines = new List<List<Point>>();
+        router.Route(Request(new Point(0, 0), new Point(300, 150), 0, []));
+
+        // Act
+        for (var i = 0; i < nets; i++)
+        {
+            var request = Request(new Point(0, i * 30), new Point(300, (nets - 1 - i) * 30), i, existing);
+            var route = router.Route(request);
+            existing.AddRange(Segments(request, route, i).Select(s => new RouteSegment(s.Start, s.End, i)));
+            all.Add(Segments(request, route, i));
+            polylines.Add(RouteAssertions.Polyline(request, route));
+        }
+
+        // Assert: orthogonal, and no pair of nets runs along each other
+        for (var i = 0; i < nets; i++)
+        {
+            Assert.True(RouteAssertions.IsOrthogonal(polylines[i]), $"Net {i} is not orthogonal");
+            for (var j = i + 1; j < nets; j++)
+            {
+                Assert.True(OverlapLength(all[i], all[j]) < Epsilon, $"Nets {i} and {j} overlap");
+            }
+        }
+    }
+
+    /// <summary>
     ///     Validates that a run lining up with another net's run, ending a port pitch from where it begins, is moved to its own track, while a run far away stays on the middle channel.
     /// </summary>
     [Fact]

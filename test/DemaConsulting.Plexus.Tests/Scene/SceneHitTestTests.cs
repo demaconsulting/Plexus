@@ -370,4 +370,38 @@ public class SceneHitTestTests
         Assert.True(scene.TryGetWirePoints(wire, out var points));
         Assert.Equal(wire.GetPoints(), points);
     }
+
+    /// <summary>
+    ///     Validates that hit testing stays correct on a page of a thousand nodes with thousands of queries.
+    /// </summary>
+    [Fact]
+    public void Scene_HitTest_ThousandNodes_ManyQueriesAreCorrect()
+    {
+        // Arrange: a 40 x 25 lattice of nodes at pitch 150
+        var (_, page) = SceneTestModel.CreatePage();
+        var nodes = new List<Node>();
+        for (var i = 0; i < 1000; i++)
+        {
+            nodes.Add(page.AddNode("acme.Gain", i % 40 * 150, i / 40 * 150, null));
+        }
+
+        var scene = SceneBuilder.Build(page);
+
+        // Act: hit the body center of every node, five times over
+        var wrong = 0;
+        for (var pass = 0; pass < 5; pass++)
+        {
+            foreach (var node in nodes)
+            {
+                var hit = scene.HitTest(node.Bounds.Center);
+                if (!ReferenceEquals(hit.Element, node))
+                {
+                    wrong++;
+                }
+            }
+        }
+
+        // Assert: every one of the 5000 queries reported its node
+        Assert.Equal(0, wrong);
+    }
 }

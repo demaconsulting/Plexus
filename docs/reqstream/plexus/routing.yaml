@@ -27,6 +27,7 @@ sections:
               - Plexus-Routing-SimpleRouter-LoopWhenBehind
             tests:
               - Routing_ConnectedWires_UnderEitherRouter_AreOrthogonal
+              - Routing_DenseConnectedPage_RoutesEveryWireOrthogonally
 
           - id: Plexus-Routing-ObstacleAvoidance
             title: >-

@@ -69,8 +69,11 @@ hit testing agrees with the drawn geometry; building and querying never change t
 - **Lookups**
   (`Scene_Lookups_ExposeLayoutsWirePointsAndContentBounds`): layouts and wire points of displayed elements are
   available, a node of another page is not, and the content bounds contain the layouts.
+- **Large page**
+  (`Scene_LargePage_BuildAndHitTest_EveryNodeIsHit`): a page of one thousand nodes with wires is built and the center
+  of every node hits that node.
 - **Null arguments**
   (`Scene_NullArguments_AreRejected`): the scene builder, layout, measurer and lookups reject nulls.
 
-Boundary conditions covered: empty selection, far elements, collapsed and expanded groups. Error
+Boundary conditions covered: empty selection, far elements, collapsed and expanded groups, a thousand nodes. Error
 paths: null arguments.

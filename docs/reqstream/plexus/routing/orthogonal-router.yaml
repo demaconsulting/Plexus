@@ -60,12 +60,13 @@ sections:
               - id: Plexus-Routing-OrthogonalRouter-AvoidObstacles
                 title: >-
                   The router shall return a route whose segments never enter the interior of any given obstacle
-                  box, whenever such a route exists.
+                  box, whenever such a route exists, including for hundreds of obstacles.
                 justification: |
                   Obstacles are the node boxes with their clearance margin; a wire through a node would be
                   mistaken for a connection to that node.
                 tests:
                   - OrthogonalRouter_Route_ObstacleBetweenPorts_AvoidsObstacleInterior
+                  - OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_AllOrthogonalAndClear
 
               - id: Plexus-Routing-OrthogonalRouter-Stubs
                 title: >-
@@ -138,6 +139,7 @@ sections:
                   - OrthogonalRouter_Route_MustCrossOtherNet_CrossesWithoutOverlap
                   - OrthogonalRouter_Route_ZeroOverlapPenalty_IgnoresOtherNets
                   - OrthogonalRouter_Route_WithExistingSegments_IsDeterministic
+                  - OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracks
 
               - id: Plexus-Routing-OrthogonalRouter-SameNetTrunk
                 title: >-

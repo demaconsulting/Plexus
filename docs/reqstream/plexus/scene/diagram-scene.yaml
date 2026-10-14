@@ -95,6 +95,16 @@ sections:
                   - SpatialIndex_Query_HugeRegion_ReturnsAllIntersecting
                   - SpatialIndex_Query_NegativeCoordinates_AreFound
 
+              - id: Plexus-Scene-DiagramScene-LargeScenes
+                title: >-
+                  Repeated hit tests at the center of every node of a scene of one thousand nodes shall each report
+                  that node.
+                justification: |
+                  Large diagrams spread their targets over many spatial index cells; hit testing must stay correct
+                  for every one of them, not only for the small layouts of the other scenarios.
+                tests:
+                  - Scene_HitTest_ThousandNodes_ManyQueriesAreCorrect
+
               - id: Plexus-Scene-DiagramScene-GroupLayouts
                 title: >-
                   The scene shall publish for each displayed group the frame, title bar and collapse toggle as drawn
