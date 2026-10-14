@@ -111,5 +111,5 @@ of model and UI types, lets the Avalonia gestures recompute the route from the s
 and lets the rules be tested without a diagram.
 
 **Performance.** The default router is designed so that routing one wire among hundreds of nodes takes well under a
-millisecond for the usual short wire. The requirement bounds are deliberately generous (a total for two hundred wires
-and for a whole connected page) so that they fail only when scalability is lost, not because of machine noise.
+millisecond for the usual short wire. Speed is assessed by profiling, not by timed tests, because test machines are
+shared and their speed varies; the large-scale tests check only that the routes are correct.

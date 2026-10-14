@@ -115,5 +115,5 @@ appearance). Customizing is a `with` expression; the shared classic instance is 
 metrics, so a custom theme changes layout, routing obstacles and painting consistently.
 
 **Performance.** Building touches each element once, wire display routes are computed only for collapsed-group wires,
-and hit tests and queries visit only the cells near the point. The requirements bound a thousand-node build plus a
-thousand hit tests generously so only a loss of scalability fails them.
+and hit tests and queries visit only the cells near the point. Speed is assessed by profiling, not by timed tests; the
+thousand-node tests check only that building succeeds and every hit is correct.
