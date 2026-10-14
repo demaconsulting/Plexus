@@ -718,6 +718,98 @@ public class PlexusAvaloniaTests
     });
 
     /// <summary>
+    ///     Validates that hovering shows node, port and wire tooltips, that hosts can override them, and that they can be turned off.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides() => UiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var bus = host.Page.AddNode("test.Bus", 300, 100, "B");
+        host.Editor.ToolTipRequested += (_, e) =>
+        {
+            if (e.Port is { } port)
+            {
+                e.Content = $"{e.Content} on {port.Node.Name}";
+            }
+        };
+        host.Flush();
+
+        // Act: hover the node, then one of its ports, then turn tooltips off
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var nodeTip = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(host.FindHit(HitKind.Port, bus));
+        host.Flush();
+        var portTip = ToolTip.GetTip(host.Editor) as string;
+        host.Editor.ShowToolTips = false;
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal("Merges channels.", nodeTip),
+            () => Assert.EndsWith(" on B", portTip, StringComparison.Ordinal),
+            () => Assert.Null(ToolTip.GetTip(host.Editor)));
+    });
+
+    /// <summary>
+    ///     Validates that a host can navigate to an element on another page and fit a set of elements.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements() => UiTest.Run(host =>
+    {
+        // Arrange: a "find node" on another page, and the selection to fit on the first
+        var second = host.Diagram.Pages.Add("Second");
+        second.AddNode("test.Sink", 3000, 2500, "Target");
+        var a = host.AddSource(0, 0);
+        var b = host.AddSink(2000, 1500);
+        var view = new Rect(host.Editor.Bounds.Size);
+
+        // Act: find by name and show it, then go back and fit the two nodes
+        var found = host.Diagram.FindNode("Target")!;
+        host.Editor.BringIntoView(found);
+        var foundVisible = view.Contains(host.Editor.GetElementScreenBounds(found));
+        var shownPage = host.Editor.Page;
+        host.Editor.ZoomToFit([a, b]);
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Same(second, shownPage),
+            () => Assert.True(foundVisible),
+            () => Assert.Same(host.Page, host.Editor.Page),
+            () => Assert.True(view.Contains(host.Editor.GetElementScreenBounds(a))),
+            () => Assert.True(view.Contains(host.Editor.GetElementScreenBounds(b))));
+    });
+
+    /// <summary>
+    ///     Validates that the editor reflects ports a port provider recomputes, connects to them and undoes the change in one step.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes() => UiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300);
+        var bus = host.Page.AddNode("test.Bus", 400, 60);
+        bus.Properties["Channels"] = 3;
+        host.Flush();
+
+        // Act: connect to the new port, then lower the channel count, then undo
+        host.Drag(host.PortOf(source), host.Editor.GetPortScreenPosition(bus.Input("in2")));
+        var connected = host.Page.Wires.Count;
+        bus.Properties["Channels"] = 2;
+        host.Flush();
+        var afterRemoval = host.Page.Wires.Count;
+        host.Editor.Undo();
+        host.Flush();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal(1, connected),
+            () => Assert.Equal(0, afterRemoval),
+            () => Assert.Same(bus.Input("in2"), Assert.Single(host.Page.Wires).Target),
+            () => Assert.True(host.CurrentScene.TryGetNodeLayout(bus, out var layout) && layout.Ports.Count == 4));
+    });
+    /// <summary>
     ///     A clipboard whose every operation fails like a locked desktop session.
     /// </summary>
     private sealed class LockedClipboard : IDiagramClipboard

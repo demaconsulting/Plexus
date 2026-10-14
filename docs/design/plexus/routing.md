@@ -14,7 +14,8 @@ its way. It consists of the `IWireRouter` contract (with `RouteRequest` and `Por
 The subsystem is pure computation. It reads no model state, holds no state between calls and performs no I/O, so
 routing is deterministic, reproducible in tests and in headless rendering, and thread-safe. The page model (Model
 subsystem) owns the decision of when to route; the Scene subsystem owns the obstacle geometry
-(`NodeGeometry.RoutingObstacles`) and calls the router for transient display routes of collapsed groups.
+(`NodeGeometry.RoutingObstacles`, from each node's current ports) and calls the router for transient display routes of
+collapsed groups.
 
 Boundaries: the subsystem does not decide which wires exist, does not move nodes and does not store routes. Stored
 wire routes belong to the model and are restored by the Serialization subsystem without consulting any router.

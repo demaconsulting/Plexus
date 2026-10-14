@@ -182,3 +182,17 @@ sections:
               - Plexus-Serialization-PlexusClipboard-DepthLimit
             tests:
               - Serialization_HostileClipboardLimits_AreRejectedWithoutExceptions
+
+          - id: Plexus-Serialization-DynamicPorts
+            title: >-
+              Loading a snapshot, pasting and duplicating shall recompute each node's ports from its restored
+              properties and payload before its wires are connected, without storing port lists, and shall treat a
+              wire to a port that is not recomputed like a wire to any unknown port.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; ports derive from configuration, so storing them would duplicate
+              state, while wires on computed ports must still be restored.
+            children:
+              - Plexus-Serialization-Snapshot-DynamicPorts
+              - Plexus-Serialization-PlexusClipboard-DynamicPorts
+            tests:
+              - Serialization_DynamicPorts_RoundTripAndPaste_RecomputePortsBeforeWires

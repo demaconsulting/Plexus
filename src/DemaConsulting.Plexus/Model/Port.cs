@@ -6,9 +6,16 @@ namespace DemaConsulting.Plexus;
 ///     A connection point on a <see cref="Node"/>: an input on the left edge or an output on the right edge.
 /// </summary>
 /// <remarks>
-///     Ports are lightweight and created once per node from its <see cref="NodeType"/>, so a port
-///     object can be compared by reference and kept by hosts. A port has no state of its own;
-///     <see cref="Wires"/> and <see cref="Anchor"/> are derived from the page and the node's bounds.
+///     Ports are lightweight objects created per node from its <see cref="NodeType"/> (or from the
+///     type's <see cref="NodeType.PortProvider"/>), so a port object can be compared by reference and
+///     kept by hosts. A port has no state of its own; <see cref="Wires"/> and <see cref="Anchor"/> are
+///     derived from the page and the node's bounds.
+///     <para>
+///         When a port provider recomputes a node's ports, a port whose name (within its direction) survives keeps
+///         its object and its wires, and only its <see cref="Definition"/> and <see cref="Index"/> are updated. A port
+///         whose name disappears is taken off the node; a host that still holds it can no longer connect it
+///         (<see cref="DiagramPage.CanConnect"/> refuses it) until an undo puts it back.
+///     </para>
 ///     Find a port with <see cref="Node.Input"/> / <see cref="Node.Output"/>, with a <c>"Node.port"</c> path
 ///     (<see cref="DiagramPage.FindPort"/>, <see cref="Diagram.FindPort"/>), or by enumerating
 ///     <see cref="Node.Inputs"/> and <see cref="Node.Outputs"/>.
@@ -58,7 +65,11 @@ public sealed class Port
     /// <summary>
     ///     Gets the port declaration.
     /// </summary>
-    public PortDefinition Definition { get; }
+    /// <remarks>
+    ///     Fixed for types without a <see cref="NodeType.PortProvider"/>; with a provider it is replaced (keeping
+    ///     <see cref="Name"/>) when the node's ports are recomputed, so the label, type or description may change.
+    /// </remarks>
+    public PortDefinition Definition { get; private set; }
 
     /// <summary>
     ///     Gets the port name, unique among the node's ports of the same direction.
@@ -91,7 +102,30 @@ public sealed class Port
     /// <summary>
     ///     Gets the zero-based row of the port within its column (inputs and outputs are counted separately).
     /// </summary>
-    public int Index { get; }
+    /// <remarks>
+    ///     May change when a <see cref="NodeType.PortProvider"/> adds or removes ports above this one.
+    /// </remarks>
+    public int Index { get; private set; }
+
+    /// <summary>
+    ///     Gets the optional description of the port (<see cref="PortDefinition.Description"/>), shown by editors in the port's tooltip.
+    /// </summary>
+    public string? Description => Definition.Description;
+
+    /// <summary>
+    ///     Gets a value indicating whether the port is currently one of its node's ports.
+    /// </summary>
+    /// <remarks>
+    ///     False after a <see cref="NodeType.PortProvider"/> removed the port (until an undo restores it).
+    /// </remarks>
+    internal bool IsOnNode
+    {
+        get
+        {
+            var column = Direction == PortDirection.Input ? Node.Inputs : Node.Outputs;
+            return Index < column.Count && ReferenceEquals(column[Index], this);
+        }
+    }
 
     /// <summary>
     ///     Gets the wires currently connected to this port, in page order; <c>Wires.Count</c> is the port's fan-out or fan-in.
@@ -151,6 +185,17 @@ public sealed class Port
     {
         ArgumentNullException.ThrowIfNull(other);
         return Node.RequirePage().Connect(this, other);
+    }
+
+    /// <summary>
+    ///     Replaces the declaration and row of the port; used by port recomputation and its undo.
+    /// </summary>
+    /// <param name="definition">The new declaration (same name as the current one).</param>
+    /// <param name="index">The new zero-based row.</param>
+    internal void Update(PortDefinition definition, int index)
+    {
+        Definition = definition;
+        Index = index;
     }
 
     /// <summary>

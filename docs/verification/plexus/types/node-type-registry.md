@@ -104,3 +104,25 @@ All NodeTypeRegistry unit tests pass. Lookups return the registered objects, rej
 - **NodeType_CreateData_PasteAndDuplicate_FillOnlyMissingData**: pasted and duplicated nodes without data get fresh data,
   those with data get a copy.
 - **NodeType_CreateData_Load_KeepsStoredDataIncludingNone**: loading never calls the factory.
+
+##### Port provider (`Plexus-Types-NodeTypeRegistry-PortProvider`)
+
+- **NodeType_PortProvider_Declared_SuppliesPortsAndKeepsDefaults**: the provider's ports are a new node's ports, the
+  declared inputs stay as declared, and a type without a provider reports none.
+- **NodeType_PortProvider_ReturnsNull_ThrowsInvalidOperation**: adding a node whose provider returns nothing throws with
+  the type key and adds no node (error path).
+
+##### Port set (`Plexus-Types-NodeTypeRegistry-PortSet`)
+
+- **PortSet_Constructor_DuplicateOrNull_Throws**: null lists, a null entry and a repeated input name are refused; the
+  same name as an input and an output is accepted (boundary).
+- **PortSet_Constructor_CopiesSequences**: adding to the caller's list afterwards does not change the set.
+- **PortSet_InputsAndOutputs_CastToList_AreReadOnly**: writing through a cast of `Inputs` or `Outputs` to a writable
+  list is refused and the declarations stay unchanged (error path).
+
+##### Descriptions (`Plexus-Types-NodeTypeRegistry-Descriptions`)
+
+- **NodeType_GetToolTip_FunctionWinsOverDescription**: the tooltip function wins over the description, the description
+  is used without a function, neither gives null, and a null node throws.
+- **PortDefinition_Description_IsExposedOnPort**: a port with a description and one without.
+- **PortType_DisplayName_DefaultsToKey**: no display name and an empty one fall back to the key.

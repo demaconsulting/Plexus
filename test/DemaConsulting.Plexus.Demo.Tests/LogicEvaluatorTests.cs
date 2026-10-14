@@ -233,4 +233,80 @@ public class LogicEvaluatorTests
         Assert.Equal(HitKind.Node, hit.Kind);
         Assert.Same(gate, hit.Node);
     }
+
+    /// <summary>
+    ///     Validates that four-input gates read every input: AND needs all, OR any, XOR an odd number.
+    /// </summary>
+    /// <param name="type">The gate node type key.</param>
+    /// <param name="onCount">How many of the four switches are on.</param>
+    /// <param name="expected">The expected gate output.</param>
+    [Theory]
+    [InlineData(DemoNodeTypes.And, 3, false)]
+    [InlineData(DemoNodeTypes.And, 4, true)]
+    [InlineData(DemoNodeTypes.Or, 0, false)]
+    [InlineData(DemoNodeTypes.Or, 1, true)]
+    [InlineData(DemoNodeTypes.Xor, 2, false)]
+    [InlineData(DemoNodeTypes.Xor, 3, true)]
+    public void LogicEvaluator_Evaluate_FourInputGates_UseEveryInput(string type, int onCount, bool expected)
+    {
+        // Arrange: a four-input gate fed by four switches, the first onCount of them on (the last input decides some cases)
+        var page = CreatePage();
+        var gate = page.AddNode(type, 300, 0, "G");
+        gate.Properties[DemoNodeTypes.GateInputsProperty] = 4;
+        foreach (var (input, index) in new[] { "d", "c", "b", "a" }.Select((name, i) => (name, i)))
+        {
+            AddSwitch(page, $"S{index}", index < onCount);
+            page.Connect($"S{index}.out", $"G.{input}");
+        }
+
+        // Act
+        var values = LogicEvaluator.Evaluate(page);
+
+        // Assert
+        Assert.Equal(expected, values[gate.Output("out")]);
+        Assert.Equal(4, gate.Inputs.Count(input => values.ContainsKey(input)));
+    }
+
+    /// <summary>
+    ///     Validates the three-input AND of the logic sample: it lights its lamp only when all three switches are on.
+    /// </summary>
+    [Fact]
+    public void LogicEvaluator_Evaluate_LogicSampleThreeInputGate_NeedsAllSwitches()
+    {
+        // Arrange
+        var diagram = DemoSamples.Logic();
+        var lamp = diagram.FindNode("AllLamp")!.Input("in");
+        var before = LogicEvaluator.Evaluate(diagram.Pages[0])[lamp];
+
+        // Act
+        diagram.FindNode("SwitchB")!.Properties["On"] = true;
+        diagram.FindNode("SwitchC")!.Properties["On"] = true;
+        var after = LogicEvaluator.Evaluate(diagram.Pages[0])[lamp];
+
+        // Assert
+        Assert.False(before);
+        Assert.True(after);
+    }
+
+    /// <summary>
+    ///     Validates that a tall gate draws a lead for every input row and stays hit-testable.
+    /// </summary>
+    [Fact]
+    public void GateVisual_TallGate_DrawsALeadPerInputRow()
+    {
+        // Arrange: an eight-input AND gate
+        var page = CreatePage();
+        var gate = page.AddNode(DemoNodeTypes.And, 60, 60, "G");
+        gate.Properties[DemoNodeTypes.GateInputsProperty] = 8;
+
+        // Act
+        var scene = SceneBuilder.Build(page);
+        Assert.True(scene.TryGetNodeLayout(gate, out var layout));
+
+        // Assert: the box grew to eight rows, and nine leads plus the outline are drawn inside it
+        Assert.Equal(NodeGeometry.RequiredHeight(8, DiagramTheme.Classic), layout.Box.Height);
+        Assert.Equal(9, layout.Ports.Count);
+        Assert.True(scene.Primitives.OfType<PathPrimitive>().Count(p => layout.Box.Contains(p.Bounds.Center)) >= 10);
+        Assert.Equal(HitKind.Node, scene.HitTest(layout.Box.Center).Kind);
+    }
 }

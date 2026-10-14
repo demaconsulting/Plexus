@@ -32,6 +32,9 @@ public sealed class FakeClipboard : IDiagramClipboard
 /// <summary>
 ///     Hosts a <see cref="DiagramEditor"/> in a headless window with a small diagram model and helpers that drive it like a user.
 /// </summary>
+/// <example>
+///     Tests that need more node types pass <c>configureTypes</c>, for example <c>new EditorHost(configureTypes: EditorHost.AddBus)</c>.
+/// </example>
 /// <remarks>
 ///     The model uses four test node types: <c>test.Source</c> (one f32 output), <c>test.Sink</c>
 ///     (one f32 input), <c>test.IntSink</c> (one i32 input) and <c>test.Merger</c> (one f32 input that
@@ -51,7 +54,8 @@ public sealed class EditorHost : IDisposable
     /// </summary>
     /// <param name="width">The window width.</param>
     /// <param name="height">The window height.</param>
-    public EditorHost(double width = 800, double height = 600)
+    /// <param name="configureTypes">Adds further node or port types to the registry before the diagram is created, or null.</param>
+    public EditorHost(double width = 800, double height = 600, Action<NodeTypeRegistry>? configureTypes = null)
     {
         var types = new NodeTypeRegistry();
         types.PortTypes.Add(new PortType("f32", Geometry.Color.Parse("#FF8C00")));
@@ -60,6 +64,7 @@ public sealed class EditorHost : IDisposable
         types.Add(new NodeType("test.Sink") { Title = "SINK", Inputs = { new PortDefinition("value", "f32") } });
         types.Add(new NodeType("test.IntSink") { Title = "INT SINK", Inputs = { new PortDefinition("value", "i32") } });
         types.Add(new NodeType("test.Merger") { Title = "MERGER", Inputs = { new PortDefinition("value", "f32") { AllowsMultipleWires = true } } });
+        configureTypes?.Invoke(types);
         Diagram = new Diagram(types);
         Page = Diagram.Pages.Add("Main");
         Editor = new DiagramEditor { Page = Page };
@@ -292,6 +297,26 @@ public sealed class EditorHost : IDisposable
         }
 
         throw new InvalidOperationException($"No {kind} hit found for the element.");
+    }
+
+    /// <summary>
+    ///     Adds <c>test.Bus</c>: a node type whose <c>Channels</c> property decides its f32 inputs (<c>in0</c>, <c>in1</c>, ...; two by default, each described as "Channel n").
+    /// </summary>
+    /// <param name="types">The registry to add to.</param>
+    public static void AddBus(NodeTypeRegistry types)
+    {
+        ArgumentNullException.ThrowIfNull(types);
+        types.Add(new NodeType("test.Bus")
+        {
+            Title = "BUS",
+            Description = "Merges channels.",
+            Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
+            Outputs = { new PortDefinition("out", "f32") },
+            Properties = { new PropertyDefinition("Channels", 2) },
+            PortProvider = node => new PortSet(
+                Enumerable.Range(0, node.Properties.Get<int>("Channels")).Select(i => new PortDefinition($"in{i}", "f32") { Description = $"Channel {i}" }),
+                [new PortDefinition("out", "f32")]),
+        });
     }
 
     /// <inheritdoc />

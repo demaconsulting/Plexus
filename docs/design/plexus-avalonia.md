@@ -157,6 +157,15 @@ change never reaches the history.
 - **Undo and Redo during a gesture only cancel it.** While a drag or an inline edit is in flight, Undo or Redo
   abandons the gesture and rolls back its transaction; only a second press changes the history. A half-made change
   therefore never becomes a history entry and the user cannot undo an earlier step by accident while still dragging.
+- **Tooltips through Avalonia's tooltip service; the host decides the text.** The editor sets its own `ToolTip.Tip`
+  for the element under the pointer instead of drawing tooltips itself, so delay, placement and look match the rest of
+  the host application. The default text comes from the node type and port declarations, and the `ToolTipRequested`
+  event lets the host replace it (live values, validation messages) or suppress it; `ShowToolTips` turns the feature
+  off for hosts that manage the editor's tooltip themselves.
+- **Navigation switches pages and respects the user's zoom.** `BringIntoView` changes the shown page when needed and
+  only scrolls (zooming out only when the element does not fit), and a set of elements is fitted like the whole page
+  (never magnified above actual size, first element's page when they span pages). Requests made before the first layout
+  wait for it, and the latest request of any kind wins, so a window constructor can navigate safely.
 - **Native vector icons and a close visual match.** Host SVG icons are drawn through Svg.Controls.Skia.Avalonia as
   vector graphics rather than bitmaps, so they stay sharp at any zoom. The editor and the headless renderer share the
   scene, layout and hit-test geometry, and differ only in drawing: their text engines and SVG renderers are

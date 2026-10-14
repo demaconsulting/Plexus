@@ -102,14 +102,17 @@ the host application from the library's one exposure to untrusted data and from 
 2. **Editing.** Host code or an editor control calls a model operation. The operation validates its input, then
    executes an undoable command on the diagram's history. The command changes the model, re-routes affected wires
    through the router, updates indexes and raises `Diagram.Changed` and collection events. Undo and redo replay the same
-   commands in the reverse or forward direction and raise the same events.
+   commands in the reverse or forward direction and raise the same events. A property or payload change of a node whose
+   type has a port provider also recomputes the node's ports, removes the wires the change invalidates and grows the
+   node, inside the same command.
 3. **Presentation.** On a change, a painter asks `SceneBuilder.Build` for a `DiagramScene` of a page. The builder
    computes node layouts (theme and text measurer), drawing order, culling, wires (from their routes), selection and
    hover state, and the hit targets. The painter draws the primitives; an editor control uses `HitTest` to translate
    pointer positions into model elements and then calls model operations (back to step 2).
 4. **Persistence and exchange.** `Diagram.ToJson` captures the model as a snapshot document; `Diagram.FromJson`
-   validates the document against the node types and rebuilds the diagram with history suspended, leaving an empty,
-   clean history. `PlexusClipboard.Copy` captures a selection (expanding groups, keeping internal wires) as envelope
+   validates the document against the node types and rebuilds the diagram with history suspended (each node's ports are
+   recomputed from its restored properties and payload before its wires are resolved), leaving an empty, clean history.
+   `PlexusClipboard.Copy` captures a selection (expanding groups, keeping internal wires) as envelope
    text; `Paste` validates the text, builds detached elements with fresh ids and unique names, and attaches them as one
    undoable step. `DiagramPage.Duplicate` uses the same clone path within a page.
 
@@ -168,6 +171,17 @@ designs.
   transient and the stored routes are untouched, so expanding the group restores the layout exactly and collapse
   remains an ordinary undoable edit. Expanded frames enclose the full visual extent of their members (names,
   summaries and port labels), so a frame never clips what it contains.
+- **Ports may vary per node; the port name is the identity.** A node type may compute each node's ports from the
+  node's properties and payload (`NodeType.PortProvider`). Ports are derived state: they are recomputed inside the undo
+  entry of the change that caused them and are never saved, so a document stays the single source of truth and undo is
+  exact. Within a direction the port name identifies a port: a surviving name keeps its `Port` object and wires, a
+  vanished name takes its wires along, and a kept port whose type changed keeps only the wires the connection rules
+  still allow. Hosts therefore use stable port names (renumbering channels re-attaches wires by name). Nodes grow to fit
+  more ports but never shrink, and stored bounds are kept on load so a restore is exact. Removed wires are reported
+  through the existing `Diagram.Changed` notifications rather than a dedicated event.
+- **Descriptions live with the declarations.** Tooltip text for ports, port types and node types (including a function
+  of the node for live state or validation messages) is declared on the types, so every editor shows the same text and
+  the core still draws none of it.
 - **Hit testing and queries use a simple spatial index.** The scale target is hundreds of nodes and wires; a uniform
   grid index and visible-region culling meet it with little code and no allocation churn (see the Scene subsystem
   design for the comparison with a tree).

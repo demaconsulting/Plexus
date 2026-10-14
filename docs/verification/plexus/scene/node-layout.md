@@ -68,4 +68,9 @@ tolerance.
   (`TextWrapper_Wrap_BreaksAtWordsAndSplitsLongWords`): words wrap at a width of five characters, explicit line
   breaks are kept and a long word is split by character.
 
+- **Per-node ports** (`Plexus-Scene-NodeLayout-DynamicPorts`): `NodeLayout_Compute_DynamicPorts_LaysOutCurrentPorts`
+  lays out the six current ports of a reconfigured node at the model's anchors;
+  `NodeGeometry_VisualBoundsAndRoutingObstacles_ProviderPorts_UseNodePorts` shows that long computed output labels
+  widen the node's visual bounds and add routing strips the type-based overload does not have.
+
 Boundary values: node without icon, many ports, a word wider than the line. Error paths: null arguments.

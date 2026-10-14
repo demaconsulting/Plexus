@@ -495,4 +495,98 @@ public class PropertyBagTests
         // Act / Assert
         Assert.Throws<InvalidOperationException>(() => node.Properties["Gain"] = 3.0);
     }
+
+    /// <summary>
+    ///     Validates that setting a property a port provider reads recomputes the ports in the same undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Set_ProviderProperty_RecomputesPortsInSameEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var bus = diagram.Pages.Add("Main").AddNode("acme.Bus", 0, 0);
+        var entries = diagram.History.UndoCount;
+
+        // Act
+        bus.Properties["Channels"] = 3;
+
+        // Assert: one entry; undoing it restores the value and the ports
+        Assert.Equal(3, bus.Inputs.Count);
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+        Assert.True(diagram.History.Undo());
+        Assert.Equal(2, bus.Properties.Get<int>("Channels"));
+        Assert.Equal(2, bus.Inputs.Count);
+    }
+
+    /// <summary>
+    ///     Validates that applying several provider properties at once is still one undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0);
+        var bus = page.AddNode("acme.Bus", 300, 0);
+        page.Connect(producer.Output("value"), bus.Input("in1"));
+
+        // Act / Assert: exact round trip of both values, the ports and the removed wire
+        TestModel.AssertRoundTrip(diagram, () =>
+            Assert.True(bus.Properties.TrySetAll(new Dictionary<string, object?> { ["Channels"] = "1", ["Kind"] = "i32" }, out _)));
+        Assert.Equal(["in0"], bus.Inputs.Select(p => p.Name));
+        Assert.Equal("i32", bus.Inputs[0].TypeKey);
+        Assert.Empty(page.Wires);
+    }
+
+    /// <summary>
+    ///     Validates that resetting a provider property restores the default ports.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var bus = diagram.Pages.Add("Main").AddNode("acme.Bus", 0, 0);
+        bus.Properties["Channels"] = 5;
+
+        // Act
+        bus.Properties.Reset("Channels");
+
+        // Assert
+        Assert.Equal(["in0", "in1"], bus.Inputs.Select(p => p.Name));
+    }
+
+    /// <summary>
+    ///     Validates that adding an ad-hoc value a port provider reads recomputes the ports in the same undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var collector = diagram.Pages.Add("Main").AddNode("acme.Collector", 0, 0);
+
+        // Act / Assert: one exact undo entry covering the value and the ports
+        TestModel.AssertRoundTrip(diagram, () => collector.Properties["FanIn"] = true);
+        Assert.True(collector.Input("in").AllowsMultipleWires);
+        Assert.Null(collector.Properties.GetDefinition("FanIn"));
+    }
+
+    /// <summary>
+    ///     Validates that removing an ad-hoc value a port provider reads recomputes the ports in the same undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Reset_AdHocProviderValue_RecomputesPortsInSameEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var collector = diagram.Pages.Add("Main").AddNode("acme.Collector", 0, 0);
+        collector.Properties["FanIn"] = true;
+
+        // Act / Assert: one exact undo entry covering the removal and the ports
+        TestModel.AssertRoundTrip(diagram, () => collector.Properties.Reset("FanIn"));
+        Assert.False(collector.Properties.ContainsKey("FanIn"));
+        Assert.False(collector.Input("in").AllowsMultipleWires);
+    }
 }

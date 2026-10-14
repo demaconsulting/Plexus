@@ -77,7 +77,8 @@ public static partial class DemoSamples
     }
 
     /// <summary>
-    ///     Adds the logic page: two switches drive a half adder, an OR gate and an inverter, each ending in a lamp.
+    ///     Adds the logic page: two switches drive a half adder, an OR gate and an inverter, each ending in a lamp;
+    ///     below them a third switch joins the first two at a three-input AND gate (its <c>Inputs</c> property is 3).
     /// </summary>
     /// <param name="page">The page to fill.</param>
     private static void AddLogicPage(DiagramPage page)
@@ -103,6 +104,16 @@ public static partial class DemoSamples
         page.Connect("Carry.out", "CarryLamp.in");
         page.Connect("Either.out", "Neither.in");
         page.Connect("Neither.out", "NeitherLamp.in");
+
+        // A gate whose ports vary per node: setting Inputs to 3 gives the AND gate a third input "c" (and makes it taller)
+        page.AddAnnotation("Inputs = 3: this AND gate has a third input, c.\nIt lights the lamp when all three switches are on.", new Rect(405, 480, 330, 48));
+        AddNode(page, DemoNodeTypes.Switch, "SwitchC", 45, 555);
+        AddNode(page, DemoNodeTypes.And, "All", 45 + ColumnPitch, 562.5, (DemoNodeTypes.GateInputsProperty, 3));
+        AddNode(page, DemoNodeTypes.Lamp, "AllLamp", 45 + (3 * ColumnPitch), 555);
+        page.Connect("SwitchA.out", "All.a");
+        page.Connect("SwitchB.out", "All.b");
+        page.Connect("SwitchC.out", "All.c");
+        page.Connect("All.out", "AllLamp.in");
     }
 
     /// <summary>

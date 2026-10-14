@@ -15,14 +15,14 @@ ships a UI-free core, a headless PNG renderer built on CanvasNet, and an Avaloni
 
 ## Features
 
-- 🔌 **Typed Ports** - Directional, colored port types with single-wire inputs by default and optional fan-in
+- 🔌 **Typed Ports** - Directional, colored port types; single-wire inputs by default, optional fan-in, per-node ports
 - 🧭 **Routed Wires** - Orthogonal, obstacle-avoiding routing with draggable segments and crossing jumps
 - 🎨 **Dynamic Styling** - Color, dash, light up, tint or fade wires and nodes from what they connect or hold
 - 🗂️ **Pages and Groups** - Multiple pages, nestable collapsible groups and sticky-note annotations
 - ↩️ **Undo/Redo** - Every mutation is undoable, with transactions to group a gesture into one step
 - 📋 **Copy/Paste** - Versioned JSON clipboard that treats pasted data as untrusted input
 - 🖼️ **Headless Rendering** - Render any page to a PNG image without a UI framework
-- 🖱️ **Avalonia Editor** - Select, move, connect, pan, zoom, rename and drag-and-drop out of the box
+- 🖱️ **Avalonia Editor** - Select, move, connect, pan, zoom, rename, drag-and-drop, hover tooltips and go-to-element
 - 🧩 **Node Palette** - Searchable palette showing node types exactly as they look on the canvas
 - 📝 **Property Grid** - Generic, annotation-driven property grid with a one-line node properties dialog
 - ✨ **Easy by Default** - Working diagram in a few lines; theme, router and text measurer are replaceable

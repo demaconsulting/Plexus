@@ -87,3 +87,10 @@ Paste message (`Plexus-Serialization-PlexusClipboard-PasteMessage`, `PasteResult
   **PasteResult_Message_MissingNodeTypes_NamesThem** and **PasteResult_Message_OtherFailure_UsesTheError**: the sentence
   of a plain success, a success with a skipped wire, a refused paste with unknown types and a foreign or empty
   clipboard.
+
+Per-node ports (`Plexus-Serialization-PlexusClipboard-DynamicPorts`):
+
+- **PlexusClipboard_Paste_DynamicPortNodes_RecreatesWiresOnDynamicPorts**: pasting into another diagram recreates the
+  wires on a computed input and a computed output and keeps the pasted node size.
+- **PlexusClipboard_Duplicate_DynamicPortNode_KeepsPortsAndWires** (`DuplicateTests.cs`): duplicating a router and its
+  consumer is one exact entry; the copy has the three computed outputs and its wire leaves from the computed one.

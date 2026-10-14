@@ -89,4 +89,10 @@ the ReqStream trace matrix.
 - **Model_ChangeNotification_ObservableCollections_ReportAddMoveRemove**: the page collection and a page's node list
   report add, move and remove.
 
+#### Per-node ports (`Plexus-Model-DynamicPorts`)
+
+- **Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry**: raising a bus's channel count and
+  changing a router's payload are each one exact undo entry (twice over); the bus grew and kept its wire, the router lost
+  its second output and the wire on it.
+
 **Expected**: each test passes, proving the Model requirements.

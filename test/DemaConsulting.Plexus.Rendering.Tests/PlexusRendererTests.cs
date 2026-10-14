@@ -378,4 +378,27 @@ public class PlexusRendererTests
         Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Bounds = new Rect(0, 0, 100000, 10) }));
         Assert.Throws<ArgumentException>(() => PlexusRenderer.SavePng(page, " "));
     }
+
+    /// <summary>
+    ///     Validates that a node whose ports come from a port provider is drawn with its current ports.
+    /// </summary>
+    [Fact]
+    public void PlexusRenderer_RenderPng_DynamicPortNode_DrawsPortsFromProvider()
+    {
+        // Arrange: a bus with one input; where its third input will be drawn
+        var (diagram, page) = RenderTestModel.CreatePage();
+        var bus = page.AddNode("t.Bus", 60, 30, "B");
+        var orange = RenderTestModel.Pixel(Color.Parse("#FF8C00"));
+        var edge = NodeGeometry.PortEdge(new Rect(60, 30, 90, NodeGeometry.RequiredHeight(3, diagram.Theme)), PortDirection.Input, 2, 3, diagram.Theme);
+        var (x, y) = ((int)(edge.X - 3), (int)edge.Y);
+        using var before = RenderTestModel.Decode(PlexusRenderer.RenderPng(page, FixedArea));
+
+        // Act: three channels
+        bus.Properties["Channels"] = 3;
+        using var after = RenderTestModel.Decode(PlexusRenderer.RenderPng(page, FixedArea));
+
+        // Assert: the third port triangle appears in the port color
+        Assert.NotEqual(orange, before[x, y]);
+        Assert.Equal(orange, after[x, y]);
+    }
 }

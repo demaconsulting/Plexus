@@ -64,6 +64,32 @@ public class DemoPropertyGridTests
     });
 
     /// <summary>
+    ///     Validates that the gate-inputs editor (a 2-to-8 number box) changes a gate's Inputs through the panel, which adds the inputs in one undo entry.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task DemoEditors_GateInputs_ChangesTheGateInputsThroughThePanel() => GuiTest.Run(() =>
+    {
+        // Arrange: the three-input AND gate of the logic sample in the docked panel
+        using var host = new MainWindowHost(MainWindowHost.Options("--sample", "logic"));
+        host.Get<MenuItem>("Menu_View_PropertiesPanel").IsChecked = true;
+        var gate = host.Session.Diagram.FindNode("All")!;
+        host.Editor.Select(gate);
+        host.Flush();
+        var before = host.Session.Diagram.History.UndoCount;
+        var box = host.Get<Control>(AutomationIds.PropertiesEditor(NodePropertySource.PropertyPath(DemoNodeTypes.GateInputsProperty)))
+            .GetSelfAndVisualDescendants().OfType<NumericUpDown>().Single();
+
+        // Act
+        box.Value = 5;
+        host.Flush();
+
+        // Assert: the range, the new inputs a..e and one undo entry
+        Assert.Equal((2m, 8m), (box.Minimum, box.Maximum));
+        Assert.Equal(["a", "b", "c", "d", "e"], gate.Inputs.Select(p => p.Name));
+        Assert.Equal(before + 1, host.Session.Diagram.History.UndoCount);
+    });
+    /// <summary>
     ///     Validates that the slider of a Task's Progress edits the host data, as one undo entry that leaves the old data untouched.
     /// </summary>
     /// <returns>A task for xUnit to await.</returns>

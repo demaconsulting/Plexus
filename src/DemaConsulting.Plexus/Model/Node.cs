@@ -10,7 +10,8 @@ namespace DemaConsulting.Plexus;
 ///     Create nodes with <see cref="DiagramPage.AddNode(string, double, double, string?, string?)"/>. Every
 ///     setter (name, bounds, data) is an undoable mutation and throws
 ///     <see cref="InvalidOperationException"/> while the node is removed from its page. A node owns
-///     its ports (<see cref="Inputs"/>, <see cref="Outputs"/>; fixed by the node type), a
+///     its ports (<see cref="Inputs"/>, <see cref="Outputs"/>; declared by the node type, or computed per node by its
+///     <see cref="NodeType.PortProvider"/> and then recomputed whenever the properties or data change), a
 ///     <see cref="PropertyBag"/> of typed values (<see cref="Properties"/>) and an optional host payload
 ///     (<see cref="Data"/>). Not thread-safe.
 ///     <para>
@@ -87,7 +88,8 @@ public sealed partial class Node : DiagramElement
         _name = name;
         _bounds = bounds;
 
-        // Ports are derived once from the (frozen) type so they can be compared by reference
+        // Ports start as the (frozen) type's declared ports; a port provider replaces them via InitializePorts
+        // once the properties and data are known. Port objects are kept by name so they can be compared by reference
         for (var i = 0; i < type.Inputs.Count; i++)
         {
             _inputs.Add(new Port(this, type.Inputs[i], PortDirection.Input, i));
@@ -167,6 +169,7 @@ public sealed partial class Node : DiagramElement
     ///         <c>node.Data = (MyData)node.Data! with { Level = 3 };</c> (one undo entry). A mutable class (the kind a property grid edits) is edited on a
     ///         copy from <see cref="CloneData"/> that is assigned back afterwards; see <see cref="NodeType.DataType"/> for what such a class needs.
     ///         New nodes start with the payload produced by <see cref="NodeType.CreateData"/>, if the type declares one.
+    ///         When the type declares a <see cref="NodeType.PortProvider"/>, the ports are recomputed in the same undo entry.
     ///     </para>
     ///     <para>
     ///         The payload takes part in JSON persistence, copy and paste only when the node type declares
@@ -186,13 +189,13 @@ public sealed partial class Node : DiagramElement
                 throw new ArgumentException(mismatch, nameof(value));
             }
 
-            var page = RequirePage();
+            RequirePage();
             if (Equals(_data, value))
             {
                 return;
             }
 
-            page.Diagram.History.Execute(new SetValueCommand<object?>(
+            ExecuteAffectingPorts(new SetValueCommand<object?>(
                 "Set node data",
                 this,
                 nameof(Data),
@@ -209,16 +212,35 @@ public sealed partial class Node : DiagramElement
     /// <summary>
     ///     Gets all ports: inputs first, then outputs.
     /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         A live read-only view. For a type without a <see cref="NodeType.PortProvider"/> it never changes. With a
+    ///         provider it is recomputed (in the same undo entry) whenever <see cref="Properties"/> or <see cref="Data"/> change:
+    ///         ports whose name survives within their direction keep their objects and wires, other ports and their wires
+    ///         are removed, new names get new ports, and the node grows when the ports need more height.
+    ///     </para>
+    ///     <para>
+    ///         Hosts observe a recomputation through <see cref="DiagramElement.PropertyChanged"/> and <see cref="Diagram.Changed"/>
+    ///         with the property name <c>Ports</c>, raised after the removal of the affected wires has been reported.
+    ///         Copy the list (for example with <c>ToList()</c>) to keep a snapshot.
+    ///     </para>
+    /// </remarks>
     public IReadOnlyList<Port> Ports { get; }
 
     /// <summary>
     ///     Gets the input ports, top to bottom.
     /// </summary>
+    /// <remarks>
+    ///     A live view that changes when a <see cref="NodeType.PortProvider"/> recomputes the ports; see <see cref="Ports"/>.
+    /// </remarks>
     public IReadOnlyList<Port> Inputs { get; }
 
     /// <summary>
     ///     Gets the output ports, top to bottom.
     /// </summary>
+    /// <remarks>
+    ///     A live view that changes when a <see cref="NodeType.PortProvider"/> recomputes the ports; see <see cref="Ports"/>.
+    /// </remarks>
     public IReadOnlyList<Port> Outputs { get; }
 
     /// <summary>

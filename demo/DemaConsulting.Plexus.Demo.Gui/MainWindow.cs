@@ -334,6 +334,7 @@ internal sealed partial class MainWindow : Window
         Editor.NodeDoubleClicked += (_, e) => Fire(() => ActivateNodeAsync(e.Node));
         Editor.ClipboardFailed += (_, e) => Session.SetMessage(ClipboardMessage.Describe(e.Error));
         Editor.DiagramContextRequested += OnContextRequested;
+        Editor.ToolTipRequested += OnToolTipRequested;
 
         Opened += (_, _) => ApplyStartup();
         Closing += OnClosing;
@@ -365,6 +366,45 @@ internal sealed partial class MainWindow : Window
         {
             _snapToGrid.IsChecked = Editor.SnapToGrid;
         }
+        else if (e.Property == DiagramEditor.ShowToolTipsProperty)
+        {
+            _showToolTips.IsChecked = Editor.ShowToolTips;
+        }
+    }
+
+    /// <summary>
+    ///     Adds the live logic value to the tooltip of a boolean wire, for example <c>SwitchA.out → Sum.a = on</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Node and port tooltips come from the node types (descriptions and live <c>NodeType.ToolTip</c> functions); this
+    ///     handler shows the other way a host customizes tooltips: overriding the editor's default text in the event.
+    /// </remarks>
+    /// <param name="sender">The editor.</param>
+    /// <param name="e">The tooltip request.</param>
+    private static void OnToolTipRequested(object? sender, DiagramToolTipRequestedEventArgs e)
+    {
+        if (e.Element is Wire wire && e.Content is string text && DescribeLogicValue(wire) is { } value)
+        {
+            e.Content = $"{text} = {value}";
+        }
+    }
+
+    /// <summary>
+    ///     Evaluates the logic value a boolean wire carries.
+    /// </summary>
+    /// <param name="wire">The wire.</param>
+    /// <returns>"on" or "off" for a wire leaving a logic node's boolean output; otherwise null.</returns>
+    internal static string? DescribeLogicValue(Wire wire)
+    {
+        ArgumentNullException.ThrowIfNull(wire);
+        if (wire.Source.TypeKey != Model.DemoNodeTypes.Bool
+            || wire.Page is not { } page
+            || !Model.LogicEvaluator.Evaluate(page).TryGetValue(wire.Source, out var value))
+        {
+            return null;
+        }
+
+        return value ? "on" : "off";
     }
 
     /// <summary>

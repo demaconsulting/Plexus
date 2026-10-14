@@ -50,7 +50,9 @@ namespace DemaConsulting.Plexus;
 ///         <see cref="PageCollection"/> of <see cref="DiagramPage"/>s; a page owns the <see cref="Node"/>s,
 ///         <see cref="Wire"/>s, <see cref="Annotation"/>s and <see cref="Group"/>s drawn on it, and a node owns its
 ///         <see cref="Port"/>s and a <see cref="PropertyBag"/> of values. Everything on a page derives from
-///         <see cref="DiagramElement"/>.
+///         <see cref="DiagramElement"/>. A node's ports normally are those its type declares; a type with a
+///         <see cref="NodeType.PortProvider"/> computes them per node (returning a <see cref="PortSet"/>) from the node's
+///         properties and data instead, keeping ports and their wires by name when they are recomputed.
 ///     </para>
 ///     <para>
 ///         The easy path is the page API: <see cref="DiagramPage.AddNode(string, double, double, string?, string?)"/>,

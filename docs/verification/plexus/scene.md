@@ -75,5 +75,9 @@ hit testing agrees with the drawn geometry; building and querying never change t
 - **Null arguments**
   (`Scene_NullArguments_AreRejected`): the scene builder, layout, measurer and lookups reject nulls.
 
+- **Per-node ports**
+  (`Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort`): after a property change adds a third input, the
+  scene hit test at that input's row returns the new port.
+
 Boundary conditions covered: empty selection, far elements, collapsed and expanded groups, a thousand nodes. Error
 paths: null arguments.

@@ -61,3 +61,10 @@ library free of any graphics dependency.
 **Collaboration.** A node type refers to an icon (`NodeType.Icon`) and to port types by key (`PortDefinition.TypeKey`);
 the keys are resolved late, through `NodeTypeRegistry.PortTypes`, by whoever draws or checks a port. The Model
 subsystem consumes a registered node type to create a node with its declared ports and default size.
+
+**Per-node ports and descriptions.** A node type may declare a `PortProvider` that returns a validated `PortSet` for
+a node from its properties and payload; the declared `Inputs` and `Outputs` stay the type's defaults. The Model
+subsystem calls the provider (through `NodeType.ResolvePorts`) when a node is created, loaded or changed. Node types
+also carry an optional `Description` and `ToolTip` function, port declarations a `Description` and port types a
+`DisplayName`; `NodeType.GetToolTip` combines the first two. The subsystem only stores these declarations: it neither
+recomputes ports nor shows text (see NodeTypeRegistry Design).

@@ -428,3 +428,39 @@ sections:
           - Plexus-Serialization-NoTypeResolution
         tests:
           - Plexus_ClipboardSafety_HostileAndMalformedText_IsRejectedWithoutChange
+
+      - id: Plexus-Core-DynamicPorts
+        title: >-
+          The library shall let a node type compute the ports of each node from the node's properties and host
+          payload, recompute them in the same undo entry as every change of those properties or that payload, keep
+          the ports (and their wires) whose names remain, remove the wires of ports that disappear or that the
+          connection rules no longer allow, grow the node to fit its ports, and restore the ports from the saved
+          properties and payload when a diagram is loaded, pasted or duplicated.
+        justification: |
+          Configurable blocks (a bus with N channels, a gate with N inputs) are common in node editors. Ports that
+          follow the configuration, with wires kept by stable port names and one undo step per edit, let hosts model
+          them without rebuilding nodes or persisting port lists.
+        tags: [system]
+        children:
+          - Plexus-Types-PortProvider
+          - Plexus-Model-DynamicPorts
+          - Plexus-Properties-PortRecompute
+          - Plexus-Serialization-DynamicPorts
+          - Plexus-Scene-DynamicPorts
+        tests:
+          - Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep
+          - Plexus_DynamicPorts_SaveLoadAndPaste_RestoreWiresOnDynamicPorts
+
+      - id: Plexus-Core-ElementDescriptions
+        title: >-
+          The library shall let a host describe ports, port types and node types with text for tooltips, including a
+          node text computed from the node's current state.
+        justification: |
+          Users of a diagram editor need to know what a block and each of its ports do, and hosts want to show live
+          values and validation messages where the user points; the description belongs with the declarations so
+          every editor shows the same text.
+        tags: [system]
+        children:
+          - Plexus-Types-Descriptions
+        tests:
+          - Plexus_Descriptions_PortsAndNodeTypes_ProvideToolTipText

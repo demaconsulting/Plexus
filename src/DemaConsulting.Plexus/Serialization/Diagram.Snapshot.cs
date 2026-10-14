@@ -12,7 +12,9 @@ public sealed partial class Diagram
     ///     The snapshot holds pages, elements, routes, groups (with collapsed state), properties and node
     ///     payloads (for node types that declare <see cref="NodeType.DataType"/> or
     ///     <see cref="NodeType.DataSerializer"/>; other payloads are omitted). History, theme, router and
-    ///     connection rules are not part of a snapshot. Capturing does not change the diagram.
+    ///     connection rules are not part of a snapshot, and neither are port lists: wires store port names, and
+    ///     loading recomputes each node's ports (with its type's <see cref="NodeType.PortProvider"/>, if any) from the
+    ///     restored properties and data before the wires are resolved. Capturing does not change the diagram.
     /// </remarks>
     /// <returns>The snapshot.</returns>
     /// <exception cref="InvalidOperationException">Thrown when a node payload does not match its declared data type or serializes to invalid JSON.</exception>

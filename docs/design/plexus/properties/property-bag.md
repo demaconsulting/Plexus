@@ -45,6 +45,12 @@ indexer that also accepts assignments.
   diagram's element-changed event.
 - **Merging**: the set-value command identifies its target by the bag and the name, so repeated assignments of one
   property inside a transaction collapse into one entry that remembers the first old and the last new value.
+- **Port recomputation**: every command (set, reset, ad-hoc add and remove) is run through the node's
+  `ExecuteAffectingPorts` instead of the history directly. For a type with a `NodeType.PortProvider` the node's ports
+  are recomputed after the value is stored and recorded in the same entry (see Node Design and DiagramPage Design); for
+  other types, and when the ports do not change, the command alone is recorded as before, so merging is unaffected.
+  Inside `TrySetAll` each value joins the open transaction, so a batch edit is still one entry; a provider failure
+  rolls the batch back and propagates.
 
 `TrySetAll(changes, out errors)`: resolves every entry first (a string for a property that is not a string property is
 read with `PropertyDefinition.TryParse`; other values are coerced like an assignment; undeclared names are normalized as

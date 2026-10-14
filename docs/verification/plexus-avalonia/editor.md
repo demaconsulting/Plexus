@@ -49,3 +49,11 @@ clipboard and drop paths reach the model or raise the right events, and read-onl
   raise their events; after switching to read-only a drag and the Delete key change nothing.
 - **Editor_Keyboard_Shortcuts_RunCommandsUnlessInlineEditorIsOpen**: Ctrl+A, Ctrl+D, Delete, Ctrl+Z and Ctrl+Y change the
   node count as expected; F2 opens the rename box, which then owns the Delete key.
+
+- **Editor_ToolTips_HoverNodePortAndWire_ShowDefaultOrHostContent**: hovering a node, a port and a wire sets the host-
+  changed node text, the port description and the `source → target` text; a drag clears the tooltip.
+- **Editor_ElementNavigation_BringIntoViewAndFitElements_ShowElementsAcrossPages**: a node on another page and a node
+  hidden in a collapsed group are brought into view (switching pages, showing the group), and fitting two far-apart
+  elements zooms out to show both.
+- **Editor_DynamicPorts_PropertyChange_SceneHitTestAndConnectFollow**: after a property change the scene lays out the
+  new ports, a drag connects to the last new input and hit testing finds it.

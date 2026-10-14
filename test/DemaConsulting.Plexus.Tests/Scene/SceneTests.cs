@@ -403,4 +403,26 @@ public class SceneTests
         // Assert
         Assert.Equal(1000, hits);
     }
+
+    /// <summary>
+    ///     Validates that the scene and hit testing show a port added by a port provider after a property change.
+    /// </summary>
+    [Fact]
+    public void Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var bus = page.AddNode("acme.Bus", 60, 60, "B");
+
+        // Act: a third channel appears
+        bus.Properties["Channels"] = 3;
+        var scene = SceneBuilder.Build(page);
+        var in2 = bus.Input("in2");
+        var hit = scene.HitTest(NodeGeometry.PortEdge(bus.Bounds, PortDirection.Input, in2.Index, bus.Inputs.Count, diagram.Theme) - new Point(3, 0));
+
+        // Assert: the new port is hit at its row
+        Assert.Equal(HitKind.Port, hit.Kind);
+        Assert.Same(in2, hit.Port);
+    }
 }

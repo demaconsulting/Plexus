@@ -69,6 +69,12 @@ internal sealed partial class MainWindow
     /// <summary>The Properties Panel menu item.</summary>
     private MenuItem _showPropertiesPanel = new();
 
+    /// <summary>The Zoom To Selection menu item.</summary>
+    private MenuItem _zoomToSelection = new();
+
+    /// <summary>The Show Tooltips menu item.</summary>
+    private MenuItem _showToolTips = new();
+
     /// <summary>
     ///     Builds the menu bar.
     /// </summary>
@@ -123,12 +129,13 @@ internal sealed partial class MainWindow
         _duplicate = Ui.Item("Duplicate", AutomationIds.Menu("Edit_Duplicate"), () => Editor.DuplicateSelection(), Ui.Keys(Key.D));
         _delete = Ui.Item("_Delete", AutomationIds.Menu("Edit_Delete"), Editor.DeleteSelection, new KeyGesture(Key.Delete));
         var selectAll = Ui.Item("Select _All", AutomationIds.Menu("Edit_SelectAll"), Editor.SelectAll, Ui.Keys(Key.A));
+        var findNode = Ui.Item("_Find Node...", AutomationIds.Menu("Edit_FindNode"), () => Fire(FindNodeAsync), Ui.Keys(Key.F), hotKey: true);
         _rename = Ui.Item("Re_name", AutomationIds.Menu("Edit_Rename"), RenameSelectedNode, new KeyGesture(Key.F2));
         // cspell:ignore roperties - "P_roperties" marks R as the access key (P is taken by Paste)
         _properties = Ui.Item("P_roperties...", AutomationIds.Menu("Edit_Properties"), () => Fire(ShowSelectedNodePropertiesAsync), PropertiesGesture);
 
         var edit = Ui.Item("_Edit", AutomationIds.Menu("Edit"));
-        foreach (var item in new Control[] { _undo, _redo, new Separator(), _cut, _copy, paste, _duplicate, _delete, new Separator(), selectAll, _rename, _properties })
+        foreach (var item in new Control[] { _undo, _redo, new Separator(), _cut, _copy, paste, _duplicate, _delete, new Separator(), selectAll, findNode, _rename, _properties })
         {
             edit.Items.Add(item);
         }
@@ -224,13 +231,29 @@ internal sealed partial class MainWindow
             }
         };
 
+        // Tooltips on nodes, ports and wires are the editor's own; the demo adds live values to them (see OnToolTipRequested)
+        _showToolTips = Ui.Item("Show _Tooltips", AutomationIds.Menu("View_ShowToolTips"));
+        _showToolTips.ToggleType = MenuItemToggleType.CheckBox;
+        _showToolTips.IsChecked = Editor.ShowToolTips;
+        _showToolTips.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == MenuItem.IsCheckedProperty)
+            {
+                Editor.ShowToolTips = _showToolTips.IsChecked;
+            }
+        };
+
+        _zoomToSelection = Ui.Item("Zoom To _Selection", AutomationIds.Menu("View_ZoomToSelection"), () => Editor.ZoomToFit(Editor.Selection));
+
         var view = Ui.Item("_View", AutomationIds.Menu("View"));
         view.Items.Add(Ui.Item("Zoom _In", AutomationIds.Menu("View_ZoomIn"), Editor.ZoomIn, Ui.Keys(Key.OemPlus), hotKey: true));
         view.Items.Add(Ui.Item("Zoom _Out", AutomationIds.Menu("View_ZoomOut"), Editor.ZoomOut, Ui.Keys(Key.OemMinus), hotKey: true));
         view.Items.Add(Ui.Item("Zoom To _Fit", AutomationIds.Menu("View_ZoomToFit"), () => Editor.ZoomToFit(), Ui.Keys(Key.D0), hotKey: true));
+        view.Items.Add(_zoomToSelection);
         view.Items.Add(new Separator());
         view.Items.Add(_showGrid);
         view.Items.Add(_snapToGrid);
+        view.Items.Add(_showToolTips);
         view.Items.Add(new Separator());
         view.Items.Add(_showPropertiesPanel);
         view.Items.Add(BuildShowToolbarItem());
@@ -275,6 +298,7 @@ internal sealed partial class MainWindow
         _group.IsEnabled = selection.Any(e => e is not Wire);
         _ungroup.IsEnabled = selection.Any(e => e is Group);
         _toggleCollapse.IsEnabled = selection.Any(e => e is Group || e.Parent is not null);
+        _zoomToSelection.IsEnabled = any;
 
         var pages = Session.Diagram.Pages;
         var index = Session.CurrentPage is { } current ? pages.IndexOf(current) : -1;

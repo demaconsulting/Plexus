@@ -176,3 +176,41 @@ sections:
                   - NodeType_CreateData_ReturningNull_StartsWithoutData
                   - NodeType_CreateData_PasteAndDuplicate_FillOnlyMissingData
                   - NodeType_CreateData_Load_KeepsStoredDataIncludingNone
+
+              - id: Plexus-Types-NodeTypeRegistry-PortProvider
+                title: >-
+                  A node type shall accept an optional port provider; a node added from such a type shall get the
+                  ports the provider returns, the declared ports shall remain unchanged, and a provider that returns
+                  no ports shall make adding the node fail with an invalid-operation error naming the type.
+                justification: |
+                  The declared ports remain the defaults that palettes and previews show; a missing result is a host
+                  mistake that must be reported where it happens rather than produce a node without ports.
+                tests:
+                  - NodeType_PortProvider_Declared_SuppliesPortsAndKeepsDefaults
+                  - NodeType_PortProvider_ReturnsNull_ThrowsInvalidOperation
+
+              - id: Plexus-Types-NodeTypeRegistry-PortSet
+                title: >-
+                  The port set a provider returns shall copy its input and output declarations, expose them
+                  read-only, and shall reject a missing list, an empty entry, or two ports of the same direction with
+                  the same name.
+                justification: |
+                  Port names within a direction identify ports when they are recomputed, so duplicates must be
+                  refused before they reach a node, and a copied set cannot change behind the model's back.
+                tests:
+                  - PortSet_Constructor_DuplicateOrNull_Throws
+                  - PortSet_Constructor_CopiesSequences
+                  - PortSet_InputsAndOutputs_CastToList_AreReadOnly
+
+              - id: Plexus-Types-NodeTypeRegistry-Descriptions
+                title: >-
+                  A port declaration and a node type shall carry an optional description, a port type a display name
+                  that defaults to its key, and a node type an optional tooltip function whose result takes precedence
+                  over its description when a node's tooltip text is requested.
+                justification: |
+                  Editors need one call that yields a node's tooltip text, live when the host provides a function,
+                  and readable type names instead of opaque keys.
+                tests:
+                  - NodeType_GetToolTip_FunctionWinsOverDescription
+                  - PortDefinition_Description_IsExposedOnPort
+                  - PortType_DisplayName_DefaultsToKey

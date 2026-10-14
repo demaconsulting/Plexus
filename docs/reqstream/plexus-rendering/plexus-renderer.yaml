@@ -162,3 +162,11 @@ sections:
               Decomposes PlexusRendering-Render-InvalidInput; bad options must fail early and loudly.
             tests:
               - PlexusRenderer_Render_InvalidInput_Throws
+
+          - id: PlexusRendering-PlexusRenderer-DynamicPorts
+            title: >-
+              The renderer shall draw each node with its current ports, including ports computed by a port provider.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; a rendered image must show the ports a configured node has.
+            tests:
+              - PlexusRenderer_RenderPng_DynamicPortNode_DrawsPortsFromProvider

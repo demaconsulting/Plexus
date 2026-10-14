@@ -88,7 +88,7 @@ public class DemoModelTests
         var plumbing = diagrams["plumbing"].Pages.Single();
         Assert.Equal((14, 11), (plumbing.Nodes.Count, plumbing.Wires.Count));
         var logic = diagrams["logic"].Pages.Single();
-        Assert.Equal((9, 10), (logic.Nodes.Count, logic.Wires.Count));
+        Assert.Equal((12, 14), (logic.Nodes.Count, logic.Wires.Count));
         var audio = diagrams["audio"].Pages.Single();
         Assert.Equal((7, 6), (audio.Nodes.Count, audio.Wires.Count));
         var workflow = diagrams["workflow"].Pages.Single();
@@ -333,5 +333,111 @@ public class DemoModelTests
         // Assert
         Assert.Equal(7, pngs.Count);
         Assert.All(pngs, png => Assert.True(png.Length > 1000));
+    }
+
+    /// <summary>
+    ///     Validates that the Inputs property of AND, OR and XOR gives the gate inputs a, b, c, ... clamped to 2..8.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_Gates_InputsProperty_ProducesNamedInputs()
+    {
+        // Arrange
+        var page = new Diagram(DemoNodeTypes.CreateRegistry()).Pages.Add("Main");
+        var and = page.AddNode(DemoNodeTypes.And, 0, 0);
+        var or = page.AddNode(DemoNodeTypes.Or, 0, 150);
+        var xor = page.AddNode(DemoNodeTypes.Xor, 0, 300);
+        var defaults = and.Inputs.Select(p => p.Name).ToArray();
+
+        // Act
+        and.Properties[DemoNodeTypes.GateInputsProperty] = 4;
+        or.Properties[DemoNodeTypes.GateInputsProperty] = 1;
+        xor.Properties[DemoNodeTypes.GateInputsProperty] = 9;
+
+        // Assert: names follow the alphabet; out-of-range counts are clamped; the NOT gate has no such property
+        Assert.Equal(["a", "b"], defaults);
+        Assert.Equal(["a", "b", "c", "d"], and.Inputs.Select(p => p.Name));
+        Assert.Equal(["a", "b"], or.Inputs.Select(p => p.Name));
+        Assert.Equal(["a", "b", "c", "d", "e", "f", "g", "h"], xor.Inputs.Select(p => p.Name));
+        Assert.All(and.Inputs, p => Assert.Equal($"Gate input {p.Name}.", p.Description));
+        Assert.Null(page.Diagram.Types.Get(DemoNodeTypes.Not).FindProperty(DemoNodeTypes.GateInputsProperty));
+        Assert.Equal(NodeGeometry.RequiredHeight(8, page.Diagram.Theme), xor.Bounds.Height);
+    }
+
+    /// <summary>
+    ///     Validates the three-input AND gate of the logic sample.
+    /// </summary>
+    [Fact]
+    public void DemoSamples_Logic_ThreeInputGate_IsWired()
+    {
+        // Arrange / Act
+        var diagram = DemoSamples.Logic();
+        var gate = diagram.FindNode("All")!;
+
+        // Assert
+        Assert.Equal(3, gate.Properties.Get<int>(DemoNodeTypes.GateInputsProperty));
+        Assert.Equal(["a", "b", "c"], gate.Inputs.Select(p => p.Name));
+        Assert.Equal(["SwitchA.out", "SwitchB.out", "SwitchC.out"], gate.Inputs.Select(p => p.Wires.Single().Source.ToString()));
+        Assert.Equal("AllLamp.in", gate.Output("out").Wires.Single().Target.ToString());
+    }
+
+    /// <summary>
+    ///     Validates that a file saved before gates had an Inputs property still loads with its wires on a and b.
+    /// </summary>
+    [Fact]
+    public void DemoDocument_Load_OldTwoInputGateFile_KeepsWires()
+    {
+        // Arrange: a two-input gate wired on both inputs, saved without the Inputs property (as older versions wrote it)
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        page.AddNode(DemoNodeTypes.Switch, 0, 0, "A");
+        page.AddNode(DemoNodeTypes.Switch, 0, 150, "B");
+        page.AddNode(DemoNodeTypes.Or, 240, 75, "G");
+        page.Connect("A.out", "G.a");
+        page.Connect("B.out", "G.b");
+        var root = System.Text.Json.Nodes.JsonNode.Parse(diagram.ToJson())!;
+        foreach (var node in root["pages"]![0]!["nodes"]!.AsArray())
+        {
+            (node!["properties"] as System.Text.Json.Nodes.JsonObject)?.Remove(DemoNodeTypes.GateInputsProperty);
+        }
+
+        using var temp = new TempDirectory();
+        var path = Path.Combine(temp.Create(), "old.json");
+        File.WriteAllText(path, root.ToJsonString());
+
+        // Act
+        var loaded = DemoDocument.Load(path);
+
+        // Assert
+        var gate = loaded.FindNode("G")!;
+        Assert.Equal(2, gate.Properties.Get<int>(DemoNodeTypes.GateInputsProperty));
+        Assert.Equal(["A.out -> G.a", "B.out -> G.b"], loaded.Pages[0].Wires.Select(w => $"{w.Source} -> {w.Target}"));
+    }
+
+    /// <summary>
+    ///     Validates the live tooltips of the logic node types and the descriptions of their ports.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_LogicToolTips_ShowLiveState()
+    {
+        // Arrange
+        var diagram = DemoSamples.Logic();
+        var switchA = diagram.FindNode("SwitchA")!;
+        var sum = diagram.FindNode("Sum")!;
+        var lamp = diagram.FindNode("SumLamp")!;
+        var carryLamp = diagram.FindNode("CarryLamp")!;
+
+        // Act
+        var switchTip = switchA.Type.GetToolTip(switchA);
+        var gateTip = sum.Type.GetToolTip(sum);
+        var lampTip = lamp.Type.GetToolTip(lamp);
+        var darkTip = carryLamp.Type.GetToolTip(carryLamp);
+
+        // Assert
+        Assert.EndsWith("Now: on", switchTip, StringComparison.Ordinal);
+        Assert.StartsWith("XOR gate.", gateTip, StringComparison.Ordinal);
+        Assert.EndsWith("Output now: on", gateTip, StringComparison.Ordinal);
+        Assert.EndsWith("Now: lit", lampTip, StringComparison.Ordinal);
+        Assert.EndsWith("Now: dark", darkTip, StringComparison.Ordinal);
+        Assert.Equal("Lights the lamp while on.", lamp.Input("in").Description);
     }
 }

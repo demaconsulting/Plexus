@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using DemaConsulting.Plexus.Avalonia;
 using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using DemaConsulting.Plexus.Demo.Gui.Dialogs;
 using DemaConsulting.Plexus.Demo.Model;
@@ -149,6 +150,41 @@ internal sealed partial class MainWindow
     {
         Editor.AddNodeAtCenter(Session.Diagram.Types.Get(typeKey));
         Editor.Focus();
+    }
+
+    /// <summary>
+    ///     Edit &gt; Find Node...: asks for a node name, then shows and selects that node, switching pages when needed.
+    /// </summary>
+    /// <returns>A task that completes when the command is done.</returns>
+    private async Task FindNodeAsync()
+    {
+        var name = await PromptDialog.AskAsync(this, "Find node", "Node name", string.Empty).ConfigureAwait(true);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            Session.SetMessage(ShowNode(name.Trim()));
+        }
+    }
+
+    /// <summary>
+    ///     Brings a node into view by name and selects it.
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="DiagramEditor.BringIntoView"/> switches to the node's page and scrolls (zooming out only if the node
+    ///     does not fit); the selection is set afterwards because a page switch clears it.
+    /// </remarks>
+    /// <param name="name">The node name.</param>
+    /// <returns>The status message describing the result.</returns>
+    internal string ShowNode(string name)
+    {
+        if (Session.Diagram.FindNode(name) is not { } node)
+        {
+            return $"No node named '{name}'.";
+        }
+
+        Editor.BringIntoView(node);
+        Editor.Select(node);
+        Editor.Focus();
+        return $"Found {node.Name} on page '{node.Page!.Name}'.";
     }
 
     /// <summary>

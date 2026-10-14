@@ -148,3 +148,14 @@ sections:
                   - NodeGeometry_DefaultNodeSize_DeclaredSize_WinsOverTheTitle
                   - NodeGeometry_DefaultNodeSize_WideThemeMinimumAndNoGrid_AreHonored
                   - SceneBuilder_Build_LongTitleWithDefaultSize_DrawsTheTitleOnOneLine
+
+              - id: Plexus-Scene-NodeLayout-DynamicPorts
+                title: >-
+                  Node layout, a node's visual extent and its routing obstacles shall be computed from the node's
+                  current ports rather than its type's declared ports.
+                justification: |
+                  Nodes of one type may have different ports; drawing, group frames and routing must follow each
+                  node.
+                tests:
+                  - NodeLayout_Compute_DynamicPorts_LaysOutCurrentPorts
+                  - NodeGeometry_VisualBoundsAndRoutingObstacles_ProviderPorts_UseNodePorts

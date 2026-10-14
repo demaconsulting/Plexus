@@ -37,6 +37,8 @@ For any other format use the *tree* below, which has the same schema without tho
 - `NodeSnapshot`: `Id`, `TypeKey`, `Name`, `Bounds`, `Properties` and `Data` (the host payload as JSON text).
 - `PropertySnapshot`: the `Kind` and the `Value`, which is a `JsonElement`.
 - `WireSnapshot`: `Id`, the source and target node ids and port names, and the `Route` (the interior bend points).
+  Port lists are not part of the snapshot: loading recomputes each node's ports from its properties and data (see
+  *Ports That Vary per Node* in *Describing Your Domain*) before it resolves the wires' port names.
 - `AnnotationSnapshot`: `Id`, `Text`, `Bounds` and `Fill` (`#AARRGGBB`, or `null` for the theme's fill).
 - `GroupSnapshot`: `Id`, `Title`, `MemberIds`, `IsCollapsed` and `CollapsedPosition`.
 

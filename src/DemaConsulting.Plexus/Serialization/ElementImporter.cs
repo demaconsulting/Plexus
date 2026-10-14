@@ -11,6 +11,11 @@ namespace DemaConsulting.Plexus;
 ///     target page or diagram partly modified. The input may be untrusted (clipboard text), therefore
 ///     every number, reference and nesting level is checked before use and problems are reported as
 ///     messages rather than thrown to the caller.
+///     <para>
+///         Each node is built in a fixed order: properties, then data, then ports (recomputed by the type's
+///         <see cref="NodeType.PortProvider"/>, because ports are never stored); groups and wires follow once every node
+///         exists, so wire ends resolve against the recomputed ports.
+///     </para>
 /// </remarks>
 internal static class ElementImporter
 {
@@ -391,11 +396,37 @@ internal static class ElementImporter
             var node = new Node(id, type, name, bounds.Offset(_dx, _dy));
             LoadProperties(node, snapshot);
             LoadData(node, snapshot);
+            LoadPorts(node);
 
             _referenceable[snapshot.Id] = node;
             _all[snapshot.Id] = node;
             _nodes[snapshot.Id] = node;
             return node;
+        }
+
+        /// <summary>
+        ///     Computes the ports of a detached node from its loaded properties and data.
+        /// </summary>
+        /// <remarks>
+        ///     Ports are never stored: a type with a <see cref="NodeType.PortProvider"/> recomputes them here, after the
+        ///     properties and data and before any wire is resolved, so wires on computed ports find them. The stored bounds
+        ///     are kept as they are (no growth), so a restore is exact. A wire naming a port the provider does not produce
+        ///     then fails like any unknown port.
+        /// </remarks>
+        /// <param name="node">The node.</param>
+        /// <exception cref="ImportException">Thrown when the provider fails.</exception>
+        private static void LoadPorts(Node node)
+        {
+            try
+            {
+                node.InitializePorts();
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or FormatException
+                or InvalidCastException or KeyNotFoundException or OverflowException)
+            {
+                // Providers signal bad configuration with these; anything else is a real bug and propagates
+                throw new ImportException($"The ports of node '{node.Name}' (type '{node.Type.Key}') could not be computed: {ex.Message}");
+            }
         }
 
         /// <summary>

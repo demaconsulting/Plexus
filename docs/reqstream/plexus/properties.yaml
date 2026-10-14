@@ -96,3 +96,15 @@ sections:
               - Plexus-Properties-PropertyBag-RemovedNode
             tests:
               - Properties_UndoNotification_EditSession_UndoesRedoesAndNotifies
+
+          - id: Plexus-Properties-PortRecompute
+            title: >-
+              The Properties subsystem shall recompute the ports of a node whose type has a port provider after every
+              property change (assignment, reset, batch edit and ad-hoc values) inside the change's own undo entry.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; properties are how users configure a node, so every way of
+              changing them must keep the ports in step.
+            children:
+              - Plexus-Properties-PropertyBag-PortRecompute
+            tests:
+              - Properties_PortRecompute_PropertyEdits_UpdatePortsInSameEntry

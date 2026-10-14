@@ -43,3 +43,7 @@ PropertyDefinition Design) and PropertyBag (see PropertyBag Design).
   nothing, and a bag whose node is removed from its page refuses changes because no history is available for it.
 - **Bag test setup.** Because a bag cannot exist outside a node, the subsystem tests build a registry with one node
   type, a diagram and a page, and add a node; no other Model features are exercised.
+
+**Port recomputation.** Property changes of a node whose type declares a port provider also recompute the node's ports
+in the same undo entry: the Property Bag hands each command to `Node.ExecuteAffectingPorts` (Model subsystem) instead
+of executing it on the history directly. See PropertyBag Design.

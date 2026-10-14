@@ -28,6 +28,17 @@ Features each domain shows off:
 - Logic: the gates use a custom `INodeVisual` (`GateVisual`) that draws classic gate symbols while name, ports and
   hit testing keep working; `LogicEvaluator.Evaluate(page)` computes the live true/false value of every logic port,
   which colors the logic wires by state (see Wire appearance). Double-click a switch to flip it.
+- Ports that vary per node: AND, OR and XOR have an `Inputs` property (2 to 8, edited with a number box; other
+  values are clamped). A `NodeType.PortProvider` (`DemoNodeTypes.GatePorts`) gives the gate that many inputs named
+  `a`, `b`, `c`, ...: raising the count adds inputs and makes the gate taller, lowering it removes the last inputs and
+  their wires, all in one undo entry, and wires on the inputs that remain stay connected. Two-input gates are exactly
+  the gates of earlier versions, so older files load unchanged. AND is on when every input is on, OR when any is, and
+  XOR when an odd number are (parity). The `logic` sample has a three-input AND gate (`All`).
+- Tooltips: rest the pointer on a node, a port or a wire. Ports show their label, type (`Boolean`, `Number`, ...) and
+  description; logic nodes show their live state (a switch on or off, a gate's output, a lamp lit or dark) from their
+  `NodeType.ToolTip`; other nodes show their `NodeType.Description`; wires show `source → target`, and the window's
+  `DiagramEditor.ToolTipRequested` handler adds `= on` or `= off` to boolean wires. View > Show Tooltips turns
+  them off.
 - Workflow: `Task` nodes carry a `TaskDetails` host data object whose annotations show off the property grid (see
   Host data and the property grid below), edited in the properties dialog and in the properties panel.
 - Samples: `math`, `plumbing` (a water circuit plus an oil and a steam circuit), `logic`, `audio`, `workflow`,
@@ -88,9 +99,13 @@ paste in the basic one: nothing is pasted and the status bar reports
 ## Features
 
 - **Menus** - File (New, Open, Save, Save As, Open Sample, Export Page PNG, Exit), Edit (Undo and Redo showing the
-  action's description, Cut, Copy, Paste, Duplicate, Delete, Select All, Rename, Properties...), Insert (Node per type,
-  Annotation, Group Selection, Ungroup, Toggle Collapse), Page (Add, Rename, Delete, Move Left/Right, Move
-  Selection To), View (Zoom In/Out/To Fit, Show Grid, Snap To Grid, Properties Panel, Show Toolbar).
+  action's description, Cut, Copy, Paste, Duplicate, Delete, Select All, Find Node..., Rename, Properties...), Insert
+  (Node per type, Annotation, Group Selection, Ungroup, Toggle Collapse), Page (Add, Rename, Delete, Move Left/Right,
+  Move Selection To), View (Zoom In/Out/To Fit, Zoom To Selection, Show Grid, Snap To Grid, Show Tooltips, Properties
+  Panel, Show Toolbar).
+- **Navigation**: Edit > Find Node... (Ctrl+F) asks for a node name and shows that node with
+  `DiagramEditor.BringIntoView`, switching to its page and showing the collapsed group that hides it, then selects it;
+  View > Zoom To Selection fits the selection with `DiagramEditor.ZoomToFit(Editor.Selection)`.
 - **Toolbar** under the menu bar: compact flat icon buttons (28 pixels) in groups with separators: New, Open, Save |
   Undo, Redo | Cut, Copy, Paste, Delete | Group, Ungroup, Toggle Collapse, Add Annotation | Zoom In, Zoom Out, Zoom To
   Fit, Show Grid, Snap To Grid | Properties, Properties Panel | Export PNG. A button owns no behavior: it raises the
@@ -184,13 +199,15 @@ across the five demo domains) in the menu ids; `<index>` is zero-based.
   showcase), `Menu_File_ExportPng`,
   `Menu_File_Exit`.
 - Edit menu: `Menu_Edit`, `Menu_Edit_Undo`, `Menu_Edit_Redo`, `Menu_Edit_Cut`, `Menu_Edit_Copy`, `Menu_Edit_Paste`,
-  `Menu_Edit_Duplicate`, `Menu_Edit_Delete`, `Menu_Edit_SelectAll`, `Menu_Edit_Rename`, `Menu_Edit_Properties`.
+  `Menu_Edit_Duplicate`, `Menu_Edit_Delete`, `Menu_Edit_SelectAll`, `Menu_Edit_FindNode`, `Menu_Edit_Rename`,
+  `Menu_Edit_Properties`.
 - Insert menu: `Menu_Insert`, `Menu_Insert_Node`, `Menu_Insert_Node_<Type>`, `Menu_Insert_Annotation`,
   `Menu_Insert_Group`, `Menu_Insert_Ungroup`, `Menu_Insert_ToggleCollapse`.
 - Page menu: `Menu_Page`, `Menu_Page_Add`, `Menu_Page_Rename`, `Menu_Page_Delete`, `Menu_Page_MoveLeft`,
   `Menu_Page_MoveRight`, `Menu_Page_MoveSelectionTo`, `Menu_Page_MoveSelectionTo_<index>` (target page index).
-- View menu: `Menu_View`, `Menu_View_ZoomIn`, `Menu_View_ZoomOut`, `Menu_View_ZoomToFit`, `Menu_View_ShowGrid`,
-  `Menu_View_SnapToGrid`, `Menu_View_PropertiesPanel`, `Menu_View_ShowToolbar`.
+- View menu: `Menu_View`, `Menu_View_ZoomIn`, `Menu_View_ZoomOut`, `Menu_View_ZoomToFit`, `Menu_View_ZoomToSelection`,
+  `Menu_View_ShowGrid`, `Menu_View_SnapToGrid`, `Menu_View_ShowToolTips`, `Menu_View_PropertiesPanel`,
+  `Menu_View_ShowToolbar`.
 - Toolbar: `Toolbar` (the bar) and one button per command, `Toolbar_<Command>`, where `<Command>` is the name of the
   menu item it mirrors without its menu: `Toolbar_New`, `Toolbar_Open`, `Toolbar_Save`, `Toolbar_Undo`,
   `Toolbar_Redo`, `Toolbar_Cut`, `Toolbar_Copy`, `Toolbar_Paste`, `Toolbar_Delete`, `Toolbar_Group`,
@@ -260,7 +277,8 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
 - `select-page` (`page`), `add-page` (`name?`; the new page is shown), `rename-page` (`page`, `name`),
   `delete-page` (`page`; the last page cannot be deleted) -> the page.
 - `list-nodes` (`page?`, default the shown page) -> `[{id,name,typeKey,bounds,properties,data,visible,page,ports}]`;
-  `data` is the host data as a JSON object (or null).
+  `data` is the host data as a JSON object (or null); `ports` are the node's current ports
+  (`[{name,direction,type}]`), so `set-property` of a gate's `Inputs` followed by `list-nodes` shows the new inputs.
 - `list-wires` (`page?`) -> `[{id,source:"Node.port",target:"Node.port",route:[{x,y}],visible}]`.
 - `list-annotations` (`page?`) -> `[{id,text,bounds,visible}]`.
 - `list-groups` (`page?`) -> `[{id,title,collapsed,bounds,members,visible}]`.
@@ -286,6 +304,12 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
 - `move-to-page` (`ids` or `names`, `page`) -> `{moved,page}`.
 - `geometry` (one of `node`, `port` + optional `direction`, `element`, `point:{x,y}` or `editor:true`) -> see below.
 - `view` (`zoom?`, `offsetX?`, `offsetY?`, `fit?`) -> `{zoom,offsetX,offsetY}`.
+- `bring-into-view` (`element`, `node` or `name`) -> `{page,zoom,offsetX,offsetY}` (`page` is the shown page's index);
+  `DiagramEditor.BringIntoView`: switches to the element's page and centers it without zooming in.
+- `zoom-to` (`ids` or `names`, `margin?` default 30) -> `{page,zoom,offsetX,offsetY}`; `DiagramEditor.ZoomToFit` of
+  the elements (the first element's page is shown).
+- `tooltip` (`element` or `node`, or `port` + optional `direction`) -> `{text}`: the tooltip the editor would show
+  (`DiagramEditor.GetToolTipContent`), or null when there is none.
 - `save` (`path?`, default the current file) -> `{path}`; `open` (`path`) -> like `info`, without an unsaved-changes
   prompt; `new` -> like `info`.
 - `render` (`path`, `page?`, `scale?`) -> `{path,page,bytes}`; writes a PNG through `PlexusRenderer`.

@@ -415,6 +415,97 @@ public class EditorTests
     private static Geometry.Color PlexusColorOf(string hex) => Geometry.Color.Parse(hex);
 
     /// <summary>
+    ///     Validates that hovering nodes, ports and wires shows tooltips the host can change, and that gestures hide them.
+    /// </summary>
+    [Fact]
+    public Task Editor_ToolTips_HoverNodePortAndWire_ShowDefaultOrHostContent() => UiTest.Run(() =>
+    {
+        // Arrange: a described bus fed by a source, and a host handler that marks node tooltips
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300, "S");
+        var bus = host.Page.AddNode("test.Bus", 400, 60, "B");
+        var wire = host.Page.Connect(source.Port("value"), bus.Input("in0"));
+        host.Editor.ToolTipRequested += (_, e) => e.Content = e.Element is Node && e.Port is null ? $"[{e.Content}]" : e.Content;
+        host.Flush();
+
+        // Act: hover the node body, a port, the wire, then start a drag
+        var tips = new List<object?>();
+        foreach (var at in new[] { host.CenterOf(bus), host.FindHit(HitKind.Port, bus), host.FindHit(HitKind.Wire, wire) })
+        {
+            host.Window.MouseMove(at);
+            host.Flush();
+            tips.Add(ToolTip.GetTip(host.Editor));
+        }
+
+        host.BeginDrag(host.CenterOf(bus));
+        host.MoveTo(host.CenterOf(bus) + new Point(30, 30));
+        var duringDrag = ToolTip.GetTip(host.Editor);
+        host.EndDrag(host.CenterOf(bus));
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal("[Merges channels.]", tips[0]),
+            () => Assert.Contains("Channel", tips[1] as string, StringComparison.Ordinal),
+            () => Assert.Equal("S.value → B.in0", tips[2]),
+            () => Assert.Null(duringDrag));
+    });
+
+    /// <summary>
+    ///     Validates that elements can be brought into view and fitted across pages and collapsed groups.
+    /// </summary>
+    [Fact]
+    public Task Editor_ElementNavigation_BringIntoViewAndFitElements_ShowElementsAcrossPages() => UiTest.Run(host =>
+    {
+        // Arrange: a node on a second page, and a node hidden in a collapsed group on the first
+        var second = host.Diagram.Pages.Add("Second");
+        var remote = second.AddNode("test.Source", 2500, 1800);
+        var hidden = host.AddSource(4000, 3000);
+        var group = host.Page.CreateGroup([hidden], "G");
+        group.IsCollapsed = true;
+        var view = new Rect(host.Editor.Bounds.Size);
+
+        // Act / Assert: the remote node switches the page
+        host.Editor.BringIntoView(remote);
+        Assert.Same(second, host.Editor.Page);
+        Assert.True(view.Contains(host.Editor.GetElementScreenBounds(remote)));
+
+        // Act / Assert: the hidden node shows its collapsed group on the first page
+        host.Editor.BringIntoView(hidden);
+        Assert.Same(host.Page, host.Editor.Page);
+        Assert.True(view.Contains(host.Editor.GetElementScreenBounds(group)));
+
+        // Act / Assert: fitting two far-apart elements zooms out to show both
+        var near = host.AddSink(0, 0);
+        host.Editor.ZoomToFit([near, group]);
+        Assert.True(host.Editor.Zoom < 1);
+        Assert.True(view.Contains(host.Editor.GetElementScreenBounds(near)));
+        Assert.True(view.Contains(host.Editor.GetElementScreenBounds(group)));
+    });
+
+    /// <summary>
+    ///     Validates that the editor shows, hit tests and connects the current ports of a node whose ports a property change recomputed.
+    /// </summary>
+    [Fact]
+    public Task Editor_DynamicPorts_PropertyChange_SceneHitTestAndConnectFollow() => UiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300);
+        var bus = host.Page.AddNode("test.Bus", 400, 60);
+
+        // Act: grow to four inputs, connect the last one by dragging
+        bus.Properties["Channels"] = 4;
+        host.Flush();
+        var layoutPorts = host.CurrentScene.TryGetNodeLayout(bus, out var layout) ? layout.Ports.Count : -1;
+        host.Drag(host.PortOf(source), host.Editor.GetPortScreenPosition(bus.Input("in3")));
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal(5, layoutPorts),
+            () => Assert.Same(bus.Input("in3"), Assert.Single(host.Page.Wires).Target),
+            () => Assert.Same(bus.Input("in3"), host.Editor.HitTest(host.Editor.GetPortScreenPosition(bus.Input("in3"))).Port));
+    });
+    /// <summary>
     ///     A clipboard whose every operation fails like a locked desktop session.
     /// </summary>
     private sealed class ThrowingClipboard : IDiagramClipboard

@@ -11,6 +11,8 @@ headless platform (Avalonia.Headless) that allows the editor to be tested automa
 
 - Custom control base classes, styled and direct properties, and the drawing context used to paint the scene
 - Pointer, mouse wheel and keyboard input events, focus handling and routed events
+- The tooltip service (`ToolTip.Tip` and `ToolTip.IsOpen` attached properties), used for the editor's hover tooltips:
+  setting the tip lets the service open it after its show delay at the pointer, clearing it closes an open tooltip
 - Text formatting and measurement
 - Drag-and-drop and operating-system clipboard services
 - UI automation peers, used to expose the editor to accessibility and test tooling

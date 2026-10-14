@@ -69,6 +69,7 @@ public sealed partial class DiagramEditor
         }
 
         CancelEdit();
+        ResetToolTip();
         var theme = EffectiveTheme;
         var editor = new TextBox
         {

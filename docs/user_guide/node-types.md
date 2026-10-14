@@ -16,7 +16,9 @@ types.PortTypes.Add(new PortType("bool", Color.Parse("#2EBF5B")));     // green
 ```
 
 `Color.Parse` accepts `#RRGGBB` and `#AARRGGBB`; `Color.FromRgb`, `Color.FromArgb` and named constants such as
-`Color.Orange` exist as well. The demo declares five port types (number, bool, fluid, audio and flow), one for each of
+`Color.Orange` exist as well. An optional `DisplayName` (for example `new PortType("bool", green) { DisplayName =
+"Boolean" }`) is the readable name editors show in port tooltips; it defaults to the key. The demo declares five port
+types (number, bool, fluid, audio and flow), one for each of
 its domains, so that the colors tell the domains apart at a glance.
 
 ## Node Types
@@ -79,7 +81,82 @@ types.Add(new NodeType("audio.Mixer")
 An input accepts one wire unless its definition says `AllowsMultipleWires = true`; outputs always fan out. Port names
 must be unique within a direction. An input and an output of one node may share a name, in which case
 `node.Port("flow")` is ambiguous and throws: use `node.Input("flow")` or `node.Output("flow")`. Wires are covered in
-*Wires, Routing and Connection Rules*.
+*Wires, Routing and Connection Rules*. A port may also carry a `Description` (what it carries or expects), which the
+editor shows in the port's tooltip.
+
+### Ports That Vary per Node
+
+Some blocks are configurable: a bus with a number of channels, a gate with a number of inputs, a router whose outputs
+come from its data. Give such a type a `PortProvider`: a function of the node that returns its ports as a `PortSet`.
+Plexus calls it when a node is created (after its default data), when a node is loaded, pasted or duplicated (after
+its stored properties and data, before its wires), and after every change of the node's `Properties` or `Data`.
+
+```csharp
+types.Add(new NodeType("demo.Bus")
+{
+    Inputs = { new PortDefinition("in0", "number"), new PortDefinition("in1", "number") },   // the defaults: 2 channels
+    Outputs = { new PortDefinition("out", "number") },
+    Properties = { new PropertyDefinition("Channels", 2) },
+    PortProvider = node => new PortSet(
+        Enumerable.Range(0, Math.Clamp(node.Properties.Get<int>("Channels"), 1, 16))
+            .Select(i => new PortDefinition($"in{i}", "number") { Description = $"Channel {i}" }),
+        [new PortDefinition("out", "number")]),
+});
+
+bus.Properties["Channels"] = 4;    // one undo entry: the property, the new inputs in2 and in3
+bus.Properties["Channels"] = 1;    // in1..in3 and their wires are removed; in0 keeps its wire
+diagram.History.Undo();            // back to four inputs, every wire included
+```
+
+What happens when the ports are recomputed:
+
+- **The port name is the identity.** Within a direction, a port whose name is still there keeps its `Port` object and
+  its wires, even when it moved to another row or its label or type changed. A name that disappeared takes its wires
+  along. So use stable names (`in0`, `in1`, ...): renaming a port drops its wires, and renumbering channels re-attaches
+  the wires by name, not by position. Port names must be unique within a direction; `PortSet` refuses duplicates.
+- **Wires the rules no longer allow are removed.** When a kept port changes its type or its fan-in, each of its wires
+  is checked again with the diagram's `ConnectionRules`; with `ConnectionRules.SameType` installed, a wire whose types
+  no longer match is removed.
+- **The node grows, never shrinks.** When the ports need more height than the node has, it grows (keeping its position
+  and width) and the wires whose ends moved are re-routed. Fewer ports leave the node as it is.
+- **One undo entry.** The property (or data) change, the removed wires, the new ports, the growth and the re-routes
+  are one entry; undo restores the exact previous ports (the same objects), wires and size. An edit that does not
+  change the ports records only the edit.
+- **Hosts see it through the usual notifications.** `Diagram.Changed` reports each removed wire
+  (`ElementRemoved`) before the node reports `Ports` as changed (`ElementChanged`); undo reports the wires as added
+  again.
+- **Ports are not saved.** Files and the clipboard store properties, data and wires (by port name); loading recomputes
+  the ports first, so wires on computed ports come back. A file whose wire names a port that the provider no longer
+  produces fails to load like any other unknown port, and a paste of it is refused with a message. Stored node sizes
+  are kept on load.
+
+Keep the provider fast, deterministic and free of side effects, and let it read only the node's `Type`,
+`Properties` and `Data`: it may run for a node that is not on a page yet, and redo replays the recorded result instead
+of calling it again. If it throws (or returns null), the triggering change is rolled back and the exception reaches
+the caller. The declared `Inputs` and `Outputs` stay the type's defaults and should equal what the provider returns
+for a new node: palettes, the drop preview and `NodeGeometry.RoutingObstacles(Rect, NodeType, DiagramTheme)` use
+them. A host that holds a `Port` the provider removed cannot connect it any more (`CanConnect` says why).
+
+The demo's AND, OR and XOR gates use a provider: their `Inputs` property (2 to 8) gives them inputs named `a`, `b`,
+`c`, ...; a two-input gate has exactly the ports of a gate without the property, so older files keep their wires.
+
+## Descriptions and Tooltips
+
+Node types and ports carry text that editors show when the pointer rests on them; the library never draws it.
+
+```csharp
+types.Add(new NodeType("demo.Lamp")
+{
+    Description = "Lights while its input is on.",                       // the tooltip when there is no function
+    ToolTip = node => $"Lights while its input is on.\nNow: {(IsLit(node) ? "lit" : "dark")}",   // live state
+    Inputs = { new PortDefinition("in", "bool") { Description = "Lights the lamp while on." } },
+});
+```
+
+`NodeType.GetToolTip(node)` returns the result of `ToolTip` when the type has one, otherwise `Description`. The
+function runs each time the pointer moves onto the node, so it can show live values or your validation messages for
+the node (return several lines separated by `\n`). For per-host logic that does not belong in the type, handle
+`DiagramEditor.ToolTipRequested` instead (see *The Avalonia Editor*).
 
 ## Properties
 

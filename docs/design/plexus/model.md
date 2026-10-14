@@ -61,3 +61,11 @@ page that holds it, the group that contains it, a bounds query and a property-ch
 - **Identity.** Elements have unique ids (generated GUID text unless supplied); nodes also have names, unique by default
   across all pages. The diagram keeps an index of attached elements for lookup by id.
 - **Threading.** The model is not thread-safe; all access must come from the owning thread.
+
+**Per-node ports.** For a node whose type declares a port provider, the Node unit recomputes the ports after every
+property or payload change (`Node.ExecuteAffectingPorts`, called by the Property Bag and by the `Data` setter) and the
+DiagramPage unit plans the consequences in the same `CommandPlan`: wires of removed ports are removed, the ports are
+swapped by name (`NodePortsCommand`), wires of retyped ports are checked again with the connection rules, the node grows
+to fit and the wires whose anchors moved are re-routed (`DiagramPage.PlanPortUpdate`). The whole change is one undo
+entry, and hosts observe it through the usual element notifications: wire removals first, then the node's `Ports`
+change. A port taken off its node is refused by connection checks. See Node Design and DiagramPage Design.

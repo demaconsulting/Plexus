@@ -20,7 +20,8 @@ public sealed partial class Diagram
     ///         without host data) are left out rather than written as null.
     ///     </para>
     ///     <para>
-    ///         The result is a copy: changing it does not change the diagram. Restore with <see cref="FromTree"/>. See <see cref="ToSnapshot"/> for what is included.
+    ///         The result is a copy: changing it does not change the diagram. Restore with <see cref="FromTree"/>. See <see cref="ToSnapshot"/> for what is included
+    ///         (ports are not: they are recomputed from the restored properties and data on load).
     ///     </para>
     /// </remarks>
     /// <example>

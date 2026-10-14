@@ -50,6 +50,7 @@ sections:
                   - DiagramPage_AddNode_FewPorts_UsesThemeDefaultSize
                   - DiagramPage_AddNode_ManyPorts_GrowsToFitPorts
                   - DiagramPage_AddNode_TypeWithDefaultSize_UsesDeclaredSize
+                  - DiagramPage_AddNode_DeclaredSizeWithoutProvider_KeepsDeclaredHeight
 
               - id: Plexus-Model-DiagramPage-NodeIdentity
                 title: >-
@@ -304,3 +305,24 @@ sections:
                   - DiagramPage_CanReconnect_NoChange_IsAllowedWithoutAskingTheRule
                   - DiagramPage_WireBeingReconnected_IsTheMovingWireOnlyDuringTheCheck
                   - ConnectionRules_HostRule_AlwaysReceivesOutputThenInput
+
+              - id: Plexus-Model-DiagramPage-DetachedPorts
+                title: >-
+                  A connection check shall refuse, with a reason, a port that a port provider has taken off its node,
+                  so connecting or reconnecting to it fails.
+                justification: |
+                  Hosts may still hold a port object after a reconfiguration removed it; a wire to it would point at a
+                  port the node no longer shows.
+                tests:
+                  - DiagramPage_CanConnect_PortRemovedByProvider_IsDenied
+
+              - id: Plexus-Model-DiagramPage-AddNodePorts
+                title: >-
+                  Adding a node of a type with a port provider shall give it the ports the provider returns for its
+                  default properties and payload and a height that fits them, even over a declared size, and shall
+                  add nothing and report the error when the provider fails.
+                justification: |
+                  A new node must be ready to wire, with every port inside its box.
+                tests:
+                  - DiagramPage_AddNode_ProviderNeedsMoreHeight_GrowsNewNode
+                  - DiagramPage_AddNode_ProviderBuildsInvalidPortSet_ThrowsAndAddsNothing

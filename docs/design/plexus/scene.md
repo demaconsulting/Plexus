@@ -117,3 +117,8 @@ metrics, so a custom theme changes layout, routing obstacles and painting consis
 **Performance.** Building touches each element once, wire display routes are computed only for collapsed-group wires,
 and hit tests and queries visit only the cells near the point. Speed is assessed by profiling, not by timed tests; the
 thousand-node tests check only that building succeeds and every hit is correct.
+
+**Per-node ports.** Layout, hit testing, visual bounds, group frames and routing obstacles read each node's current
+ports (`Node.Ports`), never the node type's declared ports, so nodes whose ports a port provider computed are drawn,
+hit and routed around correctly; the only exception is `NodeGeometry.RoutingObstacles(Rect, NodeType, DiagramTheme)`,
+which a caller uses for a type without a node (its declared defaults). See NodeLayout Design.

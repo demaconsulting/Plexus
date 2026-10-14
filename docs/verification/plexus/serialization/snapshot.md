@@ -85,3 +85,9 @@ Format-neutral tree, streams and skipping unknown types (`DiagramTreeTests`, `Di
   drops nodes, wires and memberships and fills `LoadReport` (types, counts and message); a group with remaining
   members stays; groups that become empty disappear repeatedly; nothing missing gives the empty report and an
   identical diagram; the tree loader skips too.
+
+- **Per-node ports** (`Plexus-Serialization-Snapshot-DynamicPorts`): `Snapshot_RoundTrip_WireOnDynamicPort_RestoresWireJsonAndTree`
+  restores wires on computed ports through JSON and the tree identically (ports are not written to the JSON);
+  `Snapshot_Load_WireToPortProviderDoesNotProduce_ThrowsSnapshotException` refuses a document whose wire names an input
+  the loading registry's provider does not produce (error path); `Snapshot_Load_ProviderThrows_ThrowsSnapshotException`
+  turns a provider failure into a snapshot error naming the node (error path).

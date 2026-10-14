@@ -94,13 +94,13 @@ public static partial class DemoNodeTypes
     /// <returns>A new registry; each call returns an independent instance.</returns>
     public static NodeTypeRegistry CreateRegistry()
     {
-        // Port types give wires and triangles their color
+        // Port types give wires and triangles their color, and port tooltips their type name
         var types = new NodeTypeRegistry();
-        types.PortTypes.Add(new PortType(Number, Color.Parse("#FF8C00")));
-        types.PortTypes.Add(new PortType(Bool, Color.Parse("#2EBF5B")));
-        types.PortTypes.Add(new PortType(Fluid, Color.Parse("#1E90FF")));
-        types.PortTypes.Add(new PortType(Audio, Color.Parse("#B05CFF")));
-        types.PortTypes.Add(new PortType(Flow, Color.Parse("#F2D13D")));
+        types.PortTypes.Add(new PortType(Number, Color.Parse("#FF8C00")) { DisplayName = "Number" });
+        types.PortTypes.Add(new PortType(Bool, Color.Parse("#2EBF5B")) { DisplayName = "Boolean" });
+        types.PortTypes.Add(new PortType(Fluid, Color.Parse("#1E90FF")) { DisplayName = "Fluid" });
+        types.PortTypes.Add(new PortType(Audio, Color.Parse("#B05CFF")) { DisplayName = "Audio" });
+        types.PortTypes.Add(new PortType(Flow, Color.Parse("#F2D13D")) { DisplayName = "Control flow" });
 
         // Node types follow, in the order a palette would list them
         AddMathTypes(types);
@@ -155,6 +155,9 @@ public static partial class DemoNodeTypes
     /// <param name="dataType">The type of the host data payload, or null when nodes carry none.</param>
     /// <param name="size">The default node size, or null for the demo's shared size.</param>
     /// <param name="createData">Creates the initial host data of every new node, or null when nodes start without data.</param>
+    /// <param name="portProvider">Computes each node's ports from its properties, or null when every node has the declared ports.</param>
+    /// <param name="description">What the node type does, shown in tooltips and palettes, or null.</param>
+    /// <param name="toolTip">Produces a node's live tooltip text, or null to show the description.</param>
     /// <returns>The node type.</returns>
     private static NodeType Define(
         string key,
@@ -168,7 +171,10 @@ public static partial class DemoNodeTypes
         INodeVisual? visual = null,
         Type? dataType = null,
         Size? size = null,
-        Func<object>? createData = null)
+        Func<object>? createData = null,
+        Func<Node, PortSet>? portProvider = null,
+        string? description = null,
+        Func<Node, string?>? toolTip = null)
     {
         var type = new NodeType(key)
         {
@@ -183,6 +189,11 @@ public static partial class DemoNodeTypes
             // the factory gives every new node (added, dropped or pasted) its own payload object
             DataType = dataType,
             CreateData = createData,
+
+            // Optional per-node ports and the text the editor shows when the pointer rests on a node
+            PortProvider = portProvider,
+            Description = description,
+            ToolTip = toolTip,
         };
 
         // Ports and properties are added after construction because the type is immutable once registered

@@ -23,6 +23,15 @@ internal sealed class CommandPlan
     public bool IsEmpty => _applied.Count == 0;
 
     /// <summary>
+    ///     Gets the number of steps applied so far.
+    /// </summary>
+    /// <remarks>
+    ///     Lets a caller record a single step as itself instead of wrapping it in a composite, which keeps mergeable
+    ///     commands mergeable.
+    /// </remarks>
+    public int Count => _applied.Count;
+
+    /// <summary>
     ///     Applies a step and remembers it.
     /// </summary>
     /// <param name="command">The step to apply.</param>

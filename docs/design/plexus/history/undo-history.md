@@ -33,7 +33,9 @@ mergeable command may absorb a following, already applied command. The composite
 and reverts them in reverse order; the delegate command wraps two actions; the set-value command stores a target, a key,
 the old and the new value, and merges with a following set of the same target and key, keeping the first old value and
 the last new value. The command plan applies the steps of a multi-step model operation one by one, can revert them all
-if a later step fails, and builds one composite entry.
+if a later step fails, and builds one composite entry; its `Count` (the number of applied steps) lets a caller record a
+single step as itself instead of a composite, so a mergeable command stays mergeable (used when a property change
+recomputes no ports).
 
 #### Key Methods
 

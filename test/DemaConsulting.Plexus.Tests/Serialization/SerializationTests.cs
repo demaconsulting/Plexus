@@ -45,10 +45,13 @@ public class SerializationTests
         // Act: load it with a registry whose merger does not allow fan-in
         var restored = Diagram.FromJson(original.ToJson(), SerializationFixtures.CreateTypesWithMerger(allowsFanIn: false));
 
-        // Assert
+        // Assert: every wire is restored; only the merger input's fan-in flag follows the loading registry
         var restoredMerger = restored.Pages[0].Nodes.Single(n => n.Name == "M");
         Assert.Equal(2, restoredMerger.Port("in").Wires.Count);
-        Assert.Equal(TestModel.Dump(original), TestModel.Dump(restored));
+        Assert.False(restoredMerger.Port("in").AllowsMultipleWires);
+        Assert.Equal(
+            TestModel.Dump(original).Replace("Input0:in:f32:'in'::multi", "Input0:in:f32:'in'::single", StringComparison.Ordinal),
+            TestModel.Dump(restored));
     }
 
     /// <summary>
@@ -316,5 +319,30 @@ public class SerializationTests
         var nodes = page.Nodes.Select(n => $"{n.Name}@{TestModel.Format(n.Bounds)}");
         var routes = page.Wires.Select(w => string.Join(';', w.Route.Select(p => TestModel.Format(p.X) + "," + TestModel.Format(p.Y))));
         return string.Join('|', nodes) + "#" + string.Join('|', routes);
+    }
+
+    /// <summary>
+    ///     Validates that loading, pasting and duplicating recompute per-node ports before resolving wires.
+    /// </summary>
+    [Fact]
+    public void Serialization_DynamicPorts_RoundTripAndPaste_RecomputePortsBeforeWires()
+    {
+        // Arrange
+        var original = SerializationFixtures.CreateDynamicPortDiagram();
+
+        // Act: JSON round trip, paste into another diagram, duplicate in place
+        var loaded = Diagram.FromJson(original.ToJson(), TestModel.CreateDynamicTypes());
+        var loadedDump = TestModel.Dump(loaded);
+        var target = TestModel.CreateDynamicDiagram().Pages.Add("Target");
+        var pasted = PlexusClipboard.Paste(target, PlexusClipboard.Copy(original.Pages[0].Elements));
+        var duplicates = loaded.Pages[0].Duplicate([.. loaded.Pages[0].Elements], 0, 600);
+
+        // Assert: every copy wires the computed ports Bus.in2 and R.z
+        Assert.Equal(TestModel.Dump(original), loadedDump);
+        Assert.True(pasted.Success, pasted.Error);
+        Assert.Equal(2, target.Wires.Count);
+        Assert.Equal(2, duplicates.OfType<Wire>().Count());
+        Assert.All(duplicates.OfType<Wire>().Concat(target.Wires), w => Assert.Contains(w.Source.Name, new[] { "value", "z" }));
+        Assert.Contains(target.Wires, w => w.Target.Name == "in2");
     }
 }

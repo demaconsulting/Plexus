@@ -38,7 +38,10 @@ current one with a `SnapshotException`; JSON syntax and shape problems surface a
 `Diagram.FromSnapshot(snapshot, types)`: checks the version; collects every unknown node type across all pages and
 throws one `SnapshotException` listing them all; creates a diagram, loads each page with history suspended through the
 shared importer in restore mode (exact ids, names, bounds, stored routes, z-order, groups, properties and payloads) and
-clears the history. `ToJson`/`FromJson` are the shorthands combining these steps.
+clears the history. Port lists are never stored: the importer recomputes each node's ports from its restored
+properties and payload (with the type's port provider, if any) before resolving the wires, keeping the stored bounds,
+so wires on computed ports load and a wire naming a port that is not recomputed fails like any unknown port.
+`ToJson`/`FromJson` are the shorthands combining these steps.
 
 `PropertyCodec.Write` / `TryRead`: write values with round-trip precision and colors as `#AARRGGBB`; read strictly by token
 type so a malformed value is reported, never coerced. `NodeDataCodec.Serialize` / `TryDeserialize`: use the exact declared
@@ -74,7 +77,8 @@ through the strict path, and the counts are stored in `Diagram.LoadReport`.
 
 - Malformed JSON, the wrong shape or excessive depth: `JsonException` from `Deserialize`.
 - Unsupported version, missing node types, duplicate or missing ids, dangling references, a property value of the wrong
-  kind, an unreadable payload while restoring: `SnapshotException` (missing types listed in `MissingNodeTypes`).
+  kind, an unreadable payload while restoring, a port provider that fails, a wire to a port the provider does not
+  produce: `SnapshotException` (missing types listed in `MissingNodeTypes`).
 - A payload that does not match its declared type, or a serializer that returns null or invalid JSON, while capturing:
   `InvalidOperationException` naming the node, because it is a host defect.
 - Null arguments: `ArgumentNullException`.

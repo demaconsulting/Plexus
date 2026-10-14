@@ -452,4 +452,33 @@ public class ModelTests
             pageActions);
         Assert.Equal(new[] { NotifyCollectionChangedAction.Add, NotifyCollectionChangedAction.Remove }, nodeActions);
     }
+
+    /// <summary>
+    ///     Validates that property and data changes recompute per-node ports, keeping and dropping wires, as one undo entry each.
+    /// </summary>
+    [Fact]
+    public void Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry()
+    {
+        // Arrange: wires on a bus input and on a router output
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        var router = page.AddNode("acme.Router", 0, 300, "R");
+        var consumer = page.AddNode("acme.Consumer", 300, 300, "C");
+        var kept = page.Connect("P.value", "Bus.in0");
+        var dropped = page.Connect("R.y", "C.in");
+
+        // Act / Assert: each change is one exact entry
+        TestModel.AssertRoundTrip(diagram, () => bus.Properties["Channels"] = 6);
+        TestModel.AssertRoundTrip(diagram, () => router.Data = new RouterData("x"));
+
+        // Assert: the bus grew and kept its wire; the router lost y and its wire
+        Assert.Equal(6, bus.Inputs.Count);
+        Assert.Same(kept, Assert.Single(page.Wires));
+        Assert.Null(dropped.Page);
+        Assert.Same(producer, kept.Source.Node);
+        Assert.Equal(["x"], router.Outputs.Select(p => p.Name));
+        Assert.Empty(consumer.Wires);
+    }
 }

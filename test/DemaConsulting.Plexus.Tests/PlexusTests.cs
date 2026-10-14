@@ -892,6 +892,103 @@ public class PlexusTests
     }
 
     /// <summary>
+    ///     Proves that a node whose ports come from a port provider updates its ports and wires with a property change, as one undo step.
+    /// </summary>
+    [Fact]
+    public void Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep()
+    {
+        // Arrange: a host type with a "Channels" property deciding its inputs, fed on its last channel
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("acme.Source") { Outputs = { new PortDefinition("out", "f32") } });
+        types.Add(new NodeType("acme.Bus")
+        {
+            Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
+            Properties = { new PropertyDefinition("Channels", 2) },
+            PortProvider = node => new PortSet(
+                Enumerable.Range(0, node.Properties.Get<int>("Channels")).Select(i => new PortDefinition($"in{i}", "f32")),
+                []),
+        });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Source", 0, 0, "S1");
+        page.AddNode("acme.Source", 0, 150, "S2");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        bus.Properties["Channels"] = 4;
+        var first = page.Connect("S1.out", "Bus.in0");
+        var last = page.Connect("S2.out", "Bus.in3");
+        var in0 = bus.Input("in0");
+        var entries = diagram.History.UndoCount;
+        var height = bus.Bounds.Height;
+
+        // Act: drop to two channels
+        bus.Properties["Channels"] = 2;
+
+        // Assert: in3 and its wire are gone, in0 kept its object and wire, one undo entry
+        Assert.Equal(["in0", "in1"], bus.Inputs.Select(p => p.Name));
+        Assert.Same(in0, bus.Inputs[0]);
+        Assert.Equal([first], page.Wires);
+        Assert.Equal(height, bus.Bounds.Height);
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+
+        // Act / Assert: undo restores the four ports and both wires exactly
+        Assert.True(diagram.History.Undo());
+        Assert.Equal(4, bus.Inputs.Count);
+        Assert.Equal([first, last], page.Wires);
+        Assert.Same(bus.Input("in3"), last.Target);
+    }
+
+    /// <summary>
+    ///     Proves that saving, loading and pasting restore wires that attach to ports computed by a port provider.
+    /// </summary>
+    [Fact]
+    public void Plexus_DynamicPorts_SaveLoadAndPaste_RestoreWiresOnDynamicPorts()
+    {
+        // Arrange
+        var original = Serialization.SerializationFixtures.CreateDynamicPortDiagram();
+
+        // Act: save and load, then paste everything into a fresh diagram
+        var loaded = Diagram.FromJson(original.ToJson(), TestModel.CreateDynamicTypes());
+        var target = TestModel.CreateDynamicDiagram().Pages.Add("Target");
+        var result = PlexusClipboard.Paste(target, PlexusClipboard.Copy(original.Pages[0].Elements));
+
+        // Assert: the loaded diagram equals the original, and the pasted wires use the computed ports
+        Assert.Equal(TestModel.Dump(original), TestModel.Dump(loaded));
+        Assert.True(result.Success, result.Error);
+        Assert.Equal(["P.value -> Bus.in2", "R.z -> C.in"], target.Wires.Select(w => $"{w.Source} -> {w.Target}"));
+    }
+
+    /// <summary>
+    ///     Proves that port, node type and port type descriptions provide the text hosts show in tooltips, including live state.
+    /// </summary>
+    [Fact]
+    public void Plexus_Descriptions_PortsAndNodeTypes_ProvideToolTipText()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        types.PortTypes.Add(new PortType("f32", Color.Parse("#FF8C00")) { DisplayName = "Float" });
+        types.Add(new NodeType("acme.Gauge")
+        {
+            Description = "Shows a value.",
+            Inputs = { new PortDefinition("in", "f32") { Description = "The value to show." } },
+            Properties = { new PropertyDefinition("Value", 0.0) },
+            ToolTip = node => $"Value = {node.Properties.Get<double>("Value")}",
+        });
+        types.Add(new NodeType("acme.Plain") { Description = "Does nothing." });
+        var page = new Diagram(types).Pages.Add("Main");
+        var gauge = page.AddNode("acme.Gauge", 0, 0);
+        var plain = page.AddNode("acme.Plain", 200, 0);
+
+        // Act
+        gauge.Properties["Value"] = 2.5;
+
+        // Assert: live tooltip text, description fallback, port description and type display name
+        Assert.Equal("Value = 2.5", gauge.Type.GetToolTip(gauge));
+        Assert.Equal("Does nothing.", plain.Type.GetToolTip(plain));
+        Assert.Equal("The value to show.", gauge.Input("in").Description);
+        Assert.Equal("Float", types.PortTypes.Get("f32").DisplayName);
+    }
+
+    /// <summary>
     ///     Determines whether a straight segment passes through the interior of a rectangle.
     /// </summary>
     /// <param name="a">The segment start.</param>

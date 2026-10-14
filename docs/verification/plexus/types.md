@@ -52,3 +52,13 @@ a type reflect its ports and size.
 
 - **Types_Availability_RemoveAndReRegister_ControlsNodeCreation**: after a type is removed nodes can no longer be
   created from it, and after it is registered again they can.
+
+#### Port provider (`Plexus-Types-PortProvider`)
+
+- **Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts**: two nodes of one type with a port provider have different
+  ports after configuring one of them, while the type's declared ports and its provider are unchanged.
+
+#### Descriptions (`Plexus-Types-Descriptions`)
+
+- **Types_Descriptions_PortNodeAndPortType_AreExposed**: a port description, a node type description (as the node's
+  tooltip text) and a port type display name are returned as declared.

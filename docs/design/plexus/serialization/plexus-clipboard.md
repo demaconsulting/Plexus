@@ -41,8 +41,12 @@ non-negative), computes the translation (the target position applied to the top-
 collapsed group boxes, else the default offset), then creates detached nodes (claiming ids: fresh GUIDs when cloning, the
 stored ids when restoring, rejecting empty and repeated ids; resolving names; loading properties by coercion; reading
 payloads, where a node without any payload gets `NodeType.CreateData` when cloning and keeps no payload when
-restoring), annotations (validating fill colors) and groups, links group membership after checking for unknown members,
-members in two groups, cycles and depth beyond 64, creates wires (checking nodes, port names and directions, self
+restoring), then recomputing the node's ports with its type's port provider (`Node.InitializePorts`, after the
+properties and payload and before any wire; the stored bounds are kept; a provider failure becomes a "the ports of node
+... could not be computed" message), annotations (validating fill colors) and groups, links group membership after
+checking for unknown members,
+members in two groups, cycles and depth beyond 64, creates wires (checking nodes, port names against the recomputed ports
+and directions, self
 connections and duplicate port pairs, translating routes) and fixes the z-order (a stored z-order must name every element
 exactly once; otherwise groups, nodes, annotations, wires). Any problem aborts with a message and nothing is applied.
 

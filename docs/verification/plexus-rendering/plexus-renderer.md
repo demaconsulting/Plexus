@@ -56,3 +56,6 @@ computed positions, and invalid input raises the documented exception type.
   unselected one lacks.
 - **PlexusRenderer_Render_InvalidInput_Throws**: null page, zero or NaN scale, negative padding, empty bounds, an
   oversized image and a blank path each throw the documented exception.
+
+- **PlexusRenderer_RenderPng_DynamicPortNode_DrawsPortsFromProvider**: the pixel where a node's third computed input
+  triangle is drawn has the port color only after the property change that adds that input.

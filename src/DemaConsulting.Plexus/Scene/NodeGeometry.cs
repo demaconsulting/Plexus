@@ -31,6 +31,9 @@ public static class NodeGeometry
     ///     the title is measured (with the same safety factor as port labels) by the deterministic
     ///     <see cref="ApproximateTextMeasurer"/>, never a painter's measurer, then padded and rounded up to a multiple of
     ///     <see cref="DiagramTheme.GridSize"/>. The default width is therefore a minimum, and short titles keep it.
+    ///     The port columns counted here are the type's declared <see cref="NodeType.Inputs"/> and <see cref="NodeType.Outputs"/>;
+    ///     when a <see cref="NodeType.PortProvider"/> gives a new node more ports, <see cref="DiagramPage.AddNode(NodeType, Point, string?, string?)"/>
+    ///     grows its height (never its width) to fit them, even over a declared size.
     /// </remarks>
     /// <param name="type">The node type.</param>
     /// <param name="theme">The theme supplying metrics.</param>
@@ -246,10 +249,37 @@ public static class NodeGeometry
             y += size.Height;
         }
 
-        // Ports reach sideways from the box edge out to their anchors, one row tall
-        extent = ExtendByPorts(extent, box, PortDirection.Input, node.Type.Inputs, theme);
-        return ExtendByPorts(extent, box, PortDirection.Output, node.Type.Outputs, theme);
+        // Ports reach sideways from the box edge out to their anchors, one row tall (the node's current ports)
+        extent = ExtendByPorts(extent, box, PortDirection.Input, Labels(node.Inputs), theme);
+        return ExtendByPorts(extent, box, PortDirection.Output, Labels(node.Outputs), theme);
     }
+
+    /// <summary>
+    ///     Computes the height a node needs for its current ports: <see cref="RequiredHeight"/> of its longer port column.
+    /// </summary>
+    /// <remarks>
+    ///     Used when a node's ports come from a <see cref="NodeType.PortProvider"/>: a new node, and a node whose ports
+    ///     were recomputed, grow to at least this height so no port overflows the box.
+    /// </remarks>
+    /// <param name="node">The node.</param>
+    /// <param name="theme">The theme supplying metrics.</param>
+    /// <returns>The minimum height that keeps every port anchor inside the box with padding.</returns>
+    internal static double PortColumnHeight(Node node, DiagramTheme theme) =>
+        RequiredHeight(Math.Max(node.Inputs.Count, node.Outputs.Count), theme);
+
+    /// <summary>
+    ///     Lists the labels of a column of ports.
+    /// </summary>
+    /// <param name="ports">The ports.</param>
+    /// <returns>The labels in row order.</returns>
+    private static string[] Labels(IReadOnlyList<Port> ports) => [.. ports.Select(p => p.Label)];
+
+    /// <summary>
+    ///     Lists the labels of a column of port declarations.
+    /// </summary>
+    /// <param name="ports">The declarations.</param>
+    /// <returns>The labels in row order.</returns>
+    private static string[] Labels(IList<PortDefinition> ports) => [.. ports.Select(p => p.Label)];
 
     /// <summary>
     ///     Computes the rectangle of a text centered horizontally on a box, widened by the label safety factor.
@@ -270,15 +300,15 @@ public static class NodeGeometry
     /// <param name="extent">The extent so far.</param>
     /// <param name="box">The node box.</param>
     /// <param name="direction">The column's direction.</param>
-    /// <param name="ports">The column's port declarations.</param>
+    /// <param name="labels">The labels of the column's ports, in row order.</param>
     /// <param name="theme">The theme supplying metrics.</param>
     /// <returns>The grown extent.</returns>
-    private static Rect ExtendByPorts(Rect extent, Rect box, PortDirection direction, IList<PortDefinition> ports, DiagramTheme theme)
+    private static Rect ExtendByPorts(Rect extent, Rect box, PortDirection direction, IReadOnlyList<string> labels, DiagramTheme theme)
     {
-        for (var i = 0; i < ports.Count; i++)
+        for (var i = 0; i < labels.Count; i++)
         {
-            var edge = PortEdge(box, direction, i, ports.Count, theme);
-            var anchor = PortAnchor(edge, direction, ports[i].Label, theme);
+            var edge = PortEdge(box, direction, i, labels.Count, theme);
+            var anchor = PortAnchor(edge, direction, labels[i], theme);
             var left = Math.Min(edge.X, anchor.X);
             extent = extent.Union(new Rect(left, edge.Y - (theme.PortTriangleHeight / 2), Math.Abs(anchor.X - edge.X), theme.PortTriangleHeight));
         }
@@ -296,16 +326,50 @@ public static class NodeGeometry
     ///     port's own wire is unaffected because its stub leaves from the end of its own strip.
     /// </remarks>
     /// <param name="bounds">The node's bounding box.</param>
-    /// <param name="type">The node's type, which supplies the ports.</param>
+    /// <param name="type">The node's type, which supplies the ports (its declared <see cref="NodeType.Inputs"/> and <see cref="NodeType.Outputs"/>).</param>
     /// <param name="theme">The theme supplying metrics.</param>
     /// <returns>The obstacle boxes.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="type"/> or <paramref name="theme"/> is null.</exception>
     public static IReadOnlyList<Rect> RoutingObstacles(Rect bounds, NodeType type, DiagramTheme theme)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentNullException.ThrowIfNull(theme);
+        return RoutingObstacles(bounds, Labels(type.Inputs), Labels(type.Outputs), theme);
+    }
+
+    /// <summary>
+    ///     Computes the obstacle boxes a node contributes to wire routing, from the node's current ports.
+    /// </summary>
+    /// <remarks>
+    ///     Same boxes as <see cref="RoutingObstacles(Rect, NodeType, DiagramTheme)"/>, but the port strips follow the
+    ///     node's own <see cref="Node.Inputs"/> and <see cref="Node.Outputs"/>, which differ from the type's declared ports
+    ///     when the type has a <see cref="NodeType.PortProvider"/>. The model and the scene route with this overload.
+    /// </remarks>
+    /// <param name="bounds">The node's bounding box (current or hypothetical).</param>
+    /// <param name="node">The node, which supplies the ports.</param>
+    /// <param name="theme">The theme supplying metrics.</param>
+    /// <returns>The obstacle boxes.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="node"/> or <paramref name="theme"/> is null.</exception>
+    public static IReadOnlyList<Rect> RoutingObstacles(Rect bounds, Node node, DiagramTheme theme)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(theme);
+        return RoutingObstacles(bounds, Labels(node.Inputs), Labels(node.Outputs), theme);
+    }
+
+    /// <summary>
+    ///     Computes the obstacle boxes of a node box with the given port labels.
+    /// </summary>
+    /// <param name="bounds">The node's bounding box.</param>
+    /// <param name="inputs">The input labels in row order.</param>
+    /// <param name="outputs">The output labels in row order.</param>
+    /// <param name="theme">The theme supplying metrics.</param>
+    /// <returns>The obstacle boxes.</returns>
+    private static List<Rect> RoutingObstacles(Rect bounds, IReadOnlyList<string> inputs, IReadOnlyList<string> outputs, DiagramTheme theme)
+    {
         var boxes = new List<Rect> { bounds.Inflate(theme.ObstacleMargin) };
-        AddPortStrips(boxes, bounds, PortDirection.Input, type.Inputs, theme);
-        AddPortStrips(boxes, bounds, PortDirection.Output, type.Outputs, theme);
+        AddPortStrips(boxes, bounds, PortDirection.Input, inputs, theme);
+        AddPortStrips(boxes, bounds, PortDirection.Output, outputs, theme);
         return boxes;
     }
 
@@ -315,21 +379,21 @@ public static class NodeGeometry
     /// <param name="boxes">The list to add to.</param>
     /// <param name="bounds">The node's bounding box.</param>
     /// <param name="direction">The column's direction.</param>
-    /// <param name="ports">The column's port declarations.</param>
+    /// <param name="labels">The labels of the column's ports, in row order.</param>
     /// <param name="theme">The theme supplying metrics.</param>
-    private static void AddPortStrips(List<Rect> boxes, Rect bounds, PortDirection direction, IList<PortDefinition> ports, DiagramTheme theme)
+    private static void AddPortStrips(List<Rect> boxes, Rect bounds, PortDirection direction, IReadOnlyList<string> labels, DiagramTheme theme)
     {
-        for (var i = 0; i < ports.Count; i++)
+        for (var i = 0; i < labels.Count; i++)
         {
             // Strips are only needed where the label reaches beyond the margin box already covering the edge
-            var label = ports[i].Label;
+            var label = labels[i];
             var reach = PortReach(label, theme);
             if (label.Length == 0 || reach <= theme.ObstacleMargin)
             {
                 continue;
             }
 
-            var edge = PortEdge(bounds, direction, i, ports.Count, theme);
+            var edge = PortEdge(bounds, direction, i, labels.Count, theme);
             var outer = direction == PortDirection.Input ? edge.X - reach : edge.X + reach;
             var half = theme.PortPitch / 2;
             var left = Math.Min(edge.X, outer);

@@ -40,7 +40,8 @@ Because the options are immutable, one instance can be shared between renders an
     surface (at least 1 x 1); clear it with the background; paint the grid primitive when enabled and the theme's grid
     size is positive; paint the scene primitives with a `ScenePainter`.
   - Post-conditions: the surface is fully opaque unless a translucent background was requested; if painting fails the
-    surface is disposed before the exception propagates.
+    surface is disposed before the exception propagates. Because the scene is built from the model as it is, each node
+    is drawn with its current ports, including ports a port provider computed for it.
 - **`RenderPng(page, options)`** — renders a surface and encodes it as PNG, as RGB when the background is opaque and
   as RGBA otherwise. Returns the file contents.
 - **`SavePng(page, path, options)`** — validates the path, then writes the `RenderPng` bytes to the file, replacing an

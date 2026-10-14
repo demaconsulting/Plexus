@@ -191,6 +191,21 @@ Each heading names a requirement; the bullets name the test methods and what the
   payload and excessive nesting are each rejected with an error and no elements; the page and history are unchanged and
   a valid payload still pastes afterwards.
 
+### Plexus-Core-DynamicPorts
+
+- **Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep**: a host type whose `Channels` property
+  decides its inputs is fed on two channels; lowering the count removes the last input and its wire, keeps the first
+  input object and its wire and the node height, in one undo entry; undo restores the four inputs and both wires.
+- **Plexus_DynamicPorts_SaveLoadAndPaste_RestoreWiresOnDynamicPorts**: a diagram with wires on a computed input and a
+  computed output loads from JSON identical to the original (ports included) and pastes into another diagram with both
+  wires on the computed ports.
+
+### Plexus-Core-ElementDescriptions
+
+- **Plexus_Descriptions_PortsAndNodeTypes_ProvideToolTipText**: a node type's tooltip function shows a live property
+  value, a type without one falls back to its description, a port carries its description and a port type its display
+  name.
+
 ### Platform requirements (Plexus-Platform-*)
 
 - **Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram**: runs on every platform and runtime of the CI

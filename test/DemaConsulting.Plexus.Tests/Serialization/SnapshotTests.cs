@@ -452,4 +452,60 @@ public class SnapshotTests
         Assert.Equal(DiagramSnapshot.CurrentFormatVersion, snapshot.FormatVersion);
         Assert.Equal("P", Assert.Single(snapshot.Pages).Name);
     }
+
+    /// <summary>
+    ///     Validates that wires on ports produced by a port provider survive JSON and tree round trips.
+    /// </summary>
+    [Fact]
+    public void Snapshot_RoundTrip_WireOnDynamicPort_RestoresWireJsonAndTree()
+    {
+        // Arrange
+        var original = SerializationFixtures.CreateDynamicPortDiagram();
+
+        // Act: load back through JSON and through the format-neutral tree
+        var fromJson = Diagram.FromJson(original.ToJson(), TestModel.CreateDynamicTypes());
+        var fromTree = Diagram.FromTree(original.ToTree(), TestModel.CreateDynamicTypes());
+
+        // Assert: ports, wires and bounds are identical (ports were recomputed, not stored)
+        Assert.Equal(TestModel.Dump(original), TestModel.Dump(fromJson));
+        Assert.Equal(TestModel.Dump(original), TestModel.Dump(fromTree));
+        Assert.Equal("Bus.in2", fromJson.Pages[0].Wires[0].Target.ToString());
+        Assert.DoesNotContain("\"inputs\"", original.ToJson(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Validates that a stored wire to a port the provider no longer produces is refused like any unknown port.
+    /// </summary>
+    [Fact]
+    public void Snapshot_Load_WireToPortProviderDoesNotProduce_ThrowsSnapshotException()
+    {
+        // Arrange: a registry whose bus never has more than two inputs
+        var json = SerializationFixtures.CreateDynamicPortDiagram().ToJson();
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(_ => new PortSet(
+            [new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32")],
+            [new PortDefinition("out", "f32")]));
+
+        // Act
+        var ex = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, types));
+
+        // Assert
+        Assert.Contains("no input port named 'in2'", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that a provider that fails while loading makes the load fail with a snapshot exception.
+    /// </summary>
+    [Fact]
+    public void Snapshot_Load_ProviderThrows_ThrowsSnapshotException()
+    {
+        // Arrange
+        var json = SerializationFixtures.CreateDynamicPortDiagram().ToJson();
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(_ => throw new InvalidOperationException("bad channels"));
+
+        // Act
+        var ex = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, types));
+
+        // Assert
+        Assert.Contains("could not be computed: bad channels", ex.Message, StringComparison.Ordinal);
+    }
 }

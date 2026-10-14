@@ -57,3 +57,9 @@ verification designs).
 - **Properties_UndoNotification_EditSession_UndoesRedoesAndNotifies**: real changes create one entry each, a no-op
   records nothing, undo and redo restore values, notifications carry names, a slider-style edit merges into one entry,
   and a removed node rejects edits.
+
+#### Port recomputation (`Plexus-Properties-PortRecompute`)
+
+- **Properties_PortRecompute_PropertyEdits_UpdatePortsInSameEntry**: a set, a batch edit (count and port type), a
+  reset, and adding and removing an ad-hoc value of a node whose type has a port provider each change the ports in one
+  exact undo entry.

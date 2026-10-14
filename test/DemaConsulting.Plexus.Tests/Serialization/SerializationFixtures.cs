@@ -134,4 +134,47 @@ internal static class SerializationFixtures
         second.AddNode("acme.Opaque", 400, 400);
         return diagram;
     }
+
+    /// <summary>
+    ///     Builds a diagram whose wires attach to ports that only exist because of a port provider.
+    /// </summary>
+    /// <remarks>
+    ///     A bus configured for three channels is fed on <c>in2</c>, and a router whose payload names three outputs feeds a
+    ///     consumer from <c>z</c>; neither port is among the types' declared default ports.
+    /// </remarks>
+    /// <returns>The diagram; its types come from <see cref="TestModel.CreateDynamicTypes"/>.</returns>
+    public static Diagram CreateDynamicPortDiagram()
+    {
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Producer", 0, 0, "P");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        bus.Properties["Channels"] = 3;
+        page.Connect("P.value", "Bus.in2");
+        var router = page.AddNode("acme.Router", 0, 300, "R");
+        router.Data = new RouterData("x,y,z");
+        page.AddNode("acme.Consumer", 300, 300, "C");
+        page.Connect("R.z", "C.in");
+        return diagram;
+    }
+
+    /// <summary>
+    ///     Creates the dynamic-port types with the bus's provider replaced, to load content its normal provider produced.
+    /// </summary>
+    /// <param name="provider">The replacement provider of <c>acme.Bus</c>.</param>
+    /// <returns>A new registry.</returns>
+    public static NodeTypeRegistry CreateDynamicTypesWithBusProvider(Func<Node, PortSet> provider)
+    {
+        var types = TestModel.CreateDynamicTypes();
+        var original = types.Get("acme.Bus");
+        types.Remove("acme.Bus");
+        var bus = new NodeType("acme.Bus") { PortProvider = provider };
+        foreach (var property in original.Properties)
+        {
+            bus.Properties.Add(property);
+        }
+
+        types.Add(bus);
+        return types;
+    }
 }

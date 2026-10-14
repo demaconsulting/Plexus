@@ -743,7 +743,7 @@ internal sealed partial class SceneComposer
         var list = new List<Rect>();
         foreach (var node in _page.Nodes.Where(n => !n.IsHiddenByCollapse))
         {
-            list.AddRange(NodeGeometry.RoutingObstacles(node.Bounds, node.Type, _theme));
+            list.AddRange(NodeGeometry.RoutingObstacles(node.Bounds, node, _theme));
         }
 
         foreach (var info in _collapsed.Values)

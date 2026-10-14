@@ -19,7 +19,11 @@ of annotation text (`TextWrapper`).
   (estimated by the approximate measurer, widened by a 5% safety factor
   and rounded up), port reach (triangle plus gaps plus label), port anchor (the outer end of triangle and label where wires
   attach), the node's visual bounds, and the routing obstacles (the inflated node box plus one strip per labelled port
-  whose label reaches beyond the margin).
+  whose label reaches beyond the margin). The visual bounds and the `RoutingObstacles(Rect, Node, DiagramTheme)`
+  overload use the node's current ports (which a `NodeType.PortProvider` may compute per node); the
+  `RoutingObstacles(Rect, NodeType, DiagramTheme)` overload uses the type's declared ports. The internal
+  `PortColumnHeight(node, theme)` is the required height of the node's longer current port column, used to size new
+  nodes of types with a port provider and to grow nodes whose ports were recomputed.
 - Port rows follow `DiagramTheme.PortAlignment`. With `Center` (the default) each column (all inputs, all outputs) is
   a stack centered vertically on the box: row `i` of `n` lies at `Top + Height/2 + (i - (n-1)/2) * PortPitch`, so an odd
   count puts the middle port on the box center and an even count straddles it on half-grid positions (nodes still
@@ -47,6 +51,8 @@ first, then outputs. For each port the edge point and anchor come from `NodeGeom
 triangle sits outside the edge pointing right, the hit rectangle spans from just inside the edge out to the anchor (so it
 covers triangle and label), and the label is measured with the supplied measurer and placed beside the triangle,
 vertically centered on the row. Postcondition: `Bounds` contains the box, name, summary lines, port triangles and labels.
+Ports always come from the node itself (`Node.Ports`), so nodes of one type with different per-node ports lay out
+differently, and the layout follows a recomputation as soon as the scene is rebuilt.
 Proxy ports of a collapsed group (`SceneComposer`) follow the same alignment: with `Center` each proxy column is centered
 on the collapsed box (which grows to at least the title-bar height plus one pitch per proxy row), with `Top` the rows
 start below the title bar as before.

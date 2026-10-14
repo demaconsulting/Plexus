@@ -37,6 +37,7 @@ sections:
           - PlexusRendering-PlexusRenderer-Wires
           - PlexusRendering-PlexusRenderer-StyledWires
           - PlexusRendering-PlexusRenderer-AnnotationsAndGroups
+          - PlexusRendering-PlexusRenderer-DynamicPorts
           - PlexusRendering-ScenePainter-Rectangles
           - PlexusRendering-ScenePainter-Paths
           - PlexusRendering-ScenePainter-Blending

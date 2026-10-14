@@ -201,3 +201,39 @@ sections:
               - PlexusAvalonia-Editor-DiagramEditor-Duplicate
             tests:
               - Editor_Keyboard_Shortcuts_RunCommandsUnlessInlineEditorIsOpen
+
+          - id: PlexusAvalonia-Editor-ToolTips
+            title: >-
+              The editor shall give hovered nodes, ports and wires a tooltip built from their descriptions, raise an
+              event that lets the host change or suppress it, and hide it during gestures and inline editing.
+            justification: |
+              Decomposes PlexusAvalonia-ToolTips; the editor knows what the pointer is over and when a gesture runs.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipContent
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipDisplay
+            tests:
+              - Editor_ToolTips_HoverNodePortAndWire_ShowDefaultOrHostContent
+
+          - id: PlexusAvalonia-Editor-ElementNavigation
+            title: >-
+              The editor shall bring an element into view, switching pages and showing the collapsed group that hides
+              it, and fit a set of elements into the view.
+            justification: |
+              Decomposes PlexusAvalonia-ElementNavigation; the view state (page, zoom, offset) is the editor's.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-BringIntoView
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElements
+            tests:
+              - Editor_ElementNavigation_BringIntoViewAndFitElements_ShowElementsAcrossPages
+
+          - id: PlexusAvalonia-Editor-DynamicPorts
+            title: >-
+              The editor shall draw, hit test and connect a node's current ports after a configuration change
+              recomputed them.
+            justification: |
+              Decomposes PlexusAvalonia-DynamicPorts; the editor must follow the model's port changes like any other
+              change.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-DynamicPorts
+            tests:
+              - Editor_DynamicPorts_PropertyChange_SceneHitTestAndConnectFollow

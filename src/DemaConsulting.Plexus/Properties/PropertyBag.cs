@@ -15,6 +15,9 @@ namespace DemaConsulting.Plexus;
 ///     Compatible numeric types convert, so assigning an <see cref="int"/> to a double property works.
 ///     Every assignment is undoable and a no-op assignment records nothing. Enumeration lists declared
 ///     properties first (in declaration order) and then ad-hoc values (in insertion order).
+///     When the node's type declares a <see cref="NodeType.PortProvider"/>, every change (assignment, <see cref="Reset"/>,
+///     <see cref="TrySetAll"/>, ad-hoc values) also recomputes the node's ports inside the same undo entry; see
+///     <see cref="NodeType.PortProvider"/> for how wires are kept or removed.
 ///     Not thread-safe.
 /// </remarks>
 /// <example>
@@ -202,7 +205,7 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     public void Reset(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        var page = _owner.RequirePage();
+        _owner.RequirePage();
         if (!_values.TryGetValue(name, out var current))
         {
             throw new KeyNotFoundException($"The node has no property named '{name}'.");
@@ -214,13 +217,13 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
             // Resetting an already-default value must not create a history entry
             if (!Equals(current, definition.DefaultValue))
             {
-                ExecuteSet(page, name, current, definition.DefaultValue);
+                ExecuteSet(name, current, definition.DefaultValue);
             }
 
             return;
         }
 
-        RemoveAdHoc(page, name, current);
+        RemoveAdHoc(name, current);
     }
 
     /// <summary>
@@ -258,7 +261,7 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     {
         ArgumentException.ThrowIfNullOrEmpty(name);
         ArgumentNullException.ThrowIfNull(value);
-        var page = _owner.RequirePage();
+        _owner.RequirePage();
 
         // Declared properties coerce to their kind; ad-hoc ones only need to be an allowed kind
         var definition = GetDefinition(name);
@@ -271,24 +274,23 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
         {
             if (!Equals(current, canonical))
             {
-                ExecuteSet(page, name, current, canonical);
+                ExecuteSet(name, current, canonical);
             }
 
             return;
         }
 
-        AddAdHoc(page, name, canonical);
+        AddAdHoc(name, canonical);
     }
 
     /// <summary>
-    ///     Records an undoable change of an existing value.
+    ///     Records an undoable change of an existing value, recomputing the node's ports in the same entry when its type has a port provider.
     /// </summary>
-    /// <param name="page">The node's page.</param>
     /// <param name="name">The property name.</param>
     /// <param name="oldValue">The current value.</param>
     /// <param name="newValue">The new canonical value.</param>
-    private void ExecuteSet(DiagramPage page, string name, object oldValue, object newValue) =>
-        page.Diagram.History.Execute(new SetValueCommand<object>(
+    private void ExecuteSet(string name, object oldValue, object newValue) =>
+        _owner.ExecuteAffectingPorts(new SetValueCommand<object>(
             $"Set {name}",
             this,
             name,
@@ -297,13 +299,12 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
             v => ApplyValue(name, v)));
 
     /// <summary>
-    ///     Records the undoable creation of an ad-hoc value.
+    ///     Records the undoable creation of an ad-hoc value, recomputing the node's ports in the same entry when its type has a port provider.
     /// </summary>
-    /// <param name="page">The node's page.</param>
     /// <param name="name">The new property name.</param>
     /// <param name="value">The canonical value.</param>
-    private void AddAdHoc(DiagramPage page, string name, object value) =>
-        page.Diagram.History.Execute(
+    private void AddAdHoc(string name, object value) =>
+        _owner.ExecuteAffectingPorts(new DelegateCommand(
             $"Add {name}",
             () =>
             {
@@ -316,18 +317,17 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
                 _values.Remove(name);
                 _adHocOrder.Remove(name);
                 RaiseChanged(name);
-            });
+            }));
 
     /// <summary>
-    ///     Records the undoable removal of an ad-hoc value, remembering its position.
+    ///     Records the undoable removal of an ad-hoc value, remembering its position and recomputing the node's ports in the same entry when its type has a port provider.
     /// </summary>
-    /// <param name="page">The node's page.</param>
     /// <param name="name">The property name.</param>
     /// <param name="value">The current value.</param>
-    private void RemoveAdHoc(DiagramPage page, string name, object value)
+    private void RemoveAdHoc(string name, object value)
     {
         var index = _adHocOrder.IndexOf(name);
-        page.Diagram.History.Execute(
+        _owner.ExecuteAffectingPorts(new DelegateCommand(
             $"Reset {name}",
             () =>
             {
@@ -340,7 +340,7 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
                 _values[name] = value;
                 _adHocOrder.Insert(index, name);
                 RaiseChanged(name);
-            });
+            }));
     }
 
     /// <summary>

@@ -14,6 +14,9 @@ namespace DemaConsulting.Plexus;
 ///     Pasting treats the text as untrusted: it is limited to 8 MiB,
 ///     10,000 elements and 64 nesting levels, contains no type names, is validated completely before
 ///     anything changes, and then applied as one undoable "Paste" step. Core performs no clipboard I/O.
+///     Port lists are not copied: a pasted node gets the ports its type's <see cref="NodeType.PortProvider"/> computes
+///     from the pasted properties and data before its wires are recreated, and a wire naming a port that does not exist
+///     then refuses the paste with a message, like any unknown port.
 /// </remarks>
 /// <example>
 ///     Copy a selection to a string and paste it, here into another page of the same diagram. The string can equally go through the system clipboard.

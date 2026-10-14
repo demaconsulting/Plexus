@@ -143,3 +143,17 @@ sections:
                   - PropertyBag_TrySetAll_AnyInvalid_ChangesNothingAndReportsAll
                   - PropertyBag_TrySetAll_NoEffectiveChange_RecordsNothing
                   - PropertyBag_TrySetAll_EmptyName_IsReported
+
+              - id: Plexus-Properties-PropertyBag-PortRecompute
+                title: >-
+                  PropertyBag shall recompute the node's ports after setting (a declared or an ad-hoc value), resetting
+                  (including removing an ad-hoc value) or batch-editing a property of a node whose type has a port
+                  provider, as part of the same single undo entry.
+                justification: |
+                  A property edit and the port change it causes are one user action and must undo together.
+                tests:
+                  - PropertyBag_Set_ProviderProperty_RecomputesPortsInSameEntry
+                  - PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry
+                  - PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts
+                  - PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry
+                  - PropertyBag_Reset_AdHocProviderValue_RecomputesPortsInSameEntry

@@ -21,6 +21,10 @@ public sealed partial class PropertyBag
     ///         To change host data (<see cref="Node.Data"/>) in the same undo entry, wrap both in <see cref="UndoHistory.Transact(string, Action)"/>
     ///         and assign the data inside it.
     ///     </para>
+    ///     <para>
+    ///         When the node's type declares a <see cref="NodeType.PortProvider"/>, the ports are recomputed after each applied
+    ///         value, still inside the single undo entry. If the provider throws, every change is rolled back and the exception propagates.
+    ///     </para>
     /// </remarks>
     /// <example>
     ///     <code>

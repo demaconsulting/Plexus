@@ -87,3 +87,28 @@ sections:
               - Plexus-Types-NodeTypeRegistry-Removal
             tests:
               - Types_Availability_RemoveAndReRegister_ControlsNodeCreation
+
+          - id: Plexus-Types-PortProvider
+            title: >-
+              The Types subsystem shall let a node type declare a port provider that computes each node's input and
+              output ports, while the declared ports stay the type's defaults.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; the node type is where hosts describe nodes, so it is also where
+              the rule that derives a node's ports from its configuration is declared.
+            children:
+              - Plexus-Types-NodeTypeRegistry-PortProvider
+              - Plexus-Types-NodeTypeRegistry-PortSet
+            tests:
+              - Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts
+
+          - id: Plexus-Types-Descriptions
+            title: >-
+              The Types subsystem shall let a host give ports and node types descriptions, port types display
+              names, and node types a function that produces a node's tooltip text from its current state.
+            justification: |
+              Decomposes Plexus-Core-ElementDescriptions; descriptive text is part of the declarations hosts already
+              make, so editors can show it without host code per element.
+            children:
+              - Plexus-Types-NodeTypeRegistry-Descriptions
+            tests:
+              - Types_Descriptions_PortNodeAndPortType_AreExposed

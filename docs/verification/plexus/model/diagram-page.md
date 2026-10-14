@@ -37,6 +37,8 @@ ReqStream trace matrix.
   creation by key at a position and rejection of bad types and positions.
 - **DiagramPage_AddNode_FewPorts_UsesThemeDefaultSize**, **DiagramPage_AddNode_ManyPorts_GrowsToFitPorts**,
   **DiagramPage_AddNode_TypeWithDefaultSize_UsesDeclaredSize**: node sizing.
+- **DiagramPage_AddNode_DeclaredSizeWithoutProvider_KeepsDeclaredHeight**: a declared size shorter than the ports need
+  is kept when the type has no port provider (boundary).
 - **DiagramPage_AddNode_ExplicitNameAndId_UsesThem**, **DiagramPage_AddNode_DuplicateId_ThrowsArgumentException**,
   **DiagramPage_AddNode_DefaultId_IsUniqueGuidWithoutDashes**, **DiagramPage_AddNode_NoName_GeneratesUniqueNamesFromKeyLastSegment**,
   **DiagramPage_AddNode_NoName_ReusesFreedNumber**, **DiagramPage_AddNode_DuplicateOrEmptyName_ThrowsArgumentException**,
@@ -118,5 +120,14 @@ ReqStream trace matrix.
   wire inside a reconnect check and null again afterwards.
 - **ConnectionRules_HostRule_AlwaysReceivesOutputThenInput**: connect with reversed ports, `CanConnect` and
   `CanReconnect` all call the rule with the output first.
+
+##### Per-node ports (`Plexus-Model-DiagramPage-DetachedPorts`, `Plexus-Model-DiagramPage-AddNodePorts`)
+
+- **DiagramPage_CanConnect_PortRemovedByProvider_IsDenied**: a port a provider removed is refused with a reason by
+  `CanConnect`, and `Connect` throws (error path).
+- **DiagramPage_AddNode_ProviderNeedsMoreHeight_GrowsNewNode**: a type that declares a 60-unit height but whose default
+  payload yields two outputs starts at the height two rows need, with its declared width (boundary: declared size).
+- **DiagramPage_AddNode_ProviderBuildsInvalidPortSet_ThrowsAndAddsNothing**: a provider that builds a port set with two
+  inputs of the same name makes AddNode throw, leaving no node and no history entry (error path).
 
 **Expected**: each test passes, proving the DiagramPage requirements.

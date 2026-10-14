@@ -23,10 +23,13 @@ its automation peer.
 | `Offset`                        | `Point`                   | Diagram coordinate at the control's top-left corner |
 | `ShowGrid`, `SnapToGrid`        | `bool`                    | Default true                                        |
 | `IsReadOnly`                    | `bool`                    | Default false                                       |
+| `ShowToolTips`                  | `bool`                    | Default true; false hides and never sets a tooltip  |
 | `Clipboard`                     | `IDiagramClipboard?`      | Host clipboard; null uses the window's clipboard    |
 | `Selection`                     | Read-only observable list | Distinct live elements of the shown page            |
 | Scene, stale flag, culling area | Private                   | Cached scene and the area it was built for          |
 | Hover element                   | Private                   | Element drawn highlighted                           |
+| Tooltip target, suppressed      | Private                   | Element and port the tooltip describes; pressed one |
+| Pending view request            | Private `Func<bool>?`     | Latest fit or bring-into-view waiting for layout    |
 | Current gesture                 | Private                   | At most one gesture at a time                       |
 | Inline editors                  | Private                   | At most one of rename or annotation edit open       |
 
@@ -40,7 +43,32 @@ last pointer position are tracked to place pasted content.
   fixed), `ZoomToFit(margin)` (no effect on an empty page; before the control has a size or a page the request is
   remembered, the latest one wins, and it is applied once when a size and a page exist, from the bounds-changed
   and page-changed reactions), `GetElementScreenBounds`,
-  `GetPortScreenPosition`, `HitTest`. These have no preconditions beyond non-null arguments.
+  `GetPortScreenPosition`, `HitTest`. These have no preconditions beyond non-null arguments. The pending request is a
+  function (`_pendingView`) that returns true once it was applied or became obsolete; `ApplyPendingView` runs it from
+  the bounds-changed and page-changed reactions and right after a request, and forgets it only when it is still the
+  pending one, so the latest request of any kind wins. Both fits share `FitBox` (zoom never above 1, then `CenterOn`).
+- **Navigation** (`DiagramEditor.Navigation.cs`): `BringIntoView(element)` validates that the element is on an attached
+  page of the shown diagram (else `ArgumentException`), stores the pending request, shows the element's page with
+  `SetCurrentValue` (keeping a binding; the page change clears the selection and cancels gestures) and applies the
+  request: when the editor has a size it centers the element's target box at the current zoom and zooms out only when
+  the box does not fit inside the control minus a 30-unit margin; a request whose element has left the page is
+  dropped. `ZoomToFit(elements, margin)` copies the sequence first (the live selection is cleared by a page switch),
+  does nothing for an empty sequence, validates every element, shows the first element's page and fits the union of the
+  target boxes of the elements still on that page. The target box of an element is its node layout bounds (name,
+  summary and port labels included) or its bounds; an element hidden in collapsed groups is represented by the
+  outermost collapsed group, and a wire with a hidden end by the target boxes of both end nodes.
+- **Tooltips** (`DiagramEditor.ToolTips.cs`): `GetToolTipContent(element, port)` builds the default text (a port's
+  label, the `PortType.DisplayName` of its type key from the diagram's registry and its description on a new line; a
+  node's `NodeType.GetToolTip`; a wire's `source → target`; null otherwise), raises `ToolTipRequested` with it and returns
+  the handlers' content, or null when canceled, null or empty. `UpdateToolTip(hit)`, called at the end of the hover
+  update, computes the target (element and port under the pointer) when tooltips may show (`ShowToolTips`, no gesture,
+  no inline edit, no Space pan, no pending context request, target not suppressed); when the target changed it requests
+  the content once and sets `ToolTip.Tip` on the editor, which lets Avalonia's tooltip service open the tooltip after its
+  show delay at the pointer, or close it when the content is null; when a tooltip was already open it is reopened so it
+  follows the pointer. A press records the hit target as suppressed (no tooltip for it until the pointer moves to
+  something else) and clears the tooltip; starting a gesture, pointer exit, Space pan, page change, detaching, opening an
+  inline editor and turning `ShowToolTips` off clear it too, as does a model change that removed the target element or
+  port.
 - **Scene**: the scene is built lazily when painting or hit testing needs it and is rebuilt only when stale or when the
   visible area leaves the area it was built for (visible area inflated by half its larger side). Changes of the model,
   selection, hover, theme and grid mark it stale; bursts cost one rebuild.
@@ -100,7 +128,8 @@ last pointer position are tracked to place pasted content.
   it returns null for a read-only editor, no page or an unknown key. `NodePalette` activation and a host's "insert
   node" menu entries use it.
 - **Events**: `NodeDoubleClicked`, `DiagramContextRequested` (raised on release of the right button), `PasteFailed`,
-  `ClipboardFailed`, `SelectionChanged`.
+  `ClipboardFailed`, `SelectionChanged`, `ToolTipRequested` (with `DiagramToolTipRequestedEventArgs`: `Element`,
+  `Port`, settable `Content` pre-filled with the default, `Cancel`).
 
 Post-conditions common to all editing methods: the change is one history entry, selection and view state are not
 recorded, and a read-only editor is never changed.
@@ -117,7 +146,12 @@ selects it and returns it. All of them do nothing when the editor is read-only o
 
 #### Error Handling
 
-- Null arguments throw `ArgumentNullException`.
+- Null arguments throw `ArgumentNullException`. `BringIntoView` and `ZoomToFit(elements)` throw `ArgumentException`
+  for an element that is not on an attached page, an element of another diagram than the shown page (or the first
+  element), and a null entry, before anything changes.
+- Ports that a port provider adds or removes need no handling: the editor rebuilds its scene on the model's `Ports`
+  notification, so drawing, hit testing and the connection preview always use the node's current ports, and a tooltip
+  for a removed port is cleared.
 - Invalid user actions are not errors: a rejected rename stays open with the reason; a rejected connection simply does
   not happen; a drop of an unknown key, onto a read-only editor or with no page, is ignored.
 - Clipboard content is untrusted. A failed paste returns the core's failure result, raises `PasteFailed` and changes

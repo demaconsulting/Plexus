@@ -91,3 +91,16 @@ matching helper for the drag side. While a node type drag is over the editor it 
 ghost and the created node all come from one drawing pipeline and one position computation. `NodePalette` is the ready-made
 drag side: it draws every node type with the editor's scene builder and painter and starts the node type drag from its
 items.
+
+Tooltips are part of hover tracking: while no gesture, inline edit or context request is in progress, the element (and
+port) under the pointer gets a tooltip whose content the control builds from the node type and port declarations and
+then offers to the host through `ToolTipRequested`; the content is set on the control's own `ToolTip.Tip`, so
+Avalonia's tooltip service shows it with the standard delay at the pointer. A press, a gesture, leaving the control and
+opening an inline editor clear it.
+
+Navigation requests (`BringIntoView`, `ZoomToFit` of a set of elements) switch the shown page when needed and then
+center or fit the elements; like the page-wide `ZoomToFit` they are remembered until the control has a size, and the
+latest request of any kind wins. Elements hidden in a collapsed group are shown through the outermost collapsed group.
+
+Ports computed per node by a port provider need nothing special: a recomputation is a model change that rebuilds the
+scene, so the connection preview, hit testing and drawing always use the node's current ports.

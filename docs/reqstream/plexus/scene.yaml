@@ -308,3 +308,14 @@ sections:
               - Plexus-Scene-TextMeasurement-NullArguments
             tests:
               - Scene_NullArguments_AreRejected
+
+          - id: Plexus-Scene-DynamicPorts
+            title: >-
+              The scene, its hit testing, node extents and routing obstacles shall use each node's current ports,
+              including ports computed by a port provider.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; what is drawn and hit must be the ports the node actually has.
+            children:
+              - Plexus-Scene-NodeLayout-DynamicPorts
+            tests:
+              - Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort

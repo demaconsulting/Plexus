@@ -607,4 +607,26 @@ public class ClipboardTests
         types.Add(new NodeType("acme.Widget") { Properties = { new PropertyDefinition("Level", levelDefault) } });
         return types;
     }
+
+    /// <summary>
+    ///     Validates that pasting nodes whose ports come from a provider recreates the wires on those ports.
+    /// </summary>
+    [Fact]
+    public void PlexusClipboard_Paste_DynamicPortNodes_RecreatesWiresOnDynamicPorts()
+    {
+        // Arrange: copy everything from a diagram with wires on computed ports
+        var source = SerializationFixtures.CreateDynamicPortDiagram();
+        var json = PlexusClipboard.Copy(source.Pages[0].Elements);
+        var target = TestModel.CreateDynamicDiagram();
+        var page = target.Pages.Add("Target");
+
+        // Act
+        var result = PlexusClipboard.Paste(page, json);
+
+        // Assert: both wires exist on the recomputed ports, with the pasted bounds kept
+        Assert.True(result.Success, result.Error);
+        Assert.Equal(["Bus.in2", "C.in"], page.Wires.Select(w => w.Target.ToString()));
+        Assert.Equal("R.z", page.Wires[1].Source.ToString());
+        Assert.Equal(source.FindNode("Bus")!.Bounds.Size, page.Nodes.Single(n => n.Name == "Bus").Bounds.Size);
+    }
 }

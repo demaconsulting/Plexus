@@ -207,3 +207,48 @@ All in `DiagramEditorSelectionCommandTests.cs`, in a headless window.
   factor, fixed center, `MinZoom` and `MaxZoom`), **DiagramEditor_SnapPoint_FollowsSnapToGrid** and
   **DiagramEditor_AddAnnotationAtCenter_...**: grid-aligned, centered on the view, selected, one undo entry; nothing
   when read-only.
+
+##### Tooltips (`PlexusAvalonia-Editor-DiagramEditor-ToolTipContent`, `-ToolTipDisplay`)
+
+All in `DiagramEditorToolTipTests.cs`, in a headless window; the tests read the editor's `ToolTip.Tip` and `IsOpen`
+instead of waiting for the tooltip delay.
+
+- **DiagramEditor_GetToolTipContent_Port_ShowsLabelTypeAndDescription**, **..._Node_UsesTypeToolTipThenDescription**,
+  **..._Wire_ShowsSourceToTarget**, **..._Annotation_IsNull**: the default content of each element kind, the port type
+  display name and its fallback to the key, and a null element (error path).
+- **DiagramEditor_ToolTipRequested_Handler_OverridesAndSuppresses**: a handler receives the element, the port and the
+  default, replaces node text and cancels wire text.
+- **DiagramEditor_Hover_OverNode_SetsTip**, **DiagramEditor_Hover_OverCanvas_ClearsTip**: hovering sets the node and port
+  text; empty canvas clears it.
+- **DiagramEditor_ToolTip_OpenThenMoveToAnotherElement_ShowsNewContent**: an open tooltip shows the next element's text
+  and stays open.
+- **DiagramEditor_ToolTip_PointerLeaves_ClearsTip**, **DiagramEditor_ToolTip_DragOrRename_ClearsTip**: leaving, a drag
+  (the dragged node shows no tooltip until the pointer moved elsewhere) and an inline rename clear the tooltip.
+- **DiagramEditor_ToolTip_RightClickPress_ClearsTipUntilPointerMovesAway**: a right-click press clears the tooltip, which
+  stays away while the pointer moves over the clicked element and returns after it moves away and back; the context
+  request is still raised once.
+- **DiagramEditor_ShowToolTips_False_NeverSetsTip**: turning tooltips off clears the tooltip and stops requests; the
+  default is on (`DiagramEditor_Defaults_NewEditor_HasDocumentedValues`).
+
+##### Navigation (`PlexusAvalonia-Editor-DiagramEditor-BringIntoView`, `-ZoomToFitElements`)
+
+All in `DiagramEditorNavigationTests.cs`, in an 800 by 600 headless window.
+
+- **DiagramEditor_BringIntoView_FarNode_CentersItWithoutChangingZoom**, **..._NodeOnOtherPage_SwitchesPage**,
+  **..._NodeInCollapsedGroup_CentersGroup**, **..._ElementLargerThanView_ZoomsOut** (boundary: only too-large elements zoom
+  out), **..._BeforeFirstLayout_AppliesAfterLayout**, **..._DetachedElement_ThrowsArgumentException** (removed node,
+  node of another diagram, null; error paths).
+- **DiagramEditor_BringIntoView_WireWithHiddenEnd_ShowsVisibleEndAndGroup**: a wire whose target is in a far collapsed
+  group shows its visible source and that group, zooming out to fit both.
+- **DiagramEditor_ZoomToFitElements_SubsetOfNodes_FitsOnlyThose**, **..._OtherPage_SwitchesToFirstElementsPage** (one
+  node fits at actual size), **..._Empty_DoesNothing** (boundary, plus a null sequence),
+  **..._BeforeFirstLayout_AppliesAfterLayout**, **DiagramEditor_ZoomToFit_LatestRequestWins_AcrossOverloads**.
+- **DiagramEditor_ZoomToFitElements_NodeInCollapsedGroup_FitsGroup**: a node hidden in a large collapsed group is fitted
+  as the small collapsed box, at actual size and without the far-away other node.
+
+##### Per-node ports (`PlexusAvalonia-Editor-DiagramEditor-DynamicPorts`, `DiagramEditorDynamicPortsTests.cs`)
+
+- **DiagramEditor_Connect_DragToPortAddedByPropertyChange_CreatesWire**: a drag onto a port added by a property change
+  connects to it.
+- **DiagramEditor_HitTest_PortRemovedByPropertyChange_IsNotHit**: the position of a removed port no longer hits it,
+  while the remaining port is still hit.

@@ -91,3 +91,11 @@ must pass on every supported platform for the platform requirements to be satisf
   that size is rendered. This also proves that the headless platform works at all.
 - **PlexusAvalonia_EditingSession_ConnectRenderAndUndo_WorksOnThisPlatform**: connect by dragging, render a frame and
   undo. This is the platform-evidence scenario for every platform requirement.
+
+- **PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides**: hovering a node shows its type
+  description, hovering a port shows the host-extended port text, and turning tooltips off clears the tooltip.
+- **PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements**: a node found by name on another page is brought into view
+  (the page switches and the node is visible), and fitting two far-apart nodes of the first page shows both.
+- **PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes**: a port added by a property change is connected
+  by dragging; lowering the count removes the wire; undo restores the wire on the same port and the scene shows four
+  ports again.

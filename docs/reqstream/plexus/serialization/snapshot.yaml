@@ -175,3 +175,16 @@ sections:
                   - Diagram_FromSnapshot_SkipUnknownTypes_DropsGroupsThatBecomeEmptyRepeatedly
                   - Diagram_FromJson_SkipUnknownTypes_NothingMissing_ReportIsEmpty
                   - Diagram_FromTree_SkipUnknownTypes_WorksAcrossPages
+
+              - id: Plexus-Serialization-Snapshot-DynamicPorts
+                title: >-
+                  Restoring a diagram from a snapshot, JSON or a tree shall recompute the ports of each node from its
+                  stored properties and payload before resolving wires, keeping the stored bounds, and shall fail with a
+                  snapshot error when a wire names a port that is not recomputed or the port provider fails.
+                justification: |
+                  Wires on computed ports must survive a save and load exactly, and a document that no longer fits the
+                  host's port rules must be refused rather than loaded wrong.
+                tests:
+                  - Snapshot_RoundTrip_WireOnDynamicPort_RestoresWireJsonAndTree
+                  - Snapshot_Load_WireToPortProviderDoesNotProduce_ThrowsSnapshotException
+                  - Snapshot_Load_ProviderThrows_ThrowsSnapshotException

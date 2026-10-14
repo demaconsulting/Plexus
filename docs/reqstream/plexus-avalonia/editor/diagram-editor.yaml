@@ -15,8 +15,9 @@ sections:
             requirements:
               - id: PlexusAvalonia-Editor-DiagramEditor-Defaults
                 title: >-
-                  A new editor shall be usable without configuration: zoom 1, grid shown, snapping on, editable, an
-                  automation identifier of DiagramEditor, and usable from XAML through the Plexus namespace.
+                  A new editor shall be usable without configuration: zoom 1, grid shown, snapping on, tooltips on,
+                  editable, an automation identifier of DiagramEditor, and usable from XAML through the Plexus
+                  namespace.
                 justification: |
                   Decomposes PlexusAvalonia-Editor-SceneSync; hosts should get a working editor by binding a page,
                   and automation tools need a stable identifier to find it.
@@ -511,3 +512,83 @@ sections:
                   - DiagramEditor_SnapPoint_FollowsSnapToGrid
                   - DiagramEditor_AddAnnotationAtCenter_AddsSelectedAnnotationAtTheViewCenter
                   - DiagramEditor_AddAnnotationAtCenter_ReadOnly_ReturnsNull
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-ToolTipContent
+                title: >-
+                  The editor shall provide the tooltip content of an element or port: a port's label, its type's
+                  display name and its description; a node's type tooltip text; a wire's source and target; nothing
+                  for annotations and groups; after letting the host replace the content or cancel it through an
+                  event.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-ToolTips; one query gives hosts and automation the exact text the
+                  user sees.
+                tests:
+                  - DiagramEditor_GetToolTipContent_Port_ShowsLabelTypeAndDescription
+                  - DiagramEditor_GetToolTipContent_Node_UsesTypeToolTipThenDescription
+                  - DiagramEditor_GetToolTipContent_Wire_ShowsSourceToTarget
+                  - DiagramEditor_GetToolTipContent_Annotation_IsNull
+                  - DiagramEditor_ToolTipRequested_Handler_OverridesAndSuppresses
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-ToolTipDisplay
+                title: >-
+                  The editor shall show the tooltip of the element or port under a resting pointer and replace it when
+                  the pointer moves to another one, clear it over empty canvas, when the pointer leaves, when a button
+                  is pressed (not showing it again for the pressed element until the pointer moves to something else)
+                  and when an inline edit starts, and show none while tooltips are turned off (on by default).
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-ToolTips; a tooltip that lingers over a drag or an edit box gets in
+                  the user's way.
+                tests:
+                  - DiagramEditor_Hover_OverNode_SetsTip
+                  - DiagramEditor_Hover_OverCanvas_ClearsTip
+                  - DiagramEditor_ToolTip_OpenThenMoveToAnotherElement_ShowsNewContent
+                  - DiagramEditor_ToolTip_PointerLeaves_ClearsTip
+                  - DiagramEditor_ToolTip_DragOrRename_ClearsTip
+                  - DiagramEditor_ToolTip_RightClickPress_ClearsTipUntilPointerMovesAway
+                  - DiagramEditor_ShowToolTips_False_NeverSetsTip
+                  - DiagramEditor_Defaults_NewEditor_HasDocumentedValues
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-BringIntoView
+                title: >-
+                  Bringing an element into view shall show its page and center it at the current zoom, zooming out
+                  only when it does not fit, show the outermost collapsed group instead of an element hidden in it
+                  (for a wire with a hidden end, the visible boxes of both ends), wait for the first layout when the
+                  editor has no size yet, and refuse an element that is not on a page of the shown diagram.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-ElementNavigation; jumping to an element must not change what the
+                  user chose to see more than needed.
+                tests:
+                  - DiagramEditor_BringIntoView_FarNode_CentersItWithoutChangingZoom
+                  - DiagramEditor_BringIntoView_NodeOnOtherPage_SwitchesPage
+                  - DiagramEditor_BringIntoView_NodeInCollapsedGroup_CentersGroup
+                  - DiagramEditor_BringIntoView_ElementLargerThanView_ZoomsOut
+                  - DiagramEditor_BringIntoView_BeforeFirstLayout_AppliesAfterLayout
+                  - DiagramEditor_BringIntoView_DetachedElement_ThrowsArgumentException
+                  - DiagramEditor_BringIntoView_WireWithHiddenEnd_ShowsVisibleEndAndGroup
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElements
+                title: >-
+                  Fitting a set of elements shall zoom (never above actual size) and scroll so they fit the view with a
+                  margin, counting elements hidden in a collapsed group as that group, show the first element's page
+                  when they span pages, do nothing for an empty set, wait for the first layout when the editor has no
+                  size yet, and let the latest view request win.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-ElementNavigation; zoom to selection and search results need the
+                  same fit the whole page gets.
+                tests:
+                  - DiagramEditor_ZoomToFitElements_SubsetOfNodes_FitsOnlyThose
+                  - DiagramEditor_ZoomToFitElements_OtherPage_SwitchesToFirstElementsPage
+                  - DiagramEditor_ZoomToFitElements_Empty_DoesNothing
+                  - DiagramEditor_ZoomToFitElements_BeforeFirstLayout_AppliesAfterLayout
+                  - DiagramEditor_ZoomToFit_LatestRequestWins_AcrossOverloads
+                  - DiagramEditor_ZoomToFitElements_NodeInCollapsedGroup_FitsGroup
+
+              - id: PlexusAvalonia-Editor-DiagramEditor-DynamicPorts
+                title: >-
+                  The editor shall connect a dragged wire to a port a configuration change added and shall no longer
+                  hit a port a configuration change removed.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-DynamicPorts; gestures act on the ports the node has now.
+                tests:
+                  - DiagramEditor_Connect_DragToPortAddedByPropertyChange_CreatesWire
+                  - DiagramEditor_HitTest_PortRemovedByPropertyChange_IsNotHit

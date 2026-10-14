@@ -195,11 +195,17 @@ public sealed partial class DiagramPage
     /// <summary>
     ///     Adds the route changes implied by node bounds changes: translate when both ends moved alike, otherwise re-route.
     /// </summary>
+    /// <remarks>
+    ///     <paramref name="forcedReroutes"/> lets a caller re-route wires whose end nodes keep their bounds but whose anchors
+    ///     moved anyway (a port update changes rows and labels); such a wire is re-routed even when neither end node is in
+    ///     <paramref name="changedNodes"/>.
+    /// </remarks>
     /// <param name="command">The command to add route changes to.</param>
     /// <param name="changedNodes">The nodes whose bounds change and their new bounds.</param>
-    private void PlanWireUpdates(LayoutCommand command, IReadOnlyDictionary<Node, Rect> changedNodes)
+    /// <param name="forcedReroutes">Wires to re-route regardless of their end nodes, or null.</param>
+    private void PlanWireUpdates(LayoutCommand command, IReadOnlyDictionary<Node, Rect> changedNodes, IReadOnlySet<Wire>? forcedReroutes = null)
     {
-        if (changedNodes.Count == 0)
+        if (changedNodes.Count == 0 && (forcedReroutes is null || forcedReroutes.Count == 0))
         {
             return;
         }
@@ -215,7 +221,11 @@ public sealed partial class DiagramPage
             var targetMoved = changedNodes.TryGetValue(wire.Target.Node, out var targetBounds);
             if (!sourceMoved && !targetMoved)
             {
-                if (!wire.Source.Node.IsHiddenByCollapse && !wire.Target.Node.IsHiddenByCollapse)
+                if (forcedReroutes is not null && forcedReroutes.Contains(wire))
+                {
+                    rerouted.Add(wire);
+                }
+                else if (!wire.Source.Node.IsHiddenByCollapse && !wire.Target.Node.IsHiddenByCollapse)
                 {
                     traffic.Add(wire.Source, wire.Target, wire.Source.Anchor, wire.Route, wire.Target.Anchor);
                 }
@@ -239,10 +249,11 @@ public sealed partial class DiagramPage
             }
         }
 
+        // With no hypothetical bounds the cached obstacles of the current layout are valid
         GroupObstacles? groups = null;
         foreach (var wire in rerouted)
         {
-            obstacles ??= BuildObstacles(changedNodes);
+            obstacles ??= BuildObstacles(changedNodes.Count == 0 ? null : changedNodes);
             groups ??= BuildGroupObstacles();
             var route = ComputeRoute(wire.Source, wire.Target, obstacles, changedNodes, traffic, groups);
             traffic.Add(wire.Source, wire.Target, AnchorOf(wire.Source, changedNodes), route, AnchorOf(wire.Target, changedNodes));

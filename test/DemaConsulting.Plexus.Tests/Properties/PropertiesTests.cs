@@ -252,4 +252,31 @@ public class PropertiesTests
         node.Remove();
         Assert.Throws<InvalidOperationException>(() => node.Properties["Gain"] = 2.0);
     }
+
+    /// <summary>
+    ///     Validates that property edits of every kind (set, reset, batch and ad-hoc) recompute the ports in the same undo entry.
+    /// </summary>
+    [Fact]
+    public void Properties_PortRecompute_PropertyEdits_UpdatePortsInSameEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var bus = page.AddNode("acme.Bus", 0, 0);
+        var collector = page.AddNode("acme.Collector", 300, 0);
+
+        // Act / Assert: set, batch and reset are each one exact entry that changes the ports
+        TestModel.AssertRoundTrip(diagram, () => bus.Properties["Channels"] = 4);
+        Assert.Equal(4, bus.Inputs.Count);
+        TestModel.AssertRoundTrip(diagram, () => bus.Properties.TrySetAll(new Dictionary<string, object?> { ["Channels"] = 3, ["Kind"] = "i32" }, out _));
+        Assert.All(bus.Inputs, p => Assert.Equal("i32", p.TypeKey));
+        TestModel.AssertRoundTrip(diagram, () => bus.Properties.Reset("Channels"));
+        Assert.Equal(2, bus.Inputs.Count);
+
+        // Act / Assert: adding and removing an ad-hoc value the provider reads are each one exact entry too
+        TestModel.AssertRoundTrip(diagram, () => collector.Properties["FanIn"] = true);
+        Assert.True(collector.Input("in").AllowsMultipleWires);
+        TestModel.AssertRoundTrip(diagram, () => collector.Properties.Reset("FanIn"));
+        Assert.False(collector.Input("in").AllowsMultipleWires);
+    }
 }

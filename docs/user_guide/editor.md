@@ -181,6 +181,43 @@ Editor.ClipboardFailed += (_, e) => ShowMessage($"The clipboard is not available
 locked) for the keyboard shortcuts; the methods `CopyAsync`, `CutAsync` and `PasteAsync` let such exceptions reach their
 caller instead, so wrap them in try/catch in menu handlers.
 
+### Tooltips
+
+Resting the pointer on a node, a port or a wire shows a standard Avalonia tooltip after the usual delay, next to the
+pointer. The default text comes from the declarations (see *Describing Your Domain*):
+
+- a port: its label and type (`PortType.DisplayName`, else the key), then its `Description` on a new line;
+- a node: `NodeType.GetToolTip(node)`, that is the type's `ToolTip` function (live state) or its `Description`;
+- a wire: `source → target`, for example `Sum.out → Lamp.in`;
+- annotations and groups: nothing.
+
+Handle `ToolTipRequested` to change the text before it is shown, for example to add your validation messages, or to
+suppress it; `e.Content` may also be any Avalonia content, such as a `StackPanel` with an icon:
+
+```csharp
+Editor.ToolTipRequested += (_, e) =>
+{
+    if (e.Element is Wire)
+    {
+        e.Cancel = true;                                            // no tooltips on wires
+    }
+    else if (e.Element is Node node && e.Port is null && Validate(node) is { Count: > 0 } problems)
+    {
+        e.Content = $"{e.Content}\n{string.Join("\n", problems)}"; // keep the default, add the problems
+    }
+};
+
+var text = Editor.GetToolTipContent(node);                        // the same text, for a status bar or automation
+Editor.ShowToolTips = false;                                      // turn hover tooltips off
+ToolTip.SetShowDelay(Editor, 600);                                // the standard attached properties still apply
+```
+
+The content is requested once each time the pointer moves onto an element or port, so live text is current when the
+pointer arrives. Tooltips are hidden while the user drags, connects, pans with Space or edits inline, when a button is
+pressed (the pressed element shows no tooltip until the pointer has moved to something else, which also keeps it away
+from a context menu), and when the pointer leaves the editor. The editor owns its own `ToolTip.Tip`; a host that wants
+to manage that property itself sets `ShowToolTips = false`.
+
 ### The Context Menu
 
 The editor selects the element under the pointer on a right-click and, when the button is released, raises
@@ -326,6 +363,28 @@ var snapped = Editor.SnapPoint(center);         // rounded to the grid while Sna
 Editor.ZoomAt(new Avalonia.Point(200, 150), Editor.Zoom * 1.25);    // keep the point under the cursor fixed
 var diagramPoint = Editor.ScreenToDiagram(new Avalonia.Point(200, 150));
 ```
+
+To take the user to an element, for example from a "Find node" command, a list of validation problems or search
+results, use the navigation methods:
+
+```csharp
+if (diagram.FindNode(name) is { } node)
+{
+    Editor.BringIntoView(node);         // switches Page when needed, scrolls so the node is centered
+    Editor.Select(node);                // after the call: a page switch clears the selection
+}
+
+Editor.ZoomToFit(Editor.Selection);     // "Zoom to selection"; the list is copied first
+Editor.ZoomToFit(problemNodes, 60);     // any elements, with a bigger margin
+```
+
+`BringIntoView` keeps the zoom and only zooms out when the element does not fit. An element hidden inside a collapsed
+group cannot be shown, so the outermost collapsed group that hides it is brought into view instead. `ZoomToFit` of a set
+of elements fits them like the whole page (never magnifying above 1); when the elements are on several pages the page
+of the first element is shown and the elements on other pages are ignored. Both switch pages like setting `Page` (a
+binding on `Page` stays in place), throw `ArgumentException` for an element that is not on a page of the shown diagram,
+and, like `ZoomToFit()`, may be called before the editor has a size (in a window constructor): the request is applied
+after the first layout, and the latest request of any kind wins.
 
 `ShowGrid` and `SnapToGrid` are ordinary properties that a View menu can bind to. The grid size is
 `DiagramTheme.GridSize` (see *Appearance: Themes and Styling*). The status bar of the demo reads `Zoom` and `Selection`

@@ -215,4 +215,46 @@ public class NodeLayoutTests
         Assert.Equal(new[] { "ab cd", "ef", "gh" }, words);
         Assert.Equal(new[] { "abcde", "fghij", "k" }, longWord);
     }
+
+    /// <summary>
+    ///     Validates that the layout follows the node's current ports after a port provider recomputed them.
+    /// </summary>
+    [Fact]
+    public void NodeLayout_Compute_DynamicPorts_LaysOutCurrentPorts()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var node = diagram.Pages.Add("Main").AddNode("acme.Bus", 30, 60, "B");
+
+        // Act
+        node.Properties["Channels"] = 5;
+        var layout = NodeLayout.Compute(node, diagram.Theme, new ApproximateTextMeasurer());
+
+        // Assert: one entry per current port, at the model's anchors
+        Assert.Equal(6, layout.Ports.Count);
+        Assert.Equal(node.Ports, layout.Ports.Select(p => p.Port));
+        Assert.All(layout.Ports, p => Assert.Equal(p.Port.Anchor, p.Anchor));
+    }
+
+    /// <summary>
+    ///     Validates that the visual bounds and routing obstacles of a node follow its own ports, not the type's defaults.
+    /// </summary>
+    [Fact]
+    public void NodeGeometry_VisualBoundsAndRoutingObstacles_ProviderPorts_UseNodePorts()
+    {
+        // Arrange: a router whose outputs carry long labels the type's defaults do not have
+        var diagram = TestModel.CreateDynamicDiagram();
+        var node = diagram.Pages.Add("Main").AddNode("acme.Router", 30, 60, "R");
+        var defaults = NodeGeometry.VisualBounds(node, diagram.Theme);
+
+        // Act
+        node.Data = new RouterData("a_very_long_output_name,another_long_output_name");
+        var bounds = NodeGeometry.VisualBounds(node, diagram.Theme);
+        var byNode = NodeGeometry.RoutingObstacles(node.Bounds, node, diagram.Theme);
+        var byType = NodeGeometry.RoutingObstacles(node.Bounds, node.Type, diagram.Theme);
+
+        // Assert: the long labels widen the extent and add label strips that the type overload knows nothing about
+        Assert.True(bounds.Right > defaults.Right);
+        Assert.True(byNode.Count > byType.Count || byNode.Max(r => r.Right) > byType.Max(r => r.Right));
+    }
 }

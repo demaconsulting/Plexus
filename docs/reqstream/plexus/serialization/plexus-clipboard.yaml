@@ -268,3 +268,13 @@ sections:
                   - PasteResult_Message_SuccessWithWarnings_IncludesThem
                   - PasteResult_Message_MissingNodeTypes_NamesThem
                   - PasteResult_Message_OtherFailure_UsesTheError
+
+              - id: Plexus-Serialization-PlexusClipboard-DynamicPorts
+                title: >-
+                  Pasting and duplicating shall recompute the ports of each copied node from its copied properties and
+                  payload before recreating the wires, so wires on computed ports are recreated.
+                justification: |
+                  Copying a configured block with its connections must give the same block and connections.
+                tests:
+                  - PlexusClipboard_Paste_DynamicPortNodes_RecreatesWiresOnDynamicPorts
+                  - PlexusClipboard_Duplicate_DynamicPortNode_KeepsPortsAndWires

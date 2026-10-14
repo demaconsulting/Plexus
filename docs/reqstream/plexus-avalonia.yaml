@@ -311,3 +311,43 @@ sections:
           - Plexus-OTS-Avalonia-Headless
         tests:
           - PlexusAvalonia_Headless_HostedEditor_LaysOutAndRendersFrame
+
+      - id: PlexusAvalonia-ToolTips
+        title: >-
+          The editor shall show a tooltip when the pointer rests on a node, a port or a wire, with the element's
+          description by default, shall let the host replace or suppress the text, and shall let the host turn
+          tooltips off; tooltips shall be hidden while the user drags, connects or edits and when the pointer leaves.
+        justification: |
+          Users need to know what a block or port does and what state it is in without opening dialogs; hosts need to
+          add their own information such as validation messages.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ToolTips
+          - Plexus-OTS-Avalonia-ToolTips
+        tests:
+          - PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides
+
+      - id: PlexusAvalonia-ElementNavigation
+        title: >-
+          The editor shall let a host bring any element of the diagram into view, switching to its page, and fit a set
+          of elements into the view.
+        justification: |
+          Find commands, validation lists and search results must take the user to the element they name, also on
+          another page or inside a collapsed group.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ElementNavigation
+        tests:
+          - PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements
+
+      - id: PlexusAvalonia-DynamicPorts
+        title: >-
+          The editor shall show, hit test and connect the current ports of each node, including ports that change
+          when the node's configuration changes.
+        justification: |
+          A user who reconfigures a node expects to see and wire its new ports at once, and to undo the change.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-DynamicPorts
+        tests:
+          - PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes

@@ -168,10 +168,10 @@ public class MainWindowTests
     [
         "Main_Window", "Menu_Bar", "NodePalette", "NodePalette_Filter", "Pages_Tabs", "Page_Tab_0", "Editor", "Status_Bar", "Status_Text", "Status_Selection", "Status_Zoom", "Status_Dirty",
         "Menu_File", "Menu_File_New", "Menu_File_Open", "Menu_File_Save", "Menu_File_SaveAs", "Menu_File_OpenSample", "Menu_File_OpenSample_showcase", "Menu_File_ExportPng", "Menu_File_Exit",
-        "Menu_Edit", "Menu_Edit_Undo", "Menu_Edit_Redo", "Menu_Edit_Cut", "Menu_Edit_Copy", "Menu_Edit_Paste", "Menu_Edit_Duplicate", "Menu_Edit_Delete", "Menu_Edit_SelectAll", "Menu_Edit_Rename", "Menu_Edit_Properties",
+        "Menu_Edit", "Menu_Edit_Undo", "Menu_Edit_Redo", "Menu_Edit_Cut", "Menu_Edit_Copy", "Menu_Edit_Paste", "Menu_Edit_Duplicate", "Menu_Edit_Delete", "Menu_Edit_SelectAll", "Menu_Edit_FindNode", "Menu_Edit_Rename", "Menu_Edit_Properties",
         "Menu_Insert", "Menu_Insert_Node", "Menu_Insert_Node_Mixer", "Menu_Insert_Annotation", "Menu_Insert_Group", "Menu_Insert_Ungroup", "Menu_Insert_ToggleCollapse",
         "Menu_Page", "Menu_Page_Add", "Menu_Page_Rename", "Menu_Page_Delete", "Menu_Page_MoveLeft", "Menu_Page_MoveRight", "Menu_Page_MoveSelectionTo",
-        "Menu_View", "Menu_View_ZoomIn", "Menu_View_ZoomOut", "Menu_View_ZoomToFit", "Menu_View_ShowGrid", "Menu_View_SnapToGrid", "Menu_View_PropertiesPanel",
+        "Menu_View", "Menu_View_ZoomIn", "Menu_View_ZoomOut", "Menu_View_ZoomToFit", "Menu_View_ZoomToSelection", "Menu_View_ShowGrid", "Menu_View_SnapToGrid", "Menu_View_ShowToolTips", "Menu_View_PropertiesPanel",
         "Properties_Panel", "Main_PaletteSplitter", "Main_PropertiesPanelSplitter", "PropertyGrid",
         .. PaletteItemIds,
         "Menu_File_OpenSample_math", "Menu_File_OpenSample_plumbing", "Menu_File_OpenSample_logic", "Menu_File_OpenSample_audio",
@@ -528,6 +528,40 @@ public class MainWindowTests
         Assert.True(grid.IsChecked);
         Assert.True(zoomedIn > zoom);
         Assert.Equal(zoom, host.Editor.Zoom, 6);
+    });
+
+    /// <summary>
+    ///     Validates Find Node, Zoom To Selection and Show Tooltips, and that boolean wire tooltips carry the live logic value.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task MainWindow_Navigation_FindNodeZoomToSelectionAndToolTips() => GuiTest.Run(() =>
+    {
+        // Arrange: the showcase opens on its first page; AllLamp is on the logic page
+        using var host = new MainWindowHost(MainWindowHost.Options());
+        var tips = host.Get<MenuItem>("Menu_View_ShowToolTips");
+        var zoomToSelection = host.Get<MenuItem>("Menu_View_ZoomToSelection");
+        var disabledBefore = !zoomToSelection.IsEnabled;
+
+        // Act: find a node on another page, then fit the selection
+        var message = host.Window.ShowNode("AllLamp");
+        host.Flush();
+        var lamp = host.Session.Diagram.FindNode("AllLamp")!;
+        host.Choose("Menu_View_ZoomToSelection");
+        var missing = host.Window.ShowNode("Nobody");
+        var wire = lamp.Page!.Wires.First(w => w.Source.ToString() == "SwitchA.out");
+        var wireTip = host.Editor.GetToolTipContent(wire) as string;
+        tips.IsChecked = false;
+
+        // Assert
+        Assert.True(disabledBefore);
+        Assert.Same(lamp.Page, host.Editor.Page);
+        Assert.Equal([lamp], host.Editor.Selection);
+        Assert.Contains("AllLamp", message, StringComparison.Ordinal);
+        Assert.Contains("No node named", missing, StringComparison.Ordinal);
+        Assert.True(new Rect(host.Editor.Bounds.Size).Contains(host.Editor.GetElementScreenBounds(lamp)));
+        Assert.EndsWith(" = on", wireTip, StringComparison.Ordinal);
+        Assert.False(host.Editor.ShowToolTips);
     });
 
     /// <summary>

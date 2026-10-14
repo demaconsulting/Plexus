@@ -97,3 +97,15 @@ on the values and the history.
   null and a foreign object) change nothing, add no entry and report a message for each rejected name.
 - **PropertyBag_TrySetAll_NoEffectiveChange_RecordsNothing** and **PropertyBag_TrySetAll_EmptyName_IsReported**; a
   removed node and null arguments are refused.
+
+##### Port recomputation (`Plexus-Properties-PropertyBag-PortRecompute`)
+
+- **PropertyBag_Set_ProviderProperty_RecomputesPortsInSameEntry**: one entry; undoing it restores the value and the
+  ports.
+- **PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry**: a batch of text and choice values that removes a wired
+  input and retypes the remaining one is one exact entry, the wire included.
+- **PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts**: resetting the count restores the default inputs.
+- **PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry**: adding an ad-hoc value the provider reads turns
+  fan-in on in one exact undo entry; the value stays ad-hoc (no definition).
+- **PropertyBag_Reset_AdHocProviderValue_RecomputesPortsInSameEntry**: removing that ad-hoc value turns fan-in off in
+  one exact undo entry.

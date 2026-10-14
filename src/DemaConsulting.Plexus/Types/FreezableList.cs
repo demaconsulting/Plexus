@@ -9,7 +9,8 @@ namespace DemaConsulting.Plexus;
 /// <remarks>
 ///     Node types expose their ports and properties as plain <see cref="IList{T}"/> so collection
 ///     initializers work, but nodes cache ports derived from them. Freezing at registration time
-///     keeps those caches valid. Not thread-safe.
+///     keeps those caches valid. For port lists these are the type's declared defaults: a type with a
+///     <see cref="NodeType.PortProvider"/> supplies each node's ports itself. Not thread-safe.
 /// </remarks>
 internal sealed class FreezableList<T> : IList<T>
     where T : class

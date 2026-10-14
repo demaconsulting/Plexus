@@ -55,5 +55,10 @@ count equal their values before the attempt.
   (`Serialization_HostileClipboardLimits_AreRejectedWithoutExceptions`): oversize text, 500 nesting levels and 10,001
   elements are rejected with error messages and the page stays empty with unchanged history.
 
+- **Per-node ports**
+  (`Serialization_DynamicPorts_RoundTripAndPaste_RecomputePortsBeforeWires`): a diagram with wires on computed ports
+  loads from JSON identical to the original, pastes into another diagram with both wires, and duplicates in place with
+  both wires.
+
 Boundary conditions covered: limits just exceeded (oversize text, element count, nesting), empty and minimal
 documents, equivalent but separate registries. Error paths: every rejection above.

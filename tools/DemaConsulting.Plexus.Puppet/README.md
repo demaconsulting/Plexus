@@ -102,7 +102,10 @@ plexus-puppet render <path.png> [--page <p>] [--scale <s>]
 
 `pipe` prints the raw JSON `result` of any command of the demo's automation protocol (see
 `demo/DemaConsulting.Plexus.Demo.Gui/README.md`), for example `pipe list-annotations`, `pipe copy`,
-`pipe paste '{"x":50,"y":600}'` or `pipe view '{"fit":true}'`. The other commands are wrappers that print one line per item;
+`pipe paste '{"x":50,"y":600}'` or `pipe view '{"fit":true}'`. Navigation and tooltips are reachable the same way:
+`pipe bring-into-view '{"name":"AllLamp"}'`, `pipe zoom-to '{"names":["SwitchA","All"]}'` and
+`pipe tooltip '{"port":"All.c"}'`; `pipe set-property '{"node":"All","name":"Inputs","value":4}'` changes a gate's
+inputs, which `nodes --ports` then lists. The other commands are wrappers that print one line per item;
 `add-node` accepts `Mixer` for `demo.audio.Mixer` (a short name must be unique among the registered types). Pipe
 commands change the model **directly**, bypassing the editor's input
 handling: use them to set up and to verify, and use the mouse and key commands to test the editor.

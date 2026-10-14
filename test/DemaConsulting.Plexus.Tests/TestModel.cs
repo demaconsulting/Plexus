@@ -65,6 +65,66 @@ internal static class TestModel
     }
 
     /// <summary>
+    ///     Creates the standard test types plus three types whose ports come from a port provider.
+    /// </summary>
+    /// <remarks>
+    ///     <c>acme.Bus</c> has one input per channel (<c>in0</c>, <c>in1</c>, ... of the type named by its <c>Kind</c> property,
+    ///     with a "Channel n" description) and an output <c>out</c>; its declared defaults are the two inputs of
+    ///     <c>Channels = 2</c>. <c>acme.Router</c> has an input <c>in</c> and one output per comma-separated name in its
+    ///     <see cref="RouterData"/> payload (default <c>x,y</c>), and a declared size shorter than its two outputs need.
+    ///     <c>acme.Collector</c> has one f32 input <c>in</c> and an f32 output <c>out</c>; the input allows fan-in while the
+    ///     node holds an ad-hoc property value named <c>FanIn</c>.
+    /// </remarks>
+    /// <returns>The registry.</returns>
+    public static NodeTypeRegistry CreateDynamicTypes()
+    {
+        var types = CreateTypes();
+        types.Add(new NodeType("acme.Bus")
+        {
+            Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
+            Outputs = { new PortDefinition("out", "f32") },
+            Properties =
+            {
+                new PropertyDefinition("Channels", 2),
+                new PropertyDefinition("Kind", "f32") { Choices = ["f32", "i32"] },
+                new PropertyDefinition("Level", 1.0),
+            },
+            PortProvider = node => new PortSet(
+                Enumerable.Range(0, Math.Clamp(node.Properties.Get<int>("Channels"), 0, 16))
+                    .Select(i => new PortDefinition($"in{i}", (string)node.Properties["Kind"]) { Description = $"Channel {i}" }),
+                [new PortDefinition("out", "f32")]),
+        });
+        types.Add(new NodeType("acme.Router")
+        {
+            DataType = typeof(RouterData),
+            CreateData = () => new RouterData("x,y"),
+            DefaultSize = new Size(120, 60),
+            Inputs = { new PortDefinition("in", "f32") },
+            Outputs = { new PortDefinition("x", "f32"), new PortDefinition("y", "f32") },
+            PortProvider = node => new PortSet(
+                [new PortDefinition("in", "f32")],
+                ((node.Data as RouterData)?.Outputs ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(name => new PortDefinition(name, "f32"))),
+        });
+        types.Add(new NodeType("acme.Collector")
+        {
+            Inputs = { new PortDefinition("in", "f32") },
+            Outputs = { new PortDefinition("out", "f32") },
+            PortProvider = node => new PortSet(
+                [new PortDefinition("in", "f32") { AllowsMultipleWires = node.Properties.ContainsKey("FanIn") }],
+                [new PortDefinition("out", "f32")]),
+        });
+        return types;
+    }
+
+    /// <summary>
+    ///     Creates a diagram with the standard and dynamic-port test types and no pages.
+    /// </summary>
+    /// <returns>The diagram.</returns>
+    public static Diagram CreateDynamicDiagram() => new(CreateDynamicTypes());
+
+    /// <summary>
     ///     Creates a diagram with the standard test types and no pages.
     /// </summary>
     /// <returns>The diagram.</returns>
@@ -161,6 +221,14 @@ internal static class TestModel
     {
         sb.Append(CultureInfo.InvariantCulture, $"  node {node.Id} {node.Type.Key} '{node.Name}' {Format(node.Bounds)} data={node.Data} parent={node.Parent?.Id} props=")
             .AppendJoin(';', node.Properties.Select(p => $"{p.Key}={p.Value}({p.Value.GetType().Name})"))
+            .Append(" ports=")
+            .AppendJoin(';', node.Ports.Select(p => $"{p.Direction}{p.Index}:{p.Name}:{p.TypeKey}:'{p.Label}':{p.Description}:{(p.AllowsMultipleWires ? "multi" : "single")}"))
             .Append('\n');
     }
 }
+
+/// <summary>
+///     The payload of the <c>acme.Router</c> test type: the comma-separated names of its outputs.
+/// </summary>
+/// <param name="Outputs">The output names, for example <c>"x,y"</c>.</param>
+internal sealed record RouterData(string Outputs);

@@ -92,3 +92,9 @@ because a snapshot of this diagram must reproduce it exactly.
 **Loading a diagram.** `FromSnapshot` checks the version, reports every missing node type at once before building
 anything, then loads each page with history suspended and finally clears the history, so a freshly loaded diagram has an
 empty, clean history. Wires are restored with their stored routes.
+
+**Per-node ports.** Snapshots, trees, JSON and clipboard content never contain port lists: wires name their ports. The
+importer builds each node in the order properties, payload, ports (recomputed with the type's port provider), and only
+then, once every node exists, groups and wires, so wires on computed ports resolve; stored bounds are kept. A provider
+failure or a wire to a port that is not recomputed fails the load (`SnapshotException`) or the paste (failed
+`PasteResult`) like any other invalid content. See PlexusClipboard Design and Snapshot Design.

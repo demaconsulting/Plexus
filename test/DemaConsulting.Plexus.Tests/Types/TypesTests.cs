@@ -183,4 +183,51 @@ public class TypesTests
         // Assert: nodes can be created again
         Assert.Equal("Temp2", page.AddNode("acme.Temp", 0, 0).Name);
     }
+
+    /// <summary>
+    ///     Validates that a port provider declared on a node type supplies each node's ports while the declared ports stay the defaults.
+    /// </summary>
+    [Fact]
+    public void Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts()
+    {
+        // Arrange
+        var types = TestModel.CreateDynamicTypes();
+        var page = new Diagram(types).Pages.Add("Main");
+        var a = page.AddNode("acme.Bus", 0, 0);
+        var b = page.AddNode("acme.Bus", 0, 200);
+
+        // Act: configure one node only
+        a.Properties["Channels"] = 5;
+
+        // Assert: each node has its own ports; the type's declared defaults are unchanged
+        Assert.Equal(5, a.Inputs.Count);
+        Assert.Equal(2, b.Inputs.Count);
+        Assert.Equal(["in0", "in1"], types.Get("acme.Bus").Inputs.Select(p => p.Name));
+        Assert.NotNull(types.Get("acme.Bus").PortProvider);
+    }
+
+    /// <summary>
+    ///     Validates that port, node type and port type descriptions are exposed for tooltips.
+    /// </summary>
+    [Fact]
+    public void Types_Descriptions_PortNodeAndPortType_AreExposed()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        types.PortTypes.Add(new PortType("bool", Color.Red) { DisplayName = "Boolean" });
+        types.Add(new NodeType("t.Gate")
+        {
+            Description = "A logic gate.",
+            Inputs = { new PortDefinition("a", "bool") { Description = "First operand." } },
+        });
+        var node = new Diagram(types).Pages.Add("Main").AddNode("t.Gate", 0, 0);
+
+        // Act
+        var port = node.Input("a");
+
+        // Assert
+        Assert.Equal("First operand.", port.Description);
+        Assert.Equal("A logic gate.", node.Type.GetToolTip(node));
+        Assert.Equal("Boolean", types.PortTypes.Get(port.TypeKey).DisplayName);
+    }
 }
