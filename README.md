@@ -15,32 +15,19 @@ ships a UI-free core, a headless PNG renderer built on CanvasNet, and an Avaloni
 
 ## Features
 
-- **Typed, directional ports**: Hosts declare node types, port types (with colors) and typed properties; Plexus
-  enforces output-to-input direction and single-wire inputs by default (inputs opt into fan-in with
-  `PortDefinition.AllowsMultipleWires`) and consults an optional host validator for type compatibility
-- **Routed wires**: Orthogonal, obstacle-avoiding routing with persisted routes and draggable segments
-- **Dynamic styling**: Color, dash or hide the arrowhead of individual wires, and light up, tint, glow or fade
-  individual nodes, from what they connect or hold (port types, node properties, host data) with `WireStyler` and
-  `NodeStyler` callbacks and ready-made `WireStylers` and `NodeStylers`
-- **Pages, groups and annotations**: Multiple pages per diagram, nestable collapsible groups, and sticky-note
-  annotations
-- **Everything is undoable**: Every public mutation records an undo step, with transactions for grouping a whole
-  gesture into one step
-- **Copy/paste between applications**: A versioned, size-limited JSON clipboard format that treats clipboard data as
-  untrusted input and rejects pastes atomically when node types are unknown
-- **Headless rendering**: Render any page to a PNG image without a UI framework
-- **Avalonia editor control**: Selection, move, connect, pan, zoom, inline rename, keyboard shortcuts, drag-and-drop of
-  node types and host events (double-click, context menu)
-- **Node palette**: A ready-made `NodePalette` control shows the node types of the editor's diagram exactly as they look
-  on the canvas, with category groups, a search box and drag-and-drop or double-click to add, with no code in the host
-- **Property grid**: A generic, annotation-driven Avalonia property grid that honors the `System.ComponentModel`
-  attributes, with a one-line node properties dialog (`NodePropertiesDialog.ShowAsync(window, node)`), a live panel
-  mode, a collection editor and custom editors; editing a node, with its host data, is one undo step
-- **Easy by default, powerful when needed**: A default theme, router and text measurer make a working diagram a
-  few lines of code; each can be replaced
-- **Multi-Runtime Support**: The core targets .NET 8, 9 and 10; the other packages target .NET 10
-- **Continuous Compliance**: Compliance evidence generated automatically on every CI run, following
-  the [Continuous Compliance][link-continuous-compliance] methodology
+- 🔌 **Typed Ports** - Directional, colored port types with single-wire inputs by default and optional fan-in
+- 🧭 **Routed Wires** - Orthogonal, obstacle-avoiding routing with draggable segments and crossing jumps
+- 🎨 **Dynamic Styling** - Color, dash, light up, tint or fade wires and nodes from what they connect or hold
+- 🗂️ **Pages and Groups** - Multiple pages, nestable collapsible groups and sticky-note annotations
+- ↩️ **Undo/Redo** - Every mutation is undoable, with transactions to group a gesture into one step
+- 📋 **Copy/Paste** - Versioned JSON clipboard that treats pasted data as untrusted input
+- 🖼️ **Headless Rendering** - Render any page to a PNG image without a UI framework
+- 🖱️ **Avalonia Editor** - Select, move, connect, pan, zoom, rename and drag-and-drop out of the box
+- 🧩 **Node Palette** - Searchable palette showing node types exactly as they look on the canvas
+- 📝 **Property Grid** - Generic, annotation-driven property grid with a one-line node properties dialog
+- ✨ **Easy by Default** - Working diagram in a few lines; theme, router and text measurer are replaceable
+- 🔄 **Multi-Target** - Core supports .NET 8, 9 and 10; the other packages target .NET 10
+- ✅ **Continuous Compliance** - [Compliance evidence][link-continuous-compliance] generated on every CI run
 
 ## Packages
 
