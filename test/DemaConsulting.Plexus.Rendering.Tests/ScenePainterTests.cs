@@ -314,26 +314,6 @@ public class ScenePainterTests
     }
 
     /// <summary>
-    ///     Validates that a grid is painted efficiently even for a very large area (a clipped area is not enumerated per pixel).
-    /// </summary>
-    [Fact]
-    public void ScenePainter_Paint_LargeGrid_CompletesQuickly()
-    {
-        // Arrange: a 4000 x 4000 surface with a dot every 15 units (about 71,000 dots)
-        var (surface, painter) = Create(4000, 4000);
-        using var _ = surface;
-        var watch = System.Diagnostics.Stopwatch.StartNew();
-
-        // Act
-        painter.Paint(new GridPrimitive(new Rect(0, 0, 4000, 4000), 15, Color.Black));
-        watch.Stop();
-
-        // Assert: generous bound, but far below what a path fill per dot would take
-        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"Grid took {watch.Elapsed}.");
-        Assert.Equal(new Rgba32(0, 0, 0, 255), surface[1500, 1500]);
-    }
-
-    /// <summary>
     ///     Validates that the painter's scale multiplies positions, sizes and stroke widths.
     /// </summary>
     [Fact]

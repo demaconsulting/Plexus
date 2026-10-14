@@ -12,13 +12,12 @@ verification designs (DiagramTheme, NodeLayout, TextMeasurement, SceneBuilder, D
 ### Test Environment
 
 The standard xunit runner of `DemaConsulting.Plexus.Tests` on net8.0, net9.0 and net10.0 on Windows, Linux and macOS.
-No fonts, files or network are used. One test has a wall-clock bound that is generous against typical times.
+No fonts, files or network are used.
 
 ### Acceptance Criteria
 
 All scenarios pass on every target framework. A scene built from a page contains only primitives of the closed set;
-hit testing agrees with the drawn geometry; building and querying never change the model dump or undo count; a
-thousand-node page is built and hit-tested a thousand times in under five seconds.
+hit testing agrees with the drawn geometry; building and querying never change the model dump or undo count.
 
 ### Test Scenarios
 
@@ -70,11 +69,8 @@ thousand-node page is built and hit-tested a thousand times in under five second
 - **Lookups**
   (`Scene_Lookups_ExposeLayoutsWirePointsAndContentBounds`): layouts and wire points of displayed elements are
   available, a node of another page is not, and the content bounds contain the layouts.
-- **Responsiveness**
-  (`Scene_LargePage_BuildAndHitTest_CompleteQuickly`): one thousand nodes with wires are built and hit-tested within
-  the bound and every hit reports its node.
 - **Null arguments**
   (`Scene_NullArguments_AreRejected`): the scene builder, layout, measurer and lookups reject nulls.
 
-Boundary conditions covered: empty selection, far elements, collapsed and expanded groups, a thousand nodes. Error
+Boundary conditions covered: empty selection, far elements, collapsed and expanded groups. Error
 paths: null arguments.

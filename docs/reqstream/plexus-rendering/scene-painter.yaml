@@ -109,15 +109,6 @@ sections:
             tests:
               - ScenePainter_Paint_Grid_DrawsDotsAtSpacing
 
-          - id: PlexusRendering-ScenePainter-GridPerformance
-            title: >-
-              The painter shall draw a grid over a very large area (tens of thousands of dots) within seconds.
-            justification: |
-              Decomposes PlexusRendering-Render-BackgroundAndGrid; large high-resolution renders must not stall on
-              the background grid.
-            tests:
-              - ScenePainter_Paint_LargeGrid_CompletesQuickly
-
           - id: PlexusRendering-ScenePainter-Placement
             title: >-
               The painter shall place primitives relative to a chosen origin and multiply positions, sizes and

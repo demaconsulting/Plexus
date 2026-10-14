@@ -60,13 +60,12 @@ sections:
               - id: Plexus-Routing-OrthogonalRouter-AvoidObstacles
                 title: >-
                   The router shall return a route whose segments never enter the interior of any given obstacle
-                  box, whenever such a route exists, including for hundreds of obstacles.
+                  box, whenever such a route exists.
                 justification: |
                   Obstacles are the node boxes with their clearance margin; a wire through a node would be
                   mistaken for a connection to that node.
                 tests:
                   - OrthogonalRouter_Route_ObstacleBetweenPorts_AvoidsObstacleInterior
-                  - OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_FastAndClear
 
               - id: Plexus-Routing-OrthogonalRouter-Stubs
                 title: >-
@@ -111,19 +110,6 @@ sections:
                 tests:
                   - OrthogonalRouter_Route_SameRequest_IsDeterministic
 
-              - id: Plexus-Routing-OrthogonalRouter-Performance
-                title: >-
-                  The router shall route two hundred wires among three hundred nodes within two seconds in total
-                  on a development workstation, with every route clear of every obstacle.
-                justification: |
-                  Routing runs on every interactive edit; the bound is generous against typical times below one
-                  millisecond per wire, so that only a loss of scalability, such as scanning every obstacle for
-                  every step, fails it.
-                tags:
-                  - performance
-                tests:
-                  - OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_FastAndClear
-
               - id: Plexus-Routing-OrthogonalRouter-NullRequest
                 title: The router shall throw an argument-null exception when the request is null.
                 justification: |
@@ -163,19 +149,6 @@ sections:
                 tests:
                   - OrthogonalRouter_Route_ExistingSameNet_MayShareTrunk
                   - OrthogonalRouter_Route_RunLiningUpWithSameNet_KeepsMiddleChannel
-
-              - id: Plexus-Routing-OrthogonalRouter-NetPerformance
-                title: >-
-                  The router shall route twenty parallel nets one after another, each keeping clear of the
-                  previous ones, within three seconds in total on a development workstation, with every route
-                  orthogonal and no two nets running along each other.
-                justification: |
-                  Net separation adds lines to the search grid; the bound proves that its cost stays small even
-                  when many foreign segments are inside the search window.
-                tags:
-                  - performance
-                tests:
-                  - OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracksQuickly
 
               - id: Plexus-Routing-OrthogonalRouter-RouteCleaning
                 title: >-

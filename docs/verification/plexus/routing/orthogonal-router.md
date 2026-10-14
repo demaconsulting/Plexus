@@ -11,14 +11,12 @@ orthogonality and that no segment enters the interior of an obstacle.
 
 #### Test Environment
 
-Standard xunit runner; no files, fonts or network. The performance scenario uses a stopwatch with a generous bound
-after a warm-up call so JIT time is not counted.
+Standard xunit runner; no files, fonts or network.
 
 #### Acceptance Criteria
 
 All scenarios pass on every target framework. Routes are exact where the expected shape is specified (centered Z
-shape, no bend points); otherwise the structural properties (orthogonal, clear of obstacles, stub lengths) hold. Two
-hundred wires among three hundred nodes finish in under two seconds in total.
+shape, no bend points); otherwise the structural properties (orthogonal, clear of obstacles, stub lengths) hold.
 
 #### Test Scenarios
 
@@ -49,14 +47,10 @@ hundred wires among three hundred nodes finish in under two seconds in total.
 - **Determinism**
   (`OrthogonalRouter_Route_SameRequest_IsDeterministic`): three routes of one request, two by new instances, are
   equal.
-- **Performance and clearance**
-  (`OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_FastAndClear`): a lattice of three hundred nodes
-  with two hundred requests routes within the bound, every route orthogonal and clear of every obstacle.
 - **Null request**
   (`OrthogonalRouter_Route_NullRequest_ThrowsArgumentNullException`): an argument-null exception.
 
-Net separation (`NetSeparationTests.cs`, `Plexus-Routing-OrthogonalRouter-NetSeparation`, `-SameNetTrunk`,
-`-NetPerformance`):
+Net separation (`NetSeparationTests.cs`, `Plexus-Routing-OrthogonalRouter-NetSeparation`, `-SameNetTrunk`):
 
 - **Baseline**
   (`OrthogonalRouter_Route_WithoutExistingSegments_TwoNetsShareTrunk`): without existing segments two wires with the
@@ -78,9 +72,6 @@ Net separation (`NetSeparationTests.cs`, `Plexus-Routing-OrthogonalRouter-NetSep
   (`OrthogonalRouter_Route_WithExistingSegments_IsDeterministic`,
   `OrthogonalRouter_Route_ZeroOverlapPenalty_IgnoresOtherNets`): repeated routing is identical, and a zero penalty
   gives the old shared-trunk behavior.
-- **Many nets**
-  (`OrthogonalRouter_Route_ManyParallelNets_KeepSeparateTracksQuickly`): twenty nets routed in sequence finish in under
-  three seconds, each orthogonal and no pair overlapping.
 
 Route cleaning (`RouteCleanerTests.cs`, `Plexus-Routing-OrthogonalRouter-RouteCleaning`): a collinear bend
 (`RouteCleaner_Clean_CollinearBend_IsMerged`), a cascade of collinear bends

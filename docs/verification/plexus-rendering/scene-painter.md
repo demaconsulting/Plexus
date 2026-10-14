@@ -43,7 +43,6 @@ and the argument checks raise the documented exception.
   a tint each blend to the expected mid tone over a white background.
 - **ScenePainter_Paint_MalformedIcon_IsSkipped**: a malformed icon leaves the surface unchanged.
 - **ScenePainter_Paint_Grid_DrawsDotsAtSpacing**: dots appear on multiples of the spacing only.
-- **ScenePainter_Paint_LargeGrid_CompletesQuickly**: a grid with about seventy thousand dots paints within seconds.
 - **ScenePainter_Paint_Scale_MultipliesGeometry**: a 10-unit square at (5, 5) painted at scale three covers pixels 15
   to 44.
 - **ScenePainter_Paint_Origin_OffsetsGeometry**: a painter with a non-zero origin shifts the geometry accordingly.

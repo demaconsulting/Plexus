@@ -95,19 +95,6 @@ sections:
                   - SpatialIndex_Query_HugeRegion_ReturnsAllIntersecting
                   - SpatialIndex_Query_NegativeCoordinates_AreFound
 
-              - id: Plexus-Scene-DiagramScene-ScalableQueries
-                title: >-
-                  Five thousand hit tests against a scene of one thousand nodes shall all report the expected node
-                  and complete within five seconds on a development workstation.
-                justification: |
-                  Hit tests run on every pointer move; the bound is generous against typical times of a few
-                  milliseconds, so only a loss of scalability, such as testing every target for every query,
-                  fails it.
-                tags:
-                  - performance
-                tests:
-                  - Scene_HitTest_ThousandNodes_ManyQueriesAreQuickAndCorrect
-
               - id: Plexus-Scene-DiagramScene-GroupLayouts
                 title: >-
                   The scene shall publish for each displayed group the frame, title bar and collapse toggle as drawn

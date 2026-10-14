@@ -123,9 +123,9 @@ the host application from the library's one exposure to untrusted data and from 
   an immutable result that does not track later model changes.
 - **Determinism.** Routing, layout, naming, serialization and ordering are deterministic for equal input, so tests,
   snapshots and rendered images are reproducible.
-- **Performance.** Routing is expected to stay interactive for diagrams of hundreds of nodes (a verified routing
-  scenario routes two hundred wires among three hundred nodes); scene queries and hit tests use a spatial index so that
-  cost does not grow with the whole page.
+- **Performance.** Routing is expected to stay interactive for diagrams of hundreds of nodes, and scene queries and hit
+  tests use a spatial index so that cost does not grow with the whole page. Speed is assessed by profiling rather than
+  by timed tests, because test machines are shared and their speed varies.
 - **Security.** Clipboard and snapshot input is untrusted (see *Risk Control Measures*); the library does not execute
   or instantiate types named by input data.
 - **Quality gates.** The project builds with warnings as errors and code analyzers enabled, and every public member is

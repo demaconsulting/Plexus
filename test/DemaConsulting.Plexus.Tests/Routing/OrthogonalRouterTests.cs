@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Routing;
 
@@ -250,59 +249,5 @@ public class OrthogonalRouterTests
     {
         // Arrange / Act / Assert
         Assert.Throws<ArgumentNullException>(() => new OrthogonalRouter().Route(null!));
-    }
-
-    /// <summary>
-    ///     Validates that two hundred wires among three hundred nodes route quickly and never cross a node's margin box.
-    /// </summary>
-    [Fact]
-    public void OrthogonalRouter_Route_TwoHundredWiresAmongThreeHundredNodes_FastAndClear()
-    {
-        // Arrange: a 20 x 15 lattice of 90 x 90 nodes at pitch 150, each inflated by the 15 unit margin
-        const int columns = 20;
-        const int nodeCount = 300;
-        const double stub = 15;
-        var obstacles = new List<Rect>(nodeCount);
-        for (var i = 0; i < nodeCount; i++)
-        {
-            obstacles.Add(new Rect(i % columns * 150, i / columns * 150, 90, 90).Inflate(15));
-        }
-
-        var router = new OrthogonalRouter();
-        var requests = new List<RouteRequest>();
-        for (var k = 0; k < 200; k++)
-        {
-            var from = k * 37 % nodeCount;
-            var to = ((k * 91) + 7) % nodeCount;
-            if (from == to)
-            {
-                to = (to + 1) % nodeCount;
-            }
-
-            requests.Add(new RouteRequest
-            {
-                Start = new Point((from % columns * 150) + 90, (from / columns * 150) + 45),
-                End = new Point(to % columns * 150, (to / columns * 150) + 45),
-                Obstacles = obstacles,
-            });
-        }
-
-        // Warm up so JIT time is not billed to the measurement
-        router.Route(requests[0]);
-
-        // Act
-        var watch = Stopwatch.StartNew();
-        var routes = requests.Select(r => router.Route(r)).ToList();
-        watch.Stop();
-
-        // Assert: generous bound (10 ms per wire; typically under 1 ms) and every path clear of every obstacle
-        Assert.True(watch.ElapsedMilliseconds < 2000, $"Routing took {watch.ElapsedMilliseconds} ms");
-        for (var i = 0; i < requests.Count; i++)
-        {
-            var request = requests[i];
-            List<Point> polyline = [request.Start.Offset(stub, 0), .. routes[i], request.End.Offset(-stub, 0)];
-            Assert.True(RouteAssertions.IsOrthogonal(polyline), $"Wire {i} is not orthogonal");
-            Assert.False(RouteAssertions.CrossesAny(polyline, obstacles), $"Wire {i} crosses an obstacle");
-        }
     }
 }

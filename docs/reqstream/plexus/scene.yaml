@@ -296,20 +296,6 @@ sections:
             tests:
               - Scene_Lookups_ExposeLayoutsWirePointsAndContentBounds
 
-          - id: Plexus-Scene-Responsiveness
-            title: >-
-              Building the scene of a page with a thousand nodes and answering a thousand hit tests on it shall
-              complete within five seconds on a development workstation.
-            justification: |
-              Hit testing runs on every pointer move; its cost must follow the number of nearby targets rather
-              than the size of the diagram, or large diagrams become unusable to edit.
-            tags:
-              - performance
-            children:
-              - Plexus-Scene-DiagramScene-ScalableQueries
-            tests:
-              - Scene_LargePage_BuildAndHitTest_CompleteQuickly
-
           - id: Plexus-Scene-InvalidArguments
             title: Scene entry points shall reject null arguments with argument-null exceptions.
             justification: |

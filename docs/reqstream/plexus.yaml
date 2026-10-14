@@ -280,7 +280,6 @@ sections:
           - Plexus-Routing-AlwaysRoutes
           - Plexus-Routing-Replaceable
           - Plexus-Routing-Determinism
-          - Plexus-Routing-Performance
           - Plexus-Routing-InvalidRequests
         tests:
           - Plexus_Routing_DefaultAvoidsNodesAndCustomRouterIsUsed
@@ -305,7 +304,6 @@ sections:
           - Plexus-Scene-HeadlessText
           - Plexus-Scene-RegionQueries
           - Plexus-Scene-LayoutLookup
-          - Plexus-Scene-Responsiveness
           - Plexus-Scene-InvalidArguments
         tests:
           - Plexus_Scene_BuildPage_ContainsGridNodesAndWires

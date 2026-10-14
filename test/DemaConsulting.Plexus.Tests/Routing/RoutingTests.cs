@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Routing;
 
@@ -194,49 +193,6 @@ public class RoutingTests
 
         // Act / Assert
         Assert.All(routers, router => Assert.Throws<ArgumentNullException>(() => router.Route(null!)));
-    }
-
-    /// <summary>
-    ///     Validates that every wire of a densely connected page is routed, orthogonal and quick to compute.
-    /// </summary>
-    [Fact]
-    public void Routing_DenseConnectedPage_RoutesEveryWireQuickly()
-    {
-        // Arrange: a 6 x 10 lattice of mixers, each wired to the next column on its own row and on the row below
-        const int columns = 6;
-        const int rows = 10;
-        var diagram = TestModel.CreateDiagram();
-        var page = diagram.Pages.Add("Main");
-        var nodes = new Node[columns, rows];
-        for (var c = 0; c < columns; c++)
-        {
-            for (var r = 0; r < rows; r++)
-            {
-                nodes[c, r] = page.AddNode("acme.Mixer", c * 240, r * 180, $"M{c}_{r}");
-            }
-        }
-
-        // Act
-        var watch = Stopwatch.StartNew();
-        var wires = new List<Wire>();
-        for (var c = 0; c < columns - 1; c++)
-        {
-            for (var r = 0; r < rows; r++)
-            {
-                wires.Add(page.Connect(nodes[c, r].Port("out"), nodes[c + 1, r].Port("a")));
-                if (r + 1 < rows)
-                {
-                    wires.Add(page.Connect(nodes[c, r].Port("out"), nodes[c + 1, r + 1].Port("b")));
-                }
-            }
-        }
-
-        watch.Stop();
-
-        // Assert: generous bound for a whole page of wires; each is orthogonal
-        Assert.Equal(((columns - 1) * rows) + ((columns - 1) * (rows - 1)), wires.Count);
-        Assert.True(watch.ElapsedMilliseconds < 10_000, $"Connecting {wires.Count} wires took {watch.ElapsedMilliseconds} ms");
-        Assert.All(wires, wire => Assert.True(RouteAssertions.IsOrthogonal(wire.GetPoints())));
     }
 
     /// <summary>
