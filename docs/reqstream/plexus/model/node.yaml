@@ -363,3 +363,13 @@ sections:
                   would delete wires of a port the final state still has.
                 tests:
                   - Node_DeferPortUpdates_OutsideTransaction_KeepsWireInOneEntry
+
+              - id: Plexus-Model-Node-DeferPortUpdatesRollback
+                title: >-
+                  Node.DeferPortUpdates shall roll back the changes of an action that throws, also when it runs inside
+                  an outer transaction.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortWireRemoval; a caller that catches the failure inside an outer
+                  transaction must not be left with a changed value whose ports were never recomputed.
+                tests:
+                  - Node_DeferPortUpdates_ActionThrowsInsideOuterTransaction_RollsBackItsChanges

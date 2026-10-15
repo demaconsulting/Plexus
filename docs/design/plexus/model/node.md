@@ -74,14 +74,17 @@ through the page API (see DiagramPage Design), so none of the classes has a publ
   with `CommandPlan.Abort(cause, history)` (reverting every applied step, the change included, even when one revert
   fails, under the history's replay guard) and
   propagates; handler exceptions captured meanwhile are dropped.
-- `Node.DeferPortUpdates(action)` (internal): runs an action, normally inside an undo transaction, during which
+- `Node.DeferPortUpdates(action)` (public): runs an action in its own undo transaction (nested when one is already
+  open), during which
   `ExecuteAffectingPorts` only executes each command through the history (no provider call, no planning) and remembers
   that the ports may be stale. A nesting counter makes the outermost scope the only one that recomputes: when it ends
   normally and a command ran, a plan holding only `DiagramPage.PlanPortUpdate` runs as one history operation (like
-  above) and is recorded as one more command when it is not empty. When the action throws nothing is recomputed; when
-  the provider or a rule throws, the plan is aborted and the exception propagates, so the enclosing transaction rolls
-  every change back. Used by `PropertyBag.TrySetAll` (the ports follow the final values of the batch) and by the node
-  property source of the property grid (the ports follow the final properties and data of one commit).
+  above) and is recorded as one more command when it is not empty. When the action throws nothing is recomputed and
+  the scope's own transaction rolls its changes back, so a caller that catches the exception inside an outer transaction
+  keeps no change with stale ports; when the provider or a rule throws, the plan is aborted and the exception
+  propagates, so the transaction rolls every change back. Used by `PropertyBag.TrySetAll` (the ports follow the final
+  values of the batch), by the node property source of the property grid (the ports follow the final properties and
+  data of one commit) and by hosts that commit several values and node data together.
 - `NodePortsCommand.TryCreate(node)`: asks the provider; when every new definition is equivalent
   (`PortDefinition.IsEquivalentTo`) to the current one in the same row it returns null. Otherwise it builds each new
   column by reusing the current port of the same name or creating a new port, and records removed and retyped ports.

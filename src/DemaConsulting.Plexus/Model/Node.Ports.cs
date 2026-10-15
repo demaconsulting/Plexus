@@ -143,9 +143,10 @@ public sealed partial class Node
     ///         <see cref="NodeType.PortProvider"/> this just runs the action.
     ///     </para>
     ///     <para>
-    ///         Everything is one undo entry: when no transaction is open, this opens one (<c>"Edit {Name}"</c>). A provider
-    ///         failure propagates and the transaction rolls every change back. When the action throws, no recomputation
-    ///         happens.
+    ///         Everything is one undo entry: the scope runs in its own (possibly nested) transaction (<c>"Edit {Name}"</c>). A
+    ///         provider failure propagates and the transaction rolls every change back. When the action throws, its changes
+    ///         are rolled back too and no recomputation happens, so a caller that catches the exception inside an outer
+    ///         transaction never keeps a change whose ports were not recomputed.
     ///     </para>
     /// </remarks>
     /// <example>
@@ -164,14 +165,10 @@ public sealed partial class Node
     {
         ArgumentNullException.ThrowIfNull(action);
         var history = RequirePage().Diagram.History;
-        if (history.IsInTransaction)
-        {
-            DeferPortUpdatesCore(action);
-        }
-        else
-        {
-            history.Transact($"Edit {Name}", () => DeferPortUpdatesCore(action));
-        }
+
+        // Always a transaction of its own, nested when one is open: if the action throws and a caller catches it inside an
+        // outer transaction, this scope's changes are rolled back instead of being kept with ports that were not recomputed
+        history.Transact($"Edit {Name}", () => DeferPortUpdatesCore(action));
     }
 
     /// <summary>

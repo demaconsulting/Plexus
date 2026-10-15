@@ -681,6 +681,35 @@ public class PropertyBagTests
     }
 
     /// <summary>
+    ///     Validates that an action that changes a provider property and then throws, caught inside an outer transaction, leaves
+    ///     no change behind, so the outer transaction cannot commit a property value whose ports were not recomputed.
+    /// </summary>
+    [Fact]
+    public void Node_DeferPortUpdates_ActionThrowsInsideOuterTransaction_RollsBackItsChanges()
+    {
+        // Arrange: A = B, so the pair has the input "keep" with a wire on it
+        var (diagram, page, pair, wire) = CreatePairDiagram();
+        var before = TestModel.Dump(diagram);
+
+        // Act: the outer transaction catches the failure of the deferred scope and then commits
+        diagram.History.Transact("Outer", () =>
+        {
+            var ex = Assert.Throws<InvalidOperationException>(() => pair.DeferPortUpdates(() =>
+            {
+                pair.Properties["A"] = 1;                    // would remove "keep" ...
+                throw new InvalidOperationException("Host failure.");
+            }));
+            Assert.Equal("Host failure.", ex.Message);
+        });
+
+        // Assert: the property change was rolled back with its scope, so the model is unchanged and consistent
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(0, pair.Properties.Get<int>("A"));
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Same(pair.Input("keep"), wire.Target);
+    }
+
+    /// <summary>
     ///     Validates that a provider failure during the deferred recomputation rolls the whole batch back and propagates.
     /// </summary>
     [Fact]
