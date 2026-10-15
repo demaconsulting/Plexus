@@ -61,3 +61,45 @@ sections:
               notifications at that moment, so nothing is raised by a dialog that is closing.
             tests:
               - PropertyGridDialog_CloseConfirmed_IsRaisedOnlyWhenTheCloseGoesAhead
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewArguments
+            title: >-
+              The dialog's internal preview hook shall reject a missing preview control with an argument-null
+              exception and a size that is not a positive finite number with an argument-out-of-range exception, and
+              show no preview in either case.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; a mistaken call from the Plexus adapter layer must
+              surface at the call site instead of showing a collapsed or broken preview panel.
+            tests:
+              - PropertyGridDialog_SetPreview_InvalidArguments_ThrowsAndShowsNothing
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewDocking
+            title: >-
+              The dialog's internal preview hook shall dock the preview before the grid on the requested side (left,
+              right, top or bottom), with the size as its width for left and right and its height for top and bottom,
+              a separator line facing the grid, and the grid still filling the rest of the dialog.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; the node properties dialog shows its live preview
+              beside or above the grid, and the generic dialog must support every side.
+            tests:
+              - PropertyGridDialog_SetPreview_DocksOnEveryDirection
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewReplacement
+            title: >-
+              The dialog's internal preview hook shall replace a previously shown preview, so that the dialog shows
+              at most one preview and the replaced control is detached.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; the host may change the preview layout while the
+              dialog is open and must never end up with two preview panels.
+            tests:
+              - PropertyGridDialog_SetPreview_Replacement_ShowsOnlyTheLatestPreview
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewAutomation
+            title: >-
+              The dialog's preview panel shall expose the automation id "PropertyGridDialog_Preview", the automation
+              name "Preview", the content accessibility view and the group control type, and host the given control.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; UI automation and screen-reader users must be able to
+              find and understand the preview panel.
+            tests:
+              - PropertyGridDialog_SetPreview_ExposesAutomationMetadata

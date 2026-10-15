@@ -33,7 +33,9 @@ arguments rejected.
   (error path).
 - **ReflectionPropertySource_NotifyPropertyChanged_RaisesChanged**: change notifications are forwarded with the property
   name or null, and stop after dispose.
-- **ReflectionPropertySource_RefreshAllProperty_RebuildsItems**: a refresh of the source replaces its items.
+- **ReflectionPropertySource_RefreshAllProperty_RebuildsItems**: a change of an observable property annotated
+  `RefreshProperties.All` replaces the items and raises an all-items notification, and an explicit refresh of the source
+  does the same.
 - **ReflectionPropertySource_ShownRefreshAllPropertyChanged_RebuildsItems**
   (`PlexusAvaloniaPropertyGrid-PropertySources-HiddenRefreshAll`): the change notification of a shown refresh-all
   property replaces the items and reports a change of everything, while an ordinary property keeps the items and
@@ -60,7 +62,8 @@ arguments rejected.
   (error path).
 - **PropertyOrdering_Group_ProducesCategoryGroupsOrOneFlatGroup**: groups ignore case, a flat group has no category, empty
   input gives no groups.
-- **PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically** (`CommitScopeTests.cs`): a category with a lower
+- **PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-CategoryOrder`): a category with a lower
   `CategoryOrder` is first, a category ranks as its lowest item, equal ranks are alphabetical.
 - **PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel** (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`):
   within a category a parenthesized item comes first whatever its rank, then the items by ascending `Order` (the
@@ -68,5 +71,7 @@ arguments rejected.
 - **PropertyOrdering_Order_AlphabeticalIgnoresItemOrder**
   (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrderAlphabetical`): the
   alphabetical view sorts by label even when the ranks say otherwise.
-- **CompositePropertySource_RunCommit_ChainsTheSourceScopes** (`CommitScopeTests.cs`): the scopes of the sources that
-  have one are chained, the first outermost, and the action runs once; a null action is rejected (error path).
+- **CompositePropertySource_RunCommit_ChainsTheSourceScopes** (`PlexusAvaloniaPropertyGrid-PropertySources-CommitScope`):
+  the scopes of the sources that
+  have one are chained, the first outermost, and the action runs once; a null action is rejected (error path). The test
+  uses its own recording source in `PropertySourceTests.cs`.

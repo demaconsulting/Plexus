@@ -22,6 +22,7 @@ sections:
         children:
           - PlexusAvaloniaPropertyGrid-PropertyModel-Annotations
           - PlexusAvaloniaPropertyGrid-PropertyModel-Defaults
+          - PlexusAvaloniaPropertyGrid-PropertyModel-ResetOnly
           - PlexusAvaloniaPropertyGrid-PropertyModel-Converter
           - PlexusAvaloniaPropertyGrid-PropertySources-ReflectionDiscovery
           - PlexusAvaloniaPropertyGrid-PropertySources-ReflectionNotifications
@@ -91,6 +92,7 @@ sections:
         children:
           - PlexusAvaloniaPropertyGrid-PropertyModel-Expandable
           - PlexusAvaloniaPropertyGrid-PropertyModel-Collections
+          - PlexusAvaloniaPropertyGrid-PropertyModel-CollectionSnapshotFailure
         tests:
           - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
           - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
@@ -276,6 +278,10 @@ sections:
           - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Validation
           - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Arguments
           - PlexusAvaloniaPropertyGrid-PropertyGridDialog-CloseConfirmation
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewArguments
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewDocking
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewReplacement
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-PreviewAutomation
         tests:
           - PlexusAvaloniaPropertyGrid_PropertyGridDialog_CommitsOrDiscardsTheEdits
 

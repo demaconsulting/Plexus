@@ -75,6 +75,11 @@ Values, text, standard values, children, collections and validation (`PropertyMo
 - **PropertyItem_GetCollectionItems_ReadOnlyCollectionElementsAreReadOnly**: read-only collection elements cannot be set.
 - **PropertyItem_GetCollectionItems_ExpandableElementHasChildren**: an expandable element has children under its path.
 - **PropertyItem_ConvertToString_CollectionShowsCollectionText**: a collection is shown as `(Collection)`.
+- **PropertyItem_GetCollectionValues_ThrowingEnumerator_ReturnsEmpty**: a collection whose enumeration throws at once or
+  after its first element reads as empty (no values, no element items) instead of throwing (error path).
+- **PropertyItem_Reset_ResetMethodOnlyProperty_CanBeResetAndIsNeverChanged**: a property with only a `Reset<Name>`
+  method has no default, is never changed, can be reset through the item and the session, while a property without any
+  reset support cannot (error path).
 - **PropertyItem_TrySetValue_ReportsValidationAndSetterFailures**: null, wrong type, range annotation and a throwing
   setter are failed results (error paths).
 - **PropertyItem_TrySetValue_ReadOnlyItemFails**: a read-only item cannot be written (error path).

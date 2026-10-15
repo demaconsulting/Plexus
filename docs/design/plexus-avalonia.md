@@ -77,7 +77,7 @@ only view state.
 | `ToolTipRequested` event          | Out      | Event; pre-filled content          | Cancel, null, empty: none   |
 | `GetToolTipContent`               | In / Out | Method returning the content       | Ignores `ShowToolTips`      |
 | `BringIntoView(element)`          | In       | Method; any page of the diagram    | Waits for the first layout  |
-| `ZoomToFit(elements, margin)`     | In       | Method; margin in DIP, 30 default  | Bad margin: range exception |
+| `ZoomToFit` (page or elements)    | In       | Method; margin in DIP, 30 default  | Bad margin: range exception |
 | `DiagramEditor` commands          | In       | Public methods                     | UI thread only              |
 | `DiagramEditor` events            | Out      | .NET events with argument classes  | Raised on the UI thread     |
 | Pointer, wheel and keyboard input | In       | Avalonia routed input events       | Control must be focusable   |
@@ -96,9 +96,9 @@ commands are selection, delete, duplicate, undo, redo, copy, cut, paste, rename,
 `GetToolTipContent`, `BringIntoView` and `ZoomToFit` (the whole page, or a set of elements). All members are used on the
 UI thread. `ToolTipRequested` carries a `DiagramToolTipRequestedEventArgs` whose `Content` arrives pre-filled and whose
 `Cancel` suppresses the tooltip. `BringIntoView(element)` accepts any element on an attached page of the shown diagram
-(`ArgumentException` otherwise, view unchanged); `ZoomToFit(elements, margin)` takes a margin in device-independent
-pixels per side that must be finite and not negative (`ArgumentOutOfRangeException`) and does nothing for an empty
-set. Navigation to an element
+(`ArgumentException` otherwise, view unchanged); `ZoomToFit(margin)` and `ZoomToFit(elements, margin)` take a margin in
+device-independent pixels per side that must be finite and not negative (`ArgumentOutOfRangeException`), and the fit of
+elements does nothing for an empty set. Navigation to an element
 on another page switches the shown page, which clears the selection and cancels any gesture or inline edit, exactly as
 setting the page does; a request made before the first layout is applied once the editor has a size.
 

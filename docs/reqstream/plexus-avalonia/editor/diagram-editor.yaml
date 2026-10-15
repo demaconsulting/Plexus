@@ -740,6 +740,16 @@ sections:
                 tests:
                   - DiagramEditor_ZoomToFitElements_InvalidArguments_ThrowWithoutChangingView
 
+              - id: PlexusAvalonia-Editor-DiagramEditor-ZoomToFitMarginInvalid
+                title: >-
+                  Fitting the whole page shall throw ArgumentOutOfRangeException for a negative, NaN or infinite
+                  margin, checked before anything changes and leaving the page, zoom, offset and selection unchanged.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NavigationInvalid; the page-wide fit takes the same margin as the
+                  fit of elements and must refuse the same invalid values instead of silently doing nothing.
+                tests:
+                  - DiagramEditor_ZoomToFit_InvalidMargin_ThrowsWithoutChangingView
+
               - id: PlexusAvalonia-Editor-DiagramEditor-DynamicPorts
                 title: >-
                   The editor shall connect a dragged wire to a port a configuration change added.

@@ -248,8 +248,8 @@ headless window; the tests read the editor's `ToolTip.Tip` and `IsOpen` instead 
 (Requirement IDs are prefixed `PlexusAvalonia-Editor-DiagramEditor`: `-BringIntoView`, `-BringIntoViewPage`,
 `-BringIntoViewCollapsed`, `-BringIntoViewDeferred`, `-BringIntoViewInvalid`, `-ZoomToFitElements`,
 `-ZoomToFitElementsCollapsed`, `-ZoomToFitElementsPages`, `-ZoomToFitElementsEmpty`, `-ZoomToFitElementsDeferred`,
-`-ViewRequestOrder`, `-ZoomToFitElementsInvalid`.) All in `DiagramEditorNavigationTests.cs`, in an 800 by 600 headless
-window.
+`-ViewRequestOrder`, `-ZoomToFitElementsInvalid`, `-ZoomToFitMarginInvalid`.) All in `DiagramEditorNavigationTests.cs`,
+in an 800 by 600 headless window.
 
 - **DiagramEditor_BringIntoView_FarNode_CentersItWithoutChangingZoom**,
   **DiagramEditor_BringIntoView_ElementLargerThanView_ZoomsOut** (`-BringIntoView`): a far node is centered at the
@@ -283,8 +283,10 @@ window.
   bring-into-view before the first layout leaves only the latter applied.
 - **DiagramEditor_ZoomToFitElements_InvalidArguments_ThrowWithoutChangingView** (`-ZoomToFitElementsInvalid`): a null
   sequence, a null entry, a removed node, an element of another diagram (alone or mixed), and margins -1, NaN, +infinity
-  and -infinity (also with an empty set) throw the documented exception and leave page, zoom, offset and selection
   unchanged.
+- **DiagramEditor_ZoomToFit_InvalidMargin_ThrowsWithoutChangingView** (`-ZoomToFitMarginInvalid`): the page-wide fit
+  refuses the margins -1, NaN, +infinity and -infinity with an out-of-range exception for `margin` (error paths) and
+  leaves page, zoom, offset and selection unchanged; a margin of 0 is accepted (boundary).
 
 ##### Per-node ports
 

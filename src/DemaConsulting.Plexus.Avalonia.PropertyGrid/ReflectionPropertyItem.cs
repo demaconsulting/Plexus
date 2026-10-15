@@ -209,11 +209,16 @@ internal sealed class ReflectionPropertyItem : PropertyItem
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    ///     Honors the descriptor's <c>CanResetValue</c>, so a property that only has a <c>Reset&lt;Name&gt;</c> method can be
+    ///     reset although it has no default value or default rule (<see cref="HasDefault"/> is <see langword="false"/>, so it
+    ///     is never reported as <see cref="IsChanged"/>).
+    /// </remarks>
     public override bool CanReset
     {
         get
         {
-            if (!HasDefault || IsReadOnly)
+            if (IsReadOnly)
             {
                 return false;
             }

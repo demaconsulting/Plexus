@@ -393,7 +393,9 @@ so the outermost collapsed group that hides it is brought into view instead. It 
 of the diagram the editor shows (when the editor shows no page, of any diagram) and throws `ArgumentNullException` for
 null and `ArgumentException` for anything else, leaving the view unchanged.
 
-`ZoomToFit` of a set of elements fits their union with the `margin` (device-independent pixels on each side, default 30;
+`ZoomToFit()` of the whole page takes the same `margin` and throws `ArgumentOutOfRangeException` for a negative, NaN or
+infinite one, leaving the view unchanged. `ZoomToFit` of a set of elements fits their union with the `margin`
+(device-independent pixels on each side, default 30;
 it must be finite and not negative, else `ArgumentOutOfRangeException` is thrown before anything changes). The zoom is
 the one that fits, but at most 1 (actual size, so a small set is centered rather than magnified), within `MinZoom` and
 `MaxZoom`. An empty set changes nothing. When the elements are on several pages the page of the first element is shown

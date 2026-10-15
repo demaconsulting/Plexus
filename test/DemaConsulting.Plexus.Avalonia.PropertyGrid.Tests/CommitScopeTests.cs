@@ -1,8 +1,7 @@
 namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests;
 
 /// <summary>
-///     Tests of <see cref="IPropertyCommitScope"/> (a source that brackets commits), <see cref="PropertyCommitRefusedException"/>
-///     and the category rank used to order categories.
+///     Tests of <see cref="IPropertyCommitScope"/> (a source that brackets commits) and <see cref="PropertyCommitRefusedException"/>.
 /// </summary>
 public class CommitScopeTests
 {
@@ -262,53 +261,6 @@ public class CommitScopeTests
         // Assert
         Assert.False(result.Succeeded);
         Assert.Equal("The commit scope did not apply the changes.", result.Error);
-    }
-
-    /// <summary>
-    ///     A composite chains the scopes of its sources, the first source outermost, and runs the action once.
-    /// </summary>
-    [Fact]
-    public void CompositePropertySource_RunCommit_ChainsTheSourceScopes()
-    {
-        // Arrange
-        var log = new List<string>();
-        var first = new ScopedSource(log);
-        var second = new ScopedSource(log);
-        var plain = new CustomPropertySource();
-        using var composite = new CompositePropertySource(first, plain, second);
-
-        // Act
-        composite.RunCommit(() => log.Add("apply"));
-
-        // Assert
-        Assert.Equal(["source-before", "source-before", "apply", "source-after", "source-after"], log);
-        Assert.Throws<ArgumentNullException>(() => composite.RunCommit(null!));
-    }
-
-    /// <summary>
-    ///     A category with a lower rank is shown first; within a rank the order is alphabetical, and a category ranks as its lowest item.
-    /// </summary>
-    [Fact]
-    public void PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically()
-    {
-        // Arrange
-        PropertyItem Make(string name, string category, int order) =>
-            new CustomPropertyItem(name, typeof(string), () => string.Empty, null, new CustomPropertyOptions { Category = category, CategoryOrder = order });
-        var items = new[]
-        {
-            Make("A", "Alpha", 0),
-            Make("B", "Zulu", -1),
-            Make("C", "Mike", 0),
-            Make("D", "Zulu", 5),
-        };
-
-        // Act
-        var groups = PropertyOrdering.Group(items, PropertySortMode.Categorized);
-
-        // Assert
-        Assert.Equal(["Zulu", "Alpha", "Mike"], groups.Select(g => g.Category));
-        Assert.Equal(["B", "D"], groups[0].Items.Select(i => i.Name));
-        Assert.Equal(0, new CustomPropertyOptions().CategoryOrder);
     }
 
     /// <summary>

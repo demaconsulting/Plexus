@@ -42,7 +42,8 @@ it), so wires stay attached to their ports.
 #### Key Methods
 
 - **View**: `ScreenToDiagram`, `DiagramToScreen`, `ZoomAt(screen, zoom)` (zoom keeping the point under the cursor
-  fixed), `ZoomToFit(margin)` (no effect on an empty page; before the control has a size or a page the request is
+  fixed), `ZoomToFit(margin)` (margin finite and not negative, else `ArgumentOutOfRangeException` before the request
+  is stored; no effect on an empty page; before the control has a size or a page the request is
   remembered, the latest one wins, and it is applied once when a size and a page exist, from the bounds-changed
   and page-changed reactions), `GetElementScreenBounds`,
   `GetPortScreenPosition`, `HitTest`. These have no preconditions beyond non-null arguments. The pending request is a
@@ -157,7 +158,8 @@ selects it and returns it. All of them do nothing when the editor is read-only o
 
 - Null arguments throw `ArgumentNullException`. `BringIntoView` and `ZoomToFit(elements)` throw `ArgumentException`
   for an element that is not on an attached page, an element of another diagram than the shown page (or the first
-  element), and a null entry; `ZoomToFit(elements, margin)` throws `ArgumentOutOfRangeException` for a negative, NaN or
+  element), and a null entry; `ZoomToFit(margin)` and `ZoomToFit(elements, margin)` throw `ArgumentOutOfRangeException`
+  for a negative, NaN or
   infinite margin. All of them check before anything changes, so page, zoom, offset and selection stay as they were.
 - An exception thrown by a node type's tooltip function or by a `ToolTipRequested` handler propagates unchanged to the
   caller of `GetToolTipContent`, or out of the hover handling; the editor never swallows it.

@@ -99,10 +99,7 @@ public sealed partial class DiagramEditor
         ArgumentNullException.ThrowIfNull(elements);
 
         // Validate the margin before anything is read or changed
-        if (!double.IsFinite(margin) || margin < 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(margin), margin, "The margin must be a finite number that is not negative.");
-        }
+        RequireValidMargin(margin);
 
         // Copy first: callers pass the live selection, which a page switch clears
         var list = elements.ToList();
@@ -121,6 +118,19 @@ public sealed partial class DiagramEditor
         _pendingView = () => TryZoomToFitElements(page, list, margin);
         ShowPage(page);
         ApplyPendingView();
+    }
+
+    /// <summary>
+    ///     Checks the margin of a <c>ZoomToFit</c> request.
+    /// </summary>
+    /// <param name="margin">The margin, in device-independent pixels.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="margin"/> is negative, NaN or infinite.</exception>
+    private static void RequireValidMargin(double margin)
+    {
+        if (!double.IsFinite(margin) || margin < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(margin), margin, "The margin must be a finite number that is not negative.");
+        }
     }
 
     /// <summary>

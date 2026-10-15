@@ -84,15 +84,26 @@ internal static class CollectionTypes
     ///     Takes a snapshot of the elements of a collection instance.
     /// </summary>
     /// <param name="collection">The collection, or <see langword="null"/>.</param>
-    /// <returns>The elements in enumeration order; empty for <see langword="null"/>.</returns>
+    /// <returns>
+    ///     The elements in enumeration order; empty for <see langword="null"/> and when the enumeration throws a
+    ///     non-fatal exception (an unreadable collection).
+    /// </returns>
     internal static List<object?> Snapshot(object? collection)
     {
         var result = new List<object?>();
         if (collection is IEnumerable enumerable)
         {
-            foreach (var element in enumerable)
+            try
             {
-                result.Add(element);
+                foreach (var element in enumerable)
+                {
+                    result.Add(element);
+                }
+            }
+            catch (Exception ex) when (!PropertyErrors.IsFatal(ex))
+            {
+                // An unreadable collection shows as empty rather than breaking the grid
+                return [];
             }
         }
 

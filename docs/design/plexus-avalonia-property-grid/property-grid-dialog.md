@@ -41,7 +41,9 @@ commits the edits (inside the host's commit scope, so the dialog is one undo ste
 ### Error Handling
 
 Invalid input and failed commits are shown, never thrown; a null owner or target raises `ArgumentNullException`, from
-`ShowAsync` before a window is created and from the constructor.
+`ShowAsync` before a window is created and from the constructor. The internal `SetPreview` raises `ArgumentNullException`
+for a null preview and `ArgumentOutOfRangeException` for a size that is not a positive finite number, before it changes
+the dialog.
 
 ### Dependencies
 

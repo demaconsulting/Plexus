@@ -660,9 +660,13 @@ public sealed partial class DiagramEditor : Control
     ///     when the editor has no size yet (before its first layout) or shows no page, the request is remembered and applied as soon as the editor gets a size and a page
     ///     (the latest request wins, and the page's content at that moment is fitted). A pending request is dropped once applied.
     /// </remarks>
-    /// <param name="margin">The empty space, in device-independent pixels, to keep around the content.</param>
+    /// <param name="margin">The empty space, in device-independent pixels, to keep around the content (default 30); finite and not negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown, before anything changes (a pending request stays as it was), when <paramref name="margin"/> is negative, NaN or infinite.</exception>
     public void ZoomToFit(double margin = 30)
     {
+        // Validate the margin before the request replaces a pending one
+        RequireValidMargin(margin);
+
         // Without a size or a page the request waits for the first layout (or the first page); a newer request replaces it
         _pendingView = () => TryZoomToFit(margin);
         ApplyPendingView();

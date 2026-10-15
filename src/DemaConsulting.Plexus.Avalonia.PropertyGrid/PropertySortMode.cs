@@ -6,7 +6,9 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 public enum PropertySortMode
 {
     /// <summary>
-    ///     Grouped by category (categories in alphabetical order), items alphabetical by label within each category.
+    ///     Grouped by category: the categories are ordered by their category rank (<c>CategoryOrder</c>, the lowest rank of
+    ///     a category decides) and alphabetically within equal ranks; the items of a category are ordered with
+    ///     parenthesized names first, then by item rank (<c>Order</c>, lower first) and then alphabetically by label.
     /// </summary>
     Categorized,
 

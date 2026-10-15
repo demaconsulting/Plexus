@@ -207,6 +207,42 @@ public class DiagramEditorNavigationTests
     });
 
     /// <summary>
+    ///     Validates that fitting the whole page refuses a negative, NaN or infinite margin with an out-of-range exception
+    ///     before changing the page, zoom, offset or selection, and still accepts a zero margin.
+    /// </summary>
+    [Fact]
+    public Task DiagramEditor_ZoomToFit_InvalidMargin_ThrowsWithoutChangingView() => UiTest.Run(host =>
+    {
+        // Arrange: a view that is not at the defaults
+        var node = host.AddSource(0, 0);
+        host.Editor.Select(node);
+        host.Editor.Zoom = 2;
+        host.Editor.Offset = new AvaloniaPoint(15, 25);
+
+        // Act
+        var exceptions = new[]
+        {
+            Record.Exception(() => host.Editor.ZoomToFit(-1)),
+            Record.Exception(() => host.Editor.ZoomToFit(double.NaN)),
+            Record.Exception(() => host.Editor.ZoomToFit(double.PositiveInfinity)),
+            Record.Exception(() => host.Editor.ZoomToFit(double.NegativeInfinity)),
+        };
+
+        // Assert: each request failed with the documented exception type, and the view is untouched
+        Assert.Multiple(
+            () => Assert.All(exceptions, e => Assert.IsType<ArgumentOutOfRangeException>(e)),
+            () => Assert.All(exceptions, e => Assert.Equal("margin", ((ArgumentOutOfRangeException)e!).ParamName)),
+            () => Assert.Same(host.Page, host.Editor.Page),
+            () => Assert.Equal(2.0, host.Editor.Zoom),
+            () => Assert.Equal(new AvaloniaPoint(15, 25), host.Editor.Offset),
+            () => Assert.Single(host.Editor.Selection));
+
+        // A zero margin is valid (boundary)
+        host.Editor.ZoomToFit(0);
+        Assert.Equal(1.0, host.Editor.Zoom);
+    });
+
+    /// <summary>
     ///     Validates that the margin is kept on each side of the fitted elements, and that a larger margin zooms out further.
     /// </summary>
     [Fact]

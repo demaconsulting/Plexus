@@ -321,6 +321,7 @@ sections:
             children:
               - PlexusAvalonia-Editor-DiagramEditor-BringIntoViewInvalid
               - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElementsInvalid
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitMarginInvalid
               - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElementsEmpty
             tests:
               - Editor_ElementNavigation_InvalidOrEmptyRequests_LeaveViewUnchanged

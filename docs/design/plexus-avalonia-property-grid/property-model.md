@@ -46,8 +46,10 @@ belongs to this unit because nested items are built from it.
   read-only value-type property are read-only.
 - **`HasDefault`, `IsDefaultValueKnown`, `DefaultValue`, `IsChanged`, `CanReset`, `Reset`** — `HasDefault` is true for a
   `DefaultValue` annotation or a `ShouldSerialize<Name>` method; `IsChanged` asks the descriptor
-  (`ShouldSerializeValue`) and so follows the WinForms rule; reset uses the descriptor (`ResetValue`), which honors the
-  default value and the `Reset<Name>` method. An item without a default is never changed.
+  (`ShouldSerializeValue`) and so follows the WinForms rule; `CanReset` and reset use the descriptor (`CanResetValue`,
+  `ResetValue`), which honors the default value and the `Reset<Name>` method, so a property that only has a
+  `Reset<Name>` method can be reset (it has no default, so it is never changed). An item without a default is never
+  changed; a read-only item cannot be reset.
 - **`GetValue`, `SetValue`, `TryGetValue`, `TrySetValue`, `TryReset`** — raw access may throw what the accessor throws;
   the `Try` forms check read-only state, validate, and capture exceptions. Writing a child of a value-type owner writes
   the modified copy back through the parent.
@@ -66,7 +68,8 @@ belongs to this unit because nested items are built from it.
   item expandable; the children are the browsable properties of the current value, using the converter of the value's
   runtime type for object-typed properties.
 - **`IsCollection`, `CollectionItemType`, `GetCollectionValues`, `GetCollectionItems`** — arrays, `IList`,
-  `ICollection<T>` and `IReadOnlyCollection<T>` types are collections; strings and dictionaries are not.
+  `ICollection<T>` and `IReadOnlyCollection<T>` types are collections; strings and dictionaries are not. Taking the
+  snapshot of the elements is guarded: a collection whose enumeration throws a non-fatal exception reads as empty.
 
 The converter receives an `ITypeDescriptorContext` whose `Instance` is the owner object and whose `PropertyDescriptor` is
 the item's descriptor, so context-sensitive converters work as in the WinForms grid.

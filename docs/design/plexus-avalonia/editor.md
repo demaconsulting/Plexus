@@ -46,6 +46,8 @@ the PlexusAvalonia system outside this subsystem.
     shown), otherwise `ArgumentException` (null: `ArgumentNullException`) with the view unchanged; switches the page
     (which clears the selection and cancels a gesture or inline edit), centers the element, zooms out only when it does
     not fit with 30 device-independent pixels on each side, never zooms in; waits for the first layout.
+  - `ZoomToFit(margin)`: the whole page; the same margin rule as below (`ArgumentOutOfRangeException`, checked before
+    the request is stored).
   - `ZoomToFit(elements, margin)`: margin in device-independent pixels per side (default 30), finite and not negative
     (`ArgumentOutOfRangeException`, checked first); `ArgumentNullException` for a null sequence, `ArgumentException`
     for a null entry, a detached element or an element of another diagram, in all cases with the view unchanged; zoom
