@@ -354,6 +354,33 @@ public class NodePaletteTests
     });
 
     /// <summary>
+    ///     Validates that a prototype whose scene theme has larger fonts than its diagram theme still contains every text it draws.
+    /// </summary>
+    [Fact]
+    public Task NodePrototype_Create_SceneThemeWithLargerFonts_BoundsContainTheDrawnTexts() => UiTest.Run(() =>
+    {
+        // Arrange: the scratch diagram keeps the classic metrics while the scene draws with much larger texts
+        var types = PaletteHost.CreateTypes();
+        var type = types.Get("test.Mixer");
+        var sizing = DiagramTheme.Classic;
+        var scene = new DiagramTheme { NameFontSize = 28, SummaryFontSize = 24, PortLabelFontSize = 24, TextGap = 8 };
+
+        // Act
+        var prototype = NodePrototype.Create(types, type, sizing, scene, new AvaloniaTextMeasurer());
+        var texts = prototype.Scene.Primitives.OfType<TextPrimitive>().ToList();
+
+        // Assert: the name, the summary line and both kinds of port label are drawn and all lie inside the bounds; the bounds use the
+        // deterministic text estimate, which differs from the measured line height by a few units, so the check allows 3 units
+        var bounds = prototype.VisualBounds.Inflate(3);
+        Assert.Multiple(
+            () => Assert.Contains(texts, t => t.Text == "Signal Mixer"),
+            () => Assert.Contains(texts, t => t.Text == "Gain: 1.5"),
+            () => Assert.Contains(texts, t => t.Text == "left"),
+            () => Assert.Contains(texts, t => t.Text == "mix"),
+            () => Assert.All(texts, t => Assert.True(bounds.Contains(t.Bounds), $"'{t.Text}' {t.Bounds} lies outside {prototype.VisualBounds}")));
+    });
+
+    /// <summary>
     ///     Validates that each item is the node as the canvas builds it: the display name label, the box title, ports, summary lines and a custom visual.
     /// </summary>
     [Fact]

@@ -232,30 +232,49 @@ public static class NodeGeometry
     /// <param name="node">The node.</param>
     /// <param name="theme">The theme supplying metrics and text styles.</param>
     /// <returns>The node's visual extent in diagram coordinates; it always contains <see cref="Node.Bounds"/>.</returns>
-    public static Rect VisualBounds(Node node, DiagramTheme theme)
+    public static Rect VisualBounds(Node node, DiagramTheme theme) => VisualBounds(node, theme, theme);
+
+    /// <summary>
+    ///     Computes the deterministic extent of everything drawn for a node, when the texts are drawn with another theme than the
+    ///     node's own diagram theme (a scene, render or editor theme override).
+    /// </summary>
+    /// <remarks>
+    ///     Port geometry (rows, triangles, label gaps and anchors) follows <paramref name="geometryTheme"/>, the node's diagram
+    ///     theme, because the scene always places ports with it. The text extents follow <paramref name="textTheme"/>, which draws
+    ///     them: the name and summary lines (text styles and <see cref="DiagramTheme.TextGap"/>) and each port label, whose
+    ///     rectangle sits beside its triangle as the scene places it and is at least as tall as its line height in that theme.
+    ///     With equal themes the result is that of <see cref="VisualBounds(Node, DiagramTheme)"/>.
+    /// </remarks>
+    /// <param name="node">The node.</param>
+    /// <param name="geometryTheme">The theme supplying port geometry (the node's diagram theme).</param>
+    /// <param name="textTheme">The theme supplying the text styles and the gap of the name and summary lines.</param>
+    /// <returns>The node's visual extent in diagram coordinates; it always contains <see cref="Node.Bounds"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="node"/>, <paramref name="geometryTheme"/> or <paramref name="textTheme"/> is null.</exception>
+    public static Rect VisualBounds(Node node, DiagramTheme geometryTheme, DiagramTheme textTheme)
     {
         ArgumentNullException.ThrowIfNull(node);
-        ArgumentNullException.ThrowIfNull(theme);
+        ArgumentNullException.ThrowIfNull(geometryTheme);
+        ArgumentNullException.ThrowIfNull(textTheme);
         var box = node.Bounds;
         var extent = box;
 
         // The instance name is centered just above the box
-        var nameSize = AnchorMeasurer.Measure(node.Name, theme.NameTextStyle);
-        extent = extent.Union(CenteredText(box, nameSize, box.Top - theme.TextGap - nameSize.Height));
+        var nameSize = AnchorMeasurer.Measure(node.Name, textTheme.NameTextStyle);
+        extent = extent.Union(CenteredText(box, nameSize, box.Top - textTheme.TextGap - nameSize.Height));
 
         // Summary lines stack below the box, each centered under it
-        var y = box.Bottom + theme.TextGap;
+        var y = box.Bottom + textTheme.TextGap;
         foreach (var line in node.Type.GetSummaryLines(node))
         {
-            var size = AnchorMeasurer.Measure(line, theme.SummaryTextStyle);
+            var size = AnchorMeasurer.Measure(line, textTheme.SummaryTextStyle);
             extent = extent.Union(CenteredText(box, size, y));
             y += size.Height;
         }
 
         // Ports reach sideways from the box edge out to their anchors, as tall as the triangle or the label line,
         // whichever is taller (the node's current ports)
-        extent = ExtendByPorts(extent, box, PortDirection.Input, Labels(node.Inputs), theme);
-        return ExtendByPorts(extent, box, PortDirection.Output, Labels(node.Outputs), theme);
+        extent = ExtendByPorts(extent, box, PortDirection.Input, Labels(node.Inputs), geometryTheme, textTheme);
+        return ExtendByPorts(extent, box, PortDirection.Output, Labels(node.Outputs), geometryTheme, textTheme);
     }
 
     /// <summary>
@@ -318,23 +337,36 @@ public static class NodeGeometry
     /// </summary>
     /// <remarks>
     ///     Each row is as tall as the port triangle or the label's line height, whichever is taller, so a label
-    ///     drawn centered on the row never sticks out of the extent.
+    ///     drawn centered on the row never sticks out of the extent. The label rectangle itself (measured in the text
+    ///     theme, placed beside the triangle with the geometry theme's gap as the scene does) is covered too, because
+    ///     with a text theme of a larger font it can reach beyond the geometry theme's anchor.
     /// </remarks>
     /// <param name="extent">The extent so far.</param>
     /// <param name="box">The node box.</param>
     /// <param name="direction">The column's direction.</param>
     /// <param name="labels">The labels of the column's ports, in row order.</param>
-    /// <param name="theme">The theme supplying metrics.</param>
+    /// <param name="theme">The theme supplying port geometry.</param>
+    /// <param name="textTheme">The theme supplying the label text style.</param>
     /// <returns>The grown extent.</returns>
-    private static Rect ExtendByPorts(Rect extent, Rect box, PortDirection direction, IReadOnlyList<string> labels, DiagramTheme theme)
+    private static Rect ExtendByPorts(Rect extent, Rect box, PortDirection direction, IReadOnlyList<string> labels, DiagramTheme theme, DiagramTheme textTheme)
     {
         for (var i = 0; i < labels.Count; i++)
         {
             var edge = PortEdge(box, direction, i, labels.Count, theme);
             var anchor = PortAnchor(edge, direction, labels[i], theme);
             var left = Math.Min(edge.X, anchor.X);
-            var height = Math.Max(theme.PortTriangleHeight, AnchorMeasurer.Measure(labels[i], theme.PortLabelTextStyle).Height);
+            var size = AnchorMeasurer.Measure(labels[i], textTheme.PortLabelTextStyle);
+            var height = Math.Max(theme.PortTriangleHeight, size.Height);
             extent = extent.Union(new Rect(left, edge.Y - (height / 2), Math.Abs(anchor.X - edge.X), height));
+            if (labels[i].Length > 0)
+            {
+                // The label hugs the triangle: left of an input's, right of an output's
+                var width = size.Width * LabelWidthSafety;
+                var labelLeft = direction == PortDirection.Input
+                    ? edge.X - theme.PortTriangleLength - theme.PortLabelGap - width
+                    : edge.X + theme.PortTriangleLength + theme.PortLabelGap;
+                extent = extent.Union(new Rect(labelLeft, edge.Y - (size.Height / 2), width, size.Height));
+            }
         }
 
         return extent;

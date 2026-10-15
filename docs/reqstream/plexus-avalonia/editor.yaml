@@ -171,6 +171,7 @@ sections:
               - PlexusAvalonia-Editor-DiagramEditor-ViewCommands
               - PlexusAvalonia-Editor-NodePalette-Drag
               - PlexusAvalonia-Editor-NodePalette-SceneCache
+              - PlexusAvalonia-Editor-NodePalette-PrototypeTextBounds
               - PlexusAvalonia-Editor-DiagramEditor-DropGhost
             tests:
               - Editor_NodePalette_DragItemOverEditor_ShowsGhostAndDropsNodeWhereGhostWas

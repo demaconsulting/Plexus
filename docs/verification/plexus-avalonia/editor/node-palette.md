@@ -176,3 +176,10 @@ agree.
 
 - **NodePalette_Scenes_AreCachedUntilTypesOrThemeChange**: one build per type initially; filter, grouping and zoom
   changes build nothing; a theme change rebuilds every type and every item scene uses the new theme.
+
+**Prototype bounds** (`NodePaletteTests.cs`)
+
+- **NodePrototype_Create_SceneThemeWithLargerFonts_BoundsContainTheDrawnTexts**
+  (`PlexusAvalonia-Editor-NodePalette-PrototypeTextBounds`): a prototype is created with the classic diagram theme and a
+  scene theme with much larger name, summary and port label fonts and a larger text gap; the scene's name, summary and
+  port label texts are all drawn and every text rectangle lies inside the prototype's visual bounds.

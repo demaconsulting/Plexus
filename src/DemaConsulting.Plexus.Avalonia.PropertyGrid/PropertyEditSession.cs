@@ -532,6 +532,12 @@ public sealed class PropertyEditSession
                     else
                     {
                         failed.Add(edit);
+
+                        // A setter or applier may have changed the target before it threw, so a scope refusal must undo it too
+                        if (snapshot is not null)
+                        {
+                            before.Add((edit, snapshot));
+                        }
                     }
                 }
             },
@@ -609,7 +615,7 @@ public sealed class PropertyEditSession
     ///     A scope that rolled the writes back itself (for example an undo transaction) leaves nothing to restore, and a
     ///     value that already equals its snapshot is not written again, so no spurious change or undo entry results.
     /// </remarks>
-    /// <param name="written">The edits that were written, in order, with what the target held before each.</param>
+    /// <param name="written">The edits that were written or attempted (also those whose write failed part way), in order, with what the target held before each.</param>
     /// <param name="scopeError">The message of the scope failure.</param>
     /// <returns>The message, extended by the properties that could not be restored.</returns>
     private static string RestoreWrites(List<(PendingEdit Edit, EditSnapshot? Snapshot)> written, string scopeError)

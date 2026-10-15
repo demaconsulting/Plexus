@@ -320,7 +320,7 @@ public sealed partial class Group : DiagramElement
     /// </summary>
     /// <remarks>
     ///     A node contributes its full visual extent (name above, summary below, port labels at the
-    ///     sides, see <see cref="NodeGeometry.VisualBounds"/>) rather than just its box, so the frame
+    ///     sides, see <see cref="NodeGeometry.VisualBounds(Node, DiagramTheme)"/>) rather than just its box, so the frame
     ///     never cuts through text drawn for the node.
     /// </remarks>
     /// <param name="member">A node, annotation or group.</param>

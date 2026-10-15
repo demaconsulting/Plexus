@@ -133,4 +133,7 @@ which a caller uses for a type without a node (its declared defaults). See NodeL
 
 **Visual extent.** `NodeGeometry.VisualBounds` is the deterministic extent of everything drawn for a node; each port
 row in it covers the port triangle or the full line height of the port label, whichever is taller, from the box edge to
-the anchor, so group frames (which enclose the visual extents of their members) contain complete port labels.
+the anchor, so group frames (which enclose the visual extents of their members) contain complete port labels. An
+internal two-theme overload takes the node's diagram theme for the port geometry and the theme the texts are drawn with
+for the name, summary and port label extents; the palette prototype uses it when the scene theme differs from the
+diagram theme, and the single-theme overload is that overload with both themes equal.

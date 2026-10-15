@@ -243,6 +243,18 @@ sections:
               - PropertyEditSession_Commit_RefusalAfterScopeRolledBack_WritesNothingAgain
               - PropertyEditSession_Commit_RefusalAfterWrites_ReportsAValueThatCouldNotBeRestored
 
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CommitRestoreFailedWrite
+            title: >-
+              When the commit scope refuses or fails a staged commit, the session shall also write back the item of
+              every edit whose own write failed after it had changed the target, so that such a partial write does not
+              remain in the target.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; a setter or collection applier can
+              change the target and then throw, and a commit that reports that nothing was applied must not keep that
+              partial write.
+            tests:
+              - PropertyEditSession_Commit_RefusalAfterPartialFailedWrite_RestoresTheTarget
+
           - id: PlexusAvaloniaPropertyGrid-EditSession-PrefixedRoots
             title: >-
               The session shall find an item by the path of a top-level item even when that path contains dots, and

@@ -153,6 +153,7 @@ sections:
           - PlexusAvaloniaPropertyGrid-EditSession-SourceScope
           - PlexusAvaloniaPropertyGrid-EditSession-CommitFailures
           - PlexusAvaloniaPropertyGrid-EditSession-CommitRestore
+          - PlexusAvaloniaPropertyGrid-EditSession-CommitRestoreFailedWrite
           - PlexusAvaloniaPropertyGrid-PropertySources-CommitScope
         tests:
           - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject

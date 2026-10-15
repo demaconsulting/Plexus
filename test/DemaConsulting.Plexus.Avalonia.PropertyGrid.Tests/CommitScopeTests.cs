@@ -241,6 +241,42 @@ public class CommitScopeTests
     }
 
     /// <summary>
+    ///     An edit whose setter changes the target and then throws is restored too when a later edit makes the scope refuse.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterPartialFailedWrite_RestoresTheTarget()
+    {
+        // Arrange: the first setter writes its field and then throws; the scope refuses the second edit after the writes ran
+        var partial = "old";
+        var other = "b";
+        var first = new CustomPropertyItem("First", typeof(string), () => partial, v =>
+        {
+            partial = (string)v!;
+            if (partial == "half-written")
+            {
+                throw new InvalidOperationException("rejected after the write");
+            }
+        });
+        var second = new CustomPropertyItem("Second", typeof(string), () => other, v => other = (string)v!);
+        var source = new ApplyThenRefuseSource(new CustomPropertySource([first, second]), "Second");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(first, "half-written");
+        session.SetText(second, "changed");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: nothing applied, the partial write of the failed edit is undone with the rest, both edits still pending
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.Applied);
+        Assert.Equal("Refused: Second", result.Error);
+        Assert.Equal("old", partial);
+        Assert.Equal("b", other);
+        Assert.Equal(2, session.GetPendingEdits().Count);
+        Assert.True(session.HasChanges);
+    }
+
+    /// <summary>
     ///     A scope that already rolled the writes back by itself leaves nothing to restore: no extra write happens.
     /// </summary>
     [Fact]
