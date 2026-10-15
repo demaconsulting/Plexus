@@ -365,13 +365,13 @@ public class NodePaletteTests
         var sizing = DiagramTheme.Classic;
         var scene = new DiagramTheme { NameFontSize = 28, SummaryFontSize = 24, PortLabelFontSize = 24, TextGap = 8 };
 
-        // Act
-        var prototype = NodePrototype.Create(types, type, sizing, scene, new AvaloniaTextMeasurer());
+        // Act: the deterministic measurer keeps the check independent of the fonts installed on the machine (the bounds use the same
+        // estimate), so it checks which theme sizes the texts rather than one platform's font metrics
+        var prototype = NodePrototype.Create(types, type, sizing, scene, new ApproximateTextMeasurer());
         var texts = prototype.Scene.Primitives.OfType<TextPrimitive>().ToList();
 
-        // Assert: the name, the summary line and both kinds of port label are drawn and all lie inside the bounds; the bounds use the
-        // deterministic text estimate, which differs from the measured line height by a few units, so the check allows 3 units
-        var bounds = prototype.VisualBounds.Inflate(3);
+        // Assert: the name, the summary line and both kinds of port label are drawn and all lie inside the bounds
+        var bounds = prototype.VisualBounds;
         Assert.Multiple(
             () => Assert.Contains(texts, t => t.Text == "Signal Mixer"),
             () => Assert.Contains(texts, t => t.Text == "Gain: 1.5"),
