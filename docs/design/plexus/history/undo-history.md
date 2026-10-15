@@ -86,7 +86,9 @@ marker that reports a port recomputation on undo).
 - **Push (private)**: clears the redo stack, invalidates a save point beyond the new depth, appends the entry, trims to
   the capacity and raises the change event.
 - **Suspend**: returns a scope; while any scope is active, recorded commands are applied but dropped and the save point
-  becomes unreachable. When the outermost scope is disposed the stacks are cleared, the save point becomes zero (clean)
+  becomes unreachable. A transaction begun while recording is suspended still keeps its commands, only so that a
+  failure or an explicit rollback can revert them; its commit discards them instead of pushing an entry. When the
+  outermost scope is disposed the stacks are cleared, the save point becomes zero (clean)
   or unreachable according to the dirty state captured at the start, and the change event is raised; when that happens
   during an undo, redo or rollback, this effect is deferred until the replay has moved its entry. Disposing a scope
   twice has no further effect. Starting a suspension during an undo, redo or rollback, or while a transaction is open

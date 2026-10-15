@@ -710,6 +710,35 @@ public class PropertyBagTests
     }
 
     /// <summary>
+    ///     Validates that a provider failure in the deferred recomputation also rolls the scope's changes back while recording
+    ///     is suspended (for example while a host loads a document).
+    /// </summary>
+    [Fact]
+    public void Node_DeferPortUpdates_ProviderFailsWhileSuspended_RollsBackItsChanges()
+    {
+        // Arrange
+        var (diagram, page, pair, wire) = CreatePairDiagram();
+        var before = TestModel.Dump(diagram);
+
+        // Act: A = 5 makes the provider throw when the scope recomputes the ports
+        using (diagram.History.Suspend())
+        {
+            var ex = Assert.Throws<InvalidOperationException>(() => pair.DeferPortUpdates(() =>
+            {
+                pair.Properties["B"] = 5;
+                pair.Properties["A"] = 5;
+            }));
+            Assert.Equal("A must not be 5.", ex.Message);
+        }
+
+        // Assert: both writes were reverted, so no value is left with stale ports
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(0, pair.Properties.Get<int>("A"));
+        Assert.Equal(0, pair.Properties.Get<int>("B"));
+        Assert.Same(wire, Assert.Single(page.Wires));
+    }
+
+    /// <summary>
     ///     Validates that a provider failure during the deferred recomputation rolls the whole batch back and propagates.
     /// </summary>
     [Fact]

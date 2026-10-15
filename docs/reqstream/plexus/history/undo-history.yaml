@@ -114,6 +114,17 @@ sections:
                 tests:
                   - UndoHistory_Suspend_WhileTransactionOpen_ThrowsAndChangesNothing
 
+              - id: Plexus-History-UndoHistory-SuspendedTransactionRollback
+                title: >-
+                  UndoHistory shall revert everything a transaction begun while recording is suspended did when that
+                  transaction fails or is rolled back, and shall record nothing when it commits.
+                justification: |
+                  Decomposes Plexus-History-Suspend; hosts load and build documents with recording suspended, and a
+                  failed multi-step change (for example a port provider that throws after the values were written)
+                  must not leave a half-applied model just because nothing is being recorded.
+                tests:
+                  - UndoHistory_Transact_WhileSuspended_RollsBackOnFailureAndRecordsNothing
+
               - id: Plexus-History-UndoHistory-DirtyTracking
                 title: >-
                   UndoHistory shall report the history as dirty when its position differs from the position marked

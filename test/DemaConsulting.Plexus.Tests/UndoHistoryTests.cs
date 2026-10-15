@@ -1112,6 +1112,38 @@ public class UndoHistoryTests
     }
 
     /// <summary>
+    ///     Validates that a transaction run while recording is suspended still rolls back what it did when it fails, and
+    ///     records nothing when it commits.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_Transact_WhileSuspended_RollsBackOnFailureAndRecordsNothing()
+    {
+        // Arrange
+        var history = new UndoHistory();
+        var counter = new Counter();
+        using (history.Suspend())
+        {
+            // Act: a failing transaction, then a successful one
+            Assert.Throws<InvalidOperationException>(() => history.Transact("Failing", () =>
+            {
+                Increment(history, counter);
+                Increment(history, counter);
+                throw new InvalidOperationException("Host failure.");
+            }));
+            var afterFailure = counter.Value;
+            history.Transact("Succeeding", () => Increment(history, counter));
+
+            // Assert: the failed transaction reverted both changes; the successful one kept its change
+            Assert.Equal(0, afterFailure);
+            Assert.Equal(1, counter.Value);
+        }
+
+        // Assert: nothing was recorded by either transaction
+        Assert.Equal(0, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
+    }
+
+    /// <summary>
     ///     Validates that clearing the history from a command's undo code is rejected and leaves the stacks consistent.
     /// </summary>
     [Fact]

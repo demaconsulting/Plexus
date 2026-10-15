@@ -373,3 +373,4 @@ sections:
                   transaction must not be left with a changed value whose ports were never recomputed.
                 tests:
                   - Node_DeferPortUpdates_ActionThrowsInsideOuterTransaction_RollsBackItsChanges
+                  - Node_DeferPortUpdates_ProviderFailsWhileSuspended_RollsBackItsChanges

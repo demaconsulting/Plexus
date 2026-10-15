@@ -114,6 +114,12 @@ public sealed class UndoHistory
     private string _openDescription = string.Empty;
 
     /// <summary>
+    ///     Whether the outermost open transaction began while recording was suspended: its commands are kept only so a
+    ///     rollback can revert them, and are discarded instead of recorded when it commits.
+    /// </summary>
+    private bool _openSuspended;
+
+    /// <summary>
     ///     Number of active <see cref="Suspend"/> scopes.
     /// </summary>
     private int _suspendCount;
@@ -334,11 +340,16 @@ public sealed class UndoHistory
     {
         EnsureNotApplying();
 
-        // Suspended changes are not recorded and leave the document permanently unsaved until MarkClean/Clear
+        // Suspended changes are not recorded and leave the document permanently unsaved until MarkClean/Clear. Inside a
+        // transaction (which then began suspended, as Suspend is refused while one is open) they are still kept, so a rollback
+        // can revert them; the commit discards them
         if (_suspendCount > 0)
         {
             _savePoint = null;
-            return;
+            if (_open is null)
+            {
+                return;
+            }
         }
 
         // Inside a transaction, try to merge into the previous command of the innermost transaction
@@ -449,6 +460,7 @@ public sealed class UndoHistory
         {
             _open = [];
             _openDescription = description;
+            _openSuspended = _suspendCount > 0;
         }
 
         var startIndex = _open.Count;
@@ -568,7 +580,9 @@ public sealed class UndoHistory
     ///     count as saved content of an already dirty history.
     ///     Disposing the outermost scope from code that runs during an undo, redo or rollback takes effect right after
     ///     that undo, redo or rollback has finished. Suspending is not allowed while a transaction is open, because the
-    ///     transaction's commit could otherwise record entries after the suspension discarded the stacks.
+    ///     transaction's commit could otherwise record entries after the suspension discarded the stacks. A transaction
+    ///     begun while recording is suspended still rolls back everything it did when it fails or is rolled back; when it
+    ///     commits, nothing is recorded.
     /// </remarks>
     /// <returns>A scope that resumes recording when disposed.</returns>
     /// <exception cref="InvalidOperationException">Thrown when called while an undo, redo or rollback is running, or while a transaction is open.</exception>
@@ -654,6 +668,14 @@ public sealed class UndoHistory
 
         var commands = _open;
         _open = null;
+
+        // A transaction that began while recording was suspended kept its commands only for a rollback: nothing is recorded
+        if (_openSuspended)
+        {
+            _openSuspended = false;
+            return handlerFailure;
+        }
+
         if (commands.Count > 0)
         {
             Push(new CompositeCommand(_openDescription, commands));

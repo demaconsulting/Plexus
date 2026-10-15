@@ -58,6 +58,7 @@ sections:
             children:
               - Plexus-History-UndoHistory-Suspend
               - Plexus-History-UndoHistory-SuspendInTransaction
+              - Plexus-History-UndoHistory-SuspendedTransactionRollback
             tests:
               - History_Suspend_LoadWorkflow_DropsStaleEntriesAndRestoresDirtyState
 
