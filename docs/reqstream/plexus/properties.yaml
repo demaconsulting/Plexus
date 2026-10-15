@@ -282,6 +282,7 @@ sections:
               Decomposes Plexus-Core-DynamicPorts; a properties dialog applies several values as one user action.
             children:
               - Plexus-Properties-PropertyBag-PortRecomputeBatch
+              - Plexus-Properties-PropertyBag-PortRecomputeBatchFinal
             tests:
               - Properties_PortRecompute_PropertyEdits_UpdatePortsInSameEntry
 

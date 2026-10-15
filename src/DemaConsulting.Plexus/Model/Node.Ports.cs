@@ -87,7 +87,16 @@ public sealed partial class Node
             return;
         }
 
+        // Inside a deferral scope the change is just executed; the one port update for the final state runs when the scope ends
+        if (_portDeferralDepth > 0)
+        {
+            history.Execute(command);
+            _portsMayBeStale = true;
+            return;
+        }
+
         // Apply the change, then the port update it implies, rolling everything back if any step fails
+
         history.EnsureNotApplying();
         var plan = new CommandPlan();
         var before = history.BeginOperation();
@@ -114,6 +123,124 @@ public sealed partial class Node
         // reported only once the entry is recorded
         var handlerFailure = history.EndOperation();
         history.Record(plan.Count == 1 ? command : plan.Build(command.Description));
+        handlerFailure?.Throw();
+    }
+
+    /// <summary>
+    ///     Runs an action that changes several properties and/or the data of this node, and recomputes the ports once, for
+    ///     the final state, instead of after every change.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Use it when a <see cref="NodeType.PortProvider"/> depends on more than one value: recomputing after each
+    ///         change could pass through an intermediate state that drops a port, and with it that port's wires, even
+    ///         though the final state has the port again. <see cref="PropertyBag.TrySetAll"/> already does this.
+    ///     </para>
+    ///     <para>
+    ///         While the action runs, property and data changes of this node are applied without consulting the provider.
+    ///         When the outermost scope ends normally and something changed, one port update is planned and recorded;
+    ///         nothing is recorded when the ports do not change. Scopes nest: only the outermost one recomputes. Without a
+    ///         <see cref="NodeType.PortProvider"/> this just runs the action.
+    ///     </para>
+    ///     <para>
+    ///         Everything is one undo entry: when no transaction is open, this opens one (<c>"Edit {Name}"</c>). A provider
+    ///         failure propagates and the transaction rolls every change back. When the action throws, no recomputation
+    ///         happens.
+    ///     </para>
+    /// </remarks>
+    /// <example>
+    ///     <code>
+    ///     node.DeferPortUpdates(() =>
+    ///     {
+    ///         node.Properties["Channels"] = 8;     // alone this could drop the port "aux"
+    ///         node.Properties["Aux"] = true;       // ... which the final state has again, so its wire is kept
+    ///     });
+    ///     </code>
+    /// </example>
+    /// <param name="action">The changes to apply.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="action"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the node is removed from its page, an undo or redo is running, or the provider returns null.</exception>
+    public void DeferPortUpdates(Action action)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        var history = RequirePage().Diagram.History;
+        if (history.IsInTransaction)
+        {
+            DeferPortUpdatesCore(action);
+        }
+        else
+        {
+            history.Transact($"Edit {Name}", () => DeferPortUpdatesCore(action));
+        }
+    }
+
+    /// <summary>
+    ///     Runs the deferral scope of <see cref="DeferPortUpdates"/>; the caller has an undo transaction open.
+    /// </summary>
+    /// <param name="action">The changes to apply.</param>
+    private void DeferPortUpdatesCore(Action action)
+    {
+        _portDeferralDepth++;
+        var completed = false;
+        try
+        {
+            action();
+            completed = true;
+        }
+        finally
+        {
+            _portDeferralDepth--;
+            if (!completed && _portDeferralDepth == 0)
+            {
+                _portsMayBeStale = false;
+            }
+        }
+
+        if (_portDeferralDepth == 0 && _portsMayBeStale)
+        {
+            _portsMayBeStale = false;
+            RecomputePorts();
+        }
+    }
+
+    /// <summary>
+    ///     Plans and records one port update for the node's current properties and data (nothing when the ports do not change).
+    /// </summary>
+    /// <remarks>
+    ///     Runs as one history operation like <see cref="ExecuteAffectingPorts"/>: a provider or rule failure reverts the steps
+    ///     planned so far and propagates, and a throwing change handler is rethrown after the entry was recorded.
+    /// </remarks>
+    private void RecomputePorts()
+    {
+        var page = RequirePage();
+        var history = page.Diagram.History;
+        history.EnsureNotApplying();
+        var plan = new CommandPlan();
+        var before = history.BeginOperation();
+        try
+        {
+            page.PlanPortUpdate(plan, this);
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                plan.Abort(ex, history);
+            }
+            finally
+            {
+                history.AbortOperation(before);
+            }
+
+            throw;
+        }
+
+        var handlerFailure = history.EndOperation();
+        if (!plan.IsEmpty)
+        {
+            history.Record(plan.Build("Update ports"));
+        }
+
         handlerFailure?.Throw();
     }
 }

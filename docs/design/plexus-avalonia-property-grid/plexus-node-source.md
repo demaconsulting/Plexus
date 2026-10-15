@@ -44,7 +44,9 @@ entry no matter which mode the grid is in or which host shows it.
   `UndoHistory.Transact`, lets the session write (`apply`, which writes into the working state), then publishes: the name
   through `Diagram.TryRename` (a refusal throws `PropertyCommitRefusedException` for the name row), the changed properties
   with `PropertyBag.TrySetAll`, and the working copy of the data as `Node.Data` when its serialized form differs from the
-  live data. A refusal rolls the transaction back (nothing changes: the commit is atomic) and the refusal names the row
+  live data. The three steps run inside `Node.DeferPortUpdates`, so for a type with a port provider the ports are
+  recomputed once, for the final properties and data together, and not between the steps. A refusal rolls the
+  transaction back (nothing changes: the commit is atomic) and the refusal names the row
   (`Node.Name` or `Property.<name>`), which the session lists in `CommitResult.Failed`. Afterwards the working state is
   cleared and `Changed`
   is raised so the grid reads again.

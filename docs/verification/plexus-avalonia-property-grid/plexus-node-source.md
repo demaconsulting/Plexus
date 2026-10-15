@@ -51,6 +51,9 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
   cancel leaves node, data and history alone; a commit that only renames keeps the data object.
 - **NodePropertySource_StagedCommit_CollectionEditsPersistAndUndo**: a collection edited through a collection editor
   persists on commit and undoes.
+- **NodePropertySource_StagedCommit_ProviderPortAbsentInIntermediateState_KeepsWire**: a node whose port provider reads
+  a property and the data keeps the wire of a port that exists before and after a commit of both, in one undo entry
+  with exact undo and redo.
 - **NodePropertySource_StagedCommit_RenameVetoedRefusesTheCommitAndMarksTheNameRow**: a vetoed rename refuses the commit
   with the reason on the name row, nothing changes and the edits stay pending (error path).
 - **NodePropertySource_LiveEdits_EachEditIsItsOwnUndoEntry**: four live edits are four entries and a data edit

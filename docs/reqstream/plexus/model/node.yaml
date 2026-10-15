@@ -351,3 +351,15 @@ sections:
                   direction the history moves.
                 tests:
                   - Node_Ports_Undo_ReportsPortsChangeOnceAfterRestore
+
+              - id: Plexus-Model-Node-DeferPortUpdates
+                title: >-
+                  Node.DeferPortUpdates shall apply the property and data changes of its action without recomputing the
+                  ports and then recompute them once for the final state, recording everything as one undo entry even
+                  when called outside a transaction.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortWireRemoval; hosts that commit several values (and node data)
+                  together need the same final-state recomputation as PropertyBag.TrySetAll, or an intermediate state
+                  would delete wires of a port the final state still has.
+                tests:
+                  - Node_DeferPortUpdates_OutsideTransaction_KeepsWireInOneEntry

@@ -258,6 +258,55 @@ public class NodePropertySourceTests
     }
 
     /// <summary>
+    ///     A staged commit recomputes the ports once, for the final properties and data together, so a wire on a port that
+    ///     exists before and after the commit (but not for the intermediate states) survives, in one undo entry.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_StagedCommit_ProviderPortAbsentInIntermediateState_KeepsWire()
+    {
+        // Arrange: the input "keep" exists only while the property Gain equals the data's Level
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("test.Source") { Outputs = { new PortDefinition("value", "f32") } });
+        types.Add(new NodeType("test.Paired")
+        {
+            Properties = { new PropertyDefinition("Gain", 3) },
+            DataType = typeof(ToneSettings),
+            CreateData = () => new ToneSettings(),
+            Inputs = { new PortDefinition("keep", "f32") },
+            PortProvider = node => new PortSet(
+                node.Properties.Get<int>("Gain") == (node.Data as ToneSettings)?.Level ? [new PortDefinition("keep", "f32")] : [],
+                []),
+        });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var source = page.AddNode("test.Source", 0, 0);
+        var node = page.AddNode("test.Paired", 300, 0);
+        var wire = page.Connect(source.Output("value"), node.Input("keep"));
+        var before = diagram.History.UndoCount;
+        using var nodeSource = new NodePropertySource(node);
+        var session = new PropertyEditSession(nodeSource, PropertyEditMode.Staged);
+
+        // Act: the property is applied before the data, so Gain 4 meets Level 3 on the way to Gain 4 and Level 4
+        session.SetText(Item(nodeSource, "Gain"), "4");
+        session.SetText(Item(nodeSource, "Level"), "4");
+        var result = session.Commit();
+
+        // Assert
+        Assert.True(result.Succeeded);
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Equal(4, node.Properties["Gain"]);
+        Assert.Equal(4, ((ToneSettings)node.Data!).Level);
+        Assert.Equal(before + 1, diagram.History.UndoCount);
+
+        diagram.History.Undo();
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Equal(3, node.Properties["Gain"]);
+        Assert.Equal(3, ((ToneSettings)node.Data).Level);
+        diagram.History.Redo();
+        Assert.Same(wire, Assert.Single(page.Wires));
+    }
+
+    /// <summary>
     ///     Cancelling a staged session changes nothing and the live data is never touched while editing.
     /// </summary>
     [Fact]

@@ -385,12 +385,14 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
     ///     Copies the working state to the node (inside the commit's undo transaction).
     /// </summary>
     /// <exception cref="PropertyCommitRefusedException">The rename or a property value was refused.</exception>
-    private void Publish()
-    {
-        PublishName();
-        PublishProperties();
-        PublishData();
-    }
+    private void Publish() =>
+        // The ports (when the type has a provider) are recomputed once, for the final properties and data together
+        _node.DeferPortUpdates(() =>
+        {
+            PublishName();
+            PublishProperties();
+            PublishData();
+        });
 
     /// <summary>
     ///     Renames the node through the rename pipeline when the name was edited.

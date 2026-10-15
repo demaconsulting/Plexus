@@ -118,6 +118,14 @@ on the values and the history.
 - **PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry**: a batch of text and choice values that removes a wired
   input and retypes the remaining one is one exact entry, the wire included.
 
+##### Port recomputation once for the final batch state (`Plexus-Properties-PropertyBag-PortRecomputeBatchFinal`)
+
+- **PropertyBag_TrySetAll_PortAbsentInIntermediateState_KeepsWireInOneEntry**: a provider whose port `keep` exists only
+  while A equals B; a batch changing A then B has an intermediate state without the port. The wire and the port object
+  survive, the provider runs once for the batch, and the batch is one exact undo entry (undo and redo twice).
+- **PropertyBag_TrySetAll_ProviderFailsOnFinalState_RollsBackEverything**: the provider throws for the final state; the
+  exception propagates, the model dump and the undo count are unchanged (error path), and a following valid batch works.
+
 ##### Port recomputation for ad-hoc values (`Plexus-Properties-PropertyBag-PortRecomputeAdHoc`)
 
 - **PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry**: adding an ad-hoc value the provider reads turns

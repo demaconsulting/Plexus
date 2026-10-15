@@ -267,6 +267,7 @@ sections:
               Decomposes Plexus-Core-DynamicPortWireRemoval; no wire may end at a port its node no longer has.
             children:
               - Plexus-Model-Node-DynamicPortWires
+              - Plexus-Model-Node-DeferPortUpdates
             tests:
               - Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry
 

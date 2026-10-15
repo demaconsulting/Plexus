@@ -62,6 +62,7 @@ sections:
               - NodePropertySource_StagedCancel_ChangesNothing
               - NodePropertySource_StagedCommit_UneditedDataIsNotReplaced
               - NodePropertySource_StagedCommit_CollectionEditsPersistAndUndo
+              - NodePropertySource_StagedCommit_ProviderPortAbsentInIntermediateState_KeepsWire
 
           - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Refusal
             title: >-

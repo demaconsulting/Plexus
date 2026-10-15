@@ -132,7 +132,10 @@ What happens when the ports are recomputed:
   the size alone.
 - **One undo entry.** The property (or data) change, the removed wires, the new ports, the resize and the re-routes
   are one entry; undo restores the exact previous ports (the same objects), wires and size. An edit that does not
-  change the ports records only the edit.
+  change the ports records only the edit. A batch edit (`node.Properties.TrySetAll(...)`, which the node properties
+  dialog uses, together with the data copy it commits) calls the provider once, for the final values, so a port that is
+  present before and after the batch keeps its wires even when some combination of the values passed through would
+  not have it.
 - **Hosts see it through the usual notifications.** `Diagram.Changed` reports each removed wire
   (`ElementRemoved`) before the node reports `Ports` as changed (`ElementChanged`); undo reports the wires as added
   again. `Ports` is reported exactly once per edit, undo and redo, when the node is settled: after the removed wires,

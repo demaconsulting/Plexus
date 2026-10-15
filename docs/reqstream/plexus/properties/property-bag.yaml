@@ -175,6 +175,20 @@ sections:
                 tests:
                   - PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry
 
+              - id: Plexus-Properties-PropertyBag-PortRecomputeBatchFinal
+                title: >-
+                  PropertyBag shall recompute the node's ports of a batch edit only once, for the final state of all
+                  applied values, so that a port present before and after the batch keeps its wires even when an
+                  intermediate combination of the values would not have it, and a provider failure shall roll back
+                  the whole batch.
+                justification: |
+                  Decomposes Plexus-Properties-PortRecomputeBatch; recomputing after each value would delete wires
+                  of a port that the intermediate state lacks and the final state has, and the batch would
+                  "succeed" with the wrong state.
+                tests:
+                  - PropertyBag_TrySetAll_PortAbsentInIntermediateState_KeepsWireInOneEntry
+                  - PropertyBag_TrySetAll_ProviderFailsOnFinalState_RollsBackEverything
+
               - id: Plexus-Properties-PropertyBag-PortRecomputeAdHoc
                 title: >-
                   PropertyBag shall recompute the node's ports after an ad-hoc value of a node whose type has a port

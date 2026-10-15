@@ -65,6 +65,16 @@ public sealed partial class Node : DiagramElement
     private readonly List<Port> _inputs = [];
 
     /// <summary>
+    ///     The nesting depth of <see cref="DeferPortUpdates"/> scopes; while positive, port recomputation is postponed.
+    /// </summary>
+    private int _portDeferralDepth;
+
+    /// <summary>
+    ///     Whether a command ran inside the open deferral scope, so the ports must be recomputed when it ends.
+    /// </summary>
+    private bool _portsMayBeStale;
+
+    /// <summary>
     ///     The output ports in column order.
     /// </summary>
     private readonly List<Port> _outputs = [];

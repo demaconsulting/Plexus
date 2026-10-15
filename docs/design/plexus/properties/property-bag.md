@@ -53,14 +53,16 @@ indexer that also accepts assignments.
   `ExecuteAffectingPorts` instead of the history directly. For a type with a `NodeType.PortProvider` the node's ports
   are recomputed after the value is stored and recorded in the same entry (see Node Design and DiagramPage Design); for
   other types, and when the ports do not change, the command alone is recorded as before, so merging is unaffected.
-  Inside `TrySetAll` each value joins the open transaction, so a batch edit is still one entry; a provider failure
-  rolls the batch back and propagates.
+  Inside `TrySetAll` the commands are executed with the node's port recomputation deferred (`Node.DeferPortUpdates`), so
+  the provider runs once, for the final state of the batch, and not after each value; a batch edit is still one entry,
+  and a provider failure rolls the batch back and propagates.
 
 `TrySetAll(changes, out errors)`: resolves every entry first (a string for a property that is not a string property is
 read with `PropertyDefinition.TryParse`; other values are coerced like an assignment; undeclared names are normalized as
 ad-hoc values; null and empty names are errors), collects a message per rejected name and returns false without touching
-the bag when any entry failed; otherwise it applies all entries inside `History.Transact("Edit properties", ...)`, so
-the result is one undo entry (none when nothing changes).
+the bag when any entry failed; otherwise it applies all entries inside `History.Transact("Edit properties", ...)` with
+the port recomputation deferred, so the result is one undo entry (none when nothing changes) and the ports are
+recomputed once, for the final values.
 
 #### Error Handling
 
