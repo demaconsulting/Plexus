@@ -104,6 +104,16 @@ sections:
                   - UndoHistory_Suspend_DirtyHistory_StaysDirtyAndClearsStacks
                   - UndoHistory_Suspend_Nested_OnlyOutermostScopeClearsHistory
 
+              - id: Plexus-History-UndoHistory-SuspendInTransaction
+                title: >-
+                  UndoHistory shall reject suspending recording while a transaction is open, with an invalid-operation
+                  error and no change.
+                justification: |
+                  Decomposes Plexus-History-Suspend; the commit of an open transaction records its entry after the
+                  suspension has discarded the stacks, which would reintroduce stale history.
+                tests:
+                  - UndoHistory_Suspend_WhileTransactionOpen_ThrowsAndChangesNothing
+
               - id: Plexus-History-UndoHistory-DirtyTracking
                 title: >-
                   UndoHistory shall report the history as dirty when its position differs from the position marked
@@ -175,6 +185,57 @@ sections:
                 tests:
                   - CommandPlan_Abort_RevertsEveryStepNewestFirstAndClears
                   - CommandPlan_Abort_InverseThrows_RevertsRemainingStepsAndReportsAllFailures
+
+              - id: Plexus-History-UndoHistory-PlanAbortReplayGuard
+                title: >-
+                  While reverting the steps of a failed multi-step operation, UndoHistory shall reject recording,
+                  beginning a transaction, clearing, marking clean, changing the capacity and suspending requested by
+                  the reverting code, with an invalid-operation error and no change, and shall accept them again once
+                  the revert has finished.
+                justification: |
+                  Decomposes Plexus-History-ReplayIntegrity; the revert code and the change handlers it triggers
+                  must not be able to add entries or reset the stacks in the middle of the abort, or those changes
+                  would survive the rollback of the operation.
+                tests:
+                  - CommandPlan_Abort_RevertCallsHistoryMutators_AreRejectedAndGuardIsReleased
+
+              - id: Plexus-History-UndoHistory-RollbackFailureCompletes
+                title: >-
+                  When the inverse of a command fails during a transaction rollback, UndoHistory shall still attempt
+                  the inverse of every remaining command of that transaction and shall complete the transaction, so
+                  that disposing it afterwards commits nothing.
+                justification: |
+                  Decomposes Plexus-History-Transactions; stopping at the first failing inverse would leave part of the
+                  transaction open and let a later disposal commit commands that were already reverted, so the model and
+                  the history would diverge.
+                tests:
+                  - UndoHistory_Transaction_RollbackInverseThrows_RevertsEveryCommandAndCompletes
+                  - UndoHistory_Transaction_InnerRollbackInverseThrows_OuterCommitsOnlyItsOwnCommands
+
+              - id: Plexus-History-UndoHistory-RollbackFailureReported
+                title: >-
+                  When inverses fail during a transaction rollback, UndoHistory shall report every inverse failure,
+                  as the failure itself when there is one and otherwise in an aggregate exception, and shall report the
+                  failure that caused the rollback of a Transact call first in that aggregate.
+                justification: |
+                  Decomposes Plexus-History-Transactions; no failure may be hidden, and the original cause must stay
+                  visible to the caller of a failed edit.
+                tests:
+                  - UndoHistory_Transaction_RollbackInverseThrows_RevertsEveryCommandAndCompletes
+                  - UndoHistory_Transaction_RollbackSeveralInversesThrow_ReportsAllFailures
+                  - UndoHistory_Transact_InverseThrowsDuringRollback_ReportsOriginalAndInverseFailure
+
+              - id: Plexus-History-UndoHistory-RollbackReplayGuard
+                title: >-
+                  While a transaction is rolled back, UndoHistory shall reject recording, beginning a transaction,
+                  clearing, marking clean, changing the capacity and suspending requested by the reverting code, with
+                  an invalid-operation error and no change, and shall accept them again once the rollback has finished.
+                justification: |
+                  Decomposes Plexus-History-ReplayIntegrity; inverses and the change handlers they trigger must not
+                  be able to add entries or reset the stacks in the middle of a rollback, or those changes would
+                  survive it.
+                tests:
+                  - UndoHistory_Transaction_RollbackInverseCallsHistoryMutators_AreRejectedAndGuardIsReleased
 
               - id: Plexus-History-UndoHistory-ClearDuringReplay
                 title: >-

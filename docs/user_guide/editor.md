@@ -67,7 +67,9 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Show(new Diagram(_types, _options));
+        var diagram = new Diagram(_types, _options);
+        diagram.Pages.Add("Page 1");                       // a new diagram has no pages: add one to show
+        Show(diagram);
     }
 
     private void Show(Diagram diagram)
@@ -99,7 +101,8 @@ public partial class MainWindow : Window
 ```
 
 `MyTypes.Create()` stands for the registry built in *Getting Started*, returned from a static method. A new diagram
-needs one page (`diagram.Pages.Add("Page 1")`) before the editor has something to show, because a diagram starts with
+needs one page (`diagram.Pages.Add("Page 1")`, as the constructor above does) before the editor has something to show,
+because a diagram starts with
 none. The application class and `Main` are the standard Avalonia templates: Plexus needs nothing from them except a
 loaded theme (the demo adds `new FluentTheme()` to the application's styles and starts with `UsePlatformDetect()`).
 

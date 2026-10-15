@@ -53,6 +53,9 @@ on the values and the history.
 
 - **PropertyBag_Read_MissingKeysAndConversions_BehaveAsDocumented**: lookup, missing names and typed conversions.
 - **PropertyBag_Get_OverflowingConversion_ThrowsInvalidCastException**: an overflowing conversion is an invalid cast.
+- **PropertyBag_Get_LossyConversion_ThrowsInvalidCastException**: 1.5 read as `int` or `long`, a large `long` read as
+  `double` and 0.1 read as `float` are invalid casts (error path); an integral double as `int`, 2^53 as `double` and
+  1.5 as `float` convert exactly.
 
 ##### Enumeration (`Plexus-Properties-PropertyBag-Enumeration`)
 

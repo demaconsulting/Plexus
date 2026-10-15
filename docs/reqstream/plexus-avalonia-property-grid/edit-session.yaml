@@ -230,6 +230,19 @@ sections:
               - PropertyEditSession_Commit_RefusedExceptionForAnUneditedRowIsListedAsFailed
               - PropertyEditSession_SetText_ArgumentExceptionMessage_HasNoParameterSuffix
 
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CommitRestore
+            title: >-
+              When the commit scope refuses or fails a staged commit after the writes ran, the session shall write
+              every item it had written back to the value it held before the commit, so that the target is unchanged
+              and every edit stays pending, and shall name in the commit error each value that could not be restored.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; a commit that reports that nothing was applied
+              must not leave some of its writes in the target, whatever the scope did before it refused.
+            tests:
+              - PropertyEditSession_Commit_RefusalAfterWrites_RestoresTheTargetAndKeepsEdits
+              - PropertyEditSession_Commit_RefusalAfterScopeRolledBack_WritesNothingAgain
+              - PropertyEditSession_Commit_RefusalAfterWrites_ReportsAValueThatCouldNotBeRestored
+
           - id: PlexusAvaloniaPropertyGrid-EditSession-PrefixedRoots
             title: >-
               The session shall find an item by the path of a top-level item even when that path contains dots, and

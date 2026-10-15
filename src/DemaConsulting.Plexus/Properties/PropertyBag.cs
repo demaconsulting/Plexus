@@ -148,13 +148,21 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
             return typed;
         }
 
-        // Allow numeric widening/narrowing between the primitive kinds, e.g. an int property read as double
+        // Allow numeric widening/narrowing between the primitive kinds, e.g. an int property read as double, but only
+        // when the converted value represents exactly the stored one (1.5 is not an int, long.MaxValue is not a double)
         var target = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
         if (value is int or long or double && target.IsPrimitive && target != typeof(bool) && target != typeof(char))
         {
             try
             {
-                return (T)Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+                var converted = Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+                var roundTrip = Convert.ChangeType(converted, value.GetType(), CultureInfo.InvariantCulture);
+                if (!value.Equals(roundTrip))
+                {
+                    throw new InvalidCastException($"Property '{name}' value {value} cannot be read as {target.Name} without losing precision.");
+                }
+
+                return (T)converted;
             }
             catch (OverflowException ex)
             {

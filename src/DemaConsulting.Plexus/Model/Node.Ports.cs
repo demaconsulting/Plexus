@@ -100,7 +100,7 @@ public sealed partial class Node
         {
             try
             {
-                plan.Abort(ex);
+                plan.Abort(ex, history);
             }
             finally
             {

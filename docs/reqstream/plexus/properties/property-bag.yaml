@@ -65,6 +65,7 @@ sections:
                 tests:
                   - PropertyBag_Read_MissingKeysAndConversions_BehaveAsDocumented
                   - PropertyBag_Get_OverflowingConversion_ThrowsInvalidCastException
+                  - PropertyBag_Get_LossyConversion_ThrowsInvalidCastException
 
               - id: Plexus-Properties-PropertyBag-Enumeration
                 title: >-

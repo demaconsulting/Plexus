@@ -63,6 +63,7 @@ public class HoverTests
     /// <param name="arguments">The options after the command and its target.</param>
     [Theory]
     [InlineData("--wait", "-5")]
+    [InlineData("--wait", "-1")]
     [InlineData("--wait", "abc")]
     [InlineData("--wait", "1.5")]
     [InlineData("--wait")]

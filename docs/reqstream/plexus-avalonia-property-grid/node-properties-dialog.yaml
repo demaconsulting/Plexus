@@ -284,3 +284,14 @@ sections:
               built.
             tests:
               - NodePropertiesDialog_Options_ArgumentsAreValidated
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewFailureRelease
+            title: >-
+              When the preview factory throws or returns null, or its control cannot be shown, the dialog creation
+              shall release the dialog's property source and session, so that nothing keeps listening to the node,
+              and shall propagate the failure.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; a dialog that is never handed out cannot be
+              closed by the host, so a source left subscribed to the node would leak with every failed attempt.
+            tests:
+              - NodePropertiesDialog_Create_PreviewFailure_LeavesNoSubscriptionOnTheNode

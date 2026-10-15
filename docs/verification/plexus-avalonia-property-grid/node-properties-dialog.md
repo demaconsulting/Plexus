@@ -79,6 +79,9 @@ and invalid options and arguments are rejected with the documented exceptions.
   panel (OptionsPlain, PreviewSize).
 - **NodePropertiesDialog_Options_ArgumentsAreValidated**: null owner and node, a zero, NaN or infinite size, and a factory
   that returns null are rejected; a factory exception propagates (OptionsValidation, error paths).
+- **NodePropertiesDialog_Create_PreviewFailure_LeavesNoSubscriptionOnTheNode**: three failing factories (throws, returns
+  null, returns a control that already has a parent), each tried three times, propagate their failure and leave the
+  number of `PropertyChanged` subscribers of the node as it was before (PreviewFailureRelease, error paths).
 - **NodePreviewContext_Constructors_ValidateArguments**: null grid, session, path and property name, a grid with no
   content or an ordinary object, and a session over a reflection source are rejected (PreviewContextValidation, error
   paths).

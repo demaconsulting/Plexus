@@ -336,6 +336,35 @@ public class PropertyBagTests
     }
 
     /// <summary>
+    ///     Validates that a numeric read that would lose precision is reported as an invalid cast, while exact conversions succeed.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Get_LossyConversion_ThrowsInvalidCastException()
+    {
+        // Arrange: a fractional double, a long that a double cannot represent exactly, and exactly representable values
+        var (_, node) = Create();
+        node.Properties["Fraction"] = 1.5;
+        node.Properties["Tenth"] = 0.1;
+        node.Properties["Whole"] = 3.0;
+        node.Properties["Large"] = long.MaxValue;
+        node.Properties["Wide"] = (1L << 53) + 1;
+        node.Properties["Exact"] = 1L << 53;
+
+        // Act / Assert: no rounding, no truncation
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<int>("Fraction"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<long>("Fraction"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<double>("Large"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<double>("Wide"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<float>("Tenth"));
+
+        // Assert: conversions that preserve the value still work
+        Assert.Equal(3, node.Properties.Get<int>("Whole"));
+        Assert.Equal(1L << 53, node.Properties.Get<double>("Exact"));
+        Assert.Equal(1.5f, node.Properties.Get<float>("Fraction"));
+        Assert.Equal(long.MaxValue, node.Properties.Get<long>("Large"));
+    }
+
+    /// <summary>
     ///     Validates that setting an unchanged value records nothing.
     /// </summary>
     [Fact]

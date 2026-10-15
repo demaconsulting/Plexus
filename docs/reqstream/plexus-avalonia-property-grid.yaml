@@ -152,6 +152,7 @@ sections:
           - PlexusAvaloniaPropertyGrid-EditSession-CommitScope
           - PlexusAvaloniaPropertyGrid-EditSession-SourceScope
           - PlexusAvaloniaPropertyGrid-EditSession-CommitFailures
+          - PlexusAvaloniaPropertyGrid-EditSession-CommitRestore
           - PlexusAvaloniaPropertyGrid-PropertySources-CommitScope
         tests:
           - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
@@ -357,6 +358,7 @@ sections:
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Options
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-OptionsPlain
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-OptionsValidation
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewFailureRelease
         tests:
           - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce
 

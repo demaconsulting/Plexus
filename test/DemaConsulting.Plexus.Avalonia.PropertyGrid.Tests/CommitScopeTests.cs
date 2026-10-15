@@ -183,6 +183,124 @@ public class CommitScopeTests
     }
 
     /// <summary>
+    ///     A source whose commit scope runs the writes and only then refuses, like a scope that validates after applying.
+    /// </summary>
+    /// <param name="inner">The source that supplies the items.</param>
+    /// <param name="refusedPath">The path to refuse.</param>
+    private sealed class ApplyThenRefuseSource(IPropertySource inner, string refusedPath) : IPropertySource, IPropertyCommitScope
+    {
+        /// <inheritdoc />
+        public event EventHandler<PropertySourceChangedEventArgs>? Changed
+        {
+            add => inner.Changed += value;
+            remove => inner.Changed -= value;
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<PropertyItem> GetItems() => inner.GetItems();
+
+        /// <inheritdoc />
+        public void RunCommit(Action apply)
+        {
+            apply();
+            throw new PropertyCommitRefusedException(refusedPath, "Refused: " + refusedPath);
+        }
+    }
+
+    /// <summary>
+    ///     A scope that writes and then refuses must not leave any write behind: values, a collection and a reset are restored.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterWrites_RestoresTheTargetAndKeepsEdits()
+    {
+        // Arrange: three staged edits (two values and a collection) on a plain target, and a scope that applies then refuses
+        using var inner = TestHelpers.PersonSource(out var person);
+        person.Name = "Ann";
+        person.Age = 30;
+        person.Notes.Add("old");
+        var source = new ApplyThenRefuseSource(inner, "Name");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(TestHelpers.Item(source, "Name"), "Zed");
+        session.SetText(TestHelpers.Item(source, "Age"), "9");
+        var editor = session.BeginCollectionEdit(TestHelpers.Item(source, "Notes"));
+        editor.Add("new");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: the documented atomic contract - nothing applied, target untouched, every edit still pending
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.Applied);
+        Assert.Equal("Name", Assert.Single(result.Failed).Path);
+        Assert.Equal("Refused: Name", result.Error);
+        Assert.Equal("Ann", person.Name);
+        Assert.Equal(30, person.Age);
+        Assert.Equal(["old"], person.Notes);
+        Assert.Equal(3, session.GetPendingEdits().Count);
+        Assert.True(session.HasChanges);
+    }
+
+    /// <summary>
+    ///     A scope that already rolled the writes back by itself leaves nothing to restore: no extra write happens.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterScopeRolledBack_WritesNothingAgain()
+    {
+        // Arrange: a scope that applies, undoes its own write and then refuses
+        var log = new List<string>();
+        var source = new ScopedSource(log);
+        source.Behavior = apply =>
+        {
+            apply();
+            source.Value = "old";
+            log.Add("rolled-back");
+            throw new PropertyCommitRefusedException("Title", "Not allowed here.");
+        };
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(source.GetItems()[0], "new");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: one write only (the original), no restore write, value unchanged
+        Assert.False(result.Succeeded);
+        Assert.Equal("old", source.Value);
+        Assert.Equal(1, log.Count(entry => entry == "write"));
+        Assert.True(session.HasChanges);
+    }
+
+    /// <summary>
+    ///     A value that cannot be put back after a refusal is named in the commit error.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterWrites_ReportsAValueThatCouldNotBeRestored()
+    {
+        // Arrange: a setter that accepts the first write only
+        var writes = 0;
+        var value = "old";
+        var item = new CustomPropertyItem("Title", typeof(string), () => value, v =>
+        {
+            if (++writes > 1)
+            {
+                throw new InvalidOperationException("locked");
+            }
+
+            value = (string)v!;
+        });
+        var source = new ApplyThenRefuseSource(new CustomPropertySource([item]), "Title");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(item, "new");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("Refused: Title The previous value of 'Title' could not be restored.", result.Error);
+        Assert.Equal(0, result.Applied);
+    }
+
+    /// <summary>
     ///     A setter that rejects every value the way framework code does, with an argument exception that names its parameter.
     /// </summary>
     /// <param name="value">The value.</param>

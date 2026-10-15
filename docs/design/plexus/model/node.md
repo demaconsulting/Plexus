@@ -71,7 +71,8 @@ through the page API (see DiagramPage Design), so none of the classes has a publ
   change (the ports did not change) the change itself is recorded, so mergeable value commands keep merging. The plan
   runs as one history operation (`UndoHistory.BeginOperation`/`EndOperation`), so a throwing change handler does not
   interrupt it and its exception is rethrown after the entry was recorded. Any exception of the plan itself aborts it
-  with `CommandPlan.Abort(cause)` (reverting every applied step, the change included, even when one revert fails) and
+  with `CommandPlan.Abort(cause, history)` (reverting every applied step, the change included, even when one revert
+  fails, under the history's replay guard) and
   propagates; handler exceptions captured meanwhile are dropped.
 - `NodePortsCommand.TryCreate(node)`: asks the provider; when every new definition is equivalent
   (`PortDefinition.IsEquivalentTo`) to the current one in the same row it returns null. Otherwise it builds each new

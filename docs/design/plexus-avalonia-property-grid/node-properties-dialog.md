@@ -85,8 +85,10 @@ sequenceDiagram
 A null owner or node raises `ArgumentNullException`; a node that is not attached to a diagram raises `ArgumentException`
 (from `ShowAsync` with and without options and from `Create` with and without options, because the node source refuses
 it). A `Width` or `Height` that is not a positive finite number raises `ArgumentOutOfRangeException` before any window is
-built, and a factory that returns null raises `InvalidOperationException`. When the factory throws, the context is
-disposed and the exception propagates. The context rejects a null grid, session, path or property name
+built, and a factory that returns null raises `InvalidOperationException`. When the factory throws, returns null or
+returns a control that cannot be shown (for example one that already has a parent), the context is disposed, the
+dialog's grid releases its property source and session (`Grid.SelectedObject = null`, which unsubscribes the source from
+the node) and the exception propagates. The context rejects a null grid, session, path or property name
 (`ArgumentNullException`) and a grid or session that does not show a node when it is constructed (`ArgumentException`);
 a grid that later shows something else only detaches the context. An invalid or vetoed name keeps the dialog open with
 the reason (see the PropertyGridDialog unit).

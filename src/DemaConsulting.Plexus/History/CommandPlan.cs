@@ -71,10 +71,14 @@ internal sealed class CommandPlan
     ///     with <c>throw;</c> and keeps its stack trace.
     /// </remarks>
     /// <param name="cause">The exception that made the operation fail.</param>
+    /// <param name="history">
+    ///     The history whose replay guard the reverts run under, so neither they nor the change handlers they trigger can
+    ///     change the history.
+    /// </param>
     /// <exception cref="AggregateException">
     ///     Thrown when at least one revert failed; its inner exceptions are <paramref name="cause"/> followed by every revert failure, newest step first.
     /// </exception>
-    public void Abort(Exception cause)
+    public void Abort(Exception cause, UndoHistory history)
     {
         // Newest first; the plan forgets the steps before reverting, so it is empty whatever happens
         var reverts = new List<Action>(_applied.Count);
@@ -84,7 +88,15 @@ internal sealed class CommandPlan
         }
 
         _applied.Clear();
-        CompositeCommand.Compensate(cause, reverts, "The operation failed and could not be fully reverted.");
+        try
+        {
+            history.RunGuarded(() => CompositeCommand.Compensate(cause, reverts, "The operation failed and could not be fully reverted."));
+        }
+        finally
+        {
+            // A suspension ended by a revert or its handlers takes effect now that the guard is released
+            history.CompletePendingSuspendEnd();
+        }
     }
 
     /// <summary>

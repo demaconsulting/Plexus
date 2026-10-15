@@ -34,6 +34,8 @@ namespace DemaConsulting.Plexus;
 ///         <see cref="BeginTransaction"/>, <see cref="Clear"/>, <see cref="MarkClean"/>, setting <see cref="Capacity"/> and
 ///         <see cref="Suspend"/> throw <see cref="InvalidOperationException"/> and change nothing. Ending the outermost
 ///         <see cref="Suspend"/> scope from such code is deferred until the undo, redo or rollback has finished.
+///         The same guard covers the reverts of a failed multi-step model operation. <see cref="Suspend"/> also throws while a
+///         transaction is open.
 ///     </para>
 /// </remarks>
 /// <example>
@@ -544,11 +546,12 @@ public sealed class UndoHistory
         {
             return function();
         }
-        catch
+        catch (Exception ex)
         {
             // Revert whatever the function did before it failed, then let the caller see the original exception
-            // (change-handler exceptions raised while reverting are dropped in favor of it)
-            transaction.RollbackAfterFailure();
+            // (change-handler exceptions raised while reverting are dropped in favor of it; failing inverses are
+            // reported together with it)
+            transaction.RollbackAfterFailure(ex);
             throw;
         }
     }
@@ -564,13 +567,18 @@ public sealed class UndoHistory
     ///     the outermost one ends. Call <see cref="MarkClean"/> afterwards if the loaded content should
     ///     count as saved content of an already dirty history.
     ///     Disposing the outermost scope from code that runs during an undo, redo or rollback takes effect right after
-    ///     that undo, redo or rollback has finished.
+    ///     that undo, redo or rollback has finished. Suspending is not allowed while a transaction is open, because the
+    ///     transaction's commit could otherwise record entries after the suspension discarded the stacks.
     /// </remarks>
     /// <returns>A scope that resumes recording when disposed.</returns>
-    /// <exception cref="InvalidOperationException">Thrown when called while an undo, redo or rollback is running.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when called while an undo, redo or rollback is running, or while a transaction is open.</exception>
     public IDisposable Suspend()
     {
         EnsureNotApplying();
+        if (IsInTransaction)
+        {
+            throw new InvalidOperationException("Recording cannot be suspended while a transaction is open.");
+        }
 
         // Remember the dirty state only for the outermost scope; it is restored when that scope ends
         if (_suspendCount == 0)
@@ -588,43 +596,43 @@ public sealed class UndoHistory
     /// <remarks>
     ///     A rollback runs as one change operation: change-handler exceptions raised while reverting are captured and,
     ///     unless <paramref name="discardHandlerFailures"/> is set, the first one is returned for the caller to rethrow once
-    ///     the transaction is complete.
+    ///     the transaction is complete. A rollback attempts every inverse even when one throws: the transaction is always
+    ///     completed (it can never be committed afterwards) and the inverse failures are returned instead, together with
+    ///     <paramref name="cause"/> when given.
     /// </remarks>
     /// <param name="depth">Nesting depth of the transaction being completed.</param>
     /// <param name="startIndex">Index where the transaction's commands begin in the open list.</param>
     /// <param name="commit">True to keep the commands; false to revert and discard them.</param>
     /// <param name="discardHandlerFailures">True to drop change-handler exceptions of a rollback (used when the rollback is caused by a failure).</param>
-    /// <returns>The first change-handler exception of the rollback to rethrow, or null.</returns>
+    /// <param name="cause">The failure that caused the rollback, reported together with any inverse failures; null for an explicit rollback.</param>
+    /// <returns>The exception of the rollback to rethrow once the transaction is complete (inverse failures, else the first change-handler exception), or null.</returns>
     /// <exception cref="InvalidOperationException">Thrown when transactions are completed out of order.</exception>
-    internal ExceptionDispatchInfo? EndTransaction(int depth, int startIndex, bool commit, bool discardHandlerFailures = false)
+    internal ExceptionDispatchInfo? EndTransaction(
+        int depth,
+        int startIndex,
+        bool commit,
+        bool discardHandlerFailures = false,
+        Exception? cause = null)
     {
         if (depth != _transactionStarts.Count || _open is null)
         {
             throw new InvalidOperationException("Transactions must be completed in the reverse order they were started.");
         }
 
-        // Rollback reverts this transaction's commands newest first, then forgets them
+        // Rollback reverts this transaction's commands newest first, then forgets them. The whole revert runs under the
+        // replay guard, so neither the inverses nor the change handlers they trigger can change the history.
         ExceptionDispatchInfo? handlerFailure = null;
         if (!commit)
         {
             var before = BeginOperation();
-            try
+            var revertFailures = RevertOpenCommands(startIndex);
+            if (revertFailures is not null)
             {
-                for (var i = _open.Count - 1; i >= startIndex; i--)
-                {
-                    var command = _open[i];
-                    Apply(command.Undo);
-                    _open.RemoveAt(i);
-                }
-            }
-            catch
-            {
+                // The transaction is complete either way; the revert failures (and the cause) are reported, handler failures dropped
                 AbortOperation(before);
-                CompletePendingSuspendEnd();
-                throw;
+                handlerFailure = DescribeRevertFailure(cause, revertFailures);
             }
-
-            if (discardHandlerFailures)
+            else if (discardHandlerFailures)
             {
                 AbortOperation(before);
             }
@@ -652,6 +660,77 @@ public sealed class UndoHistory
         }
 
         return handlerFailure;
+    }
+
+    /// <summary>
+    ///     Reverts and forgets the open commands from <paramref name="startIndex"/> on, newest first, attempting every one.
+    /// </summary>
+    /// <param name="startIndex">Index where the completing transaction's commands begin in the open list.</param>
+    /// <returns>The failures of the inverses, newest command first, or null when every inverse succeeded.</returns>
+    private List<Exception>? RevertOpenCommands(int startIndex)
+    {
+        List<Exception>? failures = null;
+        RunGuarded(() =>
+        {
+            for (var i = _open!.Count - 1; i >= startIndex; i--)
+            {
+                try
+                {
+                    _open[i].Undo();
+                }
+                catch (Exception ex)
+                {
+                    (failures ??= []).Add(ex);
+                }
+            }
+        });
+
+        // Every command is forgotten even when its inverse failed, so the transaction can never commit a half-reverted state
+        _open!.RemoveRange(startIndex, _open.Count - startIndex);
+        return failures;
+    }
+
+    /// <summary>
+    ///     Builds the failure to report when inverses failed during a rollback.
+    /// </summary>
+    /// <param name="cause">The failure that made the rollback necessary, or null for an explicit rollback.</param>
+    /// <param name="revertFailures">The inverse failures, newest command first.</param>
+    /// <returns>The exception to throw once the transaction is complete.</returns>
+    private static ExceptionDispatchInfo DescribeRevertFailure(Exception? cause, List<Exception> revertFailures)
+    {
+        // A lone inverse failure of an explicit rollback propagates as itself
+        if (cause is null && revertFailures.Count == 1)
+        {
+            return ExceptionDispatchInfo.Capture(revertFailures[0]);
+        }
+
+        var all = cause is null ? revertFailures : [cause, .. revertFailures];
+        return ExceptionDispatchInfo.Capture(
+            new AggregateException("The transaction was rolled back but not every change could be reverted.", all));
+    }
+
+    /// <summary>
+    ///     Runs compensation code under the replay guard, so it cannot change the history.
+    /// </summary>
+    /// <remarks>
+    ///     Like an undo or redo, code run this way (and the change handlers it triggers) cannot call
+    ///     <see cref="Execute(IUndoableCommand)"/>, <see cref="BeginTransaction"/>, <see cref="Clear"/> and the like; an
+    ///     outermost <see cref="Suspend"/> scope ended meanwhile takes effect when <see cref="CompletePendingSuspendEnd"/> runs.
+    ///     The previous guard state is restored afterwards.
+    /// </remarks>
+    /// <param name="action">The compensation to run.</param>
+    internal void RunGuarded(Action action)
+    {
+        var wasApplying = _applying;
+        _applying = true;
+        try
+        {
+            action();
+        }
+        finally
+        {
+            _applying = wasApplying;
+        }
     }
 
     /// <summary>
@@ -766,18 +845,7 @@ public sealed class UndoHistory
     ///     Runs an undo or redo action while guarding against re-entrant recording.
     /// </summary>
     /// <param name="action">The action to run.</param>
-    private void Apply(Action action)
-    {
-        _applying = true;
-        try
-        {
-            action();
-        }
-        finally
-        {
-            _applying = false;
-        }
-    }
+    private void Apply(Action action) => RunGuarded(action);
 
     /// <summary>
     ///     Runs the undo or redo of an entry as one change operation.
@@ -872,7 +940,7 @@ public sealed class UndoHistory
     /// <summary>
     ///     Applies a suspension end that was deferred because it happened during an undo, redo or rollback.
     /// </summary>
-    private void CompletePendingSuspendEnd()
+    internal void CompletePendingSuspendEnd()
     {
         if (!_suspendEndPending)
         {

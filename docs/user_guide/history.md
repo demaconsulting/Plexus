@@ -119,4 +119,6 @@ connection rules is configuration and is not undoable; assigning a styler is not
 Code that runs while an entry is undone or redone (a command's `Do` or `Undo`, and the change handlers it triggers)
 cannot change the history: `Execute`, `BeginTransaction`, `Transact`, `Clear`, `MarkClean`, setting `Capacity` and
 `Suspend` throw `InvalidOperationException` there and change nothing. Disposing a `Suspend` scope there is allowed; it
-takes effect right after the undo or redo has finished.
+takes effect right after the undo or redo has finished. The same guard covers the reverts of a transaction rollback, and
+every inverse of a rollback is attempted even when one throws (the failures are reported together, the original failure
+of a `Transact` first). `Suspend` also throws while a transaction is open.

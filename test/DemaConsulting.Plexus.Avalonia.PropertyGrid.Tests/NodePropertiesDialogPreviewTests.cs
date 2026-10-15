@@ -430,6 +430,53 @@ public class NodePropertiesDialogPreviewTests
     });
 
     /// <summary>
+    ///     When the preview factory throws, returns null or returns a control that cannot be shown, the dialog that was never handed out
+    ///     leaves no listener on the node and keeps no source alive.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task NodePropertiesDialog_Create_PreviewFailure_LeavesNoSubscriptionOnTheNode() => UiTest.Run(() =>
+    {
+        // Arrange: how many handlers listen to the node before any dialog exists, and a control that already has a parent
+        var (_, node) = NodeFixture.Create();
+        var baseline = Subscribers(node);
+        var parent = new Border();
+        var attached = new TextBlock();
+        parent.Child = attached;
+        var failures = new (Func<NodePreviewContext, Control> Factory, Type Expected)[]
+        {
+            (_ => throw new FormatException("boom"), typeof(FormatException)),
+            (_ => null!, typeof(InvalidOperationException)),
+            (_ => attached, typeof(InvalidOperationException)),
+        };
+
+        foreach (var (factory, expected) in failures)
+        {
+            // Act: repeated failures must not accumulate subscriptions
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                var thrown = Assert.ThrowsAny<Exception>(() => NodePropertiesDialog.Create(node, new NodePropertiesDialogOptions { Preview = factory }));
+
+                // Assert
+                Assert.IsType(expected, thrown);
+                Assert.Equal(baseline, Subscribers(node));
+            }
+        }
+    });
+
+    /// <summary>
+    ///     Counts the handlers of a node's <c>PropertyChanged</c> event.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    /// <returns>The number of subscribers.</returns>
+    private static int Subscribers(Node node)
+    {
+        var field = typeof(DiagramElement).GetField(nameof(DiagramElement.PropertyChanged), System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        return (field.GetValue(node) as Delegate)?.GetInvocationList().Length ?? 0;
+    }
+
+    /// <summary>
     ///     The context constructors and readers validate their arguments and refuse content that is not a node.
     /// </summary>
     /// <returns>A task that completes when the body has run.</returns>

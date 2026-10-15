@@ -31,7 +31,9 @@ indexer that also accepts assignments.
 - **Constructor (internal)**: copies the default value of each declared property of the node type.
 - **Indexer get / TryGetValue / ContainsKey / Get&lt;T&gt;**: read by name. Get&lt;T&gt; returns the value when it is
   already of the requested type, otherwise converts between the numeric kinds (int, long, double) and primitive
-  targets; a value that does not fit or a non-numeric mismatch fails.
+  targets only when the converted value represents exactly the stored one (the converted value is converted back and
+  must equal the stored value); a value that does not fit, loses precision (1.5 as int, a large long as double) or is a
+  non-numeric mismatch fails.
 - **Indexer set (Set)**: precondition: the node is attached to a page, the name is not empty and the value is not null.
   The value is coerced to the declaration (declared names) or normalized (ad-hoc names). When the name exists and the
   canonical value differs from the current value, a set-value command is executed through the diagram history; when the
@@ -63,7 +65,7 @@ the result is one undo entry (none when nothing changes).
 #### Error Handling
 
 - Reading a missing name raises a key-not-found error; an impossible typed conversion raises an invalid-cast error
-  (including numeric overflow).
+  (including numeric overflow and a conversion that would lose precision).
 - A null name raises an argument-null error; an empty name on write raises an argument error; a null value raises an
   argument-null error; a value that is not legal for the declaration raises the argument error produced by the shared
   value rules. In all these cases the bag and the history are unchanged because validation happens before any command is

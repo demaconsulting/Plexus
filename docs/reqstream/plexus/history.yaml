@@ -41,6 +41,8 @@ sections:
               - Plexus-History-UndoHistory-Transact
               - Plexus-History-UndoHistory-Merging
               - Plexus-History-UndoHistory-PlanAbort
+              - Plexus-History-UndoHistory-RollbackFailureCompletes
+              - Plexus-History-UndoHistory-RollbackFailureReported
             tests:
               - History_Transactions_DragWithNestedRollback_ProducesOneUndoEntry
               - History_Transactions_RolledBackTransaction_LeavesStateAndHistoryUntouched
@@ -55,6 +57,7 @@ sections:
               model, and loading into a clean diagram must not make it appear modified.
             children:
               - Plexus-History-UndoHistory-Suspend
+              - Plexus-History-UndoHistory-SuspendInTransaction
             tests:
               - History_Suspend_LoadWorkflow_DropsStaleEntriesAndRestoresDirtyState
 
@@ -108,6 +111,8 @@ sections:
               - Plexus-History-UndoHistory-ClearDuringReplay
               - Plexus-History-UndoHistory-StateChangeDuringReplay
               - Plexus-History-UndoHistory-SuspendEndDuringReplay
+              - Plexus-History-UndoHistory-RollbackReplayGuard
+              - Plexus-History-UndoHistory-PlanAbortReplayGuard
             tests:
               - History_ReplayIntegrity_CommandChangesHistoryDuringUndo_IsRejected
 

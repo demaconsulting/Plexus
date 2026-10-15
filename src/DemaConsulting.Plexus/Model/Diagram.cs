@@ -466,7 +466,7 @@ public sealed partial class Diagram
         {
             try
             {
-                commands.Abort(ex);
+                commands.Abort(ex, History);
             }
             finally
             {

@@ -188,8 +188,9 @@ public static class NodePropertiesDialog
     /// <remarks>
     ///     With a preview, the dialog creates a <see cref="NodePreviewContext"/> over its grid, calls the factory once, shows
     ///     the returned control in the panel <c>PropertyGridDialog_Preview</c> and disposes the context as soon as the close of
-    ///     the window is confirmed (and again, idempotently, when it has closed). When the factory throws, the context is
-    ///     disposed and the exception propagates.
+    ///     the window is confirmed (and again, idempotently, when it has closed). When the factory throws or returns
+    ///     <see langword="null"/>, or its control cannot be shown, the context is disposed, the dialog's grid releases its
+    ///     property source and session (so nothing keeps listening to the node), and the exception propagates.
     /// </remarks>
     /// <param name="node">The node to edit; it must be attached to a diagram.</param>
     /// <param name="options">The options; <see langword="null"/> gives the plain dialog.</param>
@@ -217,18 +218,18 @@ public static class NodePropertiesDialog
 
         // Give the factory a read-only view of the staged values and show its control next to the grid
         var context = new NodePreviewContext(dialog.Grid);
-        Control control;
         try
         {
-            control = preview(context) ?? throw new InvalidOperationException("The preview factory returned null.");
+            var control = preview(context) ?? throw new InvalidOperationException("The preview factory returned null.");
+            dialog.SetPreview(control, side ? Dock.Right : Dock.Top, side ? SidePreviewWidth : TopPreviewHeight);
         }
         catch
         {
+            // The dialog is never handed out: release its grid's source (which listens to the node) and session along with the context
             context.Dispose();
+            dialog.Grid.SelectedObject = null;
             throw;
         }
-
-        dialog.SetPreview(control, side ? Dock.Right : Dock.Top, side ? SidePreviewWidth : TopPreviewHeight);
 
         // Stop the notifications as soon as the close is confirmed (OK or Cancel button, window close), before the grid is torn
         // down, and again (idempotent) when the window has closed, so the preview is never redrawn by a dialog that is closing

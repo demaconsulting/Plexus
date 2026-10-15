@@ -72,10 +72,14 @@ marker that reports a port recomputation on undo).
 - **BeginTransaction(description)**: opens a transaction; the outermost one creates the collection list and fixes the
   description. The returned handle commits on dispose or reverts the commands recorded since it began on rollback.
   Completion must happen innermost first.
-- **EndTransaction** (internal): on rollback reverts the transaction's commands newest first, as one change operation,
-  and discards them; on finishing the outermost transaction pushes one composite entry, or nothing when no command was
-  recorded. It returns the first handler exception of a rollback for the transaction handle to rethrow after it marked
-  itself complete; a rollback caused by a failure (`Transact`) drops it instead.
+- **EndTransaction** (internal): on rollback reverts the transaction's commands newest first, as one change operation
+  run under the replay guard (`RunGuarded`, which restores the previous guard state in a `finally`), attempting every
+  inverse even when one throws, and discards all of them; on finishing the outermost transaction pushes one composite
+  entry, or nothing when no command was recorded. It returns the exception the handle rethrows after it marked itself
+  complete: the inverse failures when there are any (a lone failure of an explicit rollback as itself, otherwise an
+  `AggregateException`, with the causing failure of a `Transact` first), else the first handler exception of a
+  rollback; a rollback caused by a failure (`Transact`) drops handler exceptions instead. The transaction is complete
+  in every case, so a later disposal commits nothing.
 - **Record inside a transaction**: the new command is offered to the previous command of the innermost transaction
   (never to commands before the transaction's start index) and absorbed when that command accepts it; otherwise it is
   appended. Outside a transaction commands are pushed individually and never merged.
@@ -85,7 +89,8 @@ marker that reports a port recomputation on undo).
   becomes unreachable. When the outermost scope is disposed the stacks are cleared, the save point becomes zero (clean)
   or unreachable according to the dirty state captured at the start, and the change event is raised; when that happens
   during an undo, redo or rollback, this effect is deferred until the replay has moved its entry. Disposing a scope
-  twice has no further effect. Starting a suspension during an undo, redo or rollback is refused.
+  twice has no further effect. Starting a suspension during an undo, redo or rollback, or while a transaction is open
+  (the transaction's commit would record entries after the stacks were cleared), is refused.
 - **MarkClean / Clear**: set the save point to the current depth, respectively empty both stacks and set the save point
   to zero; Clear is refused while a transaction is open, and both are refused during an undo, redo or rollback. Both
   raise the change event.
@@ -105,7 +110,8 @@ transactions.
 - Null commands, descriptions and delegates raise an argument-null error before any state change.
 - A capacity below one raises an argument-out-of-range error.
 - Undo, redo and clear while a transaction is open; recording, beginning a transaction, clearing, marking clean,
-  setting the capacity or suspending while an undo, redo or rollback is running; a rollback of an already completed
+  setting the capacity or suspending while an undo, redo or rollback is running; suspending while a transaction is
+  open; a rollback of an already completed
   transaction; and completion of transactions out of order raise invalid-operation errors and change nothing. A
   rejected out-of-order completion leaves the transaction open so it can be completed correctly.
 - Exceptions thrown by command code propagate to the caller. Because the application happens before recording, a
@@ -113,7 +119,9 @@ transactions.
   A failing child of a grouped entry is compensated first; a failing step of a multi-step operation makes the plan
   revert every applied step. When a compensating or reverting step also fails, every remaining one is still attempted
   and an `AggregateException` is thrown whose inner exceptions are the original failure followed by every compensation
-  failure (the same shape for `CommandPlan.Abort` and grouped replay).
+  failure (the same shape for `CommandPlan.Abort` and grouped replay). `CommandPlan.Abort` takes the history and runs
+  its reverts under the same replay guard as an undo, so they cannot change the history. A transaction rollback also
+  attempts every inverse; it reports the inverse failures (with the original failure first when `Transact` caused it).
 - Exceptions thrown by change handlers during an operation (raised through `Notify`) never interrupt it: the change is
   completed and recorded (or moved), then the first one is rethrown with its original stack trace; later ones are
   dropped, as are all of them when the operation itself fails or when a rollback is caused by a failure. Handlers of the
