@@ -229,6 +229,74 @@ public class PlexusTests
     }
 
     /// <summary>
+    ///     Proves that a node type can give its properties display-order hints without reordering the declared
+    ///     properties or the node's property values.
+    /// </summary>
+    [Fact]
+    public void Plexus_Properties_DisplayOrder_IsDeclaredWithoutReorderingProperties()
+    {
+        // Arrange: an envelope whose properties should be listed Attack, Decay, Sustain, Release in an editor,
+        // declared in another order
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("acme.Envelope")
+        {
+            Properties =
+            {
+                new PropertyDefinition("Release", 0.5) { Order = 4 },
+                new PropertyDefinition("Attack", 0.01) { Order = 1 },
+                new PropertyDefinition("Sustain", 0.7) { Order = 3 },
+                new PropertyDefinition("Decay", 0.1) { Order = 2 },
+                new PropertyDefinition("Label", "Env"),
+            },
+        });
+        var diagram = new Diagram(types);
+
+        // Act
+        var node = diagram.Pages.Add("Main").AddNode("acme.Envelope", 0, 0);
+
+        // Assert: sorting by the hints gives the editor order; declaration and value order stay as declared
+        Assert.Equal(
+            ["Label", "Attack", "Decay", "Sustain", "Release"],
+            node.Type.Properties.OrderBy(p => p.Order).Select(p => p.Name));
+        Assert.Equal(["Release", "Attack", "Sustain", "Decay", "Label"], node.Type.Properties.Select(p => p.Name));
+        Assert.Equal(["Release", "Attack", "Sustain", "Decay", "Label"], node.Properties.Select(p => p.Key));
+        Assert.Equal(0, node.Properties.GetDefinition("Label")!.Order);
+    }
+
+    /// <summary>
+    ///     Proves that property values convert to and from editable text the same way whatever the user's culture is.
+    /// </summary>
+    [Fact]
+    public void Plexus_Properties_TextEditing_ParsesAndFormatsIndependentOfCulture()
+    {
+        // Arrange: a culture that writes 2,5 for two and a half
+        var diagram = TestModel.CreateDiagram();
+        var node = diagram.Pages.Add("Main").AddNode("acme.Producer", 0, 0);
+        var gain = node.Properties.GetDefinition("Gain")!;
+        var previous = System.Globalization.CultureInfo.CurrentCulture;
+        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
+        try
+        {
+            // Act: parse typed text, store it, and format the stored value for editing
+            var parsed = gain.TryParse("2.5", out var value, out _);
+            node.Properties["Gain"] = value!;
+            var text = PropertyDefinition.FormatForEdit(node.Properties["Gain"]);
+            var refused = gain.TryParse("abc", out _, out var reason);
+
+            // Assert: invariant text in both directions, and invalid text is refused with a reason
+            Assert.True(parsed);
+            Assert.Equal(2.5, node.Properties["Gain"]);
+            Assert.Equal("2.5", text);
+            Assert.False(refused);
+            Assert.False(string.IsNullOrWhiteSpace(reason));
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = previous;
+        }
+    }
+
+    /// <summary>
     ///     Proves that pages can be added, inserted, renamed, reordered and removed, and that removal is undoable.
     /// </summary>
     [Fact]
@@ -962,6 +1030,31 @@ public class PlexusTests
     }
 
     /// <summary>
+    ///     Proves that duplicating nodes restores the wires that attach to ports computed by a port provider, as one undo step.
+    /// </summary>
+    [Fact]
+    public void Plexus_DynamicPorts_Duplicate_RestoresWiresOnDynamicPorts()
+    {
+        // Arrange: wires on a computed input (Bus.in2) and a computed output (R.z)
+        var diagram = Serialization.SerializationFixtures.CreateDynamicPortDiagram();
+        var page = diagram.Pages[0];
+        var entries = diagram.History.UndoCount;
+
+        // Act
+        var copies = page.Duplicate([.. page.Elements], 0, 600);
+
+        // Assert: the copies carry the computed ports and both wires attach to them, in one undo entry
+        var wires = copies.OfType<Wire>().Select(w => $"{w.Source.Name} -> {w.Target.Name}").Order().ToList();
+        Assert.Equal(["value -> in2", "z -> in"], wires);
+        Assert.Equal(3, copies.OfType<Node>().Single(n => n.Type.Key == "acme.Bus").Inputs.Count);
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+
+        // Act / Assert: one undo removes every copy
+        Assert.True(diagram.History.Undo());
+        Assert.Equal(2, page.Wires.Count);
+    }
+
+    /// <summary>
     ///     Proves that port, node type and port type descriptions provide the text hosts show in tooltips, including live state.
     /// </summary>
     [Fact]
@@ -993,6 +1086,214 @@ public class PlexusTests
     }
 
     /// <summary>
+    ///     Proves that a node type's tooltip function follows the node's current state across edits and undo.
+    /// </summary>
+    [Fact]
+    public void Plexus_Descriptions_ToolTipFunction_FollowsNodeState()
+    {
+        // Arrange: a gauge whose tooltip shows its current value
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("acme.Gauge")
+        {
+            Description = "Shows a value.",
+            Properties = { new PropertyDefinition("Value", 0.0) },
+            ToolTip = node => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Value = {node.Properties.Get<double>("Value")}"),
+        });
+        var diagram = new Diagram(types);
+        var gauge = diagram.Pages.Add("Main").AddNode("acme.Gauge", 0, 0);
+        var texts = new List<string?>();
+
+        // Act: two values, then undo of the second
+        gauge.Properties["Value"] = 1.5;
+        texts.Add(gauge.Type.GetToolTip(gauge));
+        gauge.Properties["Value"] = 7.0;
+        texts.Add(gauge.Type.GetToolTip(gauge));
+        diagram.History.Undo();
+        texts.Add(gauge.Type.GetToolTip(gauge));
+
+        // Assert: every request saw the state of that moment
+        Assert.Equal(["Value = 1.5", "Value = 7", "Value = 1.5"], texts);
+    }
+
+    /// <summary>
+    ///     Creates the host types of the dynamic-port system tests: a source and a bus with a channel count and a port kind.
+    /// </summary>
+    /// <param name="provider">Wraps the bus port provider, for example to make it fail.</param>
+    /// <returns>The registry.</returns>
+    private static NodeTypeRegistry CreateBusTypes(Func<Func<Node, PortSet>, Func<Node, PortSet>>? provider = null)
+    {
+        Func<Node, PortSet> ports = node => new PortSet(
+            Enumerable.Range(0, node.Properties.Get<int>("Channels"))
+                .Select(i => new PortDefinition($"in{i}", (string)node.Properties["Kind"])),
+            []);
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("acme.Source") { Outputs = { new PortDefinition("out", "f32") } });
+        types.Add(new NodeType("acme.Bus")
+        {
+            Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
+            Properties = { new PropertyDefinition("Channels", 2), new PropertyDefinition("Kind", "f32") },
+            PortProvider = provider is null ? ports : provider(ports),
+        });
+        return types;
+    }
+
+    /// <summary>
+    ///     Proves that a wire on a port whose type a configuration change altered is removed when the connection rules refuse it.
+    /// </summary>
+    [Fact]
+    public void Plexus_DynamicPorts_RetypedPort_RemovesWireTheRulesRefuse()
+    {
+        // Arrange: matching types are required; an f32 source feeds the bus
+        var diagram = new Diagram(CreateBusTypes());
+        diagram.ConnectionRules = ConnectionRules.All(ConnectionRules.Default, ConnectionRules.SameType);
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Source", 0, 0, "S");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        var wire = page.Connect("S.out", "Bus.in0");
+        var in0 = bus.Input("in0");
+
+        // Act: the bus inputs become i32
+        bus.Properties["Kind"] = "i32";
+
+        // Assert: same port, new type, and the f32 wire is gone; one undo brings it back
+        Assert.Same(in0, bus.Input("in0"));
+        Assert.Equal("i32", in0.TypeKey);
+        Assert.Empty(page.Wires);
+        Assert.True(diagram.History.Undo());
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Equal("f32", in0.TypeKey);
+    }
+
+    /// <summary>
+    ///     Proves that a failing port provider leaves the diagram and its history unchanged and reports the error.
+    /// </summary>
+    [Fact]
+    public void Plexus_DynamicPorts_ProviderFails_LeavesDiagramAndHistoryUnchanged()
+    {
+        // Arrange: a bus whose provider cannot handle more than eight channels
+        var types = CreateBusTypes(inner => node => node.Properties.Get<int>("Channels") > 8
+            ? throw new NotSupportedException("At most eight channels are supported.")
+            : inner(node));
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Source", 0, 0, "S");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        page.Connect("S.out", "Bus.in1");
+        var ports = bus.Ports.ToArray();
+        var bounds = bus.Bounds;
+        var entries = diagram.History.UndoCount;
+
+        // Act
+        var ex = Assert.Throws<NotSupportedException>(() => bus.Properties["Channels"] = 12);
+
+        // Assert: the error is reported; property, ports, wire, size and history are as before
+        Assert.Equal("At most eight channels are supported.", ex.Message);
+        Assert.Equal(2, bus.Properties.Get<int>("Channels"));
+        Assert.Equal(ports, bus.Ports);
+        Assert.Single(page.Wires);
+        Assert.Equal(bounds, bus.Bounds);
+        Assert.Equal(entries, diagram.History.UndoCount);
+    }
+
+    /// <summary>
+    ///     Proves that a change during which a host change handler throws is completed, undoable as one step and reported afterwards.
+    /// </summary>
+    [Fact]
+    public void Plexus_ChangeHandlerThrows_ChangeIsCompletedUndoableAndReported()
+    {
+        // Arrange: a host handler that fails on every notification while armed
+        var types = CreateBusTypes();
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var source = page.AddNode("acme.Source", 0, 0, "S");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        var start = page.Wires.Count;
+        var failure = new InvalidOperationException("host handler failed");
+        var armed = true;
+        diagram.Changed += (_, _) =>
+        {
+            if (armed)
+            {
+                throw failure;
+            }
+        };
+
+        // Act / Assert: the connect completes and is recorded; the handler's exception is reported afterwards
+        Assert.Same(failure, Assert.Throws<InvalidOperationException>(() => page.Connect(source.Output("out"), bus.Input("in0"))));
+        Assert.Equal(start + 1, page.Wires.Count);
+
+        // Act / Assert: undo and redo still complete
+        Assert.Same(failure, Assert.Throws<InvalidOperationException>(() => diagram.History.Undo()));
+        Assert.Equal(start, page.Wires.Count);
+        Assert.Same(failure, Assert.Throws<InvalidOperationException>(() => diagram.History.Redo()));
+        Assert.Equal(start + 1, page.Wires.Count);
+
+        // Act / Assert: a multi-step change (ports recomputed, wire removed) is also completed as one step
+        Assert.Same(failure, Assert.Throws<InvalidOperationException>(() => bus.Properties["Channels"] = 0));
+        Assert.Empty(bus.Inputs);
+        Assert.Equal(start, page.Wires.Count);
+        armed = false;
+        Assert.True(diagram.History.Undo());
+        Assert.Equal(2, bus.Inputs.Count);
+        Assert.Equal(start + 1, page.Wires.Count);
+    }
+
+    /// <summary>
+    ///     Proves that undo and redo leave the diagram and its history consistent when recorded host code fails or tries to change the history.
+    /// </summary>
+    [Fact]
+    public void Plexus_UndoIntegrity_FailingOrReentrantCommand_LeavesDiagramAndHistoryConsistent()
+    {
+        // Arrange: one transaction with a model edit and a host command that can fail or meddle with the history
+        var diagram = new Diagram(CreateBusTypes());
+        var page = diagram.Pages.Add("Main");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        var history = diagram.History;
+        var fail = false;
+        var refused = 0;
+        void HostStep()
+        {
+            try
+            {
+                history.Clear();
+            }
+            catch (InvalidOperationException)
+            {
+                refused++;
+            }
+
+            if (fail)
+            {
+                throw new IOException("host step failed");
+            }
+        }
+
+        history.Transact("Configure", () =>
+        {
+            bus.Name = "Mixer";
+            history.Execute("Host step", () => { }, HostStep);
+            bus.Properties["Channels"] = 4;
+        });
+        var configured = (bus.Name, bus.Inputs.Count);
+        var entries = history.UndoCount;
+
+        // Act / Assert: a failing host step leaves the diagram as it was and the entry undoable
+        fail = true;
+        Assert.Throws<IOException>(() => history.Undo());
+        Assert.Equal(configured, (bus.Name, bus.Inputs.Count));
+        Assert.Equal((entries, 0), (history.UndoCount, history.RedoCount));
+
+        // Act / Assert: once it works, the undo completes; the attempted clears were refused every time
+        fail = false;
+        Assert.True(history.Undo());
+        Assert.Equal(("Bus", 2), (bus.Name, bus.Inputs.Count));
+        Assert.Equal((entries - 1, 1), (history.UndoCount, history.RedoCount));
+        Assert.Equal(2, refused);
+        Assert.True(history.Redo());
+        Assert.Equal(configured, (bus.Name, bus.Inputs.Count));
+    }
+
+    /// <summary>
     ///     Determines whether a straight segment passes through the interior of a rectangle.
     /// </summary>
     /// <param name="a">The segment start.</param>
@@ -1003,6 +1304,35 @@ public class PlexusTests
     {
         var box = Rect.FromPoints(a, b);
         return box.Left < rect.Right && box.Right > rect.Left && box.Top < rect.Bottom && box.Bottom > rect.Top;
+    }
+
+    /// <summary>
+    ///     Proves that new wires are routed around the frames of groups that contain neither of their end nodes, and
+    ///     that the host can switch group frames off as obstacles through the theme.
+    /// </summary>
+    [Fact]
+    public void Plexus_Routing_GroupFrames_AreAvoidedUnlessSwitchedOff()
+    {
+        foreach (var groupsAreObstacles in new[] { true, false })
+        {
+            // Arrange: a producer and a consumer on one row, and a group framing two nodes above and below that row
+            var diagram = TestModel.CreateDiagram();
+            diagram.Theme = DiagramTheme.Classic with { GroupsAreObstacles = groupsAreObstacles };
+            var page = diagram.Pages.Add("Main");
+            var producer = page.AddNode("acme.Producer", 0, 0, "P");
+            var consumer = page.AddNode("acme.Consumer", 800, 0, "C");
+            var group = page.CreateGroup(
+                [page.AddNode("acme.Gain", 350, -250, "Above"), page.AddNode("acme.Gain", 350, 250, "Below")],
+                "Unrelated");
+
+            // Act
+            var wire = page.Connect(producer.Port("value"), consumer.Port("in"));
+            var points = wire.GetPoints();
+
+            // Assert: with the default the wire stays outside the frame; switched off it runs straight through
+            var crosses = Enumerable.Range(0, points.Count - 1).Any(i => SegmentCrosses(points[i], points[i + 1], group.Bounds));
+            Assert.Equal(!groupsAreObstacles, crosses);
+        }
     }
 
     /// <summary>

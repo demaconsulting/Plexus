@@ -334,6 +334,51 @@ public class ClipboardSecurityTests
     }
 
     /// <summary>
+    ///     Validates that a node naming no node type (null, empty or white space) makes the paste fail without changes,
+    ///     instead of being treated as an unknown type or escaping as an exception.
+    /// </summary>
+    /// <param name="typeKey">The JSON value of the type key.</param>
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"\"")]
+    [InlineData("\"  \"")]
+    public void PlexusClipboard_Paste_NodeWithoutTypeKey_FailsAndChangesNothing(string typeKey)
+    {
+        // Arrange: a valid node followed by one without a usable type key
+        var node = "{\"id\":\"x\",\"typeKey\":" + typeKey + ",\"name\":\"X\",\"bounds\":{\"x\":0,\"y\":0,\"width\":90,\"height\":90}}";
+
+        // Act
+        var result = AssertRejected(Document("\"nodes\":[" + ValidNode + "," + node + "]"));
+
+        // Assert: the message names the missing key and no type is reported as missing
+        Assert.Contains("no node type key", result.Error, StringComparison.Ordinal);
+        Assert.Empty(result.MissingNodeTypes);
+    }
+
+    /// <summary>
+    ///     Validates that a payload serializer throwing an exception of an unexpected type cannot break a paste: the
+    ///     node is pasted without data and a warning carries the serializer's message.
+    /// </summary>
+    [Fact]
+    public void PlexusClipboard_Paste_SerializerThrowsUnexpectedException_BecomesWarning()
+    {
+        // Arrange: a node type whose serializer fails with a host-specific exception type
+        var types = SerializationFixtures.CreateTypes();
+        types.Add(new NodeType("acme.Fragile") { DataSerializer = new ThrowingDataSerializer() });
+        var page = new Diagram(types).Pages.Add("P");
+        var node = """{"id":"f","typeKey":"acme.Fragile","name":"F","bounds":{"x":0,"y":0,"width":1,"height":1},"data":{"a":1}}""";
+
+        // Act
+        var result = PlexusClipboard.Paste(page, Document("\"nodes\":[" + node + "]"));
+
+        // Assert
+        Assert.True(result.Success, result.Error);
+        Assert.Null(((Node)result.Elements[0]).Data);
+        Assert.Contains("serializer exploded", Assert.Single(result.Warnings), StringComparison.Ordinal);
+    }
+
+
+    /// <summary>
     ///     Validates that content valid up to the last element still fails atomically (the failure is found before any mutation).
     /// </summary>
     [Fact]

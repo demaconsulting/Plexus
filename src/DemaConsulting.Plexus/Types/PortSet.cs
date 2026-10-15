@@ -11,6 +11,11 @@ namespace DemaConsulting.Plexus;
 ///         to keep a port object and its wires when the ports are recomputed. An input and an output may share a name.
 ///     </para>
 ///     <para>
+///         Either list, or both, may be empty: a node whose provider returns an empty list has no ports in that direction
+///         (its former ports there are removed with their wires). A provider must return a set, though - a null result is a
+///         provider failure.
+///     </para>
+///     <para>
 ///         The constructor copies both sequences, so later changes to the caller's collections do not affect the set.
 ///         Instances are immutable (the lists are read-only wrappers over private copies) and may be cached and shared between nodes and threads; the <see cref="PortDefinition"/>
 ///         objects are immutable too, so a provider can keep a static array of them and return slices of it.

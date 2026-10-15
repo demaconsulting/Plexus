@@ -39,6 +39,10 @@ supported platform for the platform requirements to be satisfied.
   shows after the host refreshes the appearance.
 - **PlexusRendering_Render_FullPage_ShowsEveryElementKind**: a page with an icon node, a titled node, a wire, an
   annotation and a group shows the icon, title text, name text, wire, annotation fill and group at the expected pixels.
+- **PlexusRendering_Render_DynamicPortNode_ShowsCurrentPorts**: a node whose inputs come from a port provider shows the
+  port color at the position of its third input triangle only while the node has three ports (after the property change
+  that adds the input, not before it and not after it is shrunk again), and a static node's declared port is drawn in
+  every render.
 - **PlexusRendering_Render_MalformedIcon_StillRendersTheRestOfThePage**: a node with a malformed SVG icon does not
   prevent its own box and the neighboring node from being painted.
 - **PlexusRendering_Render_NodeTitle_MatchesMeasuredTextWidth**: the horizontal extent of the painted title equals

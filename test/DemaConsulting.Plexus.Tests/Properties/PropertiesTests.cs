@@ -79,6 +79,156 @@ public class PropertiesTests
         Assert.Throws<ArgumentException>(() => new PropertyDefinition("P", double.NaN));
         Assert.Throws<ArgumentException>(() => new PropertyDefinition("P", "X") { Choices = ["A", "B"] });
         Assert.Throws<ArgumentException>(() => new PropertyDefinition("P", "A") { Choices = ["A", "A"] });
+        Assert.Throws<ArgumentException>(() => new PropertyDefinition("P", "A") { Choices = ["A", null!] });
+    }
+
+    /// <summary>
+    ///     Validates that declared presentation hints are exposed with the declaration and never restrict the values
+    ///     the property accepts.
+    /// </summary>
+    [Fact]
+    public void Properties_PresentationHints_DeclaredHints_AreExposedWithoutRestrictingValues()
+    {
+        // Arrange: a type whose property carries every presentation hint, including the read-only hint
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("demo.Amp")
+        {
+            Properties =
+            {
+                new PropertyDefinition("Gain", 1.0)
+                {
+                    DisplayName = "Gain Factor",
+                    Description = "Output gain",
+                    Category = "Signal",
+                    Unit = "dB",
+                    EditorHint = "slider",
+                    ShowInSummary = true,
+                    IsReadOnly = true,
+                },
+            },
+        });
+        var diagram = new Diagram(types);
+        var node = diagram.Pages.Add("Main").AddNode("demo.Amp", 0, 0);
+
+        // Act: read the hints through the node and assign a value no hint mentions
+        var definition = node.Properties.GetDefinition("Gain")!;
+        node.Properties["Gain"] = -1000.0;
+
+        // Assert: the hints are exposed and did not restrict the assignment
+        Assert.Multiple(
+            () => Assert.Equal("Gain Factor", definition.DisplayName),
+            () => Assert.Equal("Output gain", definition.Description),
+            () => Assert.Equal("Signal", definition.Category),
+            () => Assert.Equal("dB", definition.Unit),
+            () => Assert.Equal("slider", definition.EditorHint),
+            () => Assert.True(definition.ShowInSummary),
+            () => Assert.True(definition.IsReadOnly),
+            () => Assert.Equal(-1000.0, node.Properties["Gain"]));
+    }
+
+    /// <summary>
+    ///     Validates that display-order hints are exposed but change neither the declaration order nor the order in
+    ///     which a node's properties are enumerated.
+    /// </summary>
+    [Fact]
+    public void Properties_DisplayOrder_DeclaredOrders_KeepDeclarationOrder()
+    {
+        // Arrange: properties A, B and C declared with orders 3, 1 and 2, and D left at the default
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("demo.Ordered")
+        {
+            Properties =
+            {
+                new PropertyDefinition("A", 1) { Order = 3 },
+                new PropertyDefinition("B", 1) { Order = 1 },
+                new PropertyDefinition("C", 1) { Order = 2 },
+                new PropertyDefinition("D", 1),
+            },
+        });
+        var diagram = new Diagram(types);
+
+        // Act
+        var node = diagram.Pages.Add("Main").AddNode("demo.Ordered", 0, 0);
+
+        // Assert: the hints are exposed, the declaration and enumeration orders are unchanged
+        Assert.Equal(new[] { 3, 1, 2, 0 }, node.Type.Properties.Select(p => p.Order));
+        Assert.Equal(new[] { "A", "B", "C", "D" }, node.Type.Properties.Select(p => p.Name));
+        Assert.Equal(new[] { "A", "B", "C", "D" }, node.Properties.Select(p => p.Key));
+    }
+
+    /// <summary>
+    ///     Validates that typed text converts to values of the property's kind (with a reason when invalid) and that
+    ///     edit text converts back to the same value.
+    /// </summary>
+    [Fact]
+    public void Properties_TextEditing_TypedText_ParsesAndRoundTrips()
+    {
+        // Arrange
+        var (_, node) = Create();
+        var gain = node.Properties.GetDefinition("Gain")!;
+        var retries = node.Properties.GetDefinition("Retries")!;
+        var tint = node.Properties.GetDefinition("Tint")!;
+        var mode = node.Properties.GetDefinition("Mode")!;
+
+        // Act / Assert: valid text produces values of exactly the declared kinds
+        Assert.True(gain.TryParse("2.5 dB", out var gainValue, out _));
+        Assert.Equal(2.5, gainValue);
+        Assert.True(retries.TryParse(" 7 ", out var retriesValue, out _));
+        Assert.Equal(7, retriesValue);
+        Assert.True(tint.TryParse("#445566", out var tintValue, out _));
+        Assert.Equal(Color.Parse("#445566"), tintValue);
+        Assert.True(mode.TryParse("b", out var modeValue, out _));
+        Assert.Equal("B", modeValue);
+
+        // Act / Assert: invalid text is refused with a reason
+        Assert.False(retries.TryParse("1.5", out var refused, out var reason));
+        Assert.Null(refused);
+        Assert.False(string.IsNullOrWhiteSpace(reason));
+
+        // Act / Assert: the edit text of a stored value converts back to the same value
+        node.Properties["Gain"] = 0.1 + 0.2;
+        var text = PropertyDefinition.FormatForEdit(node.Properties["Gain"]);
+        Assert.True(gain.TryParse(text, out var roundTrip, out _));
+        Assert.Equal(node.Properties["Gain"], roundTrip);
+    }
+
+    /// <summary>
+    ///     Validates that a batch edit with one invalid value changes nothing and records nothing, while a valid batch
+    ///     applies every value as one undo entry.
+    /// </summary>
+    [Fact]
+    public void Properties_BatchEdit_OneInvalidValue_ChangesNothing()
+    {
+        // Arrange
+        var (diagram, node) = Create();
+        var entries = diagram.History.UndoCount;
+
+        // Act: one invalid value among valid ones
+        var applied = node.Properties.TrySetAll(
+            new Dictionary<string, object?> { ["Gain"] = 2.0, ["Retries"] = "many", ["Mode"] = "B" },
+            out var errors);
+
+        // Assert: nothing changed, nothing recorded, the invalid value is reported
+        Assert.False(applied);
+        Assert.Equal(1.0, node.Properties["Gain"]);
+        Assert.Equal("A", node.Properties["Mode"]);
+        Assert.Equal(entries, diagram.History.UndoCount);
+        Assert.Contains("Retries", errors.Keys);
+
+        // Act: the same batch with the value corrected
+        applied = node.Properties.TrySetAll(
+            new Dictionary<string, object?> { ["Gain"] = 2.0, ["Retries"] = "4", ["Mode"] = "B" },
+            out errors);
+
+        // Assert: every value applied as one undo entry
+        Assert.True(applied);
+        Assert.Empty(errors);
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+        Assert.Equal(4, node.Properties["Retries"]);
+        diagram.History.Undo();
+        Assert.Equal(1.0, node.Properties["Gain"]);
+        Assert.Equal(3, node.Properties["Retries"]);
+        Assert.Equal("A", node.Properties["Mode"]);
     }
 
     /// <summary>

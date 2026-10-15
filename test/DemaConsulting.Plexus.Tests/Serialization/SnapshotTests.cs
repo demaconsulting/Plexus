@@ -508,4 +508,178 @@ public class SnapshotTests
         // Assert
         Assert.Contains("could not be computed: bad channels", ex.Message, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    ///     Validates that restoring directly from a snapshot object recomputes provider ports before resolving wires.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromSnapshot_WireOnDynamicPort_RestoresWire()
+    {
+        // Arrange
+        var original = SerializationFixtures.CreateDynamicPortDiagram();
+
+        // Act
+        var restored = Diagram.FromSnapshot(original.ToSnapshot(), TestModel.CreateDynamicTypes());
+
+        // Assert: the wires on the computed input and output are restored on the recomputed ports
+        Assert.Equal(TestModel.Dump(original), TestModel.Dump(restored));
+        Assert.Equal(
+            ["P.value -> Bus.in2", "R.z -> C.in"],
+            restored.Pages[0].Wires.Select(w => $"{w.Source} -> {w.Target}"));
+    }
+
+    /// <summary>
+    ///     Validates that loading a node with a provider keeps its stored bounds instead of resizing it to its ports.
+    /// </summary>
+    [Fact]
+    public void Snapshot_Load_DynamicPortNode_KeepsStoredBounds()
+    {
+        // Arrange: a bus the user made much taller than its three ports need
+        var original = SerializationFixtures.CreateDynamicPortDiagram();
+        var bus = original.FindNode("Bus")!;
+        bus.Bounds = bus.Bounds with { Height = bus.Bounds.Height + 300 };
+        var stored = bus.Bounds;
+
+        // Act
+        var loaded = Diagram.FromJson(original.ToJson(), TestModel.CreateDynamicTypes());
+
+        // Assert
+        Assert.Equal(stored, loaded.FindNode("Bus")!.Bounds);
+        Assert.Equal(3, loaded.FindNode("Bus")!.Inputs.Count);
+    }
+
+    /// <summary>
+    ///     Validates that a snapshot of nodes with provider ports stores no port lists.
+    /// </summary>
+    [Fact]
+    public void Snapshot_ToJson_DynamicPortNode_StoresNoPortLists()
+    {
+        // Arrange
+        var diagram = SerializationFixtures.CreateDynamicPortDiagram();
+
+        // Act
+        using var document = JsonDocument.Parse(diagram.ToJson());
+
+        // Assert: no node entry has a member that lists ports
+        foreach (var node in document.RootElement.GetProperty("pages")[0].GetProperty("nodes").EnumerateArray())
+        {
+            Assert.DoesNotContain(
+                node.EnumerateObject(),
+                m => m.Name.Contains("port", StringComparison.OrdinalIgnoreCase)
+                    || m.Name.Equals("inputs", StringComparison.OrdinalIgnoreCase)
+                    || m.Name.Equals("outputs", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    /// <summary>
+    ///     Validates that a provider failing with an exception type the library does not know still makes the load fail
+    ///     with a snapshot exception naming the node.
+    /// </summary>
+    [Fact]
+    public void Snapshot_Load_ProviderThrowsUnlistedException_ThrowsSnapshotException()
+    {
+        // Arrange
+        var json = SerializationFixtures.CreateDynamicPortDiagram().ToJson();
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(_ => throw new HostFailureException("host bug"));
+
+        // Act
+        var ex = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, types));
+
+        // Assert
+        Assert.Contains("'Bus'", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("could not be computed: host bug", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that a provider returning null makes the load fail with a snapshot exception.
+    /// </summary>
+    [Fact]
+    public void Snapshot_Load_ProviderReturnsNull_ThrowsSnapshotException()
+    {
+        // Arrange
+        var json = SerializationFixtures.CreateDynamicPortDiagram().ToJson();
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(_ => null!);
+
+        // Act
+        var ex = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, types));
+
+        // Assert
+        Assert.Contains("'Bus'", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("could not be computed", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that a node without a type key (null, empty or white space) makes the load fail with a snapshot
+    ///     exception, also when unknown node types are skipped.
+    /// </summary>
+    /// <param name="typeKey">The JSON value of the type key.</param>
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"\"")]
+    [InlineData("\"  \"")]
+    public void Snapshot_FromJson_NodeWithoutTypeKey_ThrowsSnapshotException(string typeKey)
+    {
+        // Arrange: a saved diagram whose only node lost its type key
+        var diagram = TestModel.CreateDiagram();
+        diagram.Pages.Add("Main").AddNode("acme.Producer", 0, 0);
+        var json = System.Text.RegularExpressions.Regex.Replace(
+            diagram.ToJson(),
+            "\"typeKey\"\\s*:\\s*\"acme.Producer\"",
+            "\"typeKey\":" + typeKey);
+        var skip = new DiagramOptions { UnknownNodeTypes = UnknownNodeTypeHandling.Skip };
+
+        // Act
+        var strict = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, TestModel.CreateTypes()));
+        var skipping = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, TestModel.CreateTypes(), skip));
+
+        // Assert: reported as invalid content, not as a missing type
+        Assert.Contains("no node type key", strict.Message, StringComparison.Ordinal);
+        Assert.Empty(strict.MissingNodeTypes);
+        Assert.Contains("no node type key", skipping.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that a payload serializer failing with an exception type the library does not know makes the load
+    ///     fail with a snapshot exception carrying the serializer's message.
+    /// </summary>
+    [Fact]
+    public void Snapshot_Load_SerializerThrowsUnexpectedException_ThrowsSnapshotException()
+    {
+        // Arrange: a saved node with a payload whose serializer cannot read it back
+        var types = SerializationFixtures.CreateTypes();
+        types.Add(new NodeType("acme.Fragile") { DataSerializer = new ThrowingDataSerializer() });
+        var diagram = new Diagram(types);
+        diagram.Pages.Add("Main").AddNode("acme.Fragile", 0, 0).Data = new object();
+        var json = diagram.ToJson();
+
+        // Act
+        var ex = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, types));
+
+        // Assert
+        Assert.Contains("serializer exploded", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that colors stored as six hexadecimal digits (opaque) or eight digits (alpha first) are read.
+    /// </summary>
+    [Fact]
+    public void Snapshot_FromJson_SixAndEightDigitColors_AreRead()
+    {
+        // Arrange: an opaque and a translucent color property, then the opaque one rewritten with six digits
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Producer", 0, 0, "Opaque").Properties["Tint"] = Color.FromArgb(0xFF, 0x44, 0x55, 0x66);
+        page.AddNode("acme.Producer", 200, 0, "Translucent").Properties["Tint"] = Color.FromArgb(0x80, 0x11, 0x22, 0x33);
+        var json = diagram.ToJson();
+        Assert.Contains("\"#FF445566\"", json, StringComparison.Ordinal);
+        Assert.Contains("\"#80112233\"", json, StringComparison.Ordinal);
+        json = json.Replace("\"#FF445566\"", "\"#445566\"", StringComparison.Ordinal);
+
+        // Act
+        var loaded = Diagram.FromJson(json, TestModel.CreateTypes());
+
+        // Assert
+        Assert.Equal(Color.FromArgb(0xFF, 0x44, 0x55, 0x66), loaded.FindNode("Opaque")!.Properties["Tint"]);
+        Assert.Equal(Color.FromArgb(0x80, 0x11, 0x22, 0x33), loaded.FindNode("Translucent")!.Properties["Tint"]);
+    }
 }

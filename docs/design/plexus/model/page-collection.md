@@ -44,7 +44,10 @@ the undoable operations. The unit is the single source file `PageCollection.cs`.
 A blank name throws an argument exception, an out-of-range index throws an argument-out-of-range exception, a page that
 is not in the collection throws an argument exception from `Move` (and yields false from `Remove`), and a null page
 throws an argument-null exception. The commands cannot fail when run by the history because they only manipulate the
-in-memory list, so notifications are always raised for both the original operation and undo and redo. Not thread-safe.
+in-memory list, so notifications are always raised for both the original operation and undo and redo. The list change
+itself (which raises `CollectionChanged`) and the diagram's `Changed` run through the history's notification gate: a
+handler that throws does not interrupt the change, the page is attached, detached or moved and the change recorded
+first, and the first handler exception is then rethrown to the caller (see Diagram Design). Not thread-safe.
 
 #### Dependencies
 

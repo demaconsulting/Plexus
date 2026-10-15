@@ -11,11 +11,11 @@ namespace DemaConsulting.Plexus;
 ///     passed to <see cref="Deserialize"/> as untrusted input.
 ///     <para>
 ///         The text returned by <see cref="Serialize"/> must be valid JSON; it is embedded as the <c>data</c> member of the node in
-///         the diagram JSON and in clipboard text. If <see cref="Deserialize"/> returns null or throws a
-///         <c>JsonException</c>, <c>FormatException</c>, <c>InvalidOperationException</c>, <c>ArgumentException</c>,
-///         <c>NotSupportedException</c> or <c>InvalidCastException</c>, the payload counts as unreadable: <see cref="Diagram.FromJson(string, NodeTypeRegistry, DiagramOptions?)"/> throws
+///         the diagram JSON and in clipboard text. If <see cref="Deserialize"/> returns null or throws any exception
+///         (other than running out of memory), the payload counts as unreadable and the exception message describes the
+///         problem: <see cref="Diagram.FromJson(string, NodeTypeRegistry, DiagramOptions?)"/> throws
 ///         <see cref="SnapshotException"/>, and a clipboard paste inserts the node without data and reports a warning in
-///         the <see cref="PasteResult"/>. Other exceptions are treated as bugs and propagate. An exception thrown from
+///         the <see cref="PasteResult"/>. An exception thrown from
 ///         <see cref="Serialize"/> propagates unchanged out of <see cref="Diagram.ToJson(bool)"/> and the clipboard copy.
 ///     </para>
 /// </remarks>
@@ -59,5 +59,8 @@ public interface INodeDataSerializer
     /// </summary>
     /// <param name="json">The JSON text produced by <see cref="Serialize"/>.</param>
     /// <returns>The payload, or null when the text does not describe a valid payload.</returns>
+    /// <remarks>
+    ///     Returning null or throwing any exception (other than running out of memory) marks the payload unreadable.
+    /// </remarks>
     object? Deserialize(string json);
 }

@@ -312,6 +312,66 @@ public class PlexusRendererTests
     }
 
     /// <summary>
+    ///     Validates that an expanded group is drawn as a frame with a border and a filled title bar around its visible members.
+    /// </summary>
+    [Fact]
+    public void PlexusRenderer_Render_ExpandedGroup_DrawsFrameAndTitleBar()
+    {
+        // Arrange: one grouped node, a theme with opaque, distinctive group colors, and the frame geometry the scene computed
+        var (_, page) = RenderTestModel.CreatePage();
+        var node = page.AddNode("t.Plain", 100, 100, "N");
+        var group = page.CreateGroup([node], "Open");
+        var theme = DiagramTheme.Classic with { GroupBorder = Color.Parse("#FF0000"), GroupTitleFill = Color.Parse("#00AA00") };
+        var scene = SceneBuilder.Build(page, new SceneOptions { Theme = theme, TextMeasurer = new CanvasTextMeasurer(), ShowGrid = false });
+        Assert.True(scene.TryGetGroupLayout(group, out var layout));
+
+        // Act
+        using var image = PlexusRenderer.Render(page, new RenderOptions { Bounds = new Rect(0, 0, 500, 400), ShowGrid = false, Theme = theme });
+
+        // Assert: the border column below the title bar is the border color, the title bar's right end the title fill, the member is still drawn
+        var frame = layout.Frame;
+        var header = layout.Header;
+        Assert.Multiple(
+            () => Assert.False(layout.IsCollapsed),
+            () => Assert.Equal(frame, group.Bounds),
+            () => Assert.Equal(RenderTestModel.Pixel(Color.Parse("#FF0000")), image[(int)Math.Floor(frame.Left), (int)(frame.Top + (frame.Height * 0.6))]),
+            () => Assert.Equal(RenderTestModel.Pixel(Color.Parse("#00AA00")), image[(int)(header.Right - 10), (int)(header.Top + (header.Height / 2))]),
+            () => Assert.Equal(NodeFill, image[(int)node.Bounds.Left + 3, (int)node.Bounds.Bottom - 4]));
+    }
+
+    /// <summary>
+    ///     Validates that a collapsed group is drawn as a node-colored box without a frame, and that its members are hidden.
+    /// </summary>
+    [Fact]
+    public void PlexusRenderer_Render_CollapsedGroup_DrawsBoxAndHidesMembers()
+    {
+        // Arrange: the same page and theme as for the expanded group, rendered once expanded
+        var (_, page) = RenderTestModel.CreatePage();
+        var node = page.AddNode("t.Plain", 100, 100, "N");
+        var group = page.CreateGroup([node], "Closed");
+        var theme = DiagramTheme.Classic with { GroupBorder = Color.Parse("#FF0000"), GroupTitleFill = Color.Parse("#00AA00") };
+        var options = new RenderOptions { Bounds = new Rect(0, 0, 500, 400), ShowGrid = false, Theme = theme };
+        var memberPixel = ((int)node.Bounds.Left + 3, (int)node.Bounds.Bottom - 4);
+        using var expanded = PlexusRenderer.Render(page, options);
+
+        // Act: collapse the group and render again
+        group.IsCollapsed = true;
+        var scene = SceneBuilder.Build(page, new SceneOptions { Theme = theme, TextMeasurer = new CanvasTextMeasurer(), ShowGrid = false });
+        Assert.True(scene.TryGetGroupLayout(group, out var layout));
+        using var collapsed = PlexusRenderer.Render(page, options);
+
+        // Assert: the member is visible while expanded and gone when collapsed; the collapsed box has the node fill and no group frame
+        var box = layout.Frame;
+        var boxBody = ((int)box.Left + 5, (int)box.Bottom - 5);
+        Assert.Multiple(
+            () => Assert.True(layout.IsCollapsed),
+            () => Assert.Equal(NodeFill, expanded[memberPixel.Item1, memberPixel.Item2]),
+            () => Assert.Equal(ThemeBackground, collapsed[memberPixel.Item1, memberPixel.Item2]),
+            () => Assert.Equal(NodeFill, collapsed[boxBody.Item1, boxBody.Item2]),
+            () => Assert.NotEqual(RenderTestModel.Pixel(Color.Parse("#FF0000")), collapsed[(int)Math.Floor(box.Left), (int)(box.Top + (box.Height / 2))]));
+    }
+
+    /// <summary>
     ///     Validates that a theme in the options overrides the diagram's theme.
     /// </summary>
     [Fact]
@@ -356,6 +416,64 @@ public class PlexusRendererTests
         {
             File.Delete(path);
         }
+    }
+
+    /// <summary>
+    ///     Validates that a file-system failure of SavePng (a missing folder) propagates unchanged and leaves nothing behind.
+    /// </summary>
+    [Fact]
+    public void PlexusRenderer_SavePng_MissingFolder_ThrowsDirectoryNotFound()
+    {
+        // Arrange: a path in a folder that does not exist
+        var (_, page) = RenderTestModel.CreatePage();
+        page.AddNode("t.Plain", 30, 30, "N");
+        var folder = Path.Combine(Path.GetTempPath(), $"plexus-missing-{Guid.NewGuid():N}");
+        var path = Path.Combine(folder, "diagram.png");
+
+        // Act / Assert: the file-system exception reaches the caller untranslated, and neither the folder nor the file was created
+        Assert.Throws<DirectoryNotFoundException>(() => PlexusRenderer.SavePng(page, path));
+        Assert.False(Directory.Exists(folder));
+        Assert.False(File.Exists(path));
+    }
+
+    /// <summary>
+    ///     Validates that the selection is copied when the options are created, so later changes to the caller's collection have no effect.
+    /// </summary>
+    [Fact]
+    public void PlexusRenderer_RenderOptions_SelectionChangedAfterInit_KeepsSnapshot()
+    {
+        // Arrange: options created from a list that the caller then empties and extends
+        var (_, page) = RenderTestModel.CreatePage();
+        var node = page.AddNode("t.Plain", 30, 30, "N");
+        var other = page.AddNode("t.Plain", 300, 30, "O");
+        var list = new List<DiagramElement> { node };
+        var options = new RenderOptions { Bounds = FixedArea.Bounds, ShowGrid = false, Selection = list };
+
+        // Act
+        list.Clear();
+        list.Add(other);
+        using var image = PlexusRenderer.Render(page, options);
+
+        // Assert: the snapshot still holds the node, which is drawn with its outline
+        Assert.Equal([node], options.Selection);
+        Assert.Equal(RenderTestModel.Pixel(DiagramTheme.Classic.SelectionColor), image[28, 70]);
+        Assert.Throws<ArgumentNullException>(() => new RenderOptions { Selection = null! });
+    }
+
+    /// <summary>
+    ///     Validates that unusable numeric options are rejected with an argument exception.
+    /// </summary>
+    [Fact]
+    public void PlexusRenderer_Render_NonFiniteOrNegativeOptions_Throw()
+    {
+        // Arrange
+        var (_, page) = RenderTestModel.CreatePage();
+
+        // Act / Assert
+        Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Scale = double.PositiveInfinity }));
+        Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Scale = -1 }));
+        Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Padding = double.NaN }));
+        Assert.Throws<ArgumentException>(() => PlexusRenderer.Render(page, new RenderOptions { Padding = double.PositiveInfinity }));
     }
 
     /// <summary>

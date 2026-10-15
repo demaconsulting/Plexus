@@ -40,7 +40,8 @@ Failures are reported with ordinary exceptions that a host catches around its Op
 - `System.Text.Json.JsonException`: the text is not valid snapshot JSON.
 - `SnapshotException`: a valid document that cannot be restored, for example one that uses an unknown node type (the
   message names it), has a wire to a port its node does not have (also a port its type's port provider no longer
-  produces), or whose port provider fails.
+  produces), whose port provider fails, or that has a node without a node type key (a paste of such content fails
+  with a message instead).
 - `IOException` and `UnauthorizedAccessException`: the file could not be read (raised by your `File` call).
 
 Load completely before replacing anything, so that a bad file leaves the open document untouched. The demo's `Open`

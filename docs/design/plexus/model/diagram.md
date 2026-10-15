@@ -19,8 +19,11 @@ data classes. JSON snapshots are further partial members of the same class that 
 
 - **Types, Pages, History**: read-only properties set by the constructor; `Pages` is created with a reference back to the
   diagram and `History` is a new undo history.
-- **Settings**: `Theme` (default classic theme), `Router` (default orthogonal router), `ConnectionRules` (default rule
-  allowing everything) and `RequireUniqueNodeNames` (default true). They are plain fields, not part of the history.
+- **Settings**: `Theme` (default classic theme), `Router` (default orthogonal router), `ConnectionRules` (default
+  `ConnectionRules.Default`, which refuses a second wire into an input whose port does not allow multiple wires and
+  allows every other structurally valid connection; a host composes it with its own rule through
+  `ConnectionRules.All` to keep that behavior, or replaces it to allow fan-in everywhere) and `RequireUniqueNodeNames`
+  (default true). They are plain fields, not part of the history.
 - **Wire styler**: `WireStyler`, an optional `Func<Wire, WireStyle?>` (default null, theme-only wires) in the partial file
   `Diagram.Appearance.cs`. It is configuration like the settings: not undoable, not serialized.
 - **Node styler**: `NodeStyler`, the node equivalent, an optional `Func<Node, NodeStyle?>` (default null, theme-only
@@ -54,17 +57,22 @@ data classes. JSON snapshots are further partial members of the same class that 
   whose name equals the argument case-sensitively. **FindPort(path, direction)**: asks each page in order for the port
   and returns the first match; the path rules (name or id, dots in names, direction) are those of the page lookup.
 - **RaiseChanged / Register / Unregister** (internal): used by pages and the page collection to publish changes and keep
-  the index current.
-- **Perform(description, plan)** (internal): runs a multi-step operation through a command plan. If a step throws, all
-  applied steps are reverted and the exception propagates; otherwise the steps are recorded as one history entry, or
-  nothing when no step ran.
+  the index current. `RaiseChanged` drops the routing caches when the theme changed, advances `Version` (always, also
+  when a handler throws) and raises `Changed` through the history's notification gate, so during an undoable change a
+  throwing handler is captured and rethrown after the change.
+- **Perform(description, plan)** (internal): runs a multi-step operation through a command plan as one history
+  operation. If a step throws, the plan reverts all applied steps (`Abort(cause)`; when a revert fails too an
+  `AggregateException` with the original exception first is thrown), handler exceptions captured meanwhile are dropped
+  and the exception propagates; otherwise the steps are recorded as one history entry, or nothing when no step ran, and
+  then the first captured handler exception is rethrown.
 - **TryRename(node, proposed, reason)**: checks the node is attached to this diagram, then (1) trims and validates the
   name (non-empty; unique unless disabled), (2) returns success without a change when the name equals the current one,
   (3) raises `NodeRenaming` so the host can correct or cancel, (4) re-validates a corrected name, and (5) executes an
   undoable set-name command. **Rename(node, proposed)** throws an argument exception carrying the reason instead of
   returning false.
 - **ApplyNodeName** (internal): used by the command for do, undo and redo; sets the name, raises the node's property
-  change (which becomes `Changed`) and then `NodeRenamed`.
+  change (which becomes `Changed`) and then `NodeRenamed`, both through the history's notification gate. `NodeRenaming`
+  (the veto hook, raised before anything changes) is not gated: its exception aborts the rename before any change.
 - **GenerateNodeName / EnsureIdAvailable / ValidateNodeName** (internal): generate the lowest unused `{TypeKey
   last segment}{n}` name, reject blank or used ids, and apply the default name rules; used by pages when adding nodes.
 - **MoveToPage(elements, target)**: validates the target and elements; expands groups to their members; drops wires and
@@ -91,7 +99,20 @@ Null arguments throw argument-null exceptions. A rename of a node that is not at
 or of elements that are not part of the diagram, a blank or duplicate id, and a rejected `Rename` throw argument
 exceptions; `TryRename` reports rename rejections through its return value and reason instead. Failing multi-step
 operations are rolled back by `Perform`, so an exception never leaves the model partially changed. Event handlers are
-invoked synchronously and an exception in a handler propagates to the caller of the change.
+invoked synchronously on the calling thread:
+
+- During an undoable change (an execute, a multi-step operation, an undo, a redo or a rollback), an exception thrown by
+  a handler of `Changed`, `NodeRenamed`, an element's, page's or property bag's `PropertyChanged`, a page content
+  collection or the page list (any exception except running out of memory) does not interrupt the change: the remaining
+  notifications are raised, the change is completed and recorded (or its entry moved), and the first handler exception
+  is then rethrown to the caller with its original stack trace; later ones of the same change are dropped.
+- Inside `UndoHistory.Transact` the rethrown exception reaches the transaction delegate, so the whole transaction is
+  rolled back and the exception propagates; handler exceptions raised while a failure is rolled back are dropped. An
+  explicit `HistoryTransaction.Rollback()` rethrows the first one after the rollback completed.
+- When the operation itself fails (validation, provider failure, failing command) its own exception propagates, the
+  model is reverted, nothing is recorded and handler exceptions are dropped.
+- Outside a history operation (the settings setters and `RefreshAppearance`, which are not undoable) a handler
+  exception propagates immediately.
 
 #### Dependencies
 

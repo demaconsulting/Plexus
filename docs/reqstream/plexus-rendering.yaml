@@ -18,7 +18,9 @@ sections:
         children:
           - PlexusRendering-PlexusRenderer-RenderPng
           - PlexusRendering-PlexusRenderer-TransparentBackground
+          - PlexusRendering-PlexusRenderer-ThemeTransparentBackground
           - PlexusRendering-PlexusRenderer-SavePng
+          - PlexusRendering-PlexusRenderer-SaveFailure
           - Plexus-OTS-CanvasNet-Png
         tests:
           - PlexusRendering_RenderPng_DiagramPage_ProducesDecodablePng
@@ -34,18 +36,42 @@ sections:
         tags: [system]
         children:
           - PlexusRendering-PlexusRenderer-Nodes
+          - PlexusRendering-PlexusRenderer-NodeTitle
+          - PlexusRendering-PlexusRenderer-NodeName
           - PlexusRendering-PlexusRenderer-Wires
           - PlexusRendering-PlexusRenderer-StyledWires
-          - PlexusRendering-PlexusRenderer-AnnotationsAndGroups
-          - PlexusRendering-PlexusRenderer-DynamicPorts
+          - PlexusRendering-PlexusRenderer-StyledWireThickness
+          - PlexusRendering-PlexusRenderer-StyledWireDash
+          - PlexusRendering-PlexusRenderer-StyledWireRefresh
+          - PlexusRendering-PlexusRenderer-Annotations
+          - PlexusRendering-PlexusRenderer-ExpandedGroups
+          - PlexusRendering-PlexusRenderer-CollapsedGroups
           - PlexusRendering-ScenePainter-Rectangles
+          - PlexusRendering-ScenePainter-RoundedCorners
+          - PlexusRendering-ScenePainter-CrispBorder
           - PlexusRendering-ScenePainter-Paths
+          - PlexusRendering-ScenePainter-OpenPathFill
+          - PlexusRendering-ScenePainter-CurveStroke
           - PlexusRendering-ScenePainter-Blending
+          - PlexusRendering-ScenePainter-AntiAliasing
           - PlexusRendering-ScenePainter-Order
           - PlexusRendering-ScenePainter-Clipping
           - Plexus-OTS-CanvasNet-Rasterize
         tests:
           - PlexusRendering_Render_FullPage_ShowsEveryElementKind
+
+      - id: PlexusRendering-Render-DynamicPorts
+        title: >-
+          The rendered image shall show each node with its current ports, including the ports a port provider
+          computes from the node's properties.
+        justification: |
+          Nodes with variable ports (a bus with a configurable number of inputs) change their ports when their
+          properties change; a picture that showed stale or missing ports would misrepresent the diagram.
+        tags: [system]
+        children:
+          - PlexusRendering-PlexusRenderer-DynamicPorts
+        tests:
+          - PlexusRendering_Render_DynamicPortNode_ShowsCurrentPorts
 
       - id: PlexusRendering-Render-Icons
         title: >-
@@ -56,11 +82,15 @@ sections:
           prevent a diagram from being rendered, and diagrams that repeat an icon must stay fast and bounded in memory.
         tags: [system]
         children:
+          - PlexusRendering-PlexusRenderer-NodeIcon
           - PlexusRendering-ScenePainter-Icons
+          - PlexusRendering-ScenePainter-IconTransparency
           - PlexusRendering-ScenePainter-MalformedIcon
           - PlexusRendering-IconCache-SharedRasterization
+          - PlexusRendering-IconCache-PerSizeSurface
           - PlexusRendering-IconCache-MalformedSvg
           - PlexusRendering-IconCache-BoundedMemory
+          - PlexusRendering-IconCache-Eviction
           - Plexus-OTS-CanvasNet-Svg
         tests:
           - PlexusRendering_Render_FullPage_ShowsEveryElementKind
@@ -77,7 +107,12 @@ sections:
         tags: [system]
         children:
           - PlexusRendering-PlexusRenderer-StyledNodes
+          - PlexusRendering-PlexusRenderer-StyledNodeBorder
+          - PlexusRendering-PlexusRenderer-StyledNodeIconTint
+          - PlexusRendering-PlexusRenderer-StyledNodeHalo
+          - PlexusRendering-PlexusRenderer-StyledNodeOpacity
           - PlexusRendering-ScenePainter-IconTint
+          - PlexusRendering-ScenePainter-IconOpacity
         tests:
           - PlexusRendering_Render_StyledNodes_ShowTheStyleOnlyWhereTheStylerDecides
       - id: PlexusRendering-Render-TextLayout
@@ -92,11 +127,17 @@ sections:
         tags: [system]
         children:
           - PlexusRendering-CanvasTextMeasurer-Width
+          - PlexusRendering-CanvasTextMeasurer-WidthFontSize
           - PlexusRendering-CanvasTextMeasurer-Weight
           - PlexusRendering-CanvasTextMeasurer-LineHeight
+          - PlexusRendering-CanvasTextMeasurer-LineHeightUniform
+          - PlexusRendering-CanvasTextMeasurer-EmptyText
           - PlexusRendering-CanvasTextMeasurer-Degenerate
           - PlexusRendering-CanvasTextMeasurer-FontFallback
+          - PlexusRendering-CanvasTextMeasurer-FamilyCase
           - PlexusRendering-ScenePainter-Text
+          - PlexusRendering-ScenePainter-TextAlignment
+          - PlexusRendering-ScenePainter-BoldText
           - Plexus-OTS-CanvasNet-Text
         tests:
           - PlexusRendering_Render_NodeTitle_MatchesMeasuredTextWidth
@@ -112,9 +153,13 @@ sections:
         tags: [system]
         children:
           - PlexusRendering-PlexusRenderer-FitContent
+          - PlexusRendering-PlexusRenderer-EmptyPage
           - PlexusRendering-PlexusRenderer-Bounds
           - PlexusRendering-PlexusRenderer-Scale
+          - PlexusRendering-PlexusRenderer-ScalePositions
           - PlexusRendering-ScenePainter-Placement
+          - PlexusRendering-ScenePainter-ScaleGeometry
+          - PlexusRendering-ScenePainter-ScaleStroke
         tests:
           - PlexusRendering_Render_FramingOptions_SizeTheImage
 
@@ -128,6 +173,7 @@ sections:
         children:
           - PlexusRendering-PlexusRenderer-Background
           - PlexusRendering-PlexusRenderer-Grid
+          - PlexusRendering-PlexusRenderer-GridOff
           - PlexusRendering-ScenePainter-Grid
         tests:
           - PlexusRendering_Render_BackgroundAndGridOptions_ChangeThePixels
@@ -143,6 +189,7 @@ sections:
         children:
           - PlexusRendering-PlexusRenderer-Theme
           - PlexusRendering-PlexusRenderer-Selection
+          - PlexusRendering-PlexusRenderer-SelectionSnapshot
         tests:
           - PlexusRendering_Render_ThemeAndSelectionOptions_RestyleTheImage
 
@@ -169,8 +216,15 @@ sections:
         tags: [system]
         children:
           - PlexusRendering-PlexusRenderer-InvalidInput
+          - PlexusRendering-PlexusRenderer-InvalidScale
+          - PlexusRendering-PlexusRenderer-InvalidPadding
+          - PlexusRendering-PlexusRenderer-InvalidBounds
+          - PlexusRendering-PlexusRenderer-ImageTooLarge
+          - PlexusRendering-PlexusRenderer-InvalidPath
           - PlexusRendering-CanvasTextMeasurer-InvalidInput
+          - PlexusRendering-CanvasTextMeasurer-NullStyle
           - PlexusRendering-ScenePainter-InvalidInput
+          - PlexusRendering-ScenePainter-NullPrimitive
         tests:
           - PlexusRendering_Render_InvalidInput_IsRejected
 

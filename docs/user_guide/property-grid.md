@@ -62,9 +62,11 @@ var mixer = new Mixer();
 var grid = new PropertyGrid { SelectedObject = mixer };      // categorized, with search and a description pane
 ```
 
-The grid lists the properties in categories (or alphabetically), within a category in the order the source gives
-(`PropertyItem.Order`, set with `CustomPropertyOptions.Order` for custom items and taken from
-`PropertyDefinition.Order` for Plexus nodes; ties and the alphabetical view go by name), with a search box, collapsible
+The grid lists the properties in categories (or alphabetically). Within a category, items are listed by their rank
+(`PropertyItem.Order`, lower first, default 0; set with `CustomPropertyOptions.Order` for custom items and taken from
+`PropertyDefinition.Order` for Plexus nodes, where any `Int32` including a negative one is allowed); items with equal
+ranks are listed alphabetically by display name (ignoring case and culture). The alphabetical view ignores the rank. The
+grid also has a search box, collapsible
 categories, a
 description pane, expandable nested objects (`Range`), a "..." button that opens the collection editor for collections
 (`Channels`) and inline validation: a value that cannot be converted, or that fails a `[Range]` or `[Required]`
@@ -88,7 +90,7 @@ context menu of such a row resets it.
 | `List<T>`, arrays, `ICollection<T>`  | The collection editor: add, remove, reorder, edit members.            |
 | `[PasswordPropertyText(true)]`       | The text is masked.                                                   |
 | `[ParenthesizePropertyName]`         | The label is shown as `(Name)` and sorted first.                      |
-| `[RefreshProperties(All)]`           | All rows are read again after the property changes.                   |
+| `[RefreshProperties(All)]`           | All rows are read again after it changes (also when hidden).          |
 | `[DefaultProperty]`                  | The row that is selected first.                                       |
 | `[PropertyEditor("key")]`            | A custom editor (see below).                                          |
 | `[UIHint("key")]`                    | The same, without referencing the grid assembly (see below).          |
@@ -147,7 +149,9 @@ bool changed = await PropertyGridDialog.ShowAsync(
     commitScope: apply => diagram.History.Transact("Edit mixer", apply));
 ```
 
-The title is "&lt;display name or type name&gt; - Properties".
+The title is "&lt;display name or type name&gt; - Properties". A missing owner or target throws `ArgumentNullException`
+before a window is created. A property whose type converter throws when asked whether it converts from text is treated
+as not editable as text (`PropertyItem.SupportsTextEditing` is `false`); it does not break the grid.
 
 ## Custom Editors
 
@@ -254,7 +258,8 @@ public class EditorWindow : Window
 ![The demo with the docked properties panel showing the selected Task node](images/property-grid-panel.png)
 
 `NodePropertiesDialog.ShowAsync` opens a dialog titled "&lt;name&gt; - Properties" and completes with `true` after OK.
-OK applies the rename, the changed properties and the edited host data as **one undo entry**; Cancel changes nothing.
+OK applies the rename, the changed properties and the edited host data as **one undo entry**; Cancel changes nothing. The
+node must be attached to a diagram: a detached node throws `ArgumentException` from `ShowAsync` and `Create`.
 The panel is live: each edit is applied at once as its own undo entry, and undo, redo and changes from elsewhere show
 up in the panel. A wire is not an element the adapters know; show only nodes, annotations and groups as above.
 
@@ -265,7 +270,8 @@ up in the panel. A wire is not an element the adapters know; show only nodes, an
   veto it; the reason appears on the name row and the dialog stays open.
 - **The declared properties** (paths `Property.<name>`), each from its `PropertyDefinition`: the category (properties
   without one are listed under
-  "General", with the name), the position within the category (`Order`, lower first, then by name), the display name
+  "General", with the name), the position within the category (`Order`, lower first including negative values, equal
+  orders alphabetically by name, categorized view only), the display name
   with the unit in parentheses, the description, read-only, a bold value
   when it differs from the default (and a reset), a drop-down for `Choices`, a check box for booleans, a color editor for
   colors, text for numbers and strings that is parsed with `definition.TryParse` (invariant culture, a trailing unit
@@ -382,25 +388,52 @@ public static class Inspectors
 - **Effective values.** `context.GetValue(path)` returns the value OK would apply: the pending edit when there is one,
   otherwise the node's current value. It accepts any row path (`Node.Name`, `Property.<name>`, `Data.<path>`);
   `GetPropertyValue(name)` is the short form for a declared property. An unknown path returns `null`.
-- **Notifications.** `Changed` is raised when an edit is staged, reset or discarded, when the edits are cancelled or
-  committed, and when the grid replaces its session. It is not raised for a validation error alone. Text fields stage
-  their value on Enter or when they lose focus. Drop-downs, check boxes and sliders stage at once. The preview therefore
-  redraws when a field is committed, not on every keystroke.
+- **Notifications.** `Changed` is raised once for each of these: an edit is staged, reset or discarded; the edit session
+  is cancelled (`PropertyEditSession.Cancel()`, which discards every pending edit); the edits are committed; the grid
+  replaces its session. It is not raised for a validation error alone. Text fields stage their value on Enter or when they
+  lose focus. Drop-downs, check boxes and sliders stage at once. The preview therefore redraws when a field is committed,
+  not on every keystroke. The dialog's **Cancel** button and closing the window do not cancel the session: they raise no
+  notification, because the dialog disposes the context as soon as the close is confirmed. **OK** raises one
+  notification for its commit, after the node holds the committed values and before the dialog closes. If the grid comes
+  to show something that is not a node, the context reads nothing (`GetValue` returns `null`) and `Node` keeps returning
+  the last node shown, until the grid shows a node again.
 - **OK and Cancel are unchanged.** The context has no write path, so the preview never changes the node: OK is still one
-  undo entry and Cancel still changes nothing. The dialog disposes the context when it closes, so no notification
-  arrives after that.
-- **Placement and size.** The preview is to the right of the grid (`NodePreviewPlacement.Side`, 400 pixels wide, dialog
-  880 by 640) or above it (`NodePreviewPlacement.Top`, 220 pixels high, dialog 480 by 860). `Title`, `Width` and
-  `Height` override the defaults. The panel that holds the preview has the automation id `PropertyGridDialog_Preview`.
+  undo entry and Cancel still changes nothing.
+- **Placement and size.** The preview is to the right of the grid (`NodePreviewPlacement.Side`, 400 pixels wide, the
+  default) or above it (`NodePreviewPlacement.Top`, 220 pixels high). Without a preview the dialog is 480 by 640 device
+  independent pixels; a side preview makes it 880 by 640 and a top preview 480 by 860. `Width` and `Height` override
+  each dimension independently (finite and greater than zero); `Title` overrides the title. The panel that holds the
+  preview has the automation id `PropertyGridDialog_Preview`.
 
 A host that builds its own window creates the context over its own staged grid, or over a `PropertyEditSession` it
 drives itself, and disposes it when the window closes:
 
 ```csharp
-var grid = new PropertyGrid { EditMode = PropertyEditMode.Staged, SelectedObject = node };
-var context = new NodePreviewContext(grid);        // follows grid.Session when the grid replaces it
-context.Changed += (_, _) => preview.Redraw(context);
-window.Closed += (_, _) => context.Dispose();
+using Avalonia.Controls;
+using DemaConsulting.Plexus;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+
+public sealed class InspectorWindow : Window
+{
+    public InspectorWindow(Node node)
+    {
+        var grid = new PropertyGrid { EditMode = PropertyEditMode.Staged, SelectedObject = node };
+        var preview = new TextBlock { Width = 200 };
+        var context = new NodePreviewContext(grid);    // follows grid.Session when the grid replaces it
+
+        void Redraw() => preview.Text = $"{context.GetPropertyValue("Frequency")} Hz";
+        context.Changed += (_, _) => Redraw();
+        Redraw();
+        Closed += (_, _) => context.Dispose();
+
+        var panel = new DockPanel();
+        DockPanel.SetDock(preview, Dock.Right);
+        panel.Children.Add(preview);
+        panel.Children.Add(grid);                      // the last child fills the rest
+        Content = panel;                               // commit with grid.Session!.Commit(), discard with Cancel()
+    }
+}
 ```
 
 The demo uses this for its oscillator, envelope and filter nodes: double-click one to see its waveform, ADSR curve or

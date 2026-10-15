@@ -144,6 +144,13 @@ diagram.Changed += (_, e) =>
 cheap cache key for anything computed from the diagram: remember the version next to the value and recompute when it
 differs. Individual elements and pages also raise `PropertyChanged` for their own members.
 
+Keep handlers short and make sure they do not throw. If one does throw during an edit, an undo or a redo, Plexus does
+not stop half-way: the change is completed and recorded in the history (so it can still be undone as one step), the
+remaining notifications are raised, and only then does the first handler exception reach the code that made the
+change. Inside `History.Transact` that exception rolls the whole transaction back, like any other failure of the
+edits. A failed edit (for example an invalid value) reports its own exception, not the handler's. Changing a setting
+such as the theme is not undoable, so a handler exception there propagates immediately.
+
 ## Renaming Nodes
 
 Renaming a node, whether in code or in place in the editor, raises `Diagram.NodeRenaming` first, so the host can

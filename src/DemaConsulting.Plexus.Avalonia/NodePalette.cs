@@ -307,6 +307,10 @@ public sealed partial class NodePalette : Control
     /// <summary>
     ///     Gets or sets the theme the items are drawn with; null (the default) uses the followed <see cref="Editor"/>'s theme, or <see cref="Scene.DiagramTheme.Classic"/> when there is no editor.
     /// </summary>
+    /// <remarks>
+    ///     The theme changes the look of the items only: port positions and port triangles follow the diagram theme the
+    ///     prototypes are sized with, as on the canvas.
+    /// </remarks>
     public DiagramTheme? DiagramTheme
     {
         get => GetValue(DiagramThemeProperty);

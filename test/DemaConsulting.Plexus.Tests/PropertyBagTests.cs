@@ -244,6 +244,28 @@ public class PropertyBagTests
     }
 
     /// <summary>
+    ///     Validates that a 64-bit integer that a double cannot hold exactly is rejected for a double property and
+    ///     leaves the value and the history unchanged, while an exactly representable one converts.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Set_Int64NotExactlyRepresentableAsDouble_ThrowsArgumentException()
+    {
+        // Arrange
+        var (diagram, node) = Create();
+        var entries = diagram.History.UndoCount;
+
+        // Act / Assert: 2^53 + 1 and long.MaxValue would be rounded by a double
+        Assert.Throws<ArgumentException>(() => node.Properties["Gain"] = (1L << 53) + 1);
+        Assert.Throws<ArgumentException>(() => node.Properties["Gain"] = long.MaxValue);
+        Assert.Equal(1.0, node.Properties["Gain"]);
+        Assert.Equal(entries, diagram.History.UndoCount);
+
+        // Act / Assert: 2^53 is held exactly and converts
+        node.Properties["Gain"] = 1L << 53;
+        Assert.Equal((double)(1L << 53), node.Properties["Gain"]);
+    }
+
+    /// <summary>
     ///     Validates that choice properties accept only their options.
     /// </summary>
     [Fact]

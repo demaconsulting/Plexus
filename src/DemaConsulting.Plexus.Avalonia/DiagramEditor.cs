@@ -544,6 +544,10 @@ public sealed partial class DiagramEditor : Control
     /// <summary>
     ///     Gets or sets the theme to draw with; null (the default) uses the page's <see cref="Diagram.Theme"/>.
     /// </summary>
+    /// <remarks>
+    ///     An override changes the look only: port positions, port triangles, port hit areas and wire ends always
+    ///     follow the diagram's own theme, so wires stay attached; set port metrics on <see cref="Diagram.Theme"/>.
+    /// </remarks>
     public DiagramTheme? DiagramTheme
     {
         get => GetValue(DiagramThemeProperty);

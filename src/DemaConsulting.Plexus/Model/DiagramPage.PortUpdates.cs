@@ -16,15 +16,24 @@ public sealed partial class DiagramPage
     ///         The steps run in a fixed order so that undo (which reverts them newest first) restores the model exactly:
     ///     </para>
     ///     <list type="number">
+    ///         <item><description>an opening notification marker, recorded at the start of the plan (before the triggering
+    ///         change), which reports the change on undo once everything is restored (see
+    ///         <see cref="NodePortsCommand.CreateNotificationSteps"/>);</description></item>
     ///         <item><description>the wires of ports that disappear are removed (in page order);</description></item>
     ///         <item><description>the ports are swapped (<see cref="NodePortsCommand"/>; surviving names keep their port objects);</description></item>
-    ///         <item><description>each remaining wire on a port whose type or fan-in changed is checked with the connection rules
-    ///         (as a reconnect of itself, so it does not count against its own port) and removed when refused;</description></item>
+    ///         <item><description>each remaining wire on a port whose type or fan-in changed is checked with the connection rules,
+    ///         in page order (<see cref="Wires"/>), as a reconnect of itself: it does not count against its own ports, the rules
+    ///         see it as <see cref="WireBeingReconnected"/>, and wires refused earlier in this step are already
+    ///         removed. A refused wire is removed. On an input that now accepts a single wire, every earlier wire is therefore
+    ///         refused and the wire latest in page order survives;</description></item>
     ///         <item><description>when the number of inputs or outputs changed, the node takes the height its longer port column
     ///         needs but never less than its type's default height (the sizing <see cref="AddNode(NodeType, Point, string?, string?)"/>
     ///         uses), so it grows or shrinks while keeping its position and width; a recomputation that keeps both counts leaves
     ///         the size alone, including a size the host set. Every remaining wire of the node whose end anchor moved is
-    ///         re-routed like after a resize.</description></item>
+    ///         re-routed like after a resize;</description></item>
+    ///         <item><description>a closing notification marker reports the node's <c>Ports</c> and its groups' <c>Bounds</c>
+    ///         as changed, once, after every wire removal, bounds and route change above (on undo the opening marker reports
+    ///         it after everything is restored).</description></item>
     ///     </list>
     ///     Nothing is planned when the provider returns ports equivalent to the current ones.
     /// </remarks>
@@ -40,6 +49,11 @@ public sealed partial class DiagramPage
         {
             return;
         }
+
+        // 0. The opening marker goes first in the plan, before the triggering change, so that undo reports the change
+        //    once everything, the triggering change included, is restored
+        var (opening, closing) = NodePortsCommand.CreateNotificationSteps(node);
+        plan.AddFirst(opening);
 
         // 1. Wires of ports that disappear go first, so hosts see them removed before the node reports new ports
         var removed = new HashSet<Port>(change.RemovedPorts);
@@ -95,5 +109,8 @@ public sealed partial class DiagramPage
         {
             plan.Run(layout);
         }
+
+        // 5. The model is settled: report the node's new ports (and the frames of its groups) once
+        plan.Run(closing);
     }
 }

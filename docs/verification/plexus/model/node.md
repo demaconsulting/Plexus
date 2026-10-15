@@ -95,33 +95,73 @@ history entry exists per change, no entry exists for a no-op, and undo and redo 
 **Per-node ports** (`Plexus-Model-Node-DynamicPorts`, `NodePortsTests.cs`)
 
 - `Node_Ports_PortProvider_NewNodeUsesProviderPorts`: a new node has the provider's ports (with their descriptions).
+
+**Recomputation** (`Plexus-Model-Node-DynamicPortRecompute`, `NodePortsTests.cs`)
+
+- `Node_Ports_DataChange_RecomputesPorts`: a payload change recomputes the outputs, as one exact undo entry.
+- `Node_Ports_CountIncreased_AddsPortsKeepingExistingInstancesAndWires`: a property change recomputes the inputs.
+
+**Port identity** (`Plexus-Model-Node-DynamicPortIdentity`, `NodePortsTests.cs`)
+
+- `Node_Ports_CountIncreased_AddsPortsKeepingExistingInstancesAndWires`: the old ports are the same objects and keep
+  their wires.
+- `Node_Ports_RenamedByName_ReattachesWiresByName`: a port that moves to another row keeps its object and wire, takes
+  its new row, and the wire is re-routed to the new anchor.
+- `Node_Ports_SurvivingPortRetyped_KeepsWiresStillAllowed`: a kept port takes its new type and keeps its wire.
+
+**New names** (`Plexus-Model-Node-DynamicPortNewNames`, `NodePortsTests.cs`)
+
+- `Node_Ports_CountIncreased_AddsPortsKeepingExistingInstancesAndWires`: the new names `in2` and `in3` are new port
+  objects without wires.
+
+**Static ports** (`Plexus-Model-Node-StaticPorts`, `NodePortsTests.cs`)
+
 - `Node_Ports_NoPortProvider_KeepsTypePorts`: property and data changes of a type without a provider keep the same port
   object and definition and record one entry each.
-- `Node_Ports_CountIncreased_AddsPortsKeepingExistingInstancesAndWires`: more channels add ports; the old ports are the
-  same objects and keep their wires.
-- `Node_Ports_RenamedByName_ReattachesWiresByName`: a port that moves to another row keeps its object and wire, and the
-  wire is re-routed to the new anchor.
-- `Node_Ports_DataChange_RecomputesPorts`: a payload change recomputes the outputs, as one exact undo entry.
 
-**Wires of changed ports** (`Plexus-Model-Node-DynamicPortWires`, `NodePortsTests.cs`)
+**Empty port set** (`Plexus-Model-Node-EmptyPortSet`, `NodePortsTests.cs`)
+
+- `Node_Ports_ProviderReturnsEmptySet_RemovesEveryPortAndWire`: a provider that returns no inputs and no outputs
+  (boundary: empty set) leaves the node without ports, removes both of its wires, and is one exact undo entry.
+
+**Wires of removed ports** (`Plexus-Model-Node-DynamicPortWires`, `NodePortsTests.cs`)
 
 - `Node_Ports_CountDecreased_RemovesPortsAndTheirWires`: removed ports take their wires; the removed port reports that
   it is no longer on its node.
+
+**Re-checked wires** (`Plexus-Model-Node-DynamicPortRevalidation`, `NodePortsTests.cs`)
+
 - `Node_Ports_SurvivingPortRetyped_RemovesWiresTheRulesRefuse`: with a same-type rule, a retyped port loses its wire;
   undo and redo restore the wire and the port type exactly.
 - `Node_Ports_SurvivingPortRetyped_KeepsWiresStillAllowed`: with the default rules, the wire stays.
 - `Node_Ports_SurvivingPortFanInRemoved_RemovesWiresTheRulesRefuse`: turning fan-in off keeps a single wire on the
   input (the same port object) and is one exact undo entry.
 
+**Re-check order** (`Plexus-Model-Node-DynamicPortRevalidationOrder`, `NodePortsTests.cs`)
+
+- `Node_Ports_FanInRemoved_KeepsWireLatestInPageOrder`: with three wires on a fan-in input, turning fan-in off keeps
+  exactly the third (latest in page order) wire; the diagram reports the removal of the first, then the second wire,
+  then the node's `Ports` change.
+
 **Node size** (`Plexus-Model-Node-DynamicPortSize`, `NodePortsTests.cs`)
 
 - `Node_Ports_MorePortsThanHeight_GrowsNodeAndReroutesWires`: eight inputs grow the node to exactly the height they need
-  (position and width unchanged) and the attached wire equals a fresh route.
+  (position and width unchanged).
 - `Node_Ports_FewerPorts_ShrinksToFitNotBelowDefaultHeight`: going from eight to three inputs shrinks the node to the
   height three need, and on to one input shrinks it to the type's default height and no further (boundary: the default
   height is the floor); position and width are kept and the attached wire equals a fresh route.
 - `Node_Ports_DeclaredSize_ShrinksNotBelowDeclaredHeight`: a node of a type with a declared size grows for five outputs
   and shrinks back for one, never below the declared height, keeping the declared width and its position.
+- `Node_Ports_ProviderReturnsEmptySet_RemovesEveryPortAndWire`: with zero port rows a node with a taller hand-set size
+  takes the type's default height (boundary: no rows).
+
+**Re-routing** (`Plexus-Model-Node-DynamicPortReroute`, `NodePortsTests.cs`)
+
+- `Node_Ports_MorePortsThanHeight_GrowsNodeAndReroutesWires`: the wire on the moved anchor equals a fresh route.
+- `Node_Ports_RenamedByName_ReattachesWiresByName`: the wire of a port that moved to another row equals a fresh route.
+
+**Group frames** (`Plexus-Model-Node-DynamicPortGroupFrame`, `NodePortsTests.cs`)
+
 - `Node_Ports_NodeInGroup_GroupFrameFollowsNewPorts`: the enclosing group reports a bounds change and still contains the
   node.
 
@@ -136,14 +176,37 @@ history entry exists per change, no entry exists for a no-op, and undo and redo 
   entry that undo and redo restore exactly, twice over, with the same port objects.
 - `Node_Ports_Shrink_UndoRedoRestoreExactBounds`: shrinking a wired eight-input node to two inputs is one entry; undo
   restores the exact previous bounds and redo the exact shrunk bounds.
+
+**Unchanged ports** (`Plexus-Model-Node-UnchangedPorts`, `NodePortsTests.cs`)
+
 - `Node_Ports_UnchangedPorts_RaisesNoPortsChangeAndOneEntry`: an edit that leaves the ports alone keeps the definitions,
   raises no `Ports` notification and records only the plain property entry.
+
+**Provider failure** (`Plexus-Model-Node-ProviderFailure`, `NodePortsTests.cs`)
+
 - `Node_Ports_ProviderDuplicateNames_ThrowsAndRevertsAssignment`: a provider producing duplicate names throws; the model
   and history are unchanged (error path).
+- `Node_Ports_ProviderThrows_RevertsAssignmentAndPropagates`: the provider's own exception (same instance, an
+  unusual exception type) reaches the caller; the model dump and the history are unchanged (error path).
+- `Node_Ports_RuleThrowsDuringRevalidation_RollsBackEverything`: a connection rule that throws while a wire is re-checked
+  makes the edit throw; the model dump and the history are unchanged and no `Ports` change is reported (error path).
+
+**Null provider result** (`Plexus-Model-Node-ProviderNull`, `NodePortsTests.cs`)
+
 - `Node_Ports_ProviderReturnsNull_ThrowsInvalidOperation`: a provider returning nothing fails the edit with the type
   named and the value reverted (error path).
 
-**Notification order** (`Plexus-Model-Node-DynamicPortNotification`, `NodePortsTests.cs`)
+**Notification when applied** (`Plexus-Model-Node-DynamicPortNotification`, `NodePortsTests.cs`)
 
 - `Node_Ports_Change_ReportsWireRemovalsBeforePortsChanged`: the diagram reports the property change, then the wire
   removal, then the node's `Ports` change.
+- `Node_Ports_RetypedPortRefusedWire_RemovedBeforePortsChanged`: when the `Ports` change is reported, a wire the rules
+  refused after a retype is already off the page.
+- `Node_Ports_Resize_BoundsAndRoutesSettledWhenPortsChanged`: growing to eight channels reports `Ports` exactly once,
+  and at that moment the node's bounds and the wire's route already equal their final values.
+
+**Notification on undo and redo** (`Plexus-Model-Node-DynamicPortUndoNotification`, `NodePortsTests.cs`)
+
+- `Node_Ports_Undo_ReportsPortsChangeOnceAfterRestore`: undoing and redoing a shrink that removed two wires each report
+  `Ports` exactly once, and the full model dump taken in the handler equals the dump after the undo (respectively redo)
+  completed: wires, bounds, routes and the property value are settled.

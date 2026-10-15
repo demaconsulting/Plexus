@@ -19,7 +19,8 @@ public sealed partial class DiagramEditor
     /// </summary>
     /// <remarks>
     ///     <para>
-    ///         The zoom is kept unless the element does not fit; then the editor zooms out just enough to show it with a small margin.
+    ///         The zoom is kept unless the element's box does not fit in the control minus a margin of 30 device-independent pixels on each
+    ///         side; then the editor zooms out just enough to show it (never below <see cref="MinZoom"/>). It never zooms in.
     ///         An element hidden inside a collapsed group cannot be shown, so the outermost collapsed group that hides it is brought into
     ///         view instead (for a wire, both ends' visible boxes). A wire is shown by the bounding box of its route.
     ///     </para>
@@ -40,9 +41,14 @@ public sealed partial class DiagramEditor
     ///     }
     ///     ]]></code>
     /// </example>
-    /// <param name="element">The element to show; it must be on a page of a diagram.</param>
+    /// <param name="element">
+    ///     The element to show: any element on an attached page of the diagram the editor shows (of any diagram when the editor shows no page).
+    /// </param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="element"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when the element is not on a page of a diagram, or belongs to another diagram than the shown page.</exception>
+    /// <exception cref="ArgumentException">
+    ///     Thrown when the element is not on a page of a diagram, or belongs to another diagram than the shown page. The
+    ///     <see cref="Page"/>, <see cref="Zoom"/>, <see cref="Offset"/> and selection are then unchanged.
+    /// </exception>
     public void BringIntoView(DiagramElement element)
     {
         ArgumentNullException.ThrowIfNull(element);
@@ -60,13 +66,16 @@ public sealed partial class DiagramEditor
     /// <remarks>
     ///     <para>
     ///         The elements are fitted like the whole page by <see cref="ZoomToFit(double)"/>: nodes count with their names, summaries and
-    ///         port labels, the zoom never goes above 1, and elements hidden in a collapsed group count as that group. Use it to show the
+    ///         port labels, and elements hidden in a collapsed group count as that group. The zoom is the one that fits the union of the
+    ///         elements plus the margin on each side into the control, but at most 1 (actual size; a small set is centered rather than
+    ///         magnified), then clamped to <see cref="MinZoom"/> to <see cref="MaxZoom"/>. Use it to show the
     ///         selection (<c>editor.ZoomToFit(editor.Selection)</c>; the list is copied before anything changes) or search results.
     ///     </para>
     ///     <para>
     ///         All elements should be on one page. When they span pages, the page of the first element is shown and the elements on other
-    ///         pages are ignored. An empty sequence does nothing. It may be called before the first layout; it is then applied once the editor
-    ///         has a size, and a newer view request replaces it.
+    ///         pages are ignored. An empty sequence changes nothing (a pending earlier request stays pending). It may be called before the
+    ///         first layout; it is then applied once the editor has a size, and the latest request of <see cref="BringIntoView"/>,
+    ///         <see cref="ZoomToFit(double)"/> and this method replaces any pending one.
     ///     </para>
     /// </remarks>
     /// <example>
@@ -78,12 +87,22 @@ public sealed partial class DiagramEditor
     ///     ]]></code>
     /// </example>
     /// <param name="elements">The elements to show; all must be on pages of the same diagram.</param>
-    /// <param name="margin">The empty space, in device-independent pixels, to keep around the elements.</param>
+    /// <param name="margin">The empty space, in device-independent pixels on each side, to keep around the elements (default 30); finite and not negative.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="elements"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when an entry is null, is not on a page of a diagram, or belongs to another diagram than the shown page or the first element.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown, before anything changes, when <paramref name="margin"/> is negative, NaN or infinite.</exception>
+    /// <exception cref="ArgumentException">
+    ///     Thrown when an entry is null, is not on a page of a diagram, or belongs to another diagram than the shown page or the
+    ///     first element. The <see cref="Page"/>, <see cref="Zoom"/>, <see cref="Offset"/> and selection are then unchanged.
+    /// </exception>
     public void ZoomToFit(IEnumerable<DiagramElement> elements, double margin = 30)
     {
         ArgumentNullException.ThrowIfNull(elements);
+
+        // Validate the margin before anything is read or changed
+        if (!double.IsFinite(margin) || margin < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(margin), margin, "The margin must be a finite number that is not negative.");
+        }
 
         // Copy first: callers pass the live selection, which a page switch clears
         var list = elements.ToList();

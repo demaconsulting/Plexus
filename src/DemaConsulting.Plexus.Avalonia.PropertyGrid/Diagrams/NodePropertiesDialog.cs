@@ -30,9 +30,13 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 ///         <see cref="NodePreviewContext"/> that reads the effective (staged) value of any row (the pending edit when there is
 ///         one, otherwise the node's current value) and raises <see cref="NodePreviewContext.Changed"/> on every edit, reset,
 ///         cancel and commit. The context has no write path, so the preview never mutates the node: OK still commits as one undo
-///         entry and Cancel still changes nothing. The context is disposed when the dialog closes. A side preview widens the
-///         default dialog to 880 x 640 and a top preview makes it 480 x 860; <see cref="NodePropertiesDialogOptions.Width"/> and
-///         <see cref="NodePropertiesDialogOptions.Height"/> override the size. Hosts that build their own window use
+///         entry and Cancel still changes nothing. "Cancel" in that list means <see cref="PropertyEditSession.Cancel"/>, which
+///         discards every pending edit and notifies once; the dialog's Cancel button and closing the window do not cancel the
+///         session and raise no notification, and OK notifies once for its commit, before the dialog closes. The context is
+///         disposed as soon as the close is confirmed and again when the window has closed, so nothing is raised after that.
+///         The dialog is 480 x 640 device-independent pixels without a preview; a side preview (400 wide) widens it to
+///         880 x 640 and a top preview (220 high) makes it 480 x 860; <see cref="NodePropertiesDialogOptions.Width"/> and
+///         <see cref="NodePropertiesDialogOptions.Height"/> override each dimension. Hosts that build their own window use
 ///         <see cref="NodePreviewContext"/> directly over their own grid or session.
 ///     </para>
 /// </remarks>
@@ -183,8 +187,9 @@ public static class NodePropertiesDialog
     /// </summary>
     /// <remarks>
     ///     With a preview, the dialog creates a <see cref="NodePreviewContext"/> over its grid, calls the factory once, shows
-    ///     the returned control in the panel <c>PropertyGridDialog_Preview</c> and disposes the context when the window
-    ///     closes. When the factory throws, the context is disposed and the exception propagates.
+    ///     the returned control in the panel <c>PropertyGridDialog_Preview</c> and disposes the context as soon as the close of
+    ///     the window is confirmed (and again, idempotently, when it has closed). When the factory throws, the context is
+    ///     disposed and the exception propagates.
     /// </remarks>
     /// <param name="node">The node to edit; it must be attached to a diagram.</param>
     /// <param name="options">The options; <see langword="null"/> gives the plain dialog.</param>
@@ -225,7 +230,9 @@ public static class NodePropertiesDialog
 
         dialog.SetPreview(control, side ? Dock.Right : Dock.Top, side ? SidePreviewWidth : TopPreviewHeight);
 
-        // Stop the notifications when the dialog closes, so the preview is not redrawn after OK or Cancel
+        // Stop the notifications as soon as the close is confirmed (OK or Cancel button, window close), before the grid is torn
+        // down, and again (idempotent) when the window has closed, so the preview is never redrawn by a dialog that is closing
+        dialog.CloseConfirmed += (_, _) => context.Dispose();
         dialog.Closed += (_, _) => context.Dispose();
         return dialog;
     }

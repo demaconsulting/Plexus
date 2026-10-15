@@ -2,7 +2,8 @@
 
 ### Verification Approach
 
-The Routing subsystem is verified by integration tests in `RoutingTests` that exercise the routers together with the
+The Routing subsystem is verified by integration tests in `RoutingTests` (every scenario below is in `RoutingTests.cs`)
+that exercise the routers together with the
 page model that calls them (`Diagram.Router`, `DiagramPage.Connect`) and the shared route assertions (`RouteAssertions`:
 orthogonality and obstacle-clearance checks). The geometry types are real; no mocks are used. One recording router
 implementing the public `IWireRouter` contract stands in for a host router to observe the request the model builds.
@@ -16,8 +17,9 @@ Linux and macOS. No files, network or fonts are used.
 
 ### Acceptance Criteria
 
-All tests below pass on every target framework. Every routed wire of every scenario must be orthogonal, and the
-default router's wires must not cross the box of any node other than at its own ports.
+All tests below pass on every target framework. Every routed wire of every scenario must be orthogonal. Wires of the
+default router avoid every node box (other than at their own ports) whenever an obstacle-free route exists; when none
+exists the route is the simple elbow, which may cross nodes (verified separately by the no-free-path scenario).
 
 ### Test Scenarios
 
@@ -45,7 +47,8 @@ default router's wires must not cross the box of any node other than at its own 
   the simple elbow, which is orthogonal.
 - **Host router receives the request**
   (`Routing_HostRouter_ReceivesRequestForNewWires`): the wire carries the bend points the host router returned, and
-  the request holds the port anchors, sides, the theme's stub length and obstacles covering both nodes.
+  the request holds the port anchors, sides, the theme's stub length, the theme's grid size (the diagram theme uses a
+  grid size of 20, not the default 15, so the value is observably passed on) and obstacles covering both nodes.
 - **Determinism**
   (`Routing_SameRequest_BothRouters_AreDeterministic`): two instances of each router give equal results for one
   request with obstacles.
@@ -55,22 +58,25 @@ default router's wires must not cross the box of any node other than at its own 
 - **Null request**
   (`Routing_NullRequest_BothRouters_ThrowArgumentNullException`): both routers reject a null request.
 - **Net separation**
-  (`DiagramPage_Connect_TwoNetsToAdjacentInputs_DoNotRunAlongEachOther`, `DiagramPage_RerouteAll_TwoNets_KeepsNetsApartAndIsRepeatable`):
-  two producers feeding adjacent inputs of one mixer get wires that share no collinear stretch, also after re-routing
-  the whole page, which is repeatable.
+  (`Routing_TwoNets_UseSeparateTracksAfterConnectAndReroute`): two producers feeding adjacent inputs of one mixer, and a
+  branch of the first net to a consumer, get wires of different nets that share no collinear stretch when connected
+  and after re-routing the whole page; every wire stays orthogonal.
 - **Wire by wire equals re-routing the page**
   (`DiagramPage_ConnectWireByWire_MatchesRerouteAll`): a lattice of thirty mixers connected wire by wire, with six
   wires merging at one fan-in input, keeps every route when the whole page is re-routed, and re-routing records no
   undo entry.
-- **Route cleaning and editing**
-  (`Wire_SetRoute_CollinearAndZeroLengthBends_AreNormalized`, `Wire_AddJog_StraightSegment_AddsBumpAsOneUndoEntry`):
-  the page-level effect of the cleaner and the editor; their geometry is verified in the OrthogonalRouter unit tests.
+- **Route cleaning**
+  (`Routing_StoredRoutes_AreNormalized`): a padded route (collinear bend, duplicated bend, bend on the target anchor)
+  normalizes to two bends, and a route stored on a connected wire is normalized the same way without changing its shape.
+- **Route editing**
+  (`Routing_RouteEditing_KeepsRoutesOrthogonalWithFixedPorts`): moving a segment, moving a bend and inserting a jog on
+  a routed wire each give a route that is orthogonal from the source anchor to the target anchor; the moved segment
+  lands at the requested coordinate.
 - **Groups as obstacles**
-  (`DiagramPage_Connect_GroupBetweenPorts_RoutesAroundGroupFrame`, `GroupObstacleTests`): a group frame spanning the
-  free row between two nodes is avoided, is not an obstacle for a wire with an end node inside it (at any depth),
-  collapsed boxes block, groups hidden in a collapsed group do not, the theme option switches it off, and moving a
-  group alone leaves wires untouched until `RerouteAll`; the details are in the DiagramPage, DiagramTheme and
-  SceneBuilder verification designs.
+  (`Routing_GroupFrameBetweenPorts_IsRoutedAround`): a group frame spanning the free row between two nodes, containing
+  neither end node, is avoided by a new wire with the obstacle clearance. Which group frames are supplied (end-node
+  exemption, collapsed boxes, hidden groups, the theme option, re-routing) is verified by the Model, DiagramPage,
+  DiagramTheme, Scene and SceneBuilder verification designs.
 
 Boundary conditions covered: targets ahead and behind, aligned and unaligned ports, enclosed ports, dense crossings.
 Error paths: null request, request without a free path.

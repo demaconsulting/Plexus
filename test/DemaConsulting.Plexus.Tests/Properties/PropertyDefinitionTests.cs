@@ -119,6 +119,62 @@ public class PropertyDefinitionTests
     }
 
     /// <summary>
+    ///     Validates that a choice list containing a null entry is rejected with a message naming the property.
+    /// </summary>
+    [Fact]
+    public void PropertyDefinition_Choices_NullEntry_Throws()
+    {
+        // Arrange: a list whose only problem is the null entry (otherwise non-empty and unique)
+        var choices = new List<string> { "A", null!, "B" };
+
+        // Act
+        var ex = Assert.Throws<ArgumentException>(() => new PropertyDefinition("Mode", "A") { Choices = choices });
+
+        // Assert: the message names the property and the null entry
+        Assert.Contains("Mode", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("null", ex.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that the display-order hint accepts negative and extreme integer values unchanged.
+    /// </summary>
+    [Fact]
+    public void PropertyDefinition_Order_NegativeAndExtremeValues_AreStored()
+    {
+        // Act
+        var negative = new PropertyDefinition("A", 1) { Order = -5 };
+        var minimum = new PropertyDefinition("B", 1) { Order = int.MinValue };
+        var maximum = new PropertyDefinition("C", 1) { Order = int.MaxValue };
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal(-5, negative.Order),
+            () => Assert.Equal(int.MinValue, minimum.Order),
+            () => Assert.Equal(int.MaxValue, maximum.Order));
+    }
+
+    /// <summary>
+    ///     Validates that an Int64 converts to a double only when the double holds exactly the same number.
+    /// </summary>
+    [Fact]
+    public void PropertyValues_Coerce_Int64BeyondDoublePrecision_IsRejected()
+    {
+        // Arrange: 2^53 is the largest range in which every integer is exactly representable
+        const long twoTo53 = 1L << 53;
+
+        // Act / Assert: exactly representable values convert
+        Assert.Equal((double)twoTo53, PropertyValues.Coerce(twoTo53, PropertyValueKind.Double, null));
+        Assert.Equal((double)(1L << 60), PropertyValues.Coerce(1L << 60, PropertyValueKind.Double, null));
+        Assert.Equal((double)int.MaxValue, PropertyValues.Coerce(int.MaxValue, PropertyValueKind.Double, null));
+        Assert.Equal(-(double)twoTo53, PropertyValues.Coerce(-twoTo53, PropertyValueKind.Double, null));
+
+        // Act / Assert: values the double would round are rejected
+        Assert.Throws<ArgumentException>(() => PropertyValues.Coerce(twoTo53 + 1, PropertyValueKind.Double, null));
+        Assert.Throws<ArgumentException>(() => PropertyValues.Coerce(long.MaxValue, PropertyValueKind.Double, null));
+        Assert.Throws<ArgumentException>(() => PropertyValues.Coerce(long.MinValue + 1, PropertyValueKind.Double, null));
+    }
+
+    /// <summary>
     ///     Validates that values are formatted with the invariant culture and that missing values format as empty text.
     /// </summary>
     [Fact]

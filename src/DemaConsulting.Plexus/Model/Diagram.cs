@@ -113,6 +113,10 @@ public sealed partial class Diagram
     ///     <see cref="DiagramChangedEventArgs.Kind"/> says what happened (an element added, removed or changed, a page added,
     ///     removed or renamed, or a setting such as the theme changed) and the other members name the page and element involved.
     ///     Handlers run synchronously on the thread that made the change; keep them short and do not edit the diagram from them.
+    ///     A handler that throws during an undoable change (an edit, undo, redo or rollback) does not interrupt or undo the
+    ///     change: the change is completed and recorded, and the first handler exception reaches the code that made the
+    ///     change afterwards (inside <see cref="UndoHistory.Transact(string, Action)"/> it rolls the transaction back).
+    ///     During a settings change, which is not undoable, the exception propagates immediately.
     /// </remarks>
     public event EventHandler<DiagramChangedEventArgs>? Changed;
 
@@ -161,6 +165,9 @@ public sealed partial class Diagram
     /// <summary>
     ///     Occurs after a node's name changed, including changes caused by undo and redo.
     /// </summary>
+    /// <remarks>
+    ///     A handler that throws does not interrupt the rename; see <see cref="Changed"/> for how its exception is reported.
+    /// </remarks>
     public event EventHandler<NodeRenamedEventArgs>? NodeRenamed;
 
     /// <summary>
@@ -419,15 +426,30 @@ public sealed partial class Diagram
 
         // The version moves before any handler runs, so a handler that rebuilds a scene already sees the new number
         Version++;
-        Changed?.Invoke(this, new DiagramChangedEventArgs(kind, page, element, propertyName));
+        if (Changed is not null)
+        {
+            // During an undoable change a throwing handler is reported after the change completed (see UndoHistory)
+            History.Notify(
+                (Diagram: this, Args: new DiagramChangedEventArgs(kind, page, element, propertyName)),
+                static s => s.Diagram.InvokeChanged(s.Args));
+        }
     }
+
+    /// <summary>
+    ///     Invokes the <see cref="Changed"/> handlers.
+    /// </summary>
+    /// <param name="args">The event data.</param>
+    private void InvokeChanged(DiagramChangedEventArgs args) => Changed?.Invoke(this, args);
 
     /// <summary>
     ///     Runs a multi-step operation and records it as one undo entry.
     /// </summary>
     /// <remarks>
     ///     Steps run immediately through the supplied <see cref="CommandPlan"/>. If any step throws,
-    ///     all applied steps are reverted so the exception leaves the model unchanged.
+    ///     all applied steps are reverted so the exception leaves the model unchanged (when a revert fails too, an
+    ///     <see cref="AggregateException"/> carrying the original exception first is thrown instead). The operation is one
+    ///     change for the history: a change handler that throws does not interrupt it, and its exception is rethrown after
+    ///     the operation was recorded.
     /// </remarks>
     /// <param name="description">Description of the combined entry.</param>
     /// <param name="plan">Applies the steps.</param>
@@ -435,20 +457,33 @@ public sealed partial class Diagram
     {
         History.EnsureNotApplying();
         var commands = new CommandPlan();
+        var before = History.BeginOperation();
         try
         {
             plan(commands);
         }
-        catch
+        catch (Exception ex)
         {
-            commands.Abort();
+            try
+            {
+                commands.Abort(ex);
+            }
+            finally
+            {
+                History.AbortOperation(before);
+            }
+
             throw;
         }
 
+        // Record the completed operation before reporting a handler failure, so model and history stay consistent
+        var handlerFailure = History.EndOperation();
         if (!commands.IsEmpty)
         {
             History.Record(commands.Build(description));
         }
+
+        handlerFailure?.Throw();
     }
 
     /// <summary>
@@ -497,5 +532,17 @@ public sealed partial class Diagram
     ///     Raises <see cref="NodeRenamed"/>.
     /// </summary>
     /// <param name="args">The event data.</param>
-    private void OnNodeRenamed(NodeRenamedEventArgs args) => NodeRenamed?.Invoke(this, args);
+    private void OnNodeRenamed(NodeRenamedEventArgs args)
+    {
+        if (NodeRenamed is not null)
+        {
+            History.Notify((Diagram: this, Args: args), static s => s.Diagram.InvokeNodeRenamed(s.Args));
+        }
+    }
+
+    /// <summary>
+    ///     Invokes the <see cref="NodeRenamed"/> handlers.
+    /// </summary>
+    /// <param name="args">The event data.</param>
+    private void InvokeNodeRenamed(NodeRenamedEventArgs args) => NodeRenamed?.Invoke(this, args);
 }

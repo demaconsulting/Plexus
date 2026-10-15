@@ -8,8 +8,10 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///         Raised by <see cref="DiagramEditor.ToolTipRequested"/> when the pointer moves onto a node, a port, a wire, an
 ///         annotation or a group (once per element or port it moves onto), and by <see cref="DiagramEditor.GetToolTipContent"/>.
 ///         <see cref="Content"/> arrives pre-filled with the editor's default text: for a port its label, the display name of its
-///         <c>PortType</c> and its <c>PortDefinition.Description</c>; for a node <c>NodeType.GetToolTip</c> (the type's tooltip
-///         function, else its description); for a wire <c>"source → target"</c>; for annotations and groups nothing (null).
+///         <c>PortType</c> (its type key when the type is not registered) and its <c>PortDefinition.Description</c> on a new line;
+///         for a node <c>NodeType.GetToolTip</c> (the type's tooltip function, else its description; a null or empty result means
+///         none); for a wire <c>"source → target"</c> (for example <c>"A.out → B.in"</c>); for annotations and groups nothing
+///         (null), although a handler may supply content for them.
 ///     </para>
 ///     <para>
 ///         Set <see cref="Content"/> to a string or to any Avalonia content (for example a <c>TextBlock</c> or a <c>StackPanel</c>

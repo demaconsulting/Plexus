@@ -359,4 +359,95 @@ public class HistoryTests
         history.Capacity = 1;
         Assert.Equal(9, raised);
     }
+
+    /// <summary>
+    ///     Validates that host command code which tries to change the history while its entry is undone or redone cannot
+    ///     corrupt the stacks.
+    /// </summary>
+    [Fact]
+    public void History_ReplayIntegrity_CommandChangesHistoryDuringUndo_IsRejected()
+    {
+        // Arrange: a base entry, then a host command whose undo and redo try to clear the history and change its state
+        var history = new UndoHistory();
+        var document = new Document();
+        Add(history, document, 1, "Base");
+        var armed = false;
+        var refused = 0;
+        void Meddle()
+        {
+            if (!armed)
+            {
+                return;
+            }
+
+            foreach (var attempt in new Action[] { history.Clear, history.MarkClean, () => history.Capacity = 1, () => history.Suspend() })
+            {
+                try
+                {
+                    attempt();
+                }
+                catch (InvalidOperationException)
+                {
+                    refused++;
+                }
+            }
+        }
+
+        history.Execute("Meddle", () => { document.Value += 10; Meddle(); }, () => { document.Value -= 10; Meddle(); });
+        armed = true;
+
+        // Act: undo and redo the meddling entry
+        history.Undo();
+        var afterUndo = (document.Value, history.UndoCount, history.RedoCount);
+        history.Redo();
+
+        // Assert: every attempt was refused both times; the stacks moved exactly as for a plain undo and redo
+        Assert.Equal(8, refused);
+        Assert.Equal((1, 1, 1), afterUndo);
+        Assert.Equal(11, document.Value);
+        Assert.Equal(2, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
+        Assert.Equal(1000, history.Capacity);
+        Assert.False(history.IsSuspended);
+    }
+
+    /// <summary>
+    ///     Validates that a grouped entry whose replay fails part-way leaves the state and the stacks as before the attempt.
+    /// </summary>
+    [Fact]
+    public void History_ReplayAtomic_FailingCommandInGroupedEntry_LeavesStateAndStacksUnchanged()
+    {
+        // Arrange: one transaction of three host commands; the second can be told to fail
+        var history = new UndoHistory();
+        var document = new Document();
+        var fail = false;
+        history.Transact("Edit", () =>
+        {
+            Add(history, document, 1, "One");
+            history.Execute(
+                "Ten",
+                () => document.Value = fail ? throw new InvalidOperationException("redo failed") : document.Value + 10,
+                () => document.Value = fail ? throw new InvalidOperationException("undo failed") : document.Value - 10);
+            Add(history, document, 100, "Hundred");
+        });
+        fail = true;
+
+        // Act / Assert: the failing undo leaves the state and the entry where they were
+        Assert.Throws<InvalidOperationException>(() => history.Undo());
+        Assert.Equal(111, document.Value);
+        Assert.Equal((1, 0), (history.UndoCount, history.RedoCount));
+
+        // Act / Assert: once it works the entry undoes; a failing redo then also leaves everything where it was
+        fail = false;
+        Assert.True(history.Undo());
+        fail = true;
+        Assert.Throws<InvalidOperationException>(() => history.Redo());
+        Assert.Equal(0, document.Value);
+        Assert.Equal((0, 1), (history.UndoCount, history.RedoCount));
+
+        // Act / Assert: and the retry replays the whole entry
+        fail = false;
+        Assert.True(history.Redo());
+        Assert.Equal(111, document.Value);
+    }
 }

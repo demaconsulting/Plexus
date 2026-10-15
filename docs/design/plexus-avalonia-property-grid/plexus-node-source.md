@@ -22,7 +22,9 @@ entry no matter which mode the grid is in or which host shows it.
   `Name`, and the path prefix is applied through the internal `PropertyItem.RootPath`. A data property can therefore not
   hide a declared one. Declared properties use the category of the
   definition (General when it has none), the definition's `Order` as the item rank (so a category lists them in
-  declared display order, ties alphabetical), the display name with the unit in parentheses, the description,
+  ascending declared display order, equal orders alphabetical by display name ignoring case and culture; the chain from
+  `PropertyDefinition.Order` to `PropertyOrdering` is described in the PlexusAvaloniaPropertyGrid system design),
+  the display name with the unit in parentheses, the description,
   read-only, a
   default (so a changed value is bold), a text converter built on `PropertyDefinition.TryParse` and
   `FormatForEdit` for numbers and choices (choices are an exclusive list), booleans as `bool`, colors as

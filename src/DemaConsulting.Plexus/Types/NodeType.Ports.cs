@@ -22,7 +22,11 @@ public sealed partial class NodeType
     ///         label or type changed; a port whose name disappeared is removed together with its wires. Use stable names (for
     ///         example <c>in0</c>, <c>in1</c>, ...): renaming a port drops its wires, and renumbering channels re-attaches the
     ///         wires by name. When a kept port changes its type or its fan-in, each of its wires is checked again with the
-    ///         diagram's <see cref="Diagram.ConnectionRules"/> and removed when the rules now refuse it.
+    ///         diagram's <see cref="Diagram.ConnectionRules"/> and removed when the rules now refuse it. The wires are checked in
+    ///         page order (<see cref="DiagramPage.Wires"/>), each as a reconnect of itself (it does not count against its own
+    ///         ports and the rule sees it as <see cref="DiagramPage.WireBeingReconnected"/>), after the wires refused before it
+    ///         were removed; so when an input that accepted several wires now accepts one, every earlier wire is refused and the
+    ///         wire latest in page order survives.
     ///     </para>
     ///     <para>
     ///         The recomputation is part of the same undo entry as the change that triggered it, so one undo restores the
@@ -32,13 +36,24 @@ public sealed partial class NodeType
     ///         re-routed. A recomputation that keeps the number of inputs and outputs leaves the size alone; loading, pasting and
     ///         duplicating keep stored sizes.
     ///         Removed wires are reported through <see cref="Diagram.Changed"/> (an <see cref="DiagramChangeKind.ElementRemoved"/>
-    ///         per wire) before the node reports <c>Ports</c> as changed.
+    ///         per wire) before the node reports <c>Ports</c> as changed; the <c>Ports</c> change is reported once per change,
+    ///         undo and redo, when the node's ports, bounds and wires are all settled.
     ///     </para>
     ///     <para>
     ///         The provider must be a fast, deterministic, side-effect-free function of the node's <see cref="Node.Type"/>,
     ///         <see cref="Node.Properties"/> and <see cref="Node.Data"/>: it may be called for a node that is not on a page yet, and
-    ///         redo replays the recorded result instead of calling it again. Returning null or throwing makes the triggering change
-    ///         fail (the change is rolled back and the exception propagates; on load the document is refused).
+    ///         redo replays the recorded result instead of calling it again. It must not return null: a null result is a
+    ///         provider failure (an <see cref="InvalidOperationException"/> naming the node type). An empty <see cref="PortSet"/>
+    ///         (no inputs, no outputs, or neither) is valid: the node then has no ports in that direction, the wires of the
+    ///         removed ports are removed, and the height rule above applies with no rows (never below the type's default height).
+    ///     </para>
+    ///     <para>
+    ///         A provider failure - an exception from the provider, a null result, an invalid <see cref="PortSet"/>, or a
+    ///         connection rule that throws while the wires are re-checked - never leaves a partial change: after a property or
+    ///         data change every applied step (including the change itself) is rolled back, nothing is recorded and the
+    ///         exception propagates; when a node is added nothing is added and the exception propagates; when a document is
+    ///         loaded a <see cref="SnapshotException"/> is thrown; a paste returns a failed <see cref="PasteResult"/> with the
+    ///         message; and a duplicate throws an <see cref="InvalidOperationException"/>. In every case the target is unchanged.
     ///     </para>
     ///     <para>
     ///         The static <see cref="Inputs"/> and <see cref="Outputs"/> remain the type's declared defaults and should equal what
@@ -87,8 +102,10 @@ public sealed partial class NodeType
     /// </summary>
     /// <remarks>
     ///     The function is called with the node each time an editor needs the tooltip (when the pointer moves onto the node),
-    ///     so it can show live state, such as a computed value or the host's validation messages for the node. Return null
-    ///     or an empty string for no tooltip. Keep it fast and free of side effects; line breaks (<c>\n</c>) are allowed.
+    ///     so it can show live state, such as a computed value or the host's validation messages for the node. Its result is
+    ///     used unchanged: return null or an empty string for no tooltip (<see cref="Description"/> is then not used). Keep it
+    ///     fast and free of side effects; line breaks (<c>\n</c>) are allowed. An exception it throws is not caught by the
+    ///     library: it propagates to the caller of <see cref="GetToolTip"/>.
     /// </remarks>
     /// <example>
     ///     Show the current value and the host's validation messages.
@@ -114,11 +131,15 @@ public sealed partial class NodeType
     ///     Produces the tooltip text of a node: the result of <see cref="ToolTip"/> when set, otherwise <see cref="Description"/>.
     /// </summary>
     /// <remarks>
-    ///     Used by editors to pre-fill a node's tooltip before the host can override it. Calls the host function, so it has
-    ///     whatever side effects that function has (none, if it follows the contract on <see cref="ToolTip"/>).
+    ///     Used by editors to pre-fill a node's tooltip before the host can override it. When <see cref="ToolTip"/> is set its
+    ///     result is returned unchanged, including null or an empty string (meaning no tooltip; the description is not used as
+    ///     a fallback); when it is not set the <see cref="Description"/> is returned. The function is called with the node on
+    ///     every call, so the text follows the node's current properties and data. Calls the host function, so it has
+    ///     whatever side effects that function has (none, if it follows the contract on <see cref="ToolTip"/>), and an
+    ///     exception thrown by that function propagates unchanged.
     /// </remarks>
     /// <param name="node">The node to describe.</param>
-    /// <returns>The text, or null when the type has neither a tooltip function nor a description.</returns>
+    /// <returns>The text, or null when there is none (the function returned null, or the type has neither a tooltip function nor a description).</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="node"/> is null.</exception>
     public string? GetToolTip(Node node)
     {

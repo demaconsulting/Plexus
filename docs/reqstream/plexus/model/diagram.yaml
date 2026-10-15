@@ -255,3 +255,59 @@ sections:
                   - Diagram_Constructor_WithInitialize_InvokesItOnceWithTheConfiguredDiagram
                   - Diagram_Loaders_WithInitialize_InvokeItAfterTheLoadAndAttachPerInstanceHandlers
                   - Diagram_Apply_WithInitialize_InvokesItAfterTheSettings
+
+              - id: Plexus-Model-Diagram-HandlerFailureKeepsChange
+                title: >-
+                  When a handler of the diagram's change, node-rename, element, page, page-content, page-list or
+                  property-value notifications throws during an undoable change, the Diagram shall still complete the
+                  change and record it as one entry.
+                justification: |
+                  Decomposes Plexus-Model-HandlerFailureKeepsChange; a host handler bug must not leave a change applied
+                  but missing from the undo history, or half applied, which would corrupt every later undo.
+                tests:
+                  - Diagram_Changed_HandlerThrowsOnAdd_NodeIsAddedRecordedAndExceptionRethrown
+                  - Diagram_Changed_HandlerThrowsDuringMultiStepOperation_IsOneCompleteEntry
+                  - Diagram_PropertyChanged_HandlersThrow_ChangesAreRecorded
+                  - Diagram_Changed_HandlerThrows_VersionStillAdvances
+
+              - id: Plexus-Model-Diagram-HandlerFailureReported
+                title: >-
+                  The first exception a change handler throws during an undoable change shall be rethrown to the code
+                  that made the change after the change is complete; later handler exceptions of the same change shall
+                  not be reported.
+                justification: |
+                  Decomposes Plexus-Model-HandlerFailureReported; the host must still learn about its failing handler,
+                  but only once the model and the history are consistent again.
+                tests:
+                  - Diagram_Changed_HandlerThrowsOnAdd_NodeIsAddedRecordedAndExceptionRethrown
+                  - Diagram_Changed_TwoHandlerFailures_FirstIsRethrown
+
+              - id: Plexus-Model-Diagram-HandlerFailureUndoRedo
+                title: >-
+                  An undo or redo during which a change handler throws shall complete and move its entry to the other
+                  stack before the handler exception is rethrown.
+                justification: |
+                  Decomposes Plexus-Model-HandlerFailureUndoRedo; the history must keep matching the model whichever
+                  direction it moves.
+                tests:
+                  - Diagram_Changed_HandlerThrowsOnUndoAndRedo_EntryMoves
+
+              - id: Plexus-Model-Diagram-HandlerFailureTransaction
+                title: >-
+                  A change handler exception raised inside a transaction run as one delegate shall roll the whole
+                  transaction back and propagate.
+                justification: |
+                  Decomposes Plexus-Model-HandlerFailureTransaction; a transaction reacts to the rethrown exception like
+                  to any other failure of its edits, so it never commits half of them.
+                tests:
+                  - Diagram_Changed_HandlerThrowsInsideTransact_TransactionIsRolledBack
+
+              - id: Plexus-Model-Diagram-HandlerFailureOperationFails
+                title: >-
+                  When an undoable change itself fails, its own exception shall propagate, the change shall be rolled
+                  back and nothing recorded, even when a change handler threw during the attempt.
+                justification: |
+                  Decomposes Plexus-Model-HandlerFailureReported; the real cause of a failed edit must not be hidden by
+                  a handler exception raised while it was applied or rolled back.
+                tests:
+                  - Diagram_Changed_OperationFailsAndHandlerThrows_OperationExceptionPropagates

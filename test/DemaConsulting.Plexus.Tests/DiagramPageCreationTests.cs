@@ -312,6 +312,28 @@ public class DiagramPageCreationTests
     }
 
     /// <summary>
+    ///     Validates that a port provider returning null makes AddNode throw an error naming the type, without adding anything.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_AddNode_ProviderReturnsNull_ThrowsAndAddsNothing()
+    {
+        // Arrange: a provider that returns no set at all
+        var types = TestModel.CreateTypes();
+        types.Add(new NodeType("acme.Null") { PortProvider = _ => null! });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var entriesBefore = diagram.History.UndoCount;
+
+        // Act
+        var ex = Assert.Throws<InvalidOperationException>(() => page.AddNode("acme.Null", 0, 0));
+
+        // Assert: the message names the type; no node or history entry is left behind
+        Assert.Contains("acme.Null", ex.Message, StringComparison.Ordinal);
+        Assert.Empty(page.Nodes);
+        Assert.Equal(entriesBefore, diagram.History.UndoCount);
+    }
+
+    /// <summary>
     ///     Validates that a new node grows to fit the ports its type's port provider returns, even over a declared size.
     /// </summary>
     [Fact]

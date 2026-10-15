@@ -57,19 +57,33 @@ All system tests must pass on every supported platform for the platform requirem
 - **PlexusAvaloniaPropertyGrid_CustomEditor_IsUsedForAnnotatedProperty**: a slider registered under the key of an
   annotation edits the annotated property.
 - **PlexusAvaloniaPropertyGrid_CustomSource_OrdersCategoryItemsByRank**: the grid control shows custom items supplied
-  out of order in the order of their ranks within their category (Attack, Decay, Sustain, Release), then the next
-  category.
+  out of order in the order of their ranks within their category (Attack, Decay, Sustain, Release), and an equal-rank
+  pair declared out of alphabetical order (Level before Balance) alphabetically, then the next category.
+- **PlexusAvaloniaPropertyGrid_AlphabeticalView_IgnoresItemRank**: the same ranked items in the alphabetical view are one
+  flat alphabetical list whatever their ranks and categories.
 - **PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry**: a node given to the factory is shown
   by the node source; a staged commit of a rename, a property and a data edit is one undo entry; two live edits are
   two entries; the previous data object is never mutated.
 - **PlexusAvaloniaPropertyGrid_PlexusNode_ListsPropertiesInDefinitionOrder**: the grid control given a node whose
   properties declare a display order lists the name and the ranked General rows, then the Envelope rows in declared
   order rather than alphabetically.
+- **PlexusAvaloniaPropertyGrid_PlexusNode_EqualOrders_ListAlphabetically**: properties that declare the same display order
+  (declared Zeta, Idle, alpha, ice, Hue) are listed alphabetically ignoring case after a property with a negative order
+  (boundary).
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_CommitsOrDiscardsAsOneUndoEntry**: a node dialog cancelled changes
   nothing; a second one commits a rename and a data edit with OK as one undo entry.
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce**: a node dialog with a live
   preview shows a staged frequency in the preview before OK, Cancel leaves the node unchanged, and a second dialog commits
   a frequency and a rename with OK as one undo entry.
+- **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewNotifiedOnEditResetAndSessionCancel**: the preview of a node
+  dialog is notified once for a staged edit (880), once for a reset (the default, 440) and once for
+  `Session.Cancel()` (the node's value); the dialog's Cancel button raises no notification; in a second dialog OK
+  raises exactly one notification, which reads the committed 660 (boundary and negative checks of the notification
+  contract).
+- **PlexusAvaloniaPropertyGrid_NodePreviewContext_HostGridAndSession_FollowStagedEdits**: in a host-built window a
+  context over the host's grid redraws a text from the staged frequency, a context over a bare staged session reads its
+  own staged value, `Cancel()` restores the node's value, disposing the context stops the redraws, and the node and the
+  undo history are untouched throughout.
 - **PlexusAvaloniaPropertyGrid_Dependencies_GenericLayers_UseNoPlexusTypes**: no type outside the Plexus adapter
   namespace has a field, property, method, constructor or base type from a Plexus namespace.
 - **PlexusAvaloniaPropertyGrid_HeadlessHost_RunsOnTheUiThread**: the headless Avalonia host used by the control tests starts

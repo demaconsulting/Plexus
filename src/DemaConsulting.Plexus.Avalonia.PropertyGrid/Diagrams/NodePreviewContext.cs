@@ -16,16 +16,25 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 ///         the <see cref="PropertyDefinition"/>, choices as strings, colors as <c>Avalonia.Media.Color</c>.
 ///     </para>
 ///     <para>
-///         <b>Notifications.</b> <see cref="Changed"/> is raised when a pending edit is made, replaced, reset or discarded,
-///         when all pending edits are cancelled, after a commit or a live write, and when the grid replaces its session (its
-///         content or edit mode changed, or it returned to the visual tree). It is not raised for a validation error alone,
-///         because an error changes no value. Text editors stage their value on Enter or when they lose focus; drop-downs, check
-///         boxes and sliders stage at once. The preview therefore redraws when a field is committed, not on every keystroke.
+///         <b>Notifications.</b> <see cref="Changed"/> is raised, once per change, when a pending edit is made, replaced, reset or
+///         discarded, when all pending edits are cancelled with <see cref="PropertyEditSession.Cancel"/> (that is what
+///         "cancelled" means here), after a commit or a live write, and when the grid replaces its session (its content or
+///         edit mode changed, or it returned to the visual tree). It is not raised for a validation error alone, because an
+///         error changes no value. The dialog's Cancel button and closing the window do not cancel the session: they raise no
+///         notification, because the dialog disposes the context as soon as the close is confirmed; OK raises the commit
+///         notification before the dialog closes. Text editors stage their value on Enter or when they lose focus; drop-downs,
+///         check boxes and sliders stage at once. The preview therefore redraws when a field is committed, not on every keystroke.
+///     </para>
+///     <para>
+///         <b>Replaced sessions.</b> When the grid replaces its session by one that does not edit a node (or by none), the
+///         context is notified once, then reads nothing (<see cref="GetValue"/> returns <see langword="null"/>) and
+///         <see cref="Node"/> keeps returning the last node shown, until the grid shows a node again.
 ///     </para>
 ///     <para>
 ///         <b>Lifetime.</b> The context subscribes to the grid and its session; <see cref="Dispose"/> unsubscribes, after
 ///         which <see cref="Changed"/> is no longer raised and reads keep working on the last session.
-///         <see cref="NodePropertiesDialog"/> disposes the context it creates when the dialog closes. A host that builds its
+///         <see cref="NodePropertiesDialog"/> disposes the context it creates as soon as the close of the dialog is confirmed
+///         (OK or Cancel) and again when the window has closed. A host that builds its
 ///         own window creates the context over its own staged <see cref="PropertyGrid"/> (or a
 ///         <see cref="PropertyEditSession"/>) and disposes it when the window closes.
 ///     </para>
@@ -71,12 +80,14 @@ public sealed class NodePreviewContext : IDisposable
     private readonly PropertyGrid? _grid;
 
     /// <summary>
-    ///     The node that was shown when the context was created (used when the current session shows no node).
+    ///     The node that was shown last: the node of the current session, or the node of the last session that edited one
+    ///     when the grid now shows something else.
     /// </summary>
-    private readonly Node _node;
+    private Node _node;
 
     /// <summary>
-    ///     The session the values are read through, or <see langword="null"/> when the grid currently has none.
+    ///     The session the values are read through, or <see langword="null"/> when the grid currently has no session or its
+    ///     session does not edit a node (the context then reads nothing).
     /// </summary>
     private PropertyEditSession? _session;
 
@@ -127,16 +138,18 @@ public sealed class NodePreviewContext : IDisposable
 
     /// <summary>
     ///     Occurs on the UI thread, with <see cref="EventArgs.Empty"/>, whenever the effective values may have changed: a
-    ///     pending edit was made, reset or discarded, the edits were cancelled or committed, a live write happened, or the
-    ///     grid replaced its session. Read the values again with <see cref="GetValue"/> in the handler.
+    ///     pending edit was made, reset or discarded, the edits were cancelled (<see cref="PropertyEditSession.Cancel"/>) or
+    ///     committed, a live write happened, or the grid replaced its session. Closing the dialog raises nothing. Read the
+    ///     values again with <see cref="GetValue"/> in the handler.
     /// </summary>
     public event EventHandler? Changed;
 
     /// <summary>
-    ///     Gets the node that is shown. Read it (its type, ports or current values) but never modify it from a preview: the
-    ///     dialog's OK and Cancel own every change.
+    ///     Gets the node that is shown: the node of the current session, or the last node shown while the grid's session does
+    ///     not edit a node. Read it (its type, ports or current values) but never modify it from a preview: the dialog's OK
+    ///     and Cancel own every change.
     /// </summary>
-    public Node Node => (_session?.Source as NodePropertySource)?.Node ?? _node;
+    public Node Node => _node;
 
     /// <summary>
     ///     Gets the effective value of a row: the pending edit when there is one, otherwise the node's current value.
@@ -147,7 +160,8 @@ public sealed class NodePreviewContext : IDisposable
     /// </param>
     /// <returns>
     ///     The value (for a pending reset the default value, for a pending collection edit the working list), or
-    ///     <see langword="null"/> when the path names no row, the value cannot be read or the grid currently has no session.
+    ///     <see langword="null"/> when the path names no row, the value cannot be read or the grid currently has no session
+    ///     that edits a node.
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="path"/> is <see langword="null"/>.</exception>
     public object? GetValue(string path)
@@ -194,7 +208,9 @@ public sealed class NodePreviewContext : IDisposable
     }
 
     /// <summary>
-    ///     Starts reading through a session and listening to it, after letting go of the previous one.
+    ///     Starts reading through a session and listening to it, after letting go of the previous one. A session that does
+    ///     not edit a node (or no session) detaches the context: it reads nothing and <see cref="Node"/> keeps returning the
+    ///     last node shown, until a session that edits a node is attached again.
     /// </summary>
     /// <param name="session">The new session, or <see langword="null"/> when the grid has none.</param>
     private void Attach(PropertyEditSession? session)
@@ -204,10 +220,15 @@ public sealed class NodePreviewContext : IDisposable
             _session.Changed -= OnSessionChanged;
         }
 
-        _session = session;
-        if (_session is not null)
+        if (session?.Source is NodePropertySource source)
         {
+            _session = session;
+            _node = source.Node;
             _session.Changed += OnSessionChanged;
+        }
+        else
+        {
+            _session = null;
         }
     }
 

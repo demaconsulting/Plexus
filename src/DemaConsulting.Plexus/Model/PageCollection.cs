@@ -74,7 +74,9 @@ public sealed class PageCollection : IReadOnlyList<DiagramPage>, IList, INotifyC
     /// </summary>
     /// <remarks>
     ///     The sender is this collection. A page rename does not raise this event; listen to
-    ///     <see cref="DiagramPage.PropertyChanged"/> (or <see cref="Diagram.Changed"/>) to refresh page titles.
+    ///     <see cref="DiagramPage.PropertyChanged"/> (or <see cref="Diagram.Changed"/>) to refresh page titles. A handler that
+    ///     throws does not interrupt the change (the page is attached, detached or moved and the change recorded first); see
+    ///     <see cref="Diagram.Changed"/> for how its exception is reported.
     /// </remarks>
     public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
@@ -257,7 +259,7 @@ public sealed class PageCollection : IReadOnlyList<DiagramPage>, IList, INotifyC
             _diagram.RegisterElement(element);
         }
 
-        _pages.Insert(index, page);
+        _diagram.History.Notify((Pages: _pages, Index: index, Page: page), static s => s.Pages.Insert(s.Index, s.Page));
         _diagram.RaiseChanged(DiagramChangeKind.PageAdded, page, null, null);
     }
 
@@ -275,7 +277,7 @@ public sealed class PageCollection : IReadOnlyList<DiagramPage>, IList, INotifyC
 
         page.IsAttached = false;
         page.InvalidateRoutingCaches();
-        _pages.Remove(page);
+        _diagram.History.Notify((Pages: _pages, Page: page), static s => s.Pages.Remove(s.Page));
         _diagram.RaiseChanged(DiagramChangeKind.PageRemoved, page, null, null);
     }
 
@@ -286,7 +288,7 @@ public sealed class PageCollection : IReadOnlyList<DiagramPage>, IList, INotifyC
     /// <param name="newIndex">The new position.</param>
     private void MoveCore(DiagramPage page, int newIndex)
     {
-        _pages.Move(_pages.IndexOf(page), newIndex);
+        _diagram.History.Notify((Pages: _pages, Page: page, NewIndex: newIndex), static s => s.Pages.Move(s.Pages.IndexOf(s.Page), s.NewIndex));
         _diagram.RaiseChanged(DiagramChangeKind.PageMoved, page, null, null);
     }
 }

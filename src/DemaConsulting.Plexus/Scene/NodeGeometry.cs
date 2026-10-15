@@ -225,7 +225,9 @@ public static class NodeGeometry
     ///     measured with the same fixed estimate as port anchors (never a painter's measurer) and
     ///     widened by the same safety factor, so this extent is identical in the model, the scene,
     ///     hit testing and every painter. Group frames enclose this extent rather than only the
-    ///     node boxes, which is what keeps labels from crossing a frame edge.
+    ///     node boxes, which is what keeps labels from crossing a frame edge. Each port row covers
+    ///     its triangle and the full line height of its label (in <see cref="DiagramTheme.PortLabelTextStyle"/>),
+    ///     whichever is taller, centered on the row, from the box edge out to the anchor.
     /// </remarks>
     /// <param name="node">The node.</param>
     /// <param name="theme">The theme supplying metrics and text styles.</param>
@@ -250,7 +252,8 @@ public static class NodeGeometry
             y += size.Height;
         }
 
-        // Ports reach sideways from the box edge out to their anchors, one row tall (the node's current ports)
+        // Ports reach sideways from the box edge out to their anchors, as tall as the triangle or the label line,
+        // whichever is taller (the node's current ports)
         extent = ExtendByPorts(extent, box, PortDirection.Input, Labels(node.Inputs), theme);
         return ExtendByPorts(extent, box, PortDirection.Output, Labels(node.Outputs), theme);
     }
@@ -313,6 +316,10 @@ public static class NodeGeometry
     /// <summary>
     ///     Grows an extent to cover one column of ports, from the box edge to each port's anchor.
     /// </summary>
+    /// <remarks>
+    ///     Each row is as tall as the port triangle or the label's line height, whichever is taller, so a label
+    ///     drawn centered on the row never sticks out of the extent.
+    /// </remarks>
     /// <param name="extent">The extent so far.</param>
     /// <param name="box">The node box.</param>
     /// <param name="direction">The column's direction.</param>
@@ -326,7 +333,8 @@ public static class NodeGeometry
             var edge = PortEdge(box, direction, i, labels.Count, theme);
             var anchor = PortAnchor(edge, direction, labels[i], theme);
             var left = Math.Min(edge.X, anchor.X);
-            extent = extent.Union(new Rect(left, edge.Y - (theme.PortTriangleHeight / 2), Math.Abs(anchor.X - edge.X), theme.PortTriangleHeight));
+            var height = Math.Max(theme.PortTriangleHeight, AnchorMeasurer.Measure(labels[i], theme.PortLabelTextStyle).Height);
+            extent = extent.Union(new Rect(left, edge.Y - (height / 2), Math.Abs(anchor.X - edge.X), height));
         }
 
         return extent;

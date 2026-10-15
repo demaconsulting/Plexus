@@ -73,6 +73,11 @@ only view state.
 | Interface                         | Dir.     | Format                             | Constraints                 |
 |-----------------------------------|----------|------------------------------------|-----------------------------|
 | `DiagramEditor` properties        | In / Out | Avalonia styled properties         | UI thread only              |
+| `ShowToolTips`                    | In / Out | Styled property, default true      | Off: no tooltip, no request |
+| `ToolTipRequested` event          | Out      | Event; pre-filled content          | Cancel, null, empty: none   |
+| `GetToolTipContent`               | In / Out | Method returning the content       | Ignores `ShowToolTips`      |
+| `BringIntoView(element)`          | In       | Method; any page of the diagram    | Waits for the first layout  |
+| `ZoomToFit(elements, margin)`     | In       | Method; margin in DIP, 30 default  | Bad margin: range exception |
 | `DiagramEditor` commands          | In       | Public methods                     | UI thread only              |
 | `DiagramEditor` events            | Out      | .NET events with argument classes  | Raised on the UI thread     |
 | Pointer, wheel and keyboard input | In       | Avalonia routed input events       | Control must be focusable   |
@@ -86,13 +91,22 @@ only view state.
 | `PlexusAvaloniaExtensions`        | Out      | Avalonia point, size, rect, color  | Pure, lossless conversions  |
 | Automation                        | Out      | Avalonia automation peer (pane)    | Default id `DiagramEditor`  |
 
-The properties are the page, theme, zoom, offset, grid, snapping, read-only mode and clipboard. The commands are
-selection, delete, duplicate, undo, redo, copy, cut, paste, rename, annotation edit, zoom and hit testing.
+The properties are the page, theme, zoom, offset, grid, snapping, read-only mode, clipboard and `ShowToolTips`. The
+commands are selection, delete, duplicate, undo, redo, copy, cut, paste, rename, annotation edit, zoom, hit testing,
+`GetToolTipContent`, `BringIntoView` and `ZoomToFit` (the whole page, or a set of elements). All members are used on the
+UI thread. `ToolTipRequested` carries a `DiagramToolTipRequestedEventArgs` whose `Content` arrives pre-filled and whose
+`Cancel` suppresses the tooltip. `BringIntoView(element)` accepts any element on an attached page of the shown diagram
+(`ArgumentException` otherwise, view unchanged); `ZoomToFit(elements, margin)` takes a margin in device-independent
+pixels per side that must be finite and not negative (`ArgumentOutOfRangeException`) and does nothing for an empty
+set. Navigation to an element
+on another page switches the shown page, which clears the selection and cancels any gesture or inline edit, exactly as
+setting the page does; a request made before the first layout is applied once the editor has a size.
 
-The events are: `SelectionChanged`, `NodeDoubleClicked`, `DiagramContextRequested`, `PasteFailed` and
-`ClipboardFailed`. Argument errors are reported as `ArgumentNullException`; invalid user actions (rejected names,
-rejected connections, unusable clipboard content) are not exceptions but are reported through state, return values or
-events.
+The events are: `SelectionChanged`, `NodeDoubleClicked`, `DiagramContextRequested`, `ToolTipRequested`, `PasteFailed`
+and `ClipboardFailed`. Argument errors are reported as `ArgumentNullException`, `ArgumentException` (an element that is
+not on an attached page of the shown diagram) or `ArgumentOutOfRangeException` (an invalid margin); invalid user
+actions (rejected names, rejected connections, unusable clipboard content) are not exceptions but are reported through
+state, return values or events.
 
 ## Dependencies
 
@@ -130,6 +144,12 @@ change never reaches the history.
 6. Copy writes the selection as Plexus clipboard JSON through the clipboard (Plexus format and plain text); paste reads
    it, lets the core validate and import it as one undo step, and selects the result or raises `PasteFailed`.
 7. A dropped node type payload creates a node at the drop point as one undo step.
+8. A property or payload change of a node whose type has a port provider recomputes the node's ports in the core, in
+   the same undo entry as the change: wires of removed ports (or refused by the connection rules) are removed, the node
+   is resized and routes are updated, and the model then reports the wire removals and the node's `Ports` change. The
+   editor receives these notifications like any other change, marks the scene stale and rebuilds layout and hit
+   targets, so a removed port is no longer hit, an added port can be connected, and the tooltip of a removed port is
+   reset. Undo and redo flow the same way.
 
 ## Design Constraints
 
@@ -159,12 +179,19 @@ change never reaches the history.
   therefore never becomes a history entry and the user cannot undo an earlier step by accident while still dragging.
 - **Tooltips through Avalonia's tooltip service; the host decides the text.** The editor sets its own `ToolTip.Tip`
   for the element under the pointer instead of drawing tooltips itself, so delay, placement and look match the rest of
-  the host application. The default text comes from the node type and port declarations, and the `ToolTipRequested`
-  event lets the host replace it (live values, validation messages) or suppress it; `ShowToolTips` turns the feature
-  off for hosts that manage the editor's tooltip themselves.
-- **Navigation switches pages and respects the user's zoom.** `BringIntoView` changes the shown page when needed and
-  only scrolls (zooming out only when the element does not fit), and a set of elements is fitted like the whole page
-  (never magnified above actual size, first element's page when they span pages). Requests made before the first layout
+  the host application. The default text of a port is its label and the display name of its port type (the key when the
+  type is not registered) with its description on a new line, that of a node is the node type's tooltip text (null or
+  empty: none), and that of a wire is `"A.out → B.in"`; annotations and groups have none unless a handler supplies
+  content. The `ToolTipRequested` event lets the host replace the content (live values, validation messages) or
+  suppress it (cancel, null or empty content); `ShowToolTips` turns the feature off, after which hovering sets no tooltip
+  and raises no event, while `GetToolTipContent` still works. A press clears the tooltip for the pressed element until
+  the pointer moves elsewhere, and a gesture, inline edit or pointer exit hides it.
+- **Navigation switches pages and respects the user's zoom.** `BringIntoView` accepts any element on an attached page of
+  the editor's diagram (of any diagram when no page is shown), changes the shown page when needed and only scrolls,
+  zooming out only when the element does not fit with a margin of 30 device-independent pixels, never in. A set of
+  elements is fitted like the whole page with a margin per side (default 30; negative or non-finite margins are
+  rejected before anything changes): the zoom is the fitting one but at most 1 and within the zoom limits, an empty set
+  changes nothing and the first element's page is shown when they span pages. Requests made before the first layout
   wait for it, and the latest request of any kind wins, so a window constructor can navigate safely.
 - **Native vector icons and a close visual match.** Host SVG icons are drawn through Svg.Controls.Skia.Avalonia as
   vector graphics rather than bitmaps, so they stay sharp at any zoom. The editor and the headless renderer share the

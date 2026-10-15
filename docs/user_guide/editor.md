@@ -187,12 +187,15 @@ Resting the pointer on a node, a port or a wire shows a standard Avalonia toolti
 pointer. The default text comes from the declarations (see *Describing Your Domain*):
 
 - a port: its label and type (`PortType.DisplayName`, else the key), then its `Description` on a new line;
-- a node: `NodeType.GetToolTip(node)`, that is the type's `ToolTip` function (live state) or its `Description`;
+- a node: `NodeType.GetToolTip(node)`, that is the type's `ToolTip` function (live state) or its `Description`; when the
+  function returns null or an empty string the node has no tooltip (the `Description` is not used instead), and an
+  exception thrown by the function propagates to the caller of `GetToolTipContent` or out of the hover handling;
 - a wire: `source → target`, for example `Sum.out → Lamp.in`;
-- annotations and groups: nothing.
+- annotations and groups: nothing, although a `ToolTipRequested` handler may supply content for them.
 
 Handle `ToolTipRequested` to change the text before it is shown, for example to add your validation messages, or to
-suppress it; `e.Content` may also be any Avalonia content, such as a `StackPanel` with an icon:
+suppress it (set `e.Cancel`, or leave `e.Content` null or empty); `e.Content` may also be any Avalonia content, such as
+a `StackPanel` with an icon:
 
 ```csharp
 Editor.ToolTipRequested += (_, e) =>
@@ -216,7 +219,8 @@ The content is requested once each time the pointer moves onto an element or por
 pointer arrives. Tooltips are hidden while the user drags, connects, pans with Space or edits inline, when a button is
 pressed (the pressed element shows no tooltip until the pointer has moved to something else, which also keeps it away
 from a context menu), and when the pointer leaves the editor. The editor owns its own `ToolTip.Tip`; a host that wants
-to manage that property itself sets `ShowToolTips = false`.
+to manage that property itself sets `ShowToolTips = false`, after which hovering sets no tooltip and raises no
+`ToolTipRequested`. `GetToolTipContent` ignores that setting and always raises the event.
 
 ### The Context Menu
 
@@ -289,6 +293,11 @@ diagram.History.Transact("Edit node", () =>
 
 Strings for typed properties are parsed against their definitions, so a number box needs no conversion code, and a
 mistake comes back as a sentence such as `'abc' is not a number.`
+
+Nodes whose type computes its ports from its configuration (`NodeType.PortProvider`, see *Describing Your Domain*)
+need no editor code: when a property or payload change adds or removes ports the editor redraws the node, a removed port
+can no longer be hit, a new port can be connected by dragging, wires the model removed disappear, and undo restores all
+of it in one step.
 
 ## Commands on the Selection
 
@@ -378,13 +387,20 @@ Editor.ZoomToFit(Editor.Selection);     // "Zoom to selection"; the list is copi
 Editor.ZoomToFit(problemNodes, 60);     // any elements, with a bigger margin
 ```
 
-`BringIntoView` keeps the zoom and only zooms out when the element does not fit. An element hidden inside a collapsed
-group cannot be shown, so the outermost collapsed group that hides it is brought into view instead. `ZoomToFit` of a set
-of elements fits them like the whole page (never magnifying above 1); when the elements are on several pages the page
-of the first element is shown and the elements on other pages are ignored. Both switch pages like setting `Page` (a
-binding on `Page` stays in place), throw `ArgumentException` for an element that is not on a page of the shown diagram,
-and, like `ZoomToFit()`, may be called before the editor has a size (in a window constructor): the request is applied
-after the first layout, and the latest request of any kind wins.
+`BringIntoView` keeps the zoom and only zooms out when the element does not fit in the editor minus a margin of 30
+device-independent pixels on each side; it never zooms in. An element hidden inside a collapsed group cannot be shown,
+so the outermost collapsed group that hides it is brought into view instead. It accepts any element on an attached page
+of the diagram the editor shows (when the editor shows no page, of any diagram) and throws `ArgumentNullException` for
+null and `ArgumentException` for anything else, leaving the view unchanged.
+
+`ZoomToFit` of a set of elements fits their union with the `margin` (device-independent pixels on each side, default 30;
+it must be finite and not negative, else `ArgumentOutOfRangeException` is thrown before anything changes). The zoom is
+the one that fits, but at most 1 (actual size, so a small set is centered rather than magnified), within `MinZoom` and
+`MaxZoom`. An empty set changes nothing. When the elements are on several pages the page of the first element is shown
+and the elements on other pages are ignored; a null entry, a detached element or an element of another diagram throws
+`ArgumentException` and changes nothing. Both methods switch pages like setting `Page` (a binding on `Page` stays in
+place) and, like `ZoomToFit()`, may be called before the editor has a size (in a window constructor): the request is
+applied after the first layout, and the latest request of any kind wins.
 
 `ShowGrid` and `SnapToGrid` are ordinary properties that a View menu can bind to. The grid size is
 `DiagramTheme.GridSize` (see *Appearance: Themes and Styling*). The status bar of the demo reads `Zoom` and `Selection`

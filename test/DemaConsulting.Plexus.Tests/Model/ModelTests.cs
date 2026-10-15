@@ -481,4 +481,252 @@ public class ModelTests
         Assert.Equal(["x"], router.Outputs.Select(p => p.Name));
         Assert.Empty(consumer.Wires);
     }
+
+    /// <summary>
+    ///     Validates that after a port is retyped only the wires the connection rules now refuse are removed.
+    /// </summary>
+    [Fact]
+    public void Model_DynamicPorts_RetypedPort_RemovesOnlyRefusedWires()
+    {
+        // Arrange: matching types required; an f32 wire on the bus input and one on its output
+        var diagram = TestModel.CreateDynamicDiagram();
+        diagram.ConnectionRules = ConnectionRules.All(ConnectionRules.Default, ConnectionRules.SameType);
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Producer", 0, 0, "P");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        page.AddNode("acme.Consumer", 600, 0, "C");
+        var refused = page.Connect("P.value", "Bus.in0");
+        var allowed = page.Connect("Bus.out", "C.in");
+
+        // Act / Assert: retyping the inputs is one exact entry
+        TestModel.AssertRoundTrip(diagram, () => bus.Properties["Kind"] = "i32");
+
+        // Assert: the input wire is refused now and removed; the unchanged output keeps its wire
+        Assert.Null(refused.Page);
+        Assert.Same(allowed, Assert.Single(page.Wires));
+    }
+
+    /// <summary>
+    ///     Validates that a change in the number of ports fits the node's height, keeps its position and width, and re-routes its wires.
+    /// </summary>
+    [Fact]
+    public void Model_DynamicPorts_PortCountChange_FitsHeightAndReroutes()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Producer", 0, 0, "P");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        var wire = page.Connect("P.value", "Bus.in0");
+        var before = bus.Bounds;
+
+        // Act: more ports than the node has room for, then back to the original count
+        bus.Properties["Channels"] = 10;
+        var grown = bus.Bounds;
+        var grownRoute = wire.Route.ToArray();
+        bus.Properties["Channels"] = 2;
+
+        // Assert: the node grew to fit, keeping position and width; the wire follows the moved anchor; back to the start
+        Assert.True(grown.Height > before.Height);
+        Assert.Equal(before.Position, grown.Position);
+        Assert.Equal(before.Width, grown.Width);
+        Assert.Equal(page.ComputeRoute(wire.Source, wire.Target, wire), wire.Route);
+        Assert.NotEqual(grownRoute, wire.Route);
+        Assert.Equal(before, bus.Bounds);
+    }
+
+    /// <summary>
+    ///     Validates that a failing port provider rolls the whole edit back and records nothing.
+    /// </summary>
+    [Fact]
+    public void Model_DynamicPorts_ProviderFails_RollsBackAndRecordsNothing()
+    {
+        // Arrange: a router whose new payload would produce a duplicate output name
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        page.AddNode("acme.Router", 0, 0, "R");
+        page.AddNode("acme.Consumer", 300, 0, "C");
+        page.Connect("R.x", "C.in");
+        var router = diagram.FindNode("R")!;
+        var before = TestModel.Dump(diagram);
+        var entries = diagram.History.UndoCount;
+
+        // Act
+        Assert.Throws<ArgumentException>(() => router.Data = new RouterData("z,z"));
+
+        // Assert: payload, ports and wires as before; nothing recorded
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(entries, diagram.History.UndoCount);
+    }
+
+    /// <summary>
+    ///     Validates that the node's ports change is reported once, after its removed wires, new size and routes are in place.
+    /// </summary>
+    [Fact]
+    public void Model_DynamicPorts_Notifications_ReportPortsChangeAfterModelSettles()
+    {
+        // Arrange: four wired inputs
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        bus.Properties["Channels"] = 4;
+        for (var i = 0; i < 4; i++)
+        {
+            page.AddNode("acme.Producer", 0, i * 150, $"P{i}");
+            page.Connect($"P{i}.value", $"Bus.in{i}");
+        }
+
+        var reports = new List<string>();
+        diagram.Changed += (_, e) =>
+        {
+            if (ReferenceEquals(e.Element, bus) && e.PropertyName == "Ports")
+            {
+                reports.Add(TestModel.Dump(diagram));
+            }
+        };
+
+        // Act / Assert: the edit, its undo and its redo each report once, with the model already in its final state
+        bus.Properties["Channels"] = 1;
+        Assert.Equal(TestModel.Dump(diagram), Assert.Single(reports));
+        reports.Clear();
+        diagram.History.Undo();
+        Assert.Equal(TestModel.Dump(diagram), Assert.Single(reports));
+        reports.Clear();
+        diagram.History.Redo();
+        Assert.Equal(TestModel.Dump(diagram), Assert.Single(reports));
+    }
+
+    /// <summary>
+    ///     Validates that a port the host still holds after the provider removed it cannot be connected.
+    /// </summary>
+    [Fact]
+    public void Model_DynamicPorts_RemovedPortHeldByHost_CannotBeConnected()
+    {
+        // Arrange: the host keeps a reference to in3, then the bus drops it
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        bus.Properties["Channels"] = 4;
+        var held = bus.Input("in3");
+        bus.Properties["Channels"] = 2;
+
+        // Act
+        var check = page.CanConnect(producer.Output("value"), held);
+
+        // Assert: refused with a reason, and connecting throws without changing anything
+        Assert.False(check.IsAllowed);
+        Assert.False(string.IsNullOrEmpty(check.Reason));
+        Assert.ThrowsAny<Exception>(() => page.Connect(producer.Output("value"), held));
+        Assert.Empty(page.Wires);
+    }
+
+    /// <summary>
+    ///     Validates that a new node of a provider type gets the provider's ports and a height that fits them.
+    /// </summary>
+    [Fact]
+    public void Model_DynamicPorts_AddNode_UsesProviderPortsAndFitsHeight()
+    {
+        // Arrange: a router type whose default payload names five outputs (more than its declared height has room for)
+        var types = TestModel.CreateDynamicTypes();
+        types.Add(new NodeType("acme.WideRouter")
+        {
+            DataType = typeof(RouterData),
+            CreateData = () => new RouterData("a,b,c,d,e"),
+            DefaultSize = new Size(120, 60),
+            Outputs = { new PortDefinition("x", "f32") },
+            PortProvider = node => new PortSet(
+                [],
+                ((RouterData)node.Data!).Outputs.Split(',').Select(name => new PortDefinition(name, "f32"))),
+        });
+        var page = new Diagram(types).Pages.Add("Main");
+
+        // Act
+        var node = page.AddNode("acme.WideRouter", 0, 0, "W");
+
+        // Assert: the provider's outputs, the declared width and a height taller than declared that holds them
+        Assert.Equal(["a", "b", "c", "d", "e"], node.Outputs.Select(p => p.Name));
+        Assert.Equal(120, node.Bounds.Width);
+        Assert.True(node.Bounds.Height > 60);
+        Assert.All(node.Outputs, port => Assert.True(port.Anchor.Y < node.Bounds.Bottom));
+    }
+
+    /// <summary>
+    ///     Validates that change handlers which throw never leave the model and its history inconsistent across edits,
+    ///     undo, redo and transactions.
+    /// </summary>
+    [Fact]
+    public void Model_HandlerFailure_EditsUndoRedoAndTransactions_KeepModelAndHistoryConsistent()
+    {
+        // Arrange: a node, and a switchable handler that throws on every notification
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var node = page.AddNode("acme.Producer", 0, 0, "P");
+        var failing = false;
+        diagram.Changed += (_, _) =>
+        {
+            if (failing)
+            {
+                throw new InvalidOperationException("handler failed");
+            }
+        };
+        var start = TestModel.Dump(diagram);
+        var entries = diagram.History.UndoCount;
+
+        // Act / Assert: an edit completes and is recorded
+        failing = true;
+        Assert.Throws<InvalidOperationException>(() => node.Properties["Gain"] = 3.0);
+        Assert.Equal(3.0, node.Properties["Gain"]);
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+        var edited = TestModel.Dump(diagram);
+
+        // Act / Assert: undo and redo complete and move the entry
+        Assert.Throws<InvalidOperationException>(() => diagram.History.Undo());
+        Assert.Equal(start, TestModel.Dump(diagram));
+        Assert.Throws<InvalidOperationException>(() => diagram.History.Redo());
+        Assert.Equal(edited, TestModel.Dump(diagram));
+
+        // Act / Assert: inside a transaction the failure rolls the whole transaction back
+        Assert.Throws<InvalidOperationException>(() => diagram.History.Transact("Edit", () =>
+        {
+            node.Name = "Feed";
+            node.MoveTo(100, 100);
+        }));
+        Assert.Equal(edited, TestModel.Dump(diagram));
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+
+        // Assert: with the handler quiet again, the history still undoes to the start
+        failing = false;
+        Assert.True(diagram.History.Undo());
+        Assert.Equal(start, TestModel.Dump(diagram));
+    }
+
+    /// <summary>
+    ///     Validates that the model hands the frame of a visible group containing neither end node to the router as an
+    ///     obstacle for the stored route, and leaves out the frame of a group that contains an end node.
+    /// </summary>
+    [Fact]
+    public void Model_Groups_UnrelatedGroupFrame_IsAnObstacleForStoredRoutes()
+    {
+        // Arrange: producer and consumer on one row, an unrelated group framing nodes above and below between them
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var consumer = page.AddNode("acme.Consumer", 800, 0, "C");
+        var group = page.CreateGroup(
+            [page.AddNode("acme.Gain", 350, -250, "Above"), page.AddNode("acme.Gain", 350, 250, "Below")],
+            "G");
+        var frame = group.Bounds.Inflate(diagram.Theme.ObstacleMargin);
+        var inner = page.AddNode("acme.Consumer", 380, 0, "Inner");
+        group.AddMember(inner);
+
+        // Act: one wire to the outside consumer, one to the consumer inside the group
+        var outside = page.Connect(producer.Port("value"), consumer.Port("in"));
+        var into = page.Connect(producer.Port("value"), inner.Port("in"));
+
+        // Assert: the stored route of the unrelated wire avoids the frame; the wire into the group may enter it
+        Assert.False(RouteAssertions.CrossesAny([outside.Source.Anchor, .. outside.Route, outside.Target.Anchor], [frame]));
+        Assert.True(RouteAssertions.IsOrthogonal(into.GetPoints()));
+        Assert.True(RouteAssertions.CrossesAny(into.GetPoints(), [frame]));
+    }
 }

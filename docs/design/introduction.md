@@ -52,6 +52,8 @@ Structure_), and the following OTS items:
 
 Version applicability: This design applies to all versions of Plexus.
 
+Usage of the libraries is described in the separate Plexus User Guide.
+
 The following topics are explicitly excluded from this design documentation:
 
 - External library internals and third-party OTS components
@@ -71,8 +73,9 @@ diagram or the prose below.
 
 ![Software Structure](SoftwareStructureView.svg)
 
-The software items are classified as follows. Folder depth alone does not determine classification; this list is
-authoritative.
+The software items are classified as follows. Folder depth alone does not determine classification. The SysML2 model
+under `docs/sysml2/` is the authoritative software structure; the list below is a summary derived from it and must be
+kept in agreement with it.
 
 ```text
 Plexus (system)
@@ -165,7 +168,8 @@ src/DemaConsulting.Plexus/                  — Plexus system (net8.0; net9.0; n
 └── Serialization/                          — Serialization subsystem (Snapshot and PlexusClipboard units)
 
 src/DemaConsulting.Plexus.Rendering/        — PlexusRendering system (net10.0); one file group per unit
-src/DemaConsulting.Plexus.Avalonia.PropertyGrid/ — PlexusAvaloniaPropertyGrid system (net10.0); Plexus/ is the adapter
+src/DemaConsulting.Plexus.Avalonia.PropertyGrid/ — PlexusAvaloniaPropertyGrid system (net10.0); Diagrams/ holds the Plexus
+                                              adapter (PlexusNodeSource and NodePropertiesDialog units)
 src/DemaConsulting.Plexus.Avalonia/         — PlexusAvalonia system (net10.0)
 ├── DiagramEditor*.cs and event args        — Editor subsystem, DiagramEditor unit
 ├── Interaction/                            — Editor subsystem, Gestures unit
@@ -269,6 +273,9 @@ System names in documentation paths are kebab-case: `plexus`, `plexus-rendering`
 
 ## References
 
-- Plexus User Guide — the compiled User Guide document for this repository.
-- Plexus Repository — the Plexus source repository hosted on
-  GitHub.
+- Plexus Requirements Specification — the compiled requirements document of this repository, which states the
+  requirements this design satisfies.
+- IEC 62304, Medical device software — Software life cycle processes; cited by the risk-control sections of the system
+  designs.
+- OMG Systems Modeling Language (SysML) v2 specification; the language of the software structure model under
+  `docs/sysml2/`.

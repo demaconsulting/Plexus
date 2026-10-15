@@ -92,7 +92,8 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     /// </summary>
     /// <remarks>
     ///     Raised twice per change: once with the property's name and once with <c>"Item[]"</c>, the name data-binding uses for
-    ///     indexer changes, so a binding to <c>Properties[Gain]</c> refreshes. The sender is the bag.
+    ///     indexer changes, so a binding to <c>Properties[Gain]</c> refreshes. The sender is the bag. A handler that throws does
+    ///     not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
     /// </remarks>
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -360,8 +361,30 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     /// <param name="name">The changed property name.</param>
     private void RaiseChanged(string name)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(IndexerName));
+        if (PropertyChanged is { } handler)
+        {
+            // During an undoable change a throwing handler is reported after the change completed (see UndoHistory)
+            Raise(handler, new PropertyChangedEventArgs(name));
+            Raise(handler, new PropertyChangedEventArgs(IndexerName));
+        }
+
         _owner.NotifyChanged(nameof(Node.Properties));
+    }
+
+    /// <summary>
+    ///     Raises one property-changed notification, through the diagram's history while the node is on a page.
+    /// </summary>
+    /// <param name="handler">The subscribed handlers.</param>
+    /// <param name="args">The notification.</param>
+    private void Raise(PropertyChangedEventHandler handler, PropertyChangedEventArgs args)
+    {
+        if (_owner.Page?.Diagram.History is { } history)
+        {
+            history.Notify((Handler: handler, Sender: this, Args: args), static s => s.Handler(s.Sender, s.Args));
+        }
+        else
+        {
+            handler(this, args);
+        }
     }
 }

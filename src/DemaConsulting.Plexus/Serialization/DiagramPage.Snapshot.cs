@@ -34,7 +34,10 @@ public sealed partial class DiagramPage
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="elements"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when an element is null or not on this page.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when an offset is not finite or exceeds 1e9 in magnitude.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the page is removed from its diagram, or a node payload cannot be serialized.</exception>
+    /// <exception cref="InvalidOperationException">
+    ///     Thrown when the page is removed from its diagram, a node payload cannot be serialized, or a node type's port
+    ///     provider fails for a copy (the message starts with "The elements could not be duplicated"); the page is unchanged.
+    /// </exception>
     public IReadOnlyList<DiagramElement> Duplicate(IEnumerable<DiagramElement> elements, double dx, double dy)
     {
         ArgumentNullException.ThrowIfNull(elements);

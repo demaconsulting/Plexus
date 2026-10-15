@@ -40,6 +40,7 @@ sections:
               - Plexus-History-UndoHistory-Rollback
               - Plexus-History-UndoHistory-Transact
               - Plexus-History-UndoHistory-Merging
+              - Plexus-History-UndoHistory-PlanAbort
             tests:
               - History_Transactions_DragWithNestedRollback_ProducesOneUndoEntry
               - History_Transactions_RolledBackTransaction_LeavesStateAndHistoryUntouched
@@ -94,3 +95,31 @@ sections:
               - Plexus-History-UndoHistory-Changed
             tests:
               - History_StateNotification_Workflow_RaisesChangedOncePerStateChange
+
+          - id: Plexus-History-ReplayIntegrity
+            title: >-
+              The History subsystem shall keep code that runs while an entry is undone, redone or rolled back from
+              changing the history, so that it cannot corrupt the undo and redo stacks.
+            justification: |
+              Decomposes Plexus-Core-UndoIntegrity; command code and the change handlers it triggers run in the middle
+              of a stack operation, and clearing or reconfiguring the history at that moment would leave the stacks
+              not matching the model.
+            children:
+              - Plexus-History-UndoHistory-ClearDuringReplay
+              - Plexus-History-UndoHistory-StateChangeDuringReplay
+              - Plexus-History-UndoHistory-SuspendEndDuringReplay
+            tests:
+              - History_ReplayIntegrity_CommandChangesHistoryDuringUndo_IsRejected
+
+          - id: Plexus-History-ReplayAtomic
+            title: >-
+              The History subsystem shall leave the state and the stacks as they were before the attempt when the undo
+              or redo of a grouped entry fails part-way.
+            justification: |
+              Decomposes Plexus-Core-UndoIntegrity; a failed undo must not leave half of a transaction undone, or the
+              next undo or redo would apply to a model the entry does not match.
+            children:
+              - Plexus-History-UndoHistory-ReplayAtomic
+              - Plexus-History-UndoHistory-ReplayCompensationFailure
+            tests:
+              - History_ReplayAtomic_FailingCommandInGroupedEntry_LeavesStateAndStacksUnchanged

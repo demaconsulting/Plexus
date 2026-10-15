@@ -505,6 +505,237 @@ public class EditorTests
             () => Assert.Same(bus.Input("in3"), Assert.Single(host.Page.Wires).Target),
             () => Assert.Same(bus.Input("in3"), host.Editor.HitTest(host.Editor.GetPortScreenPosition(bus.Input("in3"))).Port));
     });
+
+    /// <summary>
+    ///     Validates that a host that cancels, or leaves null or empty content, gets no tooltip for nodes, ports and wires.
+    /// </summary>
+    [Fact]
+    public Task Editor_ToolTips_HostCancels_ShowsNoTip() => UiTest.Run(() =>
+    {
+        // Arrange: a handler that cancels node tooltips, nulls port tooltips and empties wire tooltips
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300, "S");
+        var bus = host.Page.AddNode("test.Bus", 400, 60, "B");
+        var wire = host.Page.Connect(source.Port("value"), bus.Input("in0"));
+        host.Editor.ToolTipRequested += (_, e) =>
+        {
+            if (e.Element is Wire)
+            {
+                e.Content = string.Empty;
+            }
+            else if (e.Port is not null)
+            {
+                e.Content = null;
+            }
+            else
+            {
+                e.Cancel = true;
+            }
+        };
+        host.Flush();
+
+        // Act: hover the node body, a port and the wire
+        var tips = new List<object?>();
+        foreach (var at in new[] { host.CenterOf(bus), host.FindHit(HitKind.Port, bus), host.FindHit(HitKind.Wire, wire) })
+        {
+            host.Window.MouseMove(at);
+            host.Flush();
+            tips.Add(ToolTip.GetTip(host.Editor));
+        }
+
+        // Assert
+        Assert.All(tips, Assert.Null);
+    });
+
+    /// <summary>
+    ///     Validates that turning tooltips off shows nothing and raises no request while hovering, yet the content stays available to the host.
+    /// </summary>
+    [Fact]
+    public Task Editor_ToolTips_Disabled_ShowsNoTipAndRaisesNoEvent() => UiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300, "S");
+        var bus = host.Page.AddNode("test.Bus", 400, 60, "B");
+        var wire = host.Page.Connect(source.Port("value"), bus.Input("in0"));
+        var requests = 0;
+        host.Editor.ToolTipRequested += (_, _) => requests++;
+        host.Editor.ShowToolTips = false;
+        host.Flush();
+
+        // Act: hover the node body, a port and the wire
+        var tips = new List<object?>();
+        foreach (var at in new[] { host.CenterOf(bus), host.FindHit(HitKind.Port, bus), host.FindHit(HitKind.Wire, wire) })
+        {
+            host.Window.MouseMove(at);
+            host.Flush();
+            tips.Add(ToolTip.GetTip(host.Editor));
+        }
+
+        var hoverRequests = requests;
+        var content = host.Editor.GetToolTipContent(bus);
+
+        // Assert: hovering did nothing, GetToolTipContent ignores the setting
+        Assert.Multiple(
+            () => Assert.All(tips, Assert.Null),
+            () => Assert.Equal(0, hoverRequests),
+            () => Assert.Equal("Merges channels.", content),
+            () => Assert.Equal(1, requests));
+    });
+
+    /// <summary>
+    ///     Validates that a button press, the pointer leaving the editor and an inline rename each hide a shown tooltip.
+    /// </summary>
+    [Fact]
+    public Task Editor_ToolTips_PressExitAndInlineEdit_HideTip() => UiTest.Run(() =>
+    {
+        // Arrange: a bus with a shown tooltip
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var bus = host.Page.AddNode("test.Bus", 400, 60, "B");
+        host.Flush();
+        var center = host.CenterOf(bus);
+        object? Hover(Point at)
+        {
+            host.Window.MouseMove(at);
+            host.Flush();
+            return ToolTip.GetTip(host.Editor);
+        }
+
+        var shown = Hover(center);
+
+        // Act: leave the editor, come back, press the right button, then move a little over the same node
+        var afterExit = Hover(new Point(-50, -50));
+        var shownAgain = Hover(center);
+        host.RightClick(center);
+        var afterPress = ToolTip.GetTip(host.Editor);
+        var stillSuppressed = Hover(center + new Point(2, 0));
+
+        // Act: move away and back, then rename inline and hover while editing
+        Hover(new Point(700, 550));
+        var back = Hover(center);
+        host.Editor.BeginRename(bus);
+        var afterRename = ToolTip.GetTip(host.Editor);
+        Hover(new Point(700, 550));
+        var whileEditing = Hover(center);
+        host.Editor.CancelRename();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal("Merges channels.", shown),
+            () => Assert.Null(afterExit),
+            () => Assert.Equal("Merges channels.", shownAgain),
+            () => Assert.Null(afterPress),
+            () => Assert.Null(stillSuppressed),
+            () => Assert.Equal("Merges channels.", back),
+            () => Assert.Null(afterRename),
+            () => Assert.Null(whileEditing));
+    });
+
+    /// <summary>
+    ///     Validates that navigation requests made before the first layout wait, that the latest one wins and that an empty fit does not replace it.
+    /// </summary>
+    [Fact]
+    public Task Editor_ElementNavigation_BeforeFirstLayout_AppliesLatestRequest() => UiTest.Run(host =>
+    {
+        // Arrange: far-apart nodes in an editor that is not in a window yet
+        var near = host.AddSource(0, 0);
+        var far = host.AddSink(3000, 2000);
+        var editor = new DiagramEditor { Page = host.Page };
+
+        // Act: a page fit, a bring-into-view (the latest), an empty fit (changes nothing)
+        editor.ZoomToFit();
+        editor.BringIntoView(far);
+        editor.ZoomToFit(Array.Empty<DiagramElement>());
+        var before = (editor.Zoom, editor.Offset);
+        var window = new Window { Width = 800, Height = 600, Content = editor };
+        window.Show();
+        window.UpdateLayout();
+
+        // Assert: nothing happened before the layout; afterwards only the bring-into-view was applied
+        var view = new Rect(editor.Bounds.Size);
+        Assert.Multiple(
+            () => Assert.Equal((1.0, default(Point)), before),
+            () => Assert.Equal(1.0, editor.Zoom),
+            () => Assert.True(view.Contains(editor.GetElementScreenBounds(far))),
+            () => Assert.False(view.Intersects(editor.GetElementScreenBounds(near))));
+        window.Close();
+    });
+
+    /// <summary>
+    ///     Validates that empty, null, detached, other-diagram and invalid-margin requests leave page, zoom, offset and selection unchanged.
+    /// </summary>
+    [Fact]
+    public Task Editor_ElementNavigation_InvalidOrEmptyRequests_LeaveViewUnchanged() => UiTest.Run(host =>
+    {
+        // Arrange: a view that is not at the defaults, with a selection
+        var mine = host.AddSource(0, 0);
+        host.Editor.Select(mine);
+        host.Editor.Zoom = 2;
+        host.Editor.Offset = new Point(15, 25);
+        var removed = host.AddSink(300, 0);
+        removed.Remove();
+        var other = new Diagram(host.Diagram.Types).Pages.Add("Other").AddNode("test.Source", 3000, 2000);
+
+        // Act
+        host.Editor.ZoomToFit(Array.Empty<DiagramElement>());
+        var exceptions = new[]
+        {
+            Record.Exception(() => host.Editor.BringIntoView(null!)),
+            Record.Exception(() => host.Editor.BringIntoView(removed)),
+            Record.Exception(() => host.Editor.BringIntoView(other)),
+            Record.Exception(() => host.Editor.ZoomToFit([mine, other])),
+            Record.Exception(() => host.Editor.ZoomToFit([mine], -1)),
+            Record.Exception(() => host.Editor.ZoomToFit([mine], double.NaN)),
+        };
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.IsType<ArgumentNullException>(exceptions[0]),
+            () => Assert.IsType<ArgumentException>(exceptions[1]),
+            () => Assert.IsType<ArgumentException>(exceptions[2]),
+            () => Assert.IsType<ArgumentException>(exceptions[3]),
+            () => Assert.IsType<ArgumentOutOfRangeException>(exceptions[4]),
+            () => Assert.IsType<ArgumentOutOfRangeException>(exceptions[5]),
+            () => Assert.Same(host.Page, host.Editor.Page),
+            () => Assert.Equal(2.0, host.Editor.Zoom),
+            () => Assert.Equal(new Point(15, 25), host.Editor.Offset),
+            () => Assert.Same(mine, Assert.Single(host.Editor.Selection)));
+    });
+
+    /// <summary>
+    ///     Validates that a port a property change removed is no longer hit, together with its wire, and is hit again after undo.
+    /// </summary>
+    [Fact]
+    public Task Editor_DynamicPorts_RemovedPort_IsNotHit() => UiTest.Run(() =>
+    {
+        // Arrange: a bus with a wire on its second input
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300);
+        var bus = host.Page.AddNode("test.Bus", 400, 60);
+        var in1 = bus.Input("in1");
+        host.Page.Connect(source.Port("value"), in1);
+        host.Flush();
+        var at = host.Editor.GetPortScreenPosition(in1);
+        var before = host.Editor.HitTest(at);
+
+        // Act: shrink to one channel, then undo
+        bus.Properties["Channels"] = 1;
+        host.Flush();
+        var after = host.Editor.HitTest(at);
+        var wiresAfter = host.Page.Wires.Count;
+        host.Diagram.History.Undo();
+        host.Flush();
+        var restored = host.Editor.HitTest(host.Editor.GetPortScreenPosition(bus.Input("in1")));
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Same(in1, before.Port),
+            () => Assert.NotSame(in1, after.Port),
+            () => Assert.Equal(0, wiresAfter),
+            () => Assert.Same(bus.Input("in1"), restored.Port),
+            () => Assert.Single(host.Page.Wires));
+    });
+
     /// <summary>
     ///     A clipboard whose every operation fails like a locked desktop session.
     /// </summary>

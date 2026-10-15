@@ -123,9 +123,9 @@ types.Add(new NodeType("plumbing.Valve") { DataSerializer = new ValveSerializer(
 ```
 
 The JSON that `Deserialize` receives is untrusted input, because it comes from files and clipboards. Returning `null`
-or throwing `JsonException`, `FormatException`, `InvalidOperationException`, `ArgumentException`,
-`NotSupportedException` or `InvalidCastException` makes the payload unreadable: loading a file throws
-`SnapshotException`, and a paste inserts the node without data and adds a warning to the `PasteResult`.
+or throwing any exception (except running out of memory) makes the payload unreadable: loading a file throws
+`SnapshotException` with the exception's message, and a paste inserts the node without data and adds a warning to the
+`PasteResult`.
 
 ## Host-Defined Commands
 

@@ -31,10 +31,34 @@ public abstract partial class PropertyItem
 
     /// <summary>
     ///     Gets a value indicating whether the value can be typed as text: the converter converts from
-    ///     <see cref="string"/> (or the property is an <see cref="object"/>), and the property is not a collection.
+    ///     <see cref="string"/> (or the property is an <see cref="object"/>), and the property is not a collection. A
+    ///     converter that throws while answering is treated as not supporting text.
     /// </summary>
-    public bool SupportsTextEditing =>
-        !IsCollection && (PropertyType == typeof(object) || Converter.CanConvertFrom(new PropertyContext(this), typeof(string)));
+    public bool SupportsTextEditing
+    {
+        get
+        {
+            if (IsCollection)
+            {
+                return false;
+            }
+
+            if (PropertyType == typeof(object))
+            {
+                return true;
+            }
+
+            // The converter is user code: a failing capability probe means "no text editing", never an exception for the grid
+            try
+            {
+                return Converter.CanConvertFrom(new PropertyContext(this), typeof(string));
+            }
+            catch (Exception ex) when (!PropertyErrors.IsFatal(ex))
+            {
+                return false;
+            }
+        }
+    }
 
     /// <summary>
     ///     Converts a value to the text a user sees and edits.

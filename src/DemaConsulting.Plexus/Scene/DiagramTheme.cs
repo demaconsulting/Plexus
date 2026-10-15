@@ -63,7 +63,7 @@ namespace DemaConsulting.Plexus.Scene;
 ///     var diagram = new Diagram(new NodeTypeRegistry());
 ///     diagram.Theme = dark;                                     // used by routing, hit testing and every painter
 ///     var page = diagram.Pages.Add("Main");
-///     var scene = SceneBuilder.Build(page, new SceneOptions { Theme = dark });   // or choose the theme per scene
+///     var scene = SceneBuilder.Build(page, new SceneOptions { Theme = dark });   // or per scene (look only: ports follow diagram.Theme)
 ///     </code>
 /// </example>
 public sealed partial record DiagramTheme

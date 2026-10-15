@@ -629,4 +629,32 @@ public class ClipboardTests
         Assert.Equal("R.z", page.Wires[1].Source.ToString());
         Assert.Equal(source.FindNode("Bus")!.Bounds.Size, page.Nodes.Single(n => n.Name == "Bus").Bounds.Size);
     }
+
+    /// <summary>
+    ///     Validates that a port provider failing during a paste makes the paste fail with the provider's message and
+    ///     leaves the target page and history unchanged.
+    /// </summary>
+    [Fact]
+    public void PlexusClipboard_Paste_ProviderThrows_FailsWithMessageAndChangesNothing()
+    {
+        // Arrange: copied content with a bus, pasted where the bus provider fails
+        var json = PlexusClipboard.Copy(SerializationFixtures.CreateDynamicPortDiagram().Pages[0].Elements);
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(_ => throw new HostFailureException("bus offline"));
+        var target = new Diagram(types);
+        var page = target.Pages.Add("Target");
+        page.AddNode("acme.Producer", 0, 0);
+        var before = TestModel.Dump(target);
+        var undoBefore = target.History.UndoCount;
+
+        // Act
+        var result = PlexusClipboard.Paste(page, json);
+
+        // Assert
+        Assert.False(result.Success);
+        Assert.Contains("'Bus'", result.Error, StringComparison.Ordinal);
+        Assert.Contains("bus offline", result.Error, StringComparison.Ordinal);
+        Assert.Empty(result.Elements);
+        Assert.Equal(before, TestModel.Dump(target));
+        Assert.Equal(undoBefore, target.History.UndoCount);
+    }
 }

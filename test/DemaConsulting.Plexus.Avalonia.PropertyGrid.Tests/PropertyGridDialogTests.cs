@@ -168,6 +168,55 @@ public class PropertyGridDialogTests
     });
 
     /// <summary>
+    ///     <c>ShowAsync</c> rejects a missing owner or target with an argument-null exception before it creates a window.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PropertyGridDialog_ShowAsync_NullOwnerOrTarget_ThrowsArgumentNullException() => UiTest.Run(() =>
+    {
+        // Arrange
+        var owner = GridHarness.Host(new TextBlock { Text = "owner" });
+
+        // Act / Assert: each missing argument is rejected before a dialog is shown
+        Assert.Throws<ArgumentNullException>(() => { _ = PropertyGridDialog.ShowAsync(null!, new Widget()); });
+        Assert.Throws<ArgumentNullException>(() => { _ = PropertyGridDialog.ShowAsync(owner, null!); });
+        Assert.Empty(owner.OwnedWindows);
+        owner.Close();
+    });
+
+    /// <summary>
+    ///     The internal close-confirmed hook is raised once when the close goes ahead (Cancel button or OK) and not when a
+    ///     handler of <c>Closing</c> cancels the close.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PropertyGridDialog_CloseConfirmed_IsRaisedOnlyWhenTheCloseGoesAhead() => UiTest.Run(() =>
+    {
+        // Arrange: a dialog whose first close attempt is vetoed
+        var owner = GridHarness.Host(new TextBlock { Text = "owner" });
+        var task = PropertyGridDialog.ShowAsync(owner, new Widget());
+        GridHarness.Pump(owner);
+        var dialog = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
+        var confirmed = 0;
+        dialog.CloseConfirmed += (_, _) => confirmed++;
+        var veto = true;
+        dialog.Closing += (_, e) => e.Cancel = veto;
+
+        // Act: a vetoed close, then the Cancel button
+        dialog.Close(false);
+        var afterVeto = confirmed;
+        veto = false;
+        GridHarness.Click(GridHarness.Get<Button>(dialog, "PropertyGridDialog_Cancel"));
+        GridHarness.Pump(owner);
+
+        // Assert
+        Assert.Equal(0, afterVeto);
+        Assert.Equal(1, confirmed);
+        Assert.False(task.Result);
+        owner.Close();
+    });
+
+    /// <summary>
     ///     OK also stays open when the commit itself fails (a setter that throws) and shows the reason.
     /// </summary>
     /// <returns>A task that completes when the body has run.</returns>

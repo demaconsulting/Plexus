@@ -436,6 +436,26 @@ public class PropertyModelTests
         Assert.False(failure.Succeeded);
         Assert.Equal("bad", failure.Error);
     }
+
+    /// <summary>
+    ///     A converter that throws while it is asked whether it converts from text makes the property not editable as
+    ///     text, without throwing; a normal converter still reports its capability.
+    /// </summary>
+    [Fact]
+    public void PropertyItem_SupportsTextEditing_ConverterThrows_ReportsNotSupported()
+    {
+        // Arrange
+        using var source = new ReflectionPropertySource(new ProbeHost());
+        using var person = TestHelpers.PersonSource(out _);
+        var probed = TestHelpers.Item(source, "Value");
+
+        // Act
+        var supported = probed.SupportsTextEditing;
+
+        // Assert
+        Assert.False(supported);
+        Assert.True(TestHelpers.Item(person, "Name").SupportsTextEditing);
+    }
 }
 
 /// <summary>

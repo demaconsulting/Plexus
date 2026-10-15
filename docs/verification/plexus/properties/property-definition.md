@@ -52,12 +52,29 @@ the PropertyBag test class; the remaining tests are in the PropertyDefinition te
 - **PropertyDefinition_Choices_Invalid_Throws**: a default outside the list, an empty list, duplicates and a non-string
   default are rejected.
 
+##### Choice null entry (`Plexus-Properties-PropertyDefinition-ChoiceNullEntry`)
+
+- **PropertyDefinition_Choices_NullEntry_Throws**: a list that is otherwise valid but contains a null entry is rejected
+  with an argument exception whose message names the property and the null entry.
+
 ##### Presentation (`Plexus-Properties-PropertyDefinition-Presentation`)
 
 - **PropertyDefinition_Presentation_Defaults_AreEmpty**: the display name defaults to the name; all other hints are
-  empty and the display order is 0.
-- **PropertyDefinition_Presentation_ExplicitHints_AreStored**: explicit hints, the display order included, are stored
-  unchanged.
+  empty.
+- **PropertyDefinition_Presentation_ExplicitHints_AreStored**: explicit hints are stored unchanged.
+
+##### Display order (`Plexus-Properties-PropertyDefinition-DisplayOrder`)
+
+- **PropertyDefinition_Presentation_Defaults_AreEmpty**: the display order of a plain definition is 0.
+- **PropertyDefinition_Presentation_ExplicitHints_AreStored**: an explicit display order (3) is stored unchanged.
+- **PropertyDefinition_Order_NegativeAndExtremeValues_AreStored**: boundary values -5, the smallest and the largest
+  32-bit integer are accepted and stored unchanged.
+
+##### Lossless numeric coercion (regression test without its own requirement)
+
+- **PropertyValues_Coerce_Int64BeyondDoublePrecision_IsRejected**: 2^53, -2^53, 2^60 and the largest 32-bit integer
+  convert to a double; 2^53 + 1, the largest 64-bit integer and the smallest 64-bit integer plus one are rejected
+  because the double would hold a different number.
 
 ##### Formatting (`Plexus-Properties-PropertyDefinition-Formatting`)
 

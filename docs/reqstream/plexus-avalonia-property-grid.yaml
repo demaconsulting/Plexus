@@ -25,24 +25,46 @@ sections:
           - PlexusAvaloniaPropertyGrid-PropertyModel-Converter
           - PlexusAvaloniaPropertyGrid-PropertySources-ReflectionDiscovery
           - PlexusAvaloniaPropertyGrid-PropertySources-ReflectionNotifications
+          - PlexusAvaloniaPropertyGrid-PropertySources-HiddenRefreshAll
         tests:
           - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
 
       - id: PlexusAvaloniaPropertyGrid-Order
         title: >-
-          The system shall order and group the properties alphabetically or by category, and within a category
-          follow the order a source gives its properties before ordering them alphabetically.
+          The system shall order and group the properties alphabetically or by category.
         justification: |
-          Categorized and alphabetical views are the two familiar ways to find a property; some properties read
-          naturally in a fixed sequence that the source knows best.
+          Categorized and alphabetical views are the two familiar ways to find a property.
         tags: [system]
         children:
           - PlexusAvaloniaPropertyGrid-PropertySources-Ordering
           - PlexusAvaloniaPropertyGrid-PropertySources-CategoryOrder
-          - PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder
         tests:
           - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
+
+      - id: PlexusAvaloniaPropertyGrid-ItemOrder
+        title: >-
+          The system shall list the items of a category in the categorized view by the rank their source gives them
+          (lower first), with equal ranks alphabetical by display name.
+        justification: |
+          Some properties read naturally in a fixed sequence that the source knows best (an envelope's attack, decay,
+          sustain and release), while sources that set no rank must keep the familiar alphabetical order.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder
+        tests:
           - PlexusAvaloniaPropertyGrid_CustomSource_OrdersCategoryItemsByRank
+
+      - id: PlexusAvaloniaPropertyGrid-ItemOrderAlphabetical
+        title: >-
+          The system shall ignore the item rank in the alphabetical view.
+        justification: |
+          The alphabetical view is a flat list by display name whatever rank or category a source assigns, which keeps
+          it predictable for users who search by name.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PropertySources-ItemOrderAlphabetical
+        tests:
+          - PlexusAvaloniaPropertyGrid_AlphabeticalView_IgnoresItemRank
 
       - id: PlexusAvaloniaPropertyGrid-Text-Values
         title: >-
@@ -84,6 +106,7 @@ sections:
           - PlexusAvaloniaPropertyGrid-PropertyModel-Validation
           - PlexusAvaloniaPropertyGrid-EditSession-Errors
           - PlexusAvaloniaPropertyGrid-EditSession-ReportError
+          - PlexusAvaloniaPropertyGrid-PropertyModel-ConverterProbeFailure
         tests:
           - PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject
 
@@ -251,14 +274,15 @@ sections:
           - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Title
           - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Commit
           - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Validation
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-Arguments
+          - PlexusAvaloniaPropertyGrid-PropertyGridDialog-CloseConfirmation
         tests:
           - PlexusAvaloniaPropertyGrid_PropertyGridDialog_CommitsOrDiscardsTheEdits
 
       - id: PlexusAvaloniaPropertyGrid-Plexus-Nodes
         title: >-
           The system shall show and edit Plexus nodes, annotations and groups in the grid with one assignment: a node
-          shows its name, its declared properties with their definitions' presentation (in their declared display
-          order within a category) and its host data, and every
+          shows its name, its declared properties with their definitions' presentation and its host data, and every
           commit is one undo entry of the diagram (one step for a staged dialog, one step per edit for a live panel)
           that leaves the live host data untouched until it is replaced.
         justification: |
@@ -274,10 +298,22 @@ sections:
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Refusal
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Live
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Elements
-          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder
         tests:
           - PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry
+
+      - id: PlexusAvaloniaPropertyGrid-Plexus-NodePropertyOrder
+        title: >-
+          The system shall list a node's declared properties in the categorized view, within their category, by
+          ascending display order of their definitions, with equal orders alphabetical by display name.
+        justification: |
+          A node type that declares an order (an envelope's attack, decay, sustain and release) must be shown in that
+          order, not alphabetically, while types that declare none keep the familiar alphabetical order.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder
+        tests:
           - PlexusAvaloniaPropertyGrid_PlexusNode_ListsPropertiesInDefinitionOrder
+          - PlexusAvaloniaPropertyGrid_PlexusNode_EqualOrders_ListAlphabetically
 
       - id: PlexusAvaloniaPropertyGrid-Plexus-Dialog
         title: >-
@@ -288,30 +324,95 @@ sections:
         tags: [system]
         children:
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Show
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-StagedContent
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-NameFirst
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-NullArguments
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-UnattachedNode
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Commit
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-CommitResult
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Cancel
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Validation
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-RenameVeto
         tests:
           - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_CommitsOrDiscardsAsOneUndoEntry
 
       - id: PlexusAvaloniaPropertyGrid-Plexus-DialogPreview
         title: >-
-          The system shall let a host add a live preview to the node properties dialog that reads the staged values
-          and redraws on every edit, reset and cancel before OK, without changing the dialog's one-undo-entry OK or
-          its Cancel, and shall let hosts that build their own window use the same preview context over their own
-          grid or session.
+          The system shall let a host show a preview control beside the grid of the node properties dialog, placed
+          and sized as requested.
         justification: |
           Hosts migrating custom node inspectors (for example from WinForms) want a nicer properties dialog that
           visualizes what the settings do while the user edits, without rebuilding staging, validation and undo.
         tags: [system]
         children:
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Preview
-          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewValues
-          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewNotifications
-          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCommit
-          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewContext
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewPlacement
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewSize
           - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Options
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-OptionsPlain
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-OptionsValidation
         tests:
           - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce
+
+      - id: PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewValues
+        title: >-
+          The system shall let the preview read the staged values of the node properties dialog (the pending edit,
+          otherwise the node's current value) without changing the node.
+        justification: |
+          The preview must show what OK would apply, and a visualization must never write to the node.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewValues
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewReadOnly
+        tests:
+          - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce
+
+      - id: PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewNotifications
+        title: >-
+          The system shall notify the preview when a staged edit is made, reset or cancelled with the session and
+          after the commit, but not for a validation error alone, when the dialog's Cancel button closes it or after
+          the dialog closed.
+        justification: |
+          The preview redraws live while the user edits and must stop when the dialog closes, so a host never draws
+          into a closed window.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewNotifications
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCommitNotification
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewErrorNoNotification
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewDialogClose
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewDisposed
+        tests:
+          - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewNotifiedOnEditResetAndSessionCancel
+
+      - id: PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewCommit
+        title: >-
+          The system shall keep the node properties dialog's OK as one undo entry and its Cancel as no change when
+          a preview is shown.
+        justification: |
+          A preview must not change the dialog's commit semantics.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCommit
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCancel
+        tests:
+          - PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce
+
+      - id: PlexusAvaloniaPropertyGrid-Plexus-PreviewContext
+        title: >-
+          The system shall let a host that builds its own window use the preview context over its own grid or edit
+          session that shows a node.
+        justification: |
+          Hosts that build their own inspector window reuse the staging, validation and undo of the grid and the same
+          preview context instead of the ready-made dialog.
+        tags: [system]
+        children:
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewContext
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewContextValidation
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewSessionReplaced
+          - PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewSessionNotNode
+        tests:
+          - PlexusAvaloniaPropertyGrid_NodePreviewContext_HostGridAndSession_FollowStagedEdits
 
       - id: PlexusAvaloniaPropertyGrid-Independent
         title: >-

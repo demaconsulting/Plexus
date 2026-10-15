@@ -345,4 +345,83 @@ public class SerializationTests
         Assert.All(duplicates.OfType<Wire>().Concat(target.Wires), w => Assert.Contains(w.Source.Name, new[] { "value", "z" }));
         Assert.Contains(target.Wires, w => w.Target.Name == "in2");
     }
+
+    /// <summary>
+    ///     Validates that saved diagrams and copied clipboard text hold no port lists for nodes with computed ports.
+    /// </summary>
+    [Fact]
+    public void Serialization_DynamicPorts_Save_StoresNoPortLists()
+    {
+        // Arrange
+        var diagram = SerializationFixtures.CreateDynamicPortDiagram();
+
+        // Act
+        using var saved = System.Text.Json.JsonDocument.Parse(diagram.ToJson());
+        using var copied = System.Text.Json.JsonDocument.Parse(PlexusClipboard.Copy(diagram.Pages[0].Elements));
+
+        // Assert: no node entry of either text has a member that lists ports (payload members are host data)
+        var nodes = saved.RootElement.GetProperty("pages")[0].GetProperty("nodes").EnumerateArray()
+            .Concat(copied.RootElement.GetProperty("nodes").EnumerateArray())
+            .ToList();
+        Assert.Equal(8, nodes.Count);
+        Assert.All(nodes, node => Assert.DoesNotContain(
+            node.EnumerateObject(),
+            m => m.Name.Contains("port", StringComparison.OrdinalIgnoreCase)
+                || m.Name.Equals("inputs", StringComparison.OrdinalIgnoreCase)
+                || m.Name.Equals("outputs", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    /// <summary>
+    ///     Validates that a wire to a port the provider does not produce for the restored configuration is rejected like
+    ///     a wire to an unknown port, by load and by paste.
+    /// </summary>
+    [Fact]
+    public void Serialization_DynamicPorts_WireToPortNotRecomputed_IsRejected()
+    {
+        // Arrange: content wired to Bus.in2, read with a bus that only ever has two inputs
+        var source = SerializationFixtures.CreateDynamicPortDiagram();
+        var json = source.ToJson();
+        var text = PlexusClipboard.Copy(source.Pages[0].Elements);
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(_ => new PortSet(
+            [new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32")],
+            [new PortDefinition("out", "f32")]));
+        var target = new Diagram(types).Pages.Add("Target");
+
+        // Act
+        var loadError = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, types));
+        var pasted = PlexusClipboard.Paste(target, text);
+
+        // Assert
+        Assert.Contains("no input port named 'in2'", loadError.Message, StringComparison.Ordinal);
+        Assert.False(pasted.Success);
+        Assert.Contains("no input port named 'in2'", pasted.Error, StringComparison.Ordinal);
+        Assert.Empty(target.Elements);
+    }
+
+    /// <summary>
+    ///     Validates that a failing port provider is reported as an import error by load (snapshot exception) and paste
+    ///     (failed result), leaving the target unchanged.
+    /// </summary>
+    [Fact]
+    public void Serialization_DynamicPorts_ProviderFails_ReportsImportError()
+    {
+        // Arrange: a provider failing with an exception type that is not a typical argument or state error
+        var source = SerializationFixtures.CreateDynamicPortDiagram();
+        var json = source.ToJson();
+        var text = PlexusClipboard.Copy(source.Pages[0].Elements);
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(_ => throw new NotSupportedException("no bus here"));
+        var target = new Diagram(types).Pages.Add("Target");
+        var undoBefore = target.Diagram.History.UndoCount;
+
+        // Act
+        var loadError = Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, types));
+        var pasted = PlexusClipboard.Paste(target, text);
+
+        // Assert
+        Assert.Contains("could not be computed: no bus here", loadError.Message, StringComparison.Ordinal);
+        Assert.False(pasted.Success);
+        Assert.Contains("could not be computed: no bus here", pasted.Error, StringComparison.Ordinal);
+        Assert.Empty(target.Elements);
+        Assert.Equal(undoBefore, target.Diagram.History.UndoCount);
+    }
 }

@@ -121,13 +121,26 @@ ReqStream trace matrix.
 - **ConnectionRules_HostRule_AlwaysReceivesOutputThenInput**: connect with reversed ports, `CanConnect` and
   `CanReconnect` all call the rule with the output first.
 
-##### Per-node ports (`Plexus-Model-DiagramPage-DetachedPorts`, `Plexus-Model-DiagramPage-AddNodePorts`)
+##### Per-node ports (`Plexus-Model-DiagramPage-DetachedPorts`)
 
 - **DiagramPage_CanConnect_PortRemovedByProvider_IsDenied**: a port a provider removed is refused with a reason by
   `CanConnect`, and `Connect` throws (error path).
+
+##### New node ports (`Plexus-Model-DiagramPage-AddNodePorts`)
+
+- **DiagramPage_AddNode_ProviderNeedsMoreHeight_GrowsNewNode**: the new node has the outputs `x` and `y` that the
+  provider returns for the default payload.
+
+##### New node height (`Plexus-Model-DiagramPage-AddNodeHeight`)
+
 - **DiagramPage_AddNode_ProviderNeedsMoreHeight_GrowsNewNode**: a type that declares a 60-unit height but whose default
   payload yields two outputs starts at the height two rows need, with its declared width (boundary: declared size).
+
+##### Provider failure when adding (`Plexus-Model-DiagramPage-AddNodeProviderFailure`)
+
 - **DiagramPage_AddNode_ProviderBuildsInvalidPortSet_ThrowsAndAddsNothing**: a provider that builds a port set with two
   inputs of the same name makes AddNode throw, leaving no node and no history entry (error path).
+- **DiagramPage_AddNode_ProviderReturnsNull_ThrowsAndAddsNothing**: a provider that returns no set makes AddNode throw
+  an invalid-operation error naming the type, leaving no node and no history entry (error path).
 
 **Expected**: each test passes, proving the DiagramPage requirements.

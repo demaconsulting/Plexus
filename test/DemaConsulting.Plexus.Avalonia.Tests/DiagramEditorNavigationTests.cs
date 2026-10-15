@@ -138,6 +138,97 @@ public class DiagramEditorNavigationTests
     });
 
     /// <summary>
+    ///     Validates that an element of another diagram is refused without changing the page, zoom, offset or selection, whereas an
+    ///     editor that shows no page accepts an element of any diagram.
+    /// </summary>
+    [Fact]
+    public Task DiagramEditor_BringIntoView_ElementOfOtherDiagram_ThrowsAndKeepsView() => UiTest.Run(host =>
+    {
+        // Arrange: a view that is not at the defaults, with a selection, and a node of another diagram
+        var mine = host.AddSource(0, 0);
+        host.Editor.Select(mine);
+        host.Editor.Zoom = 2;
+        host.Editor.Offset = new AvaloniaPoint(15, 25);
+        var otherPage = new Diagram(host.Diagram.Types).Pages.Add("Other");
+        var other = otherPage.AddNode("test.Source", 3000, 2000);
+
+        // Act
+        var thrown = Record.Exception(() => host.Editor.BringIntoView(other));
+        var unchanged = (host.Editor.Page, host.Editor.Zoom, host.Editor.Offset, host.Editor.Selection.Count);
+        host.Editor.Page = null;
+        host.Editor.BringIntoView(other);
+
+        // Assert: the first request changed nothing; with no page shown, any diagram is accepted
+        Assert.Multiple(
+            () => Assert.IsType<ArgumentException>(thrown),
+            () => Assert.Equal((host.Page, 2.0, new AvaloniaPoint(15, 25), 1), unchanged),
+            () => Assert.Same(otherPage, host.Editor.Page));
+    });
+
+    /// <summary>
+    ///     Validates that fitting elements refuses invalid arguments before changing the page, zoom, offset or selection.
+    /// </summary>
+    [Fact]
+    public Task DiagramEditor_ZoomToFitElements_InvalidArguments_ThrowWithoutChangingView() => UiTest.Run(host =>
+    {
+        // Arrange: a view that is not at the defaults, a removed node and nodes of another diagram
+        var mine = host.AddSource(0, 0);
+        host.Editor.Select(mine);
+        host.Editor.Zoom = 2;
+        host.Editor.Offset = new AvaloniaPoint(15, 25);
+        var removed = host.AddSink(300, 0);
+        removed.Remove();
+        var other = new Diagram(host.Diagram.Types).Pages.Add("Other").AddNode("test.Source", 3000, 2000);
+
+        // Act
+        var exceptions = new[]
+        {
+            Record.Exception(() => host.Editor.ZoomToFit((IEnumerable<DiagramElement>)null!)),
+            Record.Exception(() => host.Editor.ZoomToFit([mine, null!])),
+            Record.Exception(() => host.Editor.ZoomToFit([mine, removed])),
+            Record.Exception(() => host.Editor.ZoomToFit([mine, other])),
+            Record.Exception(() => host.Editor.ZoomToFit([other])),
+            Record.Exception(() => host.Editor.ZoomToFit([mine], -1)),
+            Record.Exception(() => host.Editor.ZoomToFit([mine], double.NaN)),
+            Record.Exception(() => host.Editor.ZoomToFit([mine], double.PositiveInfinity)),
+            Record.Exception(() => host.Editor.ZoomToFit([mine], double.NegativeInfinity)),
+            Record.Exception(() => host.Editor.ZoomToFit(Array.Empty<DiagramElement>(), -1)),
+        };
+
+        // Assert: each request failed with the documented exception type, and the view is untouched
+        Assert.Multiple(
+            () => Assert.IsType<ArgumentNullException>(exceptions[0]),
+            () => Assert.All(exceptions[1..5], e => Assert.IsType<ArgumentException>(e)),
+            () => Assert.All(exceptions[5..], e => Assert.IsType<ArgumentOutOfRangeException>(e)),
+            () => Assert.Same(host.Page, host.Editor.Page),
+            () => Assert.Equal(2.0, host.Editor.Zoom),
+            () => Assert.Equal(new AvaloniaPoint(15, 25), host.Editor.Offset),
+            () => Assert.Single(host.Editor.Selection));
+    });
+
+    /// <summary>
+    ///     Validates that the margin is kept on each side of the fitted elements, and that a larger margin zooms out further.
+    /// </summary>
+    [Fact]
+    public Task DiagramEditor_ZoomToFitElements_Margin_IsKeptOnEachSide() => UiTest.Run(host =>
+    {
+        // Arrange: an annotation larger than the view, so the margin decides the zoom
+        var note = host.Page.AddAnnotation("big", new Geometry.Rect(100, 100, 3000, 2000));
+
+        // Act
+        host.Editor.ZoomToFit([note], 0);
+        var tight = host.Editor.Zoom;
+        host.Editor.ZoomToFit([note], 100);
+        var padded = host.Editor.Zoom;
+
+        // Assert: the box lies inside the view shrunk by the margin
+        var box = host.Editor.GetElementScreenBounds(note);
+        Assert.Multiple(
+            () => Assert.True(padded < tight),
+            () => Assert.True(View(host.Editor).Deflate(99.5).Contains(box)));
+    });
+
+    /// <summary>
     ///     Validates that elements that are not on a page of the shown diagram are refused.
     /// </summary>
     [Fact]

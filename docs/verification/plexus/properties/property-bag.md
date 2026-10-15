@@ -40,6 +40,9 @@ on the values and the history.
   and null are rejected without changing the value or the history.
 - **PropertyBag_Set_ChoiceOutsideOptions_ThrowsArgumentException**: a value outside the choices is rejected and the
   message names the choices.
+- **PropertyBag_Set_Int64NotExactlyRepresentableAsDouble_ThrowsArgumentException**: boundary of the lossless rule for a
+  double property: 2^53 + 1 and the largest 64-bit integer are rejected with the value and the history unchanged, while
+  2^53 converts exactly.
 
 ##### Ad-hoc properties (`Plexus-Properties-PropertyBag-AdHoc`)
 
@@ -98,13 +101,22 @@ on the values and the history.
 - **PropertyBag_TrySetAll_NoEffectiveChange_RecordsNothing** and **PropertyBag_TrySetAll_EmptyName_IsReported**; a
   removed node and null arguments are refused.
 
-##### Port recomputation (`Plexus-Properties-PropertyBag-PortRecompute`)
+##### Port recomputation on set (`Plexus-Properties-PropertyBag-PortRecompute`)
 
 - **PropertyBag_Set_ProviderProperty_RecomputesPortsInSameEntry**: one entry; undoing it restores the value and the
   ports.
+
+##### Port recomputation on reset (`Plexus-Properties-PropertyBag-PortRecomputeReset`)
+
+- **PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts**: resetting the count restores the default inputs.
+
+##### Port recomputation on batch edit (`Plexus-Properties-PropertyBag-PortRecomputeBatch`)
+
 - **PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry**: a batch of text and choice values that removes a wired
   input and retypes the remaining one is one exact entry, the wire included.
-- **PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts**: resetting the count restores the default inputs.
+
+##### Port recomputation for ad-hoc values (`Plexus-Properties-PropertyBag-PortRecomputeAdHoc`)
+
 - **PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry**: adding an ad-hoc value the provider reads turns
   fan-in on in one exact undo entry; the value stays ad-hoc (no definition).
 - **PropertyBag_Reset_AdHocProviderValue_RecomputesPortsInSameEntry**: removing that ad-hoc value turns fan-in off in

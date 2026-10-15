@@ -12,8 +12,9 @@ namespace DemaConsulting.Plexus;
 ///         calling the provider again.
 ///     </para>
 ///     <para>
-///         The command only swaps ports. Removing the wires of removed ports, re-checking retyped ports, resizing the node
-///         and re-routing wires are planned around it by <see cref="DiagramPage.PlanPortUpdate"/>.
+///         The command only swaps ports and drops the page's routing caches; it raises no notification. Removing the wires
+///         of removed ports, re-checking retyped ports, resizing the node, re-routing wires and reporting the change (once,
+///         when the model is settled) are planned around it by <see cref="DiagramPage.PlanPortUpdate"/>.
 ///     </para>
 /// </remarks>
 internal sealed class NodePortsCommand : IUndoableCommand
@@ -171,22 +172,71 @@ internal sealed class NodePortsCommand : IUndoableCommand
         [.. ports.Select(p => new PortSlot(p, p.Definition, p.Index))];
 
     /// <summary>
-    ///     Puts one state's ports on the node and reports the change.
+    ///     Puts one state's ports on the node, without notifications.
     /// </summary>
+    /// <remarks>
+    ///     Only the page's routing caches are dropped here; the node's <c>Ports</c> and its groups' <c>Bounds</c> are reported
+    ///     by the notification steps of <see cref="CreateNotificationSteps"/> once the whole recomputation is settled.
+    /// </remarks>
     /// <param name="state">The state to apply.</param>
     private void Apply(PortState state)
     {
-        // Definitions and rows first, so anchors are right when the lists change and notifications fire
+        // Definitions and rows first, so anchors are right when the lists change
         foreach (var slot in state.Inputs.Concat(state.Outputs))
         {
             slot.Port.Update(slot.Definition, slot.Index);
         }
 
         _node.ReplacePortsCore(state.Inputs.Select(s => s.Port), state.Outputs.Select(s => s.Port));
+        _node.Page?.OnElementChanging(_node);
+    }
 
-        // The node reports the change (which also drops the page's routing caches); groups re-fit their frames
-        _node.NotifyChanged(nameof(Node.Ports));
-        for (var group = _node.Parent; group is not null; group = group.Parent)
+    /// <summary>
+    ///     Creates the two marker steps that report a port recomputation once the model is settled.
+    /// </summary>
+    /// <remarks>
+    ///     The page records the opening step at the start of the plan (before the triggering change) and runs the closing step
+    ///     after the last step of the recomputation. The closing step reports the change when the recomputation is applied
+    ///     (first time and redo), after every wire removal, bounds and route change; the opening step reports it when the
+    ///     entry is reverted (undo or rollback), after the wires, bounds, routes and the triggering change are restored. A
+    ///     recomputation that failed before its closing step ever ran is rolled back silently, because nothing was reported
+    ///     for it. The report is the node's <c>Ports</c> change followed by a <c>Bounds</c> change of every enclosing group,
+    ///     so frames re-fit.
+    /// </remarks>
+    /// <param name="node">The node whose ports are recomputed.</param>
+    /// <returns>The opening and closing steps.</returns>
+    public static (IUndoableCommand Opening, IUndoableCommand Closing) CreateNotificationSteps(Node node)
+    {
+        var settled = false;
+        var opening = new DelegateCommand(
+            "Update ports",
+            () => { },
+            () =>
+            {
+                if (settled)
+                {
+                    Notify(node);
+                }
+            });
+        var closing = new DelegateCommand(
+            "Update ports",
+            () =>
+            {
+                settled = true;
+                Notify(node);
+            },
+            () => { });
+        return (opening, closing);
+    }
+
+    /// <summary>
+    ///     Reports a changed set of ports: the node's <c>Ports</c>, then the <c>Bounds</c> of every enclosing group.
+    /// </summary>
+    /// <param name="node">The node.</param>
+    private static void Notify(Node node)
+    {
+        node.NotifyChanged(nameof(Node.Ports));
+        for (var group = node.Parent; group is not null; group = group.Parent)
         {
             group.NotifyChanged(nameof(Group.Bounds));
         }

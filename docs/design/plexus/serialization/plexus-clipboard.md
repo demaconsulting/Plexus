@@ -35,20 +35,22 @@ operation that attaches the elements. Reading the envelope rejects, in this orde
 a missing or foreign
 `format` marker and an unsupported version, each with a message in a failed `PasteResult`.
 
-`ElementImporter.Prepare(target, content, options)`: refuses content above `MaxElements` before per-element work, reports
-all unknown node types together, validates every rectangle, collapsed position and route point (finite, within 1e9, sizes
-non-negative), computes the translation (the target position applied to the top-left of the union of node, annotation and
-collapsed group boxes, else the default offset), then creates detached nodes (claiming ids: fresh GUIDs when cloning, the
-stored ids when restoring, rejecting empty and repeated ids; resolving names; loading properties by coercion; reading
-payloads, where a node without any payload gets `NodeType.CreateData` when cloning and keeps no payload when
-restoring), then recomputing the node's ports with its type's port provider (`Node.InitializePorts`, after the
-properties and payload and before any wire; the stored bounds are kept; a provider failure becomes a "the ports of node
-... could not be computed" message), annotations (validating fill colors) and groups, links group membership after
-checking for unknown members,
-members in two groups, cycles and depth beyond 64, creates wires (checking nodes, port names against the recomputed ports
-and directions, self
-connections and duplicate port pairs, translating routes) and fixes the z-order (a stored z-order must name every element
-exactly once; otherwise groups, nodes, annotations, wires). Any problem aborts with a message and nothing is applied.
+`ElementImporter.Prepare(target, content, options)`: refuses content above `MaxElements` before per-element work,
+rejects a node entry that is null or has a null, empty or white-space type key ("A node has no node type key."; checked
+before the missing-type check, so such a node is never reported as an unknown type), reports all unknown node types
+together, validates every rectangle, collapsed position and route point (finite, within 1e9, sizes non-negative),
+computes the translation (the target position applied to the top-left of the union of node, annotation and collapsed
+group boxes, else the default offset), then creates detached nodes (claiming ids: fresh GUIDs when cloning, the stored
+ids when restoring, rejecting empty and repeated ids; resolving names; loading properties by coercion; reading payloads,
+where a node without any payload gets `NodeType.CreateData` when cloning and keeps no payload when restoring), then
+recomputing the node's ports with its type's port provider (`Node.InitializePorts`, after the properties and payload and
+before any wire; the stored bounds are kept; every provider failure except `OutOfMemoryException` - an exception of any
+type, a null result or an invalid port set - becomes a "the ports of node ... could not be computed: reason" import
+problem that keeps the provider's exception as its inner exception), annotations (validating fill colors) and groups,
+links group membership after checking for unknown members, members in two groups, cycles and depth beyond 64, creates
+wires (checking nodes, port names against the recomputed ports and directions, self connections and duplicate port
+pairs, translating routes) and fixes the z-order (a stored z-order must name every element exactly once; otherwise
+groups, nodes, annotations, wires). Any problem aborts with a message and nothing is applied.
 
 `PreparedImport.Apply(page, plan, exactZOrder)`: when restoring, attaches the elements in order; when cloning, attaches
 everything except wires first and then each wire after asking the page whether the connection rules allow it, skipping
@@ -72,9 +74,10 @@ Bad clipboard text is never an exception: the paste returns `PasteResult` with `
 unknown node types, the complete list of keys. Warnings (property kind mismatches, unavailable choices, rejected wires,
 unreadable payloads) accompany a successful result. Caller errors throw: `ArgumentNullException` and `ArgumentException`
 for null, detached or multi-page selections, `ArgumentOutOfRangeException` for non-finite or huge positions and offsets,
-and `InvalidOperationException` when the target page has been removed or a duplicate's own payload no longer
-serializes. Unexpected exceptions from host serializers other than the documented bad-input types propagate, since they
-indicate defects.
+and `InvalidOperationException` when the target page has been removed, a duplicate's own payload no longer
+serializes or a port provider fails for a copy ("The elements could not be duplicated: ..."). Exceptions of host
+payload serializers while reading are never propagated: any of them except `OutOfMemoryException` makes the payload
+unreadable (a warning on paste, an error on restore).
 
 #### Dependencies
 

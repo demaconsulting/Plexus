@@ -60,6 +60,12 @@ the ReqStream trace matrix.
   nested members, collapse hides members and expand shows them, ungrouping hands members to the parent group, and undo
   restores the nesting.
 
+#### Group frames as obstacles (`Plexus-Model-GroupObstacles`)
+
+- **Model_Groups_UnrelatedGroupFrame_IsAnObstacleForStoredRoutes**: the stored route of a wire between two nodes outside
+  a group that frames the free row between them never enters the frame with its clearance, while a wire to a node
+  inside that group is routed orthogonally into the frame (the group of an end node is no obstacle).
+
 #### Editing (`Plexus-Model-Editing`)
 
 - **Model_Editing_MoveAndRemove_WiresFollowAndAreRemoved**: moving both ends translates a manual route; removing a node
@@ -89,10 +95,55 @@ the ReqStream trace matrix.
 - **Model_ChangeNotification_ObservableCollections_ReportAddMoveRemove**: the page collection and a page's node list
   report add, move and remove.
 
-#### Per-node ports (`Plexus-Model-DynamicPorts`)
+#### Per-node ports
+
+Requirements: `Plexus-Model-DynamicPorts`, `Plexus-Model-DynamicPortIdentity`, `Plexus-Model-DynamicPortWireRemoval` and
+`Plexus-Model-DynamicPortUndo`.
 
 - **Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry**: raising a bus's channel count and
-  changing a router's payload are each one exact undo entry (twice over); the bus grew and kept its wire, the router lost
-  its second output and the wire on it.
+  changing a router's payload are each one exact undo entry (twice over); the bus grew and kept its wire (same port),
+  the router lost its second output and the wire on it.
+
+#### Re-checked wires (`Plexus-Model-DynamicPortRuleRevalidation`)
+
+- **Model_DynamicPorts_RetypedPort_RemovesOnlyRefusedWires**: with a same-type rule, retyping the bus inputs removes the
+  f32 wire on its input and keeps the wire on its unchanged output; the edit is one exact undo entry.
+
+#### Node size (`Plexus-Model-DynamicPortResize`)
+
+- **Model_DynamicPorts_PortCountChange_FitsHeightAndReroutes**: ten channels make the bus taller with the same position
+  and width; the wire equals a fresh route of its moved anchor; going back to two channels restores the original
+  bounds (boundary: back to the default height).
+
+#### Provider failure (`Plexus-Model-DynamicPortProviderFailure`)
+
+- **Model_DynamicPorts_ProviderFails_RollsBackAndRecordsNothing**: a payload whose provider result has a duplicate
+  output name makes the edit throw; the model dump (payload, ports, wire) and the history are unchanged (error path).
+
+#### Ports notification (`Plexus-Model-DynamicPortNotification`)
+
+- **Model_DynamicPorts_Notifications_ReportPortsChangeAfterModelSettles**: dropping a four-channel wired bus to one
+  channel, its undo and its redo each report the bus's `Ports` change exactly once, and the model dump taken in the
+  handler equals the final dump of that step.
+
+#### Removed port held by a host (`Plexus-Model-DynamicPortDetached`)
+
+- **Model_DynamicPorts_RemovedPortHeldByHost_CannotBeConnected**: a port kept by the host after the provider removed it
+  is refused with a reason, and connecting to it throws without adding a wire (error path).
+
+#### New node of a provider type (`Plexus-Model-DynamicPortAddNode`)
+
+- **Model_DynamicPorts_AddNode_UsesProviderPortsAndFitsHeight**: a type with a declared 120 x 60 size whose default
+  payload names five outputs gets those outputs, the declared width and a taller height that contains every anchor.
+
+#### Change handlers that throw
+
+Requirements: `Plexus-Model-HandlerFailureKeepsChange`, `Plexus-Model-HandlerFailureReported`,
+`Plexus-Model-HandlerFailureUndoRedo` and `Plexus-Model-HandlerFailureTransaction`.
+
+- **Model_HandlerFailure_EditsUndoRedoAndTransactions_KeepModelAndHistoryConsistent**: with a handler that throws on
+  every notification, a property edit is applied and recorded, undo and redo restore the exact dumps and move the entry,
+  a `Transact` with a rename and a move is rolled back as a whole, and once the handler is quiet one undo returns to the
+  starting dump.
 
 **Expected**: each test passes, proving the Model requirements.

@@ -134,6 +134,28 @@ public class NodePropertySourceTests
     }
 
     /// <summary>
+    ///     Rows whose definitions declare the same display order are listed alphabetically by display name, ignoring case and
+    ///     the current culture; a negative order lists first.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_GetItems_EqualOrder_ListsAlphabetically()
+    {
+        // Arrange: ties declared out of order with mixed case
+        var (_, node) = NodeFixture.CreateTied();
+        using var source = new NodePropertySource(node);
+        IReadOnlyList<PropertyGroup> groups = [];
+
+        // Act: under Turkish culture a culture-sensitive comparison would list "Idle" before "ice"
+        TestHelpers.WithCulture("tr-TR", () => groups = PropertyOrdering.Group(source.GetItems(), PropertySortMode.Categorized));
+
+        // Assert
+        Assert.Equal(["General", "Tied"], groups.Select(g => g.Category));
+        Assert.Equal(["Early", "alpha", "Hue", "ice", "Idle", "Zeta"], groups[1].Items.Select(i => i.Name));
+        Assert.Equal(-5, Item(source, "Early").Order);
+        Assert.Equal(7, Item(source, "Zeta").Order);
+    }
+
+    /// <summary>
     ///     A node that is not attached to a diagram cannot be shown.
     /// </summary>
     [Fact]

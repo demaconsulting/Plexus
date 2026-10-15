@@ -76,6 +76,10 @@ internal static class NodeDataCodec
     /// <param name="data">Receives the payload on success.</param>
     /// <param name="problem">Receives a description of the failure.</param>
     /// <returns><see langword="true"/> when a payload was produced.</returns>
+    /// <remarks>
+    ///     Any exception of the host serializer or of System.Text.Json except <see cref="OutOfMemoryException"/>, and a
+    ///     null result, make the payload unreadable; the exception message becomes <paramref name="problem"/>.
+    /// </remarks>
     public static bool TryDeserialize(NodeType type, string json, out object? data, out string? problem)
     {
         data = null;
@@ -86,9 +90,9 @@ internal static class NodeDataCodec
                 ? serializer.Deserialize(json)
                 : JsonSerializer.Deserialize(json, type.DataType!, PayloadOptions);
         }
-        catch (Exception ex) when (ex is JsonException or NotSupportedException or InvalidOperationException or ArgumentException or FormatException or InvalidCastException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            // Host serializers and System.Text.Json both signal bad input with these; anything else is a real bug and propagates
+            // The text is untrusted and the serializer is host code: every non-fatal failure makes the payload unreadable
             problem = ex.Message;
             return false;
         }

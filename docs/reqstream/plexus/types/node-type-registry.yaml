@@ -179,38 +179,114 @@ sections:
 
               - id: Plexus-Types-NodeTypeRegistry-PortProvider
                 title: >-
-                  A node type shall accept an optional port provider; a node added from such a type shall get the
-                  ports the provider returns, the declared ports shall remain unchanged, and a provider that returns
-                  no ports shall make adding the node fail with an invalid-operation error naming the type.
+                  A node type shall accept an optional port provider, and a node added from such a type shall get the
+                  ports the provider returns.
                 justification: |
-                  The declared ports remain the defaults that palettes and previews show; a missing result is a host
-                  mistake that must be reported where it happens rather than produce a node without ports.
+                  Decomposes Plexus-Types-PortProvider; the type is where the rule deriving a node's ports from its
+                  configuration is declared.
                 tests:
                   - NodeType_PortProvider_Declared_SuppliesPortsAndKeepsDefaults
+
+              - id: Plexus-Types-NodeTypeRegistry-PortProviderDefaults
+                title: >-
+                  A node type with a port provider shall keep its declared ports unchanged.
+                justification: |
+                  Decomposes Plexus-Types-PortProviderDefaults; the declared ports remain the defaults that palettes and
+                  previews show.
+                tests:
+                  - NodeType_PortProvider_Declared_SuppliesPortsAndKeepsDefaults
+
+              - id: Plexus-Types-NodeTypeRegistry-PortProviderNull
+                title: >-
+                  A port provider that returns no port set shall make adding the node fail with an invalid-operation
+                  error naming the type, and no node shall be added.
+                justification: |
+                  Decomposes Plexus-Types-PortProviderNull; a missing result is a host mistake that must be reported
+                  where it happens rather than produce a node without ports.
+                tests:
                   - NodeType_PortProvider_ReturnsNull_ThrowsInvalidOperation
+
+              - id: Plexus-Types-NodeTypeRegistry-PortProviderEmpty
+                title: >-
+                  A port set without inputs or outputs shall be a valid provider result and give a node without ports
+                  in that direction.
+                justification: |
+                  Decomposes Plexus-Types-PortProvider; a configuration may switch every port of a direction off, which
+                  is different from the provider failing.
+                tests:
+                  - NodeType_PortProvider_EmptyPortSet_AddsNodeWithoutPorts
 
               - id: Plexus-Types-NodeTypeRegistry-PortSet
                 title: >-
-                  The port set a provider returns shall copy its input and output declarations, expose them
-                  read-only, and shall reject a missing list, an empty entry, or two ports of the same direction with
-                  the same name.
+                  The port set a provider returns shall copy its input and output declarations, so later changes to
+                  the provider's collections do not affect it.
                 justification: |
-                  Port names within a direction identify ports when they are recomputed, so duplicates must be
-                  refused before they reach a node, and a copied set cannot change behind the model's back.
+                  Decomposes Plexus-Types-PortProvider; a set that could change behind the model's back would break the
+                  exact undo of port changes.
+                tests:
+                  - PortSet_Constructor_CopiesSequences
+
+              - id: Plexus-Types-NodeTypeRegistry-PortSetReadOnly
+                title: >-
+                  The port set shall expose its input and output declarations read-only.
+                justification: |
+                  Decomposes Plexus-Types-PortProvider; a set may be cached and shared between nodes, so no consumer may
+                  modify it.
+                tests:
+                  - PortSet_InputsAndOutputs_CastToList_AreReadOnly
+
+              - id: Plexus-Types-NodeTypeRegistry-PortSetValidation
+                title: >-
+                  The port set shall reject a missing list, an empty entry and two ports of the same direction with the
+                  same name, and accept an input and an output with the same name.
+                justification: |
+                  Decomposes Plexus-Types-PortProvider; port names within a direction identify ports when they are
+                  recomputed, so duplicates must be refused before they reach a node.
                 tests:
                   - PortSet_Constructor_DuplicateOrNull_Throws
-                  - PortSet_Constructor_CopiesSequences
-                  - PortSet_InputsAndOutputs_CastToList_AreReadOnly
 
               - id: Plexus-Types-NodeTypeRegistry-Descriptions
                 title: >-
-                  A port declaration and a node type shall carry an optional description, a port type a display name
-                  that defaults to its key, and a node type an optional tooltip function whose result takes precedence
-                  over its description when a node's tooltip text is requested.
+                  A node type shall carry an optional description, null when none is declared.
                 justification: |
-                  Editors need one call that yields a node's tooltip text, live when the host provides a function,
-                  and readable type names instead of opaque keys.
+                  Decomposes Plexus-Types-Descriptions; the description is the default text an editor shows for a node.
                 tests:
                   - NodeType_GetToolTip_FunctionWinsOverDescription
+
+              - id: Plexus-Types-NodeTypeRegistry-PortDescription
+                title: >-
+                  A port declaration shall carry an optional description that is exposed on the ports created from it.
+                justification: |
+                  Decomposes Plexus-Types-PortDescriptions; editors read the description from the port the pointer is
+                  over.
+                tests:
                   - PortDefinition_Description_IsExposedOnPort
+
+              - id: Plexus-Types-NodeTypeRegistry-PortTypeDisplayName
+                title: >-
+                  A port type shall carry a display name that defaults to its key when none, or an empty one, is given.
+                justification: |
+                  Decomposes Plexus-Types-PortTypeDisplayName; users should read type names, not opaque keys.
+                tests:
                   - PortType_DisplayName_DefaultsToKey
+
+              - id: Plexus-Types-NodeTypeRegistry-ToolTipPrecedence
+                title: >-
+                  A node's tooltip text shall be the result of its type's tooltip function when one is declared, used
+                  unchanged even when it is null or empty, and the type's description otherwise.
+                justification: |
+                  Decomposes Plexus-Types-ToolTipFunction; a host that declares a function decides the text alone,
+                  including that a node has no tooltip at the moment.
+                tests:
+                  - NodeType_GetToolTip_FunctionWinsOverDescription
+                  - NodeType_GetToolTip_FunctionReturnsNullOrEmpty_DoesNotUseDescription
+
+              - id: Plexus-Types-NodeTypeRegistry-ToolTipFailure
+                title: >-
+                  An exception thrown by a node type's tooltip function shall propagate unchanged to the caller that
+                  asked for the tooltip text.
+                justification: |
+                  Decomposes Plexus-Types-ToolTipFunction; a failing host function is a host bug that must be visible,
+                  not silently replaced by other text.
+                tests:
+                  - NodeType_GetToolTip_FunctionThrows_PropagatesException

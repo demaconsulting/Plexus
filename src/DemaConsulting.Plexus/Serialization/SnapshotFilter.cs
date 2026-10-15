@@ -61,7 +61,8 @@ internal static class SnapshotFilter
         var keptNodes = new List<NodeSnapshot>();
         foreach (var node in allNodes)
         {
-            if (node?.TypeKey is { } key && !types.Contains(key))
+            // A blank key is not an unknown type: it stays in and the importer rejects it as invalid content
+            if (node?.TypeKey is { } key && !string.IsNullOrWhiteSpace(key) && !types.Contains(key))
             {
                 gone.Add(node.Id);
             }

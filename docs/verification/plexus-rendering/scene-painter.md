@@ -5,9 +5,11 @@ Scope: Paints scene primitives (rectangles, paths, text, icons, grid) onto a Can
 ### Verification Approach
 
 Unit tests in `ScenePainterTests.cs` create a white surface and a painter, paint hand-built primitives, and sample
-pixels. Real `Surface`, `IconCache` and font objects are used (they are the behavior under test); no test doubles are
-needed because the painter has no other collaborators. Text and icons are checked by counting changed pixels in regions,
-which is independent of exact glyph shapes.
+pixels; all scenarios of this unit, including the tinted-icon scenarios, are in this one file. Real `Surface`,
+`IconCache` and font objects are used (they are the behavior under test); no test doubles are needed because the
+painter has no other collaborators. Text and icons are checked by counting changed pixels in regions, which is
+independent of exact glyph shapes. Borders are checked at scale one and at scale two, because the border width in output
+pixels is the stroke thickness times the scale.
 
 ### Test Environment
 
@@ -21,7 +23,13 @@ and the argument checks raise the documented exception.
 ### Test Scenarios
 
 - **ScenePainter_Paint_FilledRect_CoversAreaOnly**: a filled rectangle colors its area and nothing outside it.
-- **ScenePainter_Paint_StrokedRect_OnePixelBorderIsCrisp**: a one-pixel stroke occupies exactly one pixel column.
+- **ScenePainter_Paint_StrokedRect_OnePixelBorderIsCrisp**: a one-unit stroke at scale one occupies exactly one pixel
+  column at full coverage, and the neighbors stay white.
+- **ScenePainter_Paint_StrokedRectAtScaleTwo_BorderIsTwoCrispPixels**: a one-unit stroke at scale two occupies exactly
+  two pixel columns and two pixel rows at full coverage (19 and 20 for the edge at device 20), the neighbors and the
+  interior stay white; this also shows that the stroke width in output pixels is the thickness times the scale.
+- **ScenePainter_Paint_HalfUnitBorderAtScaleTwo_IsOneCrispPixel**: a half-unit stroke at scale two occupies exactly one
+  pixel column and one pixel row at full coverage.
 - **ScenePainter_Paint_RoundedRect_CornerIsCutAway**: the corner pixel of a rounded rectangle stays unpainted.
 - **ScenePainter_Paint_FilledPath_FillsPolygon**: a closed triangle is filled inside and not in the opposite corner.
 - **ScenePainter_Paint_OpenPathWithFill_IsImplicitlyClosed**: an unclosed filled path is filled as if closed.
@@ -36,7 +44,7 @@ and the argument checks raise the documented exception.
   rectangle.
 - **ScenePainter_Paint_BoldText_DrawsMoreInk**: bold text darkens more pixels than regular text.
 - **ScenePainter_Paint_Icon_CompositesRasterizedSvg**: an icon is opaque where its SVG paints and transparent
-  elsewhere.
+  elsewhere (the background shows through the transparent half).
 - **ScenePainter_Paint_TintedIcon_RecolorsEveryPaintedPixel**: a two-colored icon painted with a tint is one flat color
   wherever it paints and stays transparent elsewhere, while the copy without a tint keeps both colors.
 - **ScenePainter_Paint_TintAlphaAndOpacity_BlendWithTheBackground**: a half-alpha tint and a half-opaque icon without
@@ -46,7 +54,7 @@ and the argument checks raise the documented exception.
 - **ScenePainter_Paint_LargeGrid_DrawsDotsAtHighCoordinates**: a grid of about seventy thousand dots on a 4000 by 4000
   surface still paints a dot at (1500, 1500).
 - **ScenePainter_Paint_Scale_MultipliesGeometry**: a 10-unit square at (5, 5) painted at scale three covers pixels 15
-  to 44.
+  to 44 (positions and sizes are multiplied; the stroke width is covered by the scale-two border scenarios above).
 - **ScenePainter_Paint_Origin_OffsetsGeometry**: a painter with a non-zero origin shifts the geometry accordingly.
 - **ScenePainter_Paint_NullArguments_Throw**: a null surface, primitive or sequence throws.
 

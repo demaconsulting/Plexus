@@ -105,24 +105,44 @@ All NodeTypeRegistry unit tests pass. Lookups return the registered objects, rej
   those with data get a copy.
 - **NodeType_CreateData_Load_KeepsStoredDataIncludingNone**: loading never calls the factory.
 
-##### Port provider (`Plexus-Types-NodeTypeRegistry-PortProvider`)
+##### Port provider (`Plexus-Types-NodeTypeRegistry-PortProvider`, `Plexus-Types-NodeTypeRegistry-PortProviderDefaults`)
 
 - **NodeType_PortProvider_Declared_SuppliesPortsAndKeepsDefaults**: the provider's ports are a new node's ports, the
   declared inputs stay as declared, and a type without a provider reports none.
+
+##### Null provider result (`Plexus-Types-NodeTypeRegistry-PortProviderNull`)
+
 - **NodeType_PortProvider_ReturnsNull_ThrowsInvalidOperation**: adding a node whose provider returns nothing throws with
   the type key and adds no node (error path).
 
-##### Port set (`Plexus-Types-NodeTypeRegistry-PortSet`)
+##### Empty port set (`Plexus-Types-NodeTypeRegistry-PortProviderEmpty`)
 
-- **PortSet_Constructor_DuplicateOrNull_Throws**: null lists, a null entry and a repeated input name are refused; the
-  same name as an input and an output is accepted (boundary).
+- **NodeType_PortProvider_EmptyPortSet_AddsNodeWithoutPorts**: a provider returning a set without inputs and outputs
+  (boundary: empty set) adds a node that has no ports, although the type declares one of each.
+
+##### Port set (`Plexus-Types-NodeTypeRegistry-PortSet`, `Plexus-Types-NodeTypeRegistry-PortSetReadOnly`, `Plexus-Types-NodeTypeRegistry-PortSetValidation`)
+
 - **PortSet_Constructor_CopiesSequences**: adding to the caller's list afterwards does not change the set.
 - **PortSet_InputsAndOutputs_CastToList_AreReadOnly**: writing through a cast of `Inputs` or `Outputs` to a writable
   list is refused and the declarations stay unchanged (error path).
+- **PortSet_Constructor_DuplicateOrNull_Throws**: null lists, a null entry and a repeated input name are refused; the
+  same name as an input and an output is accepted (boundary).
 
-##### Descriptions (`Plexus-Types-NodeTypeRegistry-Descriptions`)
+##### Descriptions (`Plexus-Types-NodeTypeRegistry-Descriptions`, `Plexus-Types-NodeTypeRegistry-PortDescription`, `Plexus-Types-NodeTypeRegistry-PortTypeDisplayName`)
 
-- **NodeType_GetToolTip_FunctionWinsOverDescription**: the tooltip function wins over the description, the description
-  is used without a function, neither gives null, and a null node throws.
+- **NodeType_GetToolTip_FunctionWinsOverDescription**: the description is used without a function, and a type without
+  either gives null.
 - **PortDefinition_Description_IsExposedOnPort**: a port with a description and one without.
 - **PortType_DisplayName_DefaultsToKey**: no display name and an empty one fall back to the key.
+
+##### Tooltip precedence (`Plexus-Types-NodeTypeRegistry-ToolTipPrecedence`)
+
+- **NodeType_GetToolTip_FunctionWinsOverDescription**: the tooltip function wins over the description, and a null node
+  throws.
+- **NodeType_GetToolTip_FunctionReturnsNullOrEmpty_DoesNotUseDescription**: a function returning null gives null and
+  one returning an empty string gives an empty string, although both types have a description (boundary).
+
+##### Tooltip failure (`Plexus-Types-NodeTypeRegistry-ToolTipFailure`)
+
+- **NodeType_GetToolTip_FunctionThrows_PropagatesException**: the exception instance thrown by the function reaches the
+  caller unwrapped (error path).

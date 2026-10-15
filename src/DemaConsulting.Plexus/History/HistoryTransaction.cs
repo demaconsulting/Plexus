@@ -73,7 +73,9 @@ public sealed class HistoryTransaction : IDisposable
     ///     Reverts and discards every command recorded since this transaction began.
     /// </summary>
     /// <remarks>
-    ///     After a rollback the transaction is complete; disposing it afterwards does nothing.
+    ///     After a rollback the transaction is complete; disposing it afterwards does nothing. A change handler that throws
+    ///     while the commands are reverted does not stop the rollback; the first such exception is rethrown once the
+    ///     rollback has completed.
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the transaction is already complete or is not the innermost open one.</exception>
     public void Rollback()
@@ -83,7 +85,27 @@ public sealed class HistoryTransaction : IDisposable
             throw new InvalidOperationException("The transaction has already been completed.");
         }
 
-        _history.EndTransaction(_depth, _startIndex, commit: false);
+        var handlerFailure = _history.EndTransaction(_depth, _startIndex, commit: false);
+        _completed = true;
+        handlerFailure?.Throw();
+    }
+
+    /// <summary>
+    ///     Reverts and discards every command recorded since this transaction began because the transaction failed.
+    /// </summary>
+    /// <remarks>
+    ///     Like <see cref="Rollback"/>, but change-handler exceptions raised while reverting are dropped, so the caller can
+    ///     rethrow the failure that caused the rollback. Does nothing when the transaction is already complete (for example
+    ///     when the failing code rolled it back itself).
+    /// </remarks>
+    internal void RollbackAfterFailure()
+    {
+        if (_completed)
+        {
+            return;
+        }
+
+        _history.EndTransaction(_depth, _startIndex, commit: false, discardHandlerFailures: true);
         _completed = true;
     }
 

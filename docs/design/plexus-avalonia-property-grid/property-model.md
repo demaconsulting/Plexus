@@ -57,7 +57,9 @@ belongs to this unit because nested items are built from it.
   when none is given); `null` is empty text; a collection whose converter has no text form is `(Collection)`.
 - **`ConvertFromString`, `TryParse`, `TrySetText`, `SupportsTextEditing`** — parse with the converter and the culture;
   an object-typed property takes the text as is; a type whose converter cannot convert from text (and collections)
-  report a `NotSupportedException` or a failed result.
+  report a `NotSupportedException` or a failed result. `SupportsTextEditing` asks the converter
+  (`CanConvertFrom(string)`), which is user code: a non-fatal exception from that probe is treated as "no text editing"
+  (false) instead of escaping into the grid, which asks every item while it builds its rows.
 - **`HasStandardValues`, `StandardValuesExclusive`, `GetStandardValues`** — expose the converter's standard values (enums,
   `bool`, custom lists that may depend on the owner instance) with their text.
 - **`IsExpandable`, `Children`** — a converter that supports properties (such as `ExpandableObjectConverter`) makes the

@@ -28,9 +28,12 @@ instance is not thread-safe.
 
 - **`Paint(IEnumerable<ScenePrimitive>)`** — paints primitives in the given order (back to front).
 - **`Paint(ScenePrimitive)`** — dispatches on the primitive kind:
-  - Rectangle: converts to device space; when the outline has a whole-pixel stroke width of at least one pixel, the
-    edges are snapped (an odd width centers on a pixel middle, an even width on a pixel boundary) so one-pixel
-    borders stay crisp. Zero or negative sizes are skipped. Fills and strokes a rectangle or, for a corner radius,
+  - Rectangle: converts to device space. Stroke thickness is in diagram units, so the border width in output pixels is
+    the thickness times the scale. When that product is a whole number of pixels (within a small tolerance) of at
+    least one, the edges are snapped (an odd width centers on a pixel middle, an even width on a pixel boundary) so the
+    border covers exactly that many pixel columns and rows at full coverage: thickness 1 at scale 1 gives one pixel,
+    thickness 1 at scale 2 gives two, and thickness 0.5 at scale 2 gives one. Other widths are drawn anti-aliased
+    without snapping. Zero or negative sizes are skipped. Fills and strokes a rectangle or, for a corner radius,
     a rounded rectangle path; strokes use mitered joins.
   - Path: skips empty command lists; fills treat every figure as closed; strokes use round joins and butt caps, are
     never thinner than a quarter pixel, and leave figures open. A drawing command without a preceding move starts a
@@ -39,7 +42,7 @@ instance is not thread-safe.
     edge of its rectangle according to the style; centers the line box (ascent plus descent) vertically in the
     rectangle and rounds the baseline to a whole pixel; uses the same `FontProvider` lookup as `CanvasTextMeasurer`.
   - Icon: converts the rectangle to a whole-pixel position and size, skips boxes smaller than one pixel or larger
-    than the maximum surface dimension, obtains the rasterized icon from `IconCache`, skips it when the cache reports
+    than the maximum surface dimension, obtains the rasterized icon from `IconCache.Shared`, skips it when the cache reports
     it as missing, and composites it row by row with straight-alpha "over" blending, clipped to the surface. With a
     tint, each pixel the icon paints is replaced by the tint's color with coverage `icon alpha * tint alpha` (a
     silhouette, so multi-colored artwork becomes one flat color); the primitive's opacity is the extra coverage factor
@@ -61,7 +64,7 @@ Post-conditions: only pixels of the surface are modified; primitives extending b
 ### Dependencies
 
 - Core scene primitives, `Point`, `Rect`, `Color` and text style types.
-- `IconCache` and `FontProvider` (part of the CanvasTextMeasurer unit) of this system.
+- `IconCache` (through its shared instance) and `FontProvider` (part of the CanvasTextMeasurer unit) of this system.
 - CanvasNet (OTS) canvas, path, text-rendering and surface types; see _CanvasNet_ in the OTS design documents.
 
 ### Callers

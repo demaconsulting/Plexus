@@ -39,3 +39,25 @@ sections:
             tests:
               - PropertyGridDialog_Ok_WithInvalidValue_StaysOpen
               - PropertyGridDialog_Ok_WhenCommitFails_StaysOpenWithReason
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-Arguments
+            title: >-
+              The dialog shall reject a missing owner or target with an argument-null exception, before it creates a
+              window.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; a mistaken call must surface at once at the call site
+              instead of showing a broken dialog.
+            tests:
+              - PropertyGridDialog_ShowAsync_NullOwnerOrTarget_ThrowsArgumentNullException
+              - PropertyGridDialog_Constructor_CreatesStagedGridWithTitle
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyGridDialog-CloseConfirmation
+            title: >-
+              The dialog shall tell the Plexus adapter layer once, before its grid leaves the window, when its close
+              is confirmed (OK, Cancel button or window close), and not when a handler of the closing event cancels
+              the close.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Grid-Dialog; the node properties dialog stops its preview
+              notifications at that moment, so nothing is raised by a dialog that is closing.
+            tests:
+              - PropertyGridDialog_CloseConfirmed_IsRaisedOnlyWhenTheCloseGoesAhead

@@ -22,7 +22,9 @@ indexer that also accepts assignments.
   of the canonical portable kinds; enumeration yields declared properties in declaration order followed by ad-hoc
   values in insertion order; the property count equals the number of declared plus ad-hoc values.
 - **Notification name**: changes are reported with the property name and with the indexer name used by the
-  property-changed convention.
+  property-changed convention. While the node is on a page both notifications are raised through the diagram history's
+  notification gate, so a throwing handler cannot interrupt an undoable change; its exception is rethrown after the
+  change was recorded (see Diagram Design).
 
 #### Key Methods
 

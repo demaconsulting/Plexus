@@ -257,4 +257,89 @@ public class NodeLayoutTests
         Assert.True(bounds.Right > defaults.Right);
         Assert.True(byNode.Count > byType.Count || byNode.Max(r => r.Right) > byType.Max(r => r.Right));
     }
+
+    /// <summary>
+    ///     Validates that a layout computed with a theme whose port metrics differ from the diagram's still puts every
+    ///     port, triangle and hit area at the model's anchors (the node's diagram theme fixes the port geometry).
+    /// </summary>
+    [Fact]
+    public void NodeLayout_Compute_OtherThemeWithChangedPortMetrics_KeepsModelAnchors()
+    {
+        // Arrange: a classic diagram, and a display theme with a wider pitch, gap and triangle
+        var (diagram, page) = SceneTestModel.CreatePage();
+        var node = page.AddNode("acme.Mixer", 30, 60, "M");
+        var display = DiagramTheme.Classic with { PortPitch = 30, PortLabelGap = 20, PortTriangleLength = 14, PortHitRadius = 2 };
+
+        // Act
+        var layout = NodeLayout.Compute(node, display, new ApproximateTextMeasurer());
+
+        // Assert: anchors, triangles and hit areas follow the diagram theme on the model's rows
+        Assert.Equal(node.Ports.Count, layout.Ports.Count);
+        foreach (var port in layout.Ports)
+        {
+            Assert.Equal(port.Port.Anchor, port.Anchor);
+            Assert.Equal(port.Anchor.Y, port.Triangle.Center.Y, 9);
+            Assert.Equal(diagram.Theme.PortTriangleLength, port.Triangle.Width, 9);
+            Assert.Equal(2 * diagram.Theme.PortHitRadius, port.HitBounds.Height, 9);
+            Assert.Equal(port.Anchor.Y, port.HitBounds.Center.Y, 9);
+        }
+    }
+
+    /// <summary>
+    ///     Validates that a node's visual extent covers the full label line height of its outermost port rows (taller than
+    ///     the port triangles in the classic theme).
+    /// </summary>
+    [Fact]
+    public void NodeGeometry_VisualBounds_PortLabelLineHeight_IsContained()
+    {
+        // Arrange: a mixer squeezed so short that its four input rows stick out above and below the box
+        var (diagram, page) = SceneTestModel.CreatePage();
+        var node = page.AddNode("acme.Mixer", 30, 60, "M");
+        node.Bounds = node.Bounds with { Height = 20 };
+        var theme = diagram.Theme;
+        var measurer = new ApproximateTextMeasurer();
+
+        // Act
+        var extent = NodeGeometry.VisualBounds(node, theme);
+
+        // Assert: the label line (taller than the triangle) of the first and last input lies inside the extent
+        var first = node.Inputs[0];
+        var last = node.Inputs[^1];
+        var firstEdge = NodeGeometry.PortEdge(node.Bounds, PortDirection.Input, 0, node.Inputs.Count, theme);
+        var lastEdge = NodeGeometry.PortEdge(node.Bounds, PortDirection.Input, last.Index, node.Inputs.Count, theme);
+        var firstHalf = measurer.Measure(first.Label, theme.PortLabelTextStyle).Height / 2;
+        var lastHalf = measurer.Measure(last.Label, theme.PortLabelTextStyle).Height / 2;
+        Assert.True(firstHalf > theme.PortTriangleHeight / 2);
+        Assert.True(lastEdge.Y + lastHalf > node.Bounds.Bottom);
+        Assert.True(extent.Top <= firstEdge.Y - firstHalf);
+        Assert.True(extent.Bottom >= lastEdge.Y + lastHalf);
+    }
+
+    /// <summary>
+    ///     Validates that with a large port label font every port label drawn by the layout lies inside the node's
+    ///     visual extent.
+    /// </summary>
+    [Fact]
+    public void NodeGeometry_VisualBounds_LargePortLabelFont_ContainsLabels()
+    {
+        // Arrange: a diagram theme with a 24-unit port label font and a short mixer
+        var (diagram, page) = SceneTestModel.CreatePage();
+        diagram.Theme = DiagramTheme.Classic with { PortLabelFontSize = 24 };
+        var node = page.AddNode("acme.Mixer", 30, 60, "M");
+        node.Bounds = node.Bounds with { Height = 20 };
+
+        // Act
+        var extent = NodeGeometry.VisualBounds(node, diagram.Theme);
+        var layout = NodeLayout.Compute(node, diagram.Theme, new ApproximateTextMeasurer());
+
+        // Assert
+        Assert.All(layout.Ports, port =>
+        {
+            var label = port.Label.Bounds;
+            Assert.True(label.Top >= extent.Top - 1e-9, $"{port.Port.Name} top");
+            Assert.True(label.Bottom <= extent.Bottom + 1e-9, $"{port.Port.Name} bottom");
+            Assert.True(label.Left >= extent.Left - 1e-9, $"{port.Port.Name} left");
+            Assert.True(label.Right <= extent.Right + 1e-9, $"{port.Port.Name} right");
+        });
+    }
 }

@@ -46,7 +46,10 @@ sections:
           - Plexus-Types-Validation
           - Plexus-Types-Icons
           - Plexus-Properties-Declaration
+          - Plexus-Properties-ChoiceDeclaration
+          - Plexus-Properties-DeclarationValidation
           - Plexus-Properties-Display
+          - Plexus-Properties-PresentationHints
         tests:
           - Plexus_NodeTypes_DeclareAndRegister_RejectsInvalidDeclarationsAndFreezesTypes
           - Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram
@@ -63,10 +66,46 @@ sections:
         children:
           - Plexus-Properties-Defaults
           - Plexus-Properties-Validation
+          - Plexus-Properties-NumericConversion
+          - Plexus-Properties-AdHoc
+          - Plexus-Properties-BatchEdit
           - Plexus-Properties-Access
+          - Plexus-Properties-Enumeration
+          - Plexus-Properties-Reset
           - Plexus-Properties-UndoNotification
+          - Plexus-Properties-NoOpChange
+          - Plexus-Properties-MergeInTransaction
+          - Plexus-Properties-ChangeNotification
+          - Plexus-Properties-RemovedNode
         tests:
           - Plexus_Properties_TypedValues_DefaultsValidationAndReset
+
+      - id: Plexus-Core-PropertyDisplayOrder
+        title: >-
+          The library shall let a node type give each declared property an integer display-order hint (default 0)
+          for property editors, without changing the declaration order of the properties.
+        justification: |
+          Decomposes Plexus-Core-Properties; hosts want related properties (for example an envelope's Attack, Decay,
+          Sustain and Release) listed in a meaningful sequence in editors, while saved documents and summaries keep
+          the declaration order.
+        tags: [system]
+        children:
+          - Plexus-Properties-DisplayOrder
+        tests:
+          - Plexus_Properties_DisplayOrder_IsDeclaredWithoutReorderingProperties
+
+      - id: Plexus-Core-PropertyText
+        title: >-
+          The library shall convert property values to and from editable text, independent of the user's culture.
+        justification: |
+          Decomposes Plexus-Core-Properties; every host editor needs the same text conversion, and a document edited
+          on one machine must read the same on another.
+        tags: [system]
+        children:
+          - Plexus-Properties-TextParsing
+          - Plexus-Properties-EditText
+        tests:
+          - Plexus_Properties_TextEditing_ParsesAndFormatsIndependentOfCulture
 
       - id: Plexus-Core-Pages
         title: >-
@@ -275,7 +314,6 @@ sections:
         children:
           - Plexus-Routing-OrthogonalWires
           - Plexus-Routing-ObstacleAvoidance
-          - Plexus-Routing-GroupObstacles
           - Plexus-Routing-PortStubs
           - Plexus-Routing-AlwaysRoutes
           - Plexus-Routing-Replaceable
@@ -283,6 +321,32 @@ sections:
           - Plexus-Routing-InvalidRequests
         tests:
           - Plexus_Routing_DefaultAvoidsNodesAndCustomRouterIsUsed
+
+      - id: Plexus-Core-GroupObstacles
+        title: >-
+          The library shall route wires around the frames of groups that contain neither of their end nodes.
+        justification: |
+          Decomposes Plexus-Core-Routing; a wire that passes through the frame of a group it has nothing to do with
+          looks as if it belonged to the group, while the wires of a group's own members must still be able to leave
+          and enter it.
+        tags: [system]
+        children:
+          - Plexus-Routing-GroupObstacles
+          - Plexus-Model-GroupObstacles
+          - Plexus-Scene-GroupObstacles
+        tests:
+          - Plexus_Routing_GroupFrames_AreAvoidedUnlessSwitchedOff
+
+      - id: Plexus-Core-GroupObstaclesOption
+        title: >-
+          The library shall let the host switch group frames off as routing obstacles through the theme.
+        justification: |
+          Decomposes Plexus-Core-Routing; some hosts prefer the shortest wires over avoiding group frames.
+        tags: [system]
+        children:
+          - Plexus-Scene-GroupObstaclesOption
+        tests:
+          - Plexus_Routing_GroupFrames_AreAvoidedUnlessSwitchedOff
 
       - id: Plexus-Core-Scene
         title: >-
@@ -305,6 +369,7 @@ sections:
           - Plexus-Scene-RegionQueries
           - Plexus-Scene-LayoutLookup
           - Plexus-Scene-InvalidArguments
+          - Plexus-Scene-NodeVisualExtent
         tests:
           - Plexus_Scene_BuildPage_ContainsGridNodesAndWires
 
@@ -317,6 +382,7 @@ sections:
         tags: [system]
         children:
           - Plexus-Scene-Theming
+          - Plexus-Scene-GeometryTheme
           - Plexus-Scene-PortPlacement
           - Plexus-Scene-Extensibility
         tests:
@@ -431,36 +497,239 @@ sections:
 
       - id: Plexus-Core-DynamicPorts
         title: >-
-          The library shall let a node type compute the ports of each node from the node's properties and host
-          payload, recompute them in the same undo entry as every change of those properties or that payload, keep
-          the ports (and their wires) whose names remain, remove the wires of ports that disappear or that the
-          connection rules no longer allow, resize the node to fit its ports when their number changes, and restore
-          the ports from the saved properties and payload when a diagram is loaded, pasted or duplicated.
+          The library shall let a node type compute the input and output ports of each node from the node's
+          properties and host payload.
         justification: |
           Configurable blocks (a bus with N channels, a gate with N inputs) are common in node editors. Ports that
-          follow the configuration, with wires kept by stable port names and one undo step per edit, let hosts model
-          them without rebuilding nodes or persisting port lists.
+          follow the configuration let hosts model them without rebuilding nodes or persisting port lists.
         tags: [system]
         children:
           - Plexus-Types-PortProvider
+          - Plexus-Types-PortProviderDefaults
           - Plexus-Model-DynamicPorts
+          - Plexus-Model-DynamicPortAddNode
           - Plexus-Properties-PortRecompute
-          - Plexus-Serialization-DynamicPorts
+          - Plexus-Properties-PortRecomputeReset
+          - Plexus-Properties-PortRecomputeBatch
+          - Plexus-Properties-PortRecomputeAdHoc
           - Plexus-Scene-DynamicPorts
+          - Plexus-Scene-DynamicPortHitTest
+          - Plexus-Scene-DynamicPortExtent
+          - Plexus-Scene-DynamicPortObstacles
         tests:
           - Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep
+
+      - id: Plexus-Core-DynamicPortIdentity
+        title: >-
+          When a node's ports are recomputed, the ports whose names remain within their direction shall keep their
+          port objects and their wires.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; users expect wires to stay connected when they add channels or reorder
+          outputs, and hosts hold ports by reference.
+        tags: [system]
+        children:
+          - Plexus-Model-DynamicPortIdentity
+        tests:
+          - Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep
+
+      - id: Plexus-Core-DynamicPortWireRemoval
+        title: >-
+          When a node's ports are recomputed, the library shall remove the wires of ports that disappear.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; no wire may end at a port its node no longer shows.
+        tags: [system]
+        children:
+          - Plexus-Model-DynamicPortWireRemoval
+          - Plexus-Model-DynamicPortDetached
+        tests:
+          - Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep
+
+      - id: Plexus-Core-DynamicPortRuleRevalidation
+        title: >-
+          When a recomputation changes the type or fan-in of a kept port, the library shall remove the wires of that
+          port that the connection rules no longer allow.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; the host's connection rules must hold for every wire of the diagram,
+          also after a reconfiguration.
+        tags: [system]
+        children:
+          - Plexus-Model-DynamicPortRuleRevalidation
+        tests:
+          - Plexus_DynamicPorts_RetypedPort_RemovesWireTheRulesRefuse
+
+      - id: Plexus-Core-DynamicPortResize
+        title: >-
+          When a recomputation changes the number of a node's ports, the library shall resize the node to fit them,
+          never below the type's default height.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; every port must stay inside its node box, and a node that loses ports
+          should not stay taller than a new node with the same ports.
+        tags: [system]
+        children:
+          - Plexus-Model-DynamicPortResize
+        tests:
+          - Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep
+
+      - id: Plexus-Core-DynamicPortUndo
+        title: >-
+          The library shall record a port recomputation in the same undo entry as the property or payload change that
+          triggered it.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; users undo the edit they made, and one undo must restore the ports and
+          wires it changed.
+        tags: [system]
+        children:
+          - Plexus-Model-DynamicPortUndo
+          - Plexus-Model-DynamicPortNotification
+        tests:
+          - Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep
+
+      - id: Plexus-Core-DynamicPortFailure
+        title: >-
+          When a port provider fails, the library shall leave the diagram and its history unchanged and report the
+          error.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; a host bug in a provider must never leave a half-applied edit or an
+          undo entry that does not match the model.
+        tags: [system]
+        children:
+          - Plexus-Model-DynamicPortProviderFailure
+          - Plexus-Types-PortProviderNull
+        tests:
+          - Plexus_DynamicPorts_ProviderFails_LeavesDiagramAndHistoryUnchanged
+
+      - id: Plexus-Core-DynamicPortLoad
+        title: >-
+          Loading a saved diagram shall restore the computed ports of each node and the wires attached to them.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; ports are not saved, so they must be recomputed from the restored
+          configuration before wires are reconnected.
+        tags: [system]
+        children:
+          - Plexus-Serialization-DynamicPorts
+          - Plexus-Serialization-NoStoredPorts
+          - Plexus-Serialization-DynamicPortUnknownPort
+          - Plexus-Serialization-DynamicPortProviderFailure
+        tests:
           - Plexus_DynamicPorts_SaveLoadAndPaste_RestoreWiresOnDynamicPorts
+
+      - id: Plexus-Core-DynamicPortPaste
+        title: >-
+          Pasting copied content shall restore the computed ports of each node and the wires attached to them.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; copied content holds no port lists either, so paste must recompute
+          the ports before it recreates wires.
+        tags: [system]
+        children:
+          - Plexus-Serialization-DynamicPortsPaste
+        tests:
+          - Plexus_DynamicPorts_SaveLoadAndPaste_RestoreWiresOnDynamicPorts
+
+      - id: Plexus-Core-DynamicPortDuplicate
+        title: >-
+          Duplicating elements shall restore the computed ports of each copied node and the wires attached to them.
+        justification: |
+          Decomposes Plexus-Core-DynamicPorts; a duplicated configured block must keep its ports and the connections
+          between the duplicated elements.
+        tags: [system]
+        children:
+          - Plexus-Serialization-DynamicPortsDuplicate
+        tests:
+          - Plexus_DynamicPorts_Duplicate_RestoresWiresOnDynamicPorts
 
       - id: Plexus-Core-ElementDescriptions
         title: >-
-          The library shall let a host describe ports, port types and node types with text for tooltips, including a
-          node text computed from the node's current state.
+          The library shall let a host give a node type a description that editors can show as a tooltip.
         justification: |
-          Users of a diagram editor need to know what a block and each of its ports do, and hosts want to show live
-          values and validation messages where the user points; the description belongs with the declarations so
+          Users of a diagram editor need to know what a block does; the description belongs with the declaration so
           every editor shows the same text.
         tags: [system]
         children:
           - Plexus-Types-Descriptions
         tests:
           - Plexus_Descriptions_PortsAndNodeTypes_ProvideToolTipText
+
+      - id: Plexus-Core-PortDescriptions
+        title: >-
+          The library shall let a host give a port a description.
+        justification: |
+          Decomposes Plexus-Core-ElementDescriptions; users need to know what each port of a block means.
+        tags: [system]
+        children:
+          - Plexus-Types-PortDescriptions
+        tests:
+          - Plexus_Descriptions_PortsAndNodeTypes_ProvideToolTipText
+
+      - id: Plexus-Core-PortTypeNames
+        title: >-
+          The library shall let a host give a port type a display name.
+        justification: |
+          Decomposes Plexus-Core-ElementDescriptions; tooltips should name port types in words, not keys.
+        tags: [system]
+        children:
+          - Plexus-Types-PortTypeDisplayName
+        tests:
+          - Plexus_Descriptions_PortsAndNodeTypes_ProvideToolTipText
+
+      - id: Plexus-Core-LiveToolTips
+        title: >-
+          The library shall let a node type compute a node's tooltip text from the node's current state.
+        justification: |
+          Decomposes Plexus-Core-ElementDescriptions; hosts want to show live values and validation messages where
+          the user points.
+        tags: [system]
+        children:
+          - Plexus-Types-ToolTipFunction
+        tests:
+          - Plexus_Descriptions_ToolTipFunction_FollowsNodeState
+
+      - id: Plexus-Core-HandlerFailureKeepsChange
+        title: >-
+          A change during which a host change handler throws shall still be completed and be undoable as one step.
+        justification: |
+          A bug in host code that observes the diagram must not corrupt the document: a change left half applied,
+          or applied but missing from the undo history, would make every later undo wrong.
+        tags: [system]
+        children:
+          - Plexus-Model-HandlerFailureKeepsChange
+          - Plexus-Model-HandlerFailureTransaction
+        tests:
+          - Plexus_ChangeHandlerThrows_ChangeIsCompletedUndoableAndReported
+
+      - id: Plexus-Core-HandlerFailureReported
+        title: >-
+          The first exception a host change handler throws during a change shall reach the code that made the change
+          after the change is complete.
+        justification: |
+          Decomposes Plexus-Core-HandlerFailureKeepsChange; the host must still learn that its handler failed.
+        tags: [system]
+        children:
+          - Plexus-Model-HandlerFailureReported
+        tests:
+          - Plexus_ChangeHandlerThrows_ChangeIsCompletedUndoableAndReported
+
+      - id: Plexus-Core-HandlerFailureUndoRedo
+        title: >-
+          An undo or redo during which a host change handler throws shall still complete.
+        justification: |
+          Decomposes Plexus-Core-HandlerFailureKeepsChange; undo and redo must keep the history matching the diagram
+          too.
+        tags: [system]
+        children:
+          - Plexus-Model-HandlerFailureUndoRedo
+        tests:
+          - Plexus_ChangeHandlerThrows_ChangeIsCompletedUndoableAndReported
+
+      - id: Plexus-Core-UndoIntegrity
+        title: >-
+          Undo and redo shall leave the diagram and the undo history consistent when recorded host code fails or
+          tries to change the history while it runs.
+        justification: |
+          Hosts record their own changes in the history; a failure or a misplaced history call in that code must
+          not leave half of a step undone or the stacks out of step with the diagram.
+        tags: [system]
+        children:
+          - Plexus-History-ReplayIntegrity
+          - Plexus-History-ReplayAtomic
+        tests:
+          - Plexus_UndoIntegrity_FailingOrReentrantCommand_LeavesDiagramAndHistoryConsistent

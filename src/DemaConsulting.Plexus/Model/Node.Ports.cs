@@ -69,7 +69,10 @@ public sealed partial class Node
     ///     </para>
     ///     <para>
     ///         If the provider or a connection rule throws, every applied step (including the change itself) is reverted
-    ///         and the exception propagates.
+    ///         and the exception propagates; the revert attempts every step even when one of them fails, and then throws an
+    ///         <see cref="AggregateException"/> carrying the original exception first. The whole update is one change for the
+    ///         history: a change handler that throws does not interrupt it, and its exception is rethrown after the entry
+    ///         was recorded.
     ///     </para>
     /// </remarks>
     /// <param name="command">The property or data change, not yet applied.</param>
@@ -87,18 +90,30 @@ public sealed partial class Node
         // Apply the change, then the port update it implies, rolling everything back if any step fails
         history.EnsureNotApplying();
         var plan = new CommandPlan();
+        var before = history.BeginOperation();
         try
         {
             plan.Run(command);
             page.PlanPortUpdate(plan, this);
         }
-        catch
+        catch (Exception ex)
         {
-            plan.Abort();
+            try
+            {
+                plan.Abort(ex);
+            }
+            finally
+            {
+                history.AbortOperation(before);
+            }
+
             throw;
         }
 
-        // A lone change is recorded as itself so mergeable edits (sliders, drags) keep merging
+        // A lone change is recorded as itself so mergeable edits (sliders, drags) keep merging; a handler failure is
+        // reported only once the entry is recorded
+        var handlerFailure = history.EndOperation();
         history.Record(plan.Count == 1 ? command : plan.Build(command.Description));
+        handlerFailure?.Throw();
     }
 }

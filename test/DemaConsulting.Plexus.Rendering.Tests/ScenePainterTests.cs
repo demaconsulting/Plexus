@@ -10,6 +10,12 @@ namespace DemaConsulting.Plexus.Rendering.Tests;
 public class ScenePainterTests
 {
     /// <summary>
+    ///     An SVG with an opaque red left half and an opaque blue upper right quarter, to prove a tint replaces every color.
+    /// </summary>
+    private const string TwoColorSvg =
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 10\"><rect width=\"10\" height=\"10\" fill=\"#FF0000\"/><rect x=\"10\" width=\"10\" height=\"5\" fill=\"#0000FF\"/></svg>";
+
+    /// <summary>
     ///     The white background used by every test surface.
     /// </summary>
     private static readonly Rgba32 White = new(255, 255, 255, 255);
@@ -65,6 +71,57 @@ public class ScenePainterTests
         Assert.Equal(White, surface[9, 20]);
         Assert.Equal(White, surface[11, 20]);
         Assert.Equal(White, surface[20, 20]);
+    }
+
+    /// <summary>
+    ///     Validates that a one-unit border at scale two is exactly two output pixels wide at full coverage.
+    /// </summary>
+    [Fact]
+    public void ScenePainter_Paint_StrokedRectAtScaleTwo_BorderIsTwoCrispPixels()
+    {
+        // Arrange: a 30 x 20 rectangle at (10, 10) with a one-unit border, painted at scale two (device left edge x = 20)
+        var (surface, painter) = Create(100, 80, 2);
+        using var _ = surface;
+
+        // Act
+        painter.Paint(new RectPrimitive(new Rect(10, 10, 30, 20), null, Color.Black, 1));
+
+        // Assert: the left and top borders cover exactly two pixel columns/rows (19-20) at full coverage; neighbors stay white
+        var black = new Rgba32(0, 0, 0, 255);
+        Assert.Multiple(
+            () => Assert.Equal(White, surface[18, 40]),
+            () => Assert.Equal(black, surface[19, 40]),
+            () => Assert.Equal(black, surface[20, 40]),
+            () => Assert.Equal(White, surface[21, 40]),
+            () => Assert.Equal(White, surface[40, 18]),
+            () => Assert.Equal(black, surface[40, 19]),
+            () => Assert.Equal(black, surface[40, 20]),
+            () => Assert.Equal(White, surface[40, 21]),
+            () => Assert.Equal(White, surface[40, 40]));
+    }
+
+    /// <summary>
+    ///     Validates that a half-unit border at scale two is exactly one output pixel wide at full coverage.
+    /// </summary>
+    [Fact]
+    public void ScenePainter_Paint_HalfUnitBorderAtScaleTwo_IsOneCrispPixel()
+    {
+        // Arrange: the same rectangle with a half-unit border, painted at scale two
+        var (surface, painter) = Create(100, 80, 2);
+        using var _ = surface;
+
+        // Act
+        painter.Paint(new RectPrimitive(new Rect(10, 10, 30, 20), null, Color.Black, 0.5));
+
+        // Assert: the left border occupies exactly pixel column 20, the top border exactly pixel row 20
+        var black = new Rgba32(0, 0, 0, 255);
+        Assert.Multiple(
+            () => Assert.Equal(White, surface[19, 40]),
+            () => Assert.Equal(black, surface[20, 40]),
+            () => Assert.Equal(White, surface[21, 40]),
+            () => Assert.Equal(White, surface[40, 19]),
+            () => Assert.Equal(black, surface[40, 20]),
+            () => Assert.Equal(White, surface[40, 21]));
     }
 
     /// <summary>
@@ -274,6 +331,57 @@ public class ScenePainterTests
         Assert.Equal(new Rgba32(255, 0, 0, 255), surface[20, 20]);
         Assert.Equal(White, surface[40, 20]);
         Assert.Equal(White, surface[5, 20]);
+    }
+
+    /// <summary>
+    ///     Validates that a tinted icon becomes a silhouette in the tint color over the cached rasterization, leaving transparent areas alone.
+    /// </summary>
+    [Fact]
+    public void ScenePainter_Paint_TintedIcon_RecolorsEveryPaintedPixel()
+    {
+        // Arrange
+        var (surface, painter) = Create(80, 40);
+        using var _ = surface;
+        var icon = IconSource.FromSvg(TwoColorSvg);
+        var green = Color.Parse("#00AA00");
+
+        // Act: the same icon as authored and tinted, side by side
+        painter.Paint(new IconPrimitive(icon, new Rect(0, 0, 40, 20)));
+        painter.Paint(new IconPrimitive(icon, new Rect(40, 0, 40, 20), null, green));
+
+        // Assert: the plain icon keeps both colors; tinted is green wherever the icon paints and white where it is transparent
+        Assert.Multiple(
+            () => Assert.Equal(new Rgba32(255, 0, 0, 255), surface[10, 10]),
+            () => Assert.Equal(new Rgba32(0, 0, 255, 255), surface[30, 5]),
+            () => Assert.Equal(new Rgba32(0, 170, 0, 255), surface[50, 10]),
+            () => Assert.Equal(new Rgba32(0, 170, 0, 255), surface[70, 5]),
+            () => Assert.Equal(White, surface[70, 15]));
+    }
+
+    /// <summary>
+    ///     Validates that a translucent tint scales the coverage and that the primitive opacity blends the icon with what is below it.
+    /// </summary>
+    [Fact]
+    public void ScenePainter_Paint_TintAlphaAndOpacity_BlendWithTheBackground()
+    {
+        // Arrange
+        var (surface, painter) = Create(60, 20);
+        using var _ = surface;
+        var icon = IconSource.FromSvg(RenderTestModel.RedSquareSvg);
+
+        // Act: half-alpha black tint, and an icon without a tint at half opacity
+        painter.Paint(new IconPrimitive(icon, new Rect(0, 0, 20, 20), null, new Color(0, 0, 0, 128)));
+        painter.Paint(new IconPrimitive(icon, new Rect(30, 0, 20, 20), null, null, 0.5));
+
+        // Assert: 50% black over white is mid gray; 50% red over white is pink
+        var gray = surface[10, 10];
+        var pink = surface[40, 10];
+        Assert.Multiple(
+            () => Assert.InRange(gray.R, 126, 129),
+            () => Assert.Equal(gray.R, gray.B),
+            () => Assert.Equal(255, pink.R),
+            () => Assert.InRange(pink.G, 126, 129),
+            () => Assert.Equal(pink.G, pink.B));
     }
 
     /// <summary>

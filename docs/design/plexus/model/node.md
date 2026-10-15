@@ -58,7 +58,9 @@ through the page API (see DiagramPage Design), so none of the classes has a publ
   connection rules.
 - `DiagramElement.Remove()`: shorthand for removing the element through its page; `RequirePage()` returns the
   attached page or throws, and every mutator calls it first.
-- `DiagramElement.NotifyChanged(name)`: raises `PropertyChanged` and reports an element-changed event to the diagram.
+- `DiagramElement.NotifyChanged(name)`: drops the page's routing caches, raises `PropertyChanged` (through the
+  history's notification gate while the element is on a page, so a throwing handler cannot interrupt an undoable
+  change) and reports an element-changed event to the diagram.
 
 - `Node.InitializePorts()` (internal): for a type with a provider, asks the provider (`NodeType.ResolvePorts`) and
   rebuilds the port lists without history, reusing ports by name. Called for a detached node by `DiagramPage.AddNode`
@@ -66,14 +68,23 @@ through the page API (see DiagramPage Design), so none of the classes has a publ
 - `Node.ExecuteAffectingPorts(command)` (internal): the single entry point for property and data changes. Without a
   provider it is `UndoHistory.Execute(command)`. With one it opens a `CommandPlan`, runs the change, asks the page to
   plan the port update (`DiagramPage.PlanPortUpdate`) and records the plan as one entry; when the plan holds only the
-  change (the ports did not change) the change itself is recorded, so mergeable value commands keep merging. Any
-  exception aborts the plan (reverting the change) and propagates.
+  change (the ports did not change) the change itself is recorded, so mergeable value commands keep merging. The plan
+  runs as one history operation (`UndoHistory.BeginOperation`/`EndOperation`), so a throwing change handler does not
+  interrupt it and its exception is rethrown after the entry was recorded. Any exception of the plan itself aborts it
+  with `CommandPlan.Abort(cause)` (reverting every applied step, the change included, even when one revert fails) and
+  propagates; handler exceptions captured meanwhile are dropped.
 - `NodePortsCommand.TryCreate(node)`: asks the provider; when every new definition is equivalent
   (`PortDefinition.IsEquivalentTo`) to the current one in the same row it returns null. Otherwise it builds each new
   column by reusing the current port of the same name or creating a new port, and records removed and retyped ports.
-  `Do`/`Undo` apply a state: update every slot's port (definition, row), replace the node's lists, raise
-  `PropertyChanged("Ports")` on the node (which also drops the page's routing caches) and `Bounds` changes on every
-  ancestor group, whose frames follow the node's visual extent.
+  `Do`/`Undo` apply a state: update every slot's port (definition, row), replace the node's lists and drop the page's
+  routing caches; they raise no notification.
+- `NodePortsCommand.CreateNotificationSteps(node)`: returns two marker steps sharing a "settled" flag. The opening step
+  (recorded first in the plan, before the triggering change) does nothing when applied and, when reverted after the
+  closing step has run at least once, reports the change; the closing step (run last) sets the flag and reports the
+  change, and does nothing when reverted. Reporting means `PropertyChanged("Ports")` on the node followed by a `Bounds`
+  change of every ancestor group, whose frames follow the node's visual extent. So the node reports `Ports` exactly once
+  per change, undo and redo, after every wire removal or re-add, bounds and route change and (on undo) the restored
+  value; a recomputation rolled back before its closing step ran reports nothing.
 
 `CloneData()`: serializes the payload with `NodeDataCodec` (the data serializer or exact data type of the node type) and
 deserializes it again, so the copy is exactly what saving and loading would produce; null data gives null, and data of
@@ -87,8 +98,11 @@ edited copy together with property changes is one `Transact` call that assigns `
 - Null arguments throw `ArgumentNullException`; unknown port names throw `ArgumentException`; ambiguous names throw
   `InvalidOperationException`; invalid bounds are rejected by the page with `ArgumentException`.
 - A port provider that returns null makes `NodeType.ResolvePorts` throw `InvalidOperationException` naming the type and
-  node; an invalid `PortSet` throws `ArgumentException` from its constructor. During a property or data change either
-  exception aborts the plan, so the change is reverted and nothing is recorded; when adding a node, the node is not added.
+  node; an invalid `PortSet` throws `ArgumentException` from its constructor; an empty `PortSet` is valid and gives the
+  node no ports in that direction. During a property or data change any exception of the provider (or of a connection
+  rule while wires are re-checked) aborts the plan, so the change is reverted, nothing is recorded, no `Ports` change is
+  reported and the exception propagates unchanged; when a revert fails too, an `AggregateException` carrying the
+  original exception first is thrown. When adding a node, the node is not added.
 - Errors are propagated to the caller; apart from aborting the plan the unit does not catch exceptions.
 
 #### Dependencies

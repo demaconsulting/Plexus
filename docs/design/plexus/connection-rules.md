@@ -69,7 +69,9 @@ Exceptions thrown by a host rule are not caught here and propagate to the caller
 ConnectionRules uses the Model subsystem's `Port` type to read the type key, name, owning node and wire list of the
 ports it is given. The ready-made rules depend on `Port.TypeKey`, `Port.AllowsMultipleWires`,
 `Port.CountWiresIgnoringReconnect` and `Port.ToString` (`Node.port`). It
-has no other dependencies.
+has no other dependencies. This is an intentional mutual reference with the Model: the validator contract receives
+Model ports because it decides about them, while the Model owns the rule slot and calls the rule; a rule only reads the
+ports it is given and never changes the model.
 
 ### Callers
 

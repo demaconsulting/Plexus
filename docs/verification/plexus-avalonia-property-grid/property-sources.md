@@ -33,8 +33,15 @@ arguments rejected.
   (error path).
 - **ReflectionPropertySource_NotifyPropertyChanged_RaisesChanged**: change notifications are forwarded with the property
   name or null, and stop after dispose.
-- **ReflectionPropertySource_RefreshAllProperty_RebuildsItems**: a change of a refresh-all property rebuilds the items
-  and a normal property does not.
+- **ReflectionPropertySource_RefreshAllProperty_RebuildsItems**: a refresh of the source replaces its items.
+- **ReflectionPropertySource_ShownRefreshAllPropertyChanged_RebuildsItems**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-HiddenRefreshAll`): the change notification of a shown refresh-all
+  property replaces the items and reports a change of everything, while an ordinary property keeps the items and
+  reports its own name.
+- **ReflectionPropertySource_HiddenRefreshAllPropertyChanged_RebuildsItems**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-HiddenRefreshAll`): the change notification of a hidden (non-browsable)
+  refresh-all property, which has no item, also replaces the items of a source that omits it and reports a change of
+  everything.
 - **CustomPropertySource_AddRemoveNotify_RaiseChanges**: add, remove, refresh and value notifications raise changes and
   hidden items are not listed.
 - **CustomPropertyItem_Options_AreExposed**: metadata, default and reset, read-only state and argument validation
@@ -58,7 +65,8 @@ arguments rejected.
 - **PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel** (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`):
   within a category a parenthesized item comes first whatever its rank, then the items by ascending `Order` (the
   default 0 before 1), equal ranks alphabetical.
-- **PropertyOrdering_Order_AlphabeticalIgnoresItemOrder** (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`): the
+- **PropertyOrdering_Order_AlphabeticalIgnoresItemOrder**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrderAlphabetical`): the
   alphabetical view sorts by label even when the ranks say otherwise.
 - **CompositePropertySource_RunCommit_ChainsTheSourceScopes** (`CommitScopeTests.cs`): the scopes of the sources that
   have one are chained, the first outermost, and the action runs once; a null action is rejected (error path).

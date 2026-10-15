@@ -94,11 +94,34 @@ sections:
                   - Snapshot_FromSnapshot_InvalidContent_ThrowsSnapshotException
                   - Snapshot_FromSnapshot_DuplicateIdAcrossPages_Throws
                   - Snapshot_FromSnapshot_PropertyKindMismatch_Throws
+                  - Snapshot_FromJson_NodeWithoutTypeKey_ThrowsSnapshotException
+
+              - id: Plexus-Serialization-Snapshot-ColorText
+                title: >-
+                  Restoring a snapshot shall read a color written as six hexadecimal digits as an opaque color and a
+                  color written as eight hexadecimal digits with the alpha first as a color with that alpha.
+                justification: |
+                  Decomposes Plexus-Serialization-LosslessRoundTrip; hand-edited and older documents often write
+                  opaque colors without an alpha, and both forms must load to the intended color.
+                tests:
+                  - Snapshot_FromJson_SixAndEightDigitColors_AreRead
+
+              - id: Plexus-Serialization-Snapshot-PayloadReadFailure
+                title: >-
+                  Restoring a node payload that the node type cannot read, for any reason except running out of
+                  memory, shall throw a snapshot exception that carries the reason.
+                justification: |
+                  Decomposes Plexus-Serialization-InvalidSnapshots; a payload serializer is host code reading untrusted
+                  text, and any failure in it must surface as the documented load error, not as an arbitrary
+                  exception.
+                tests:
+                  - Snapshot_Load_SerializerThrowsUnexpectedException_ThrowsSnapshotException
 
               - id: Plexus-Serialization-Snapshot-JsonShape
                 title: >-
-                  The JSON shall use camelCase member names, a format version, colors as  # AARRGGBB text and no type
-                  names, and shall be indented only when requested.
+                  The JSON shall use camelCase member names, a format version, colors as eight-digit text with the
+                  alpha first (`"#AARRGGBB"`, also when opaque) and no type names, and shall be indented only when
+                  requested.
                 justification: |
                   A stable, readable shape lets other tools and future versions read the documents.
                 tests:
@@ -129,8 +152,9 @@ sections:
               - id: Plexus-Serialization-Snapshot-Tree
                 title: >-
                   It shall be possible to capture the diagram as a tree of plain values (string, bool, long, double,
-                  null, lists and string-keyed dictionaries only, with property kinds as plain strings, colors as
-                  # AARRGGBB text and host data as nested values) that has the schema of the JSON format, and a diagram
+                  null, lists and string-keyed dictionaries only, with property kinds as plain strings, colors as the
+                  eight-digit text `"#AARRGGBB"` and host data as nested values) that has the schema of the JSON
+                  format, and a diagram
                   shall be restorable from such a tree, tolerating other number types, dictionary and list types and
                   JSON elements, and reporting unusable trees as snapshot exceptions.
                 justification: |
@@ -179,12 +203,50 @@ sections:
               - id: Plexus-Serialization-Snapshot-DynamicPorts
                 title: >-
                   Restoring a diagram from a snapshot, JSON or a tree shall recompute the ports of each node from its
-                  stored properties and payload before resolving wires, keeping the stored bounds, and shall fail with a
-                  snapshot error when a wire names a port that is not recomputed or the port provider fails.
+                  stored properties and payload before resolving the wires.
                 justification: |
-                  Wires on computed ports must survive a save and load exactly, and a document that no longer fits the
-                  host's port rules must be refused rather than loaded wrong.
+                  Decomposes Plexus-Serialization-DynamicPorts; wires on computed ports must survive a save and load
+                  exactly.
                 tests:
                   - Snapshot_RoundTrip_WireOnDynamicPort_RestoresWireJsonAndTree
+                  - Snapshot_FromSnapshot_WireOnDynamicPort_RestoresWire
+
+              - id: Plexus-Serialization-Snapshot-DynamicPortBounds
+                title: >-
+                  Restoring a node whose ports are computed shall keep the node's stored bounds.
+                justification: |
+                  Decomposes Plexus-Serialization-DynamicPorts; a restore must reproduce the saved document exactly,
+                  including a size the user chose by hand.
+                tests:
+                  - Snapshot_Load_DynamicPortNode_KeepsStoredBounds
+
+              - id: Plexus-Serialization-Snapshot-NoStoredPorts
+                title: >-
+                  A snapshot shall hold no port lists of its nodes.
+                justification: |
+                  Decomposes Plexus-Serialization-NoStoredPorts; ports derive from the node type and configuration, so
+                  storing them would duplicate state.
+                tests:
+                  - Snapshot_ToJson_DynamicPortNode_StoresNoPortLists
+
+              - id: Plexus-Serialization-Snapshot-DynamicPortMissing
+                title: >-
+                  Restoring a snapshot whose wire names a port the restored node does not have after recomputation
+                  shall throw a snapshot exception naming the port.
+                justification: |
+                  Decomposes Plexus-Serialization-DynamicPortUnknownPort; a document that no longer fits the host's
+                  port rules must be refused rather than loaded wrong.
+                tests:
                   - Snapshot_Load_WireToPortProviderDoesNotProduce_ThrowsSnapshotException
+
+              - id: Plexus-Serialization-Snapshot-DynamicPortProviderFailure
+                title: >-
+                  Restoring a snapshot shall throw a snapshot exception naming the node when its port provider throws
+                  any exception except running out of memory, or returns no port set.
+                justification: |
+                  Decomposes Plexus-Serialization-DynamicPortProviderFailure; a provider is host code, and any failure
+                  in it must surface as the documented load error without producing a diagram.
+                tests:
                   - Snapshot_Load_ProviderThrows_ThrowsSnapshotException
+                  - Snapshot_Load_ProviderThrowsUnlistedException_ThrowsSnapshotException
+                  - Snapshot_Load_ProviderReturnsNull_ThrowsSnapshotException

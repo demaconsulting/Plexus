@@ -823,4 +823,311 @@ public class UndoHistoryTests
         history.Execute("Next", () => { }, () => { });
         Assert.Equal(2, history.UndoCount);
     }
+
+    /// <summary>
+    ///     Validates that aborting a command plan reverts every applied step newest first and empties the plan.
+    /// </summary>
+    [Fact]
+    public void CommandPlan_Abort_RevertsEveryStepNewestFirstAndClears()
+    {
+        // Arrange: three applied steps that log their reverts
+        var reverted = new List<string>();
+        var plan = new CommandPlan();
+        foreach (var name in new[] { "a", "b", "c" })
+        {
+            plan.Run(name, () => { }, () => reverted.Add(name));
+        }
+
+        // Act: abort because of a (simulated) later failure
+        plan.Abort(new InvalidOperationException("later step failed"));
+
+        // Assert: every step reverted, newest first, and nothing left to record
+        Assert.Equal(["c", "b", "a"], reverted);
+        Assert.True(plan.IsEmpty);
+        Assert.Equal(0, plan.Count);
+    }
+
+    /// <summary>
+    ///     Validates that a failing revert does not stop the abort and that every failure is reported with the original error.
+    /// </summary>
+    [Fact]
+    public void CommandPlan_Abort_InverseThrows_RevertsRemainingStepsAndReportsAllFailures()
+    {
+        // Arrange: three steps; the middle one cannot be reverted
+        var reverted = new List<string>();
+        var revertFailure = new InvalidOperationException("cannot revert b");
+        var plan = new CommandPlan();
+        plan.Run("a", () => { }, () => reverted.Add("a"));
+        plan.Run("b", () => { }, () => throw revertFailure);
+        plan.Run("c", () => { }, () => reverted.Add("c"));
+        var cause = new ArgumentException("the operation failed");
+
+        // Act
+        var ex = Assert.Throws<AggregateException>(() => plan.Abort(cause));
+
+        // Assert: the other steps were still reverted; the original error comes first, then the revert failure; plan empty
+        Assert.Equal(["c", "a"], reverted);
+        Assert.Equal(2, ex.InnerExceptions.Count);
+        Assert.Same(cause, ex.InnerExceptions[0]);
+        Assert.Same(revertFailure, ex.InnerExceptions[1]);
+        Assert.True(plan.IsEmpty);
+    }
+
+    /// <summary>
+    ///     Validates that clearing the history from a command's undo code is rejected and leaves the stacks consistent.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_Clear_FromUndoCallback_ThrowsAndKeepsStacks()
+    {
+        // Arrange: an increment, then an entry whose undo tries to clear the history
+        var history = new UndoHistory();
+        var counter = new Counter();
+        Increment(history, counter);
+        InvalidOperationException? rejected = null;
+        history.Execute(
+            "Clear on undo",
+            () => { },
+            () =>
+            {
+                try
+                {
+                    history.Clear();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    rejected = ex;
+                }
+            });
+
+        // Act
+        Assert.True(history.Undo());
+
+        // Assert: the clear was refused; the undo moved its entry normally and the earlier entry is still undoable
+        Assert.NotNull(rejected);
+        Assert.Equal(1, history.UndoCount);
+        Assert.Equal(1, history.RedoCount);
+        Assert.True(history.Undo());
+        Assert.Equal(0, counter.Value);
+    }
+
+    /// <summary>
+    ///     Validates that clearing the history from a command's redo code is rejected and leaves the stacks consistent.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_Clear_FromRedoCallback_ThrowsAndKeepsStacks()
+    {
+        // Arrange: an increment, then an entry whose redo (armed after it was executed) tries to clear the history
+        var history = new UndoHistory();
+        var counter = new Counter();
+        Increment(history, counter);
+        var armed = false;
+        InvalidOperationException? rejected = null;
+        history.Execute(
+            "Clear on redo",
+            () =>
+            {
+                if (!armed)
+                {
+                    return;
+                }
+
+                try
+                {
+                    history.Clear();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    rejected = ex;
+                }
+            },
+            () => { });
+        Assert.True(history.Undo());
+        armed = true;
+
+        // Act
+        Assert.True(history.Redo());
+
+        // Assert: the clear was refused; the redo moved its entry normally and both entries can still be undone
+        Assert.NotNull(rejected);
+        Assert.Equal(2, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
+        Assert.True(history.Undo());
+        Assert.True(history.Undo());
+        Assert.Equal(0, counter.Value);
+    }
+
+    /// <summary>
+    ///     Validates that marking clean, changing the capacity and suspending from a command's undo code are rejected.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_MarkCleanCapacityAndSuspend_FromUndoCallback_AreRejected()
+    {
+        // Arrange: an entry whose undo tries the three state changes and remembers what each one did
+        var history = new UndoHistory();
+        var outcomes = new List<Type?>();
+        void Try(Action action)
+        {
+            try
+            {
+                action();
+                outcomes.Add(null);
+            }
+            catch (Exception ex)
+            {
+                outcomes.Add(ex.GetType());
+            }
+        }
+
+        history.Execute(
+            "Change history on undo",
+            () => { },
+            () =>
+            {
+                Try(history.MarkClean);
+                Try(() => history.Capacity = 5);
+                Try(() => history.Suspend());
+            });
+        var capacity = history.Capacity;
+
+        // Act
+        Assert.True(history.Undo());
+
+        // Assert: all three refused; capacity, suspension and dirty state are those of a plain undo to the clean point
+        Assert.Equal([typeof(InvalidOperationException), typeof(InvalidOperationException), typeof(InvalidOperationException)], outcomes);
+        Assert.Equal(capacity, history.Capacity);
+        Assert.False(history.IsSuspended);
+        Assert.False(history.IsDirty);
+        Assert.Equal(0, history.UndoCount);
+        Assert.Equal(1, history.RedoCount);
+    }
+
+    /// <summary>
+    ///     Validates that ending the outermost suspension from a command's undo code takes effect only after the undo.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_SuspendScopeDisposedFromUndoCallback_TakesEffectAfterUndo()
+    {
+        // Arrange: an entry whose undo ends a suspension that is opened afterwards
+        var history = new UndoHistory();
+        IDisposable? scope = null;
+        var undoCountInCallback = -1;
+        history.Execute(
+            "End suspension on undo",
+            () => { },
+            () =>
+            {
+                scope!.Dispose();
+                undoCountInCallback = history.UndoCount;
+            });
+        scope = history.Suspend();
+
+        // Act
+        var undone = history.Undo();
+
+        // Assert: no failure; the stacks were untouched during the undo and cleared right after it
+        Assert.True(undone);
+        Assert.Equal(1, undoCountInCallback);
+        Assert.False(history.IsSuspended);
+        Assert.False(history.CanUndo);
+        Assert.False(history.CanRedo);
+    }
+
+    /// <summary>
+    ///     Creates a history holding one grouped entry of three commands adding 1, 10 and 100 to a counter, whose middle
+    ///     command fails while <paramref name="failMiddle"/> says so.
+    /// </summary>
+    /// <param name="counter">The counter.</param>
+    /// <param name="failMiddle">Returns whether the middle command's do or undo should throw.</param>
+    /// <param name="failLastDo">Returns whether the last command's do should throw.</param>
+    /// <returns>The history.</returns>
+    private static UndoHistory CreateGroupedEntry(Counter counter, Func<bool> failMiddle, Func<bool> failLastDo)
+    {
+        var history = new UndoHistory();
+        history.Transact("Group", () =>
+        {
+            history.Execute("Add 1", () => counter.Value += 1, () => counter.Value -= 1);
+            history.Execute(
+                "Add 10",
+                () => counter.Value = failMiddle() ? throw new InvalidOperationException("middle do failed") : counter.Value + 10,
+                () => counter.Value = failMiddle() ? throw new InvalidOperationException("middle undo failed") : counter.Value - 10);
+            history.Execute(
+                "Add 100",
+                () => counter.Value = failLastDo() ? throw new ArgumentException("last do failed") : counter.Value + 100,
+                () => counter.Value -= 100);
+        });
+        return history;
+    }
+
+    /// <summary>
+    ///     Validates that a failing command in a grouped entry's redo restores the other commands and keeps the entry.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_Redo_MiddleCommandFails_RestoresStateAndKeepsEntry()
+    {
+        // Arrange: the grouped entry, undone; its middle command will fail on redo
+        var counter = new Counter();
+        var fail = false;
+        var history = CreateGroupedEntry(counter, () => fail, () => false);
+        Assert.True(history.Undo());
+        fail = true;
+
+        // Act
+        var ex = Assert.Throws<InvalidOperationException>(() => history.Redo());
+
+        // Assert: the first command was re-reverted, the entry is still on the redo stack, and a retry works
+        Assert.Equal("middle do failed", ex.Message);
+        Assert.Equal(0, counter.Value);
+        Assert.Equal(1, history.RedoCount);
+        Assert.Equal(0, history.UndoCount);
+        fail = false;
+        Assert.True(history.Redo());
+        Assert.Equal(111, counter.Value);
+    }
+
+    /// <summary>
+    ///     Validates that a failing command in a grouped entry's undo restores the other commands and keeps the entry.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_Undo_MiddleCommandFails_RestoresStateAndKeepsEntry()
+    {
+        // Arrange: the grouped entry; its middle command will fail on undo
+        var counter = new Counter();
+        var fail = false;
+        var history = CreateGroupedEntry(counter, () => fail, () => false);
+        fail = true;
+
+        // Act
+        var ex = Assert.Throws<InvalidOperationException>(() => history.Undo());
+
+        // Assert: the last command was re-applied, the entry is still on the undo stack, and a retry works
+        Assert.Equal("middle undo failed", ex.Message);
+        Assert.Equal(111, counter.Value);
+        Assert.Equal(1, history.UndoCount);
+        Assert.Equal(0, history.RedoCount);
+        fail = false;
+        Assert.True(history.Undo());
+        Assert.Equal(0, counter.Value);
+    }
+
+    /// <summary>
+    ///     Validates that when restoring a failed grouped undo also fails, both failures are reported together.
+    /// </summary>
+    [Fact]
+    public void UndoHistory_Undo_MiddleCommandAndCompensationFail_ReportsAllFailures()
+    {
+        // Arrange: the middle command fails on undo and the last command cannot be re-applied
+        var counter = new Counter();
+        var fail = false;
+        var history = CreateGroupedEntry(counter, () => fail, () => fail);
+        fail = true;
+
+        // Act
+        var ex = Assert.Throws<AggregateException>(() => history.Undo());
+
+        // Assert: the original failure first, then the compensation failure; the entry stays on the undo stack
+        Assert.Equal(2, ex.InnerExceptions.Count);
+        Assert.Equal("middle undo failed", ex.InnerExceptions[0].Message);
+        Assert.IsType<ArgumentException>(ex.InnerExceptions[1]);
+        Assert.Equal(1, history.UndoCount);
+    }
 }

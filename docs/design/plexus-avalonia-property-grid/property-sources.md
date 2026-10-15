@@ -32,8 +32,10 @@ data). `PropertySourceFactory` chooses the source for an object and lets adapter
 - **`ReflectionPropertySource.GetItems`** — items built from `TypeDescriptor.GetProperties(target)`, so
   `ICustomTypeDescriptor` and `TypeDescriptionProvider` add dynamic properties; non-browsable properties are omitted
   unless requested. `Refresh()` discovers the properties again and raises `Changed` for everything. A property change
-  notification raises `Changed` for that property, and rebuilds the items when the property is annotated
-  `RefreshProperties.All` or the notification names no property.
+  notification raises `Changed` for that property, and rebuilds the items when the notification names no property or
+  when the named property is annotated `RefreshProperties.All`. The annotation is looked up on the target's complete
+  descriptor set (`TypeDescriptor.GetProperties(target)[name]`, browsable or not), not in the item list, so a hidden
+  property that is annotated to refresh everything also rebuilds the items.
 - **`CompositePropertySource.GetItems`** — concatenates the items of the sources in order; when a name occurs again the
   first item is kept (the name is the path, which must be unique). Forwards the `Changed` events of its sources.
 - **`CustomPropertySource.Add` / `Remove` / `Refresh` / `NotifyValueChanged`** — change the list or report a value
@@ -46,8 +48,10 @@ data). `PropertySourceFactory` chooses the source for an object and lets adapter
 - **`PropertyOrdering.Order`** — orders by category rank (the lowest `PropertyItem.CategoryOrder` of a category), then by
   category (categorized mode) and then by parenthesized names first, the item rank (`PropertyItem.Order`, lower first;
   categorized mode only, so the alphabetical view ignores it) and display
-  name, comparing with the invariant culture and ignoring case; the sort is stable. Every item ranks 0 unless its source
-  sets a rank (`CustomPropertyOptions.Order`, or `PropertyDefinition.Order` through the node source), so sources that set
+  name, comparing with the invariant culture and ignoring case (so items of equal rank are alphabetical); the sort is
+  stable. Every item ranks 0 unless its source
+  sets a rank (`CustomPropertyOptions.Order`, or `PropertyDefinition.Order` through the node source: see the
+  display-order chain in the PlexusAvaloniaPropertyGrid system design), so sources that set
   none keep the alphabetical order. **`Group`** splits the ordered items
   into category groups (a single group without a category in alphabetical mode).
 

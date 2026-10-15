@@ -35,7 +35,9 @@ its automation peer.
 
 View mapping: a diagram point `d` is at screen point `(d - Offset) x Zoom`. The selection never contains an element
 that is not on the shown page and is not recorded in history. Zoom is limited to 0.1 to 8. Pointer-over state and the
-last pointer position are tracked to place pasted content.
+last pointer position are tracked to place pasted content. An explicit `DiagramTheme` changes the look only: port
+positions, triangles, port hit areas and wire ends always follow the diagram's own theme (the core's node layout uses
+it), so wires stay attached to their ports.
 
 #### Key Methods
 
@@ -47,20 +49,27 @@ last pointer position are tracked to place pasted content.
   function (`_pendingView`) that returns true once it was applied or became obsolete; `ApplyPendingView` runs it from
   the bounds-changed and page-changed reactions and right after a request, and forgets it only when it is still the
   pending one, so the latest request of any kind wins. Both fits share `FitBox` (zoom never above 1, then `CenterOn`).
-- **Navigation** (`DiagramEditor.Navigation.cs`): `BringIntoView(element)` validates that the element is on an attached
-  page of the shown diagram (else `ArgumentException`), stores the pending request, shows the element's page with
+- **Navigation** (`DiagramEditor.Navigation.cs`): `BringIntoView(element)` accepts an element on an attached page of the
+  editor's diagram (of any diagram when no page is shown), else `ArgumentException` (null: `ArgumentNullException`)
+  before anything changes, stores the pending request, shows the element's page with
   `SetCurrentValue` (keeping a binding; the page change clears the selection and cancels gestures) and applies the
   request: when the editor has a size it centers the element's target box at the current zoom and zooms out only when
-  the box does not fit inside the control minus a 30-unit margin; a request whose element has left the page is
-  dropped. `ZoomToFit(elements, margin)` copies the sequence first (the live selection is cleared by a page switch),
-  does nothing for an empty sequence, validates every element, shows the first element's page and fits the union of the
-  target boxes of the elements still on that page. The target box of an element is its node layout bounds (name,
+  the box does not fit inside the control minus a 30-unit margin on each side (never in, never below `MinZoom`); a
+  request whose element has left the page is dropped. `ZoomToFit(elements, margin)` first validates the sequence
+  (`ArgumentNullException`) and the margin (finite and not negative, else `ArgumentOutOfRangeException`), then copies the
+  sequence (the live selection is cleared by a page switch), does nothing for an empty sequence (a pending request stays
+  pending), validates every element, shows the first element's page and fits the union of the
+  target boxes of the elements still on that page (elements of other pages are ignored) with the margin per side, zoom
+  at most 1 and then clamped to the zoom limits. The target box of an element is its node layout bounds (name,
   summary and port labels included) or its bounds; an element hidden in collapsed groups is represented by the
   outermost collapsed group, and a wire with a hidden end by the target boxes of both end nodes.
 - **Tooltips** (`DiagramEditor.ToolTips.cs`): `GetToolTipContent(element, port)` builds the default text (a port's
-  label, the `PortType.DisplayName` of its type key from the diagram's registry and its description on a new line; a
-  node's `NodeType.GetToolTip`; a wire's `source → target`; null otherwise), raises `ToolTipRequested` with it and returns
-  the handlers' content, or null when canceled, null or empty. `UpdateToolTip(hit)`, called at the end of the hover
+  label, the `PortType.DisplayName` of its type key from the diagram's registry (the key when unregistered) and its
+  description on a new line; a node's `NodeType.GetToolTip`, where null or empty means no tooltip; a wire's
+  `source → target`; null for annotations and groups), raises `ToolTipRequested` with it and returns
+  the handlers' content (a handler may supply content for annotations and groups), or null when canceled, null or empty;
+  it ignores `ShowToolTips` and lets exceptions of the tooltip function and of handlers propagate.
+  `UpdateToolTip(hit)`, called at the end of the hover
   update, computes the target (element and port under the pointer) when tooltips may show (`ShowToolTips`, no gesture,
   no inline edit, no Space pan, no pending context request, target not suppressed); when the target changed it requests
   the content once and sets `ToolTip.Tip` on the editor, which lets Avalonia's tooltip service open the tooltip after its
@@ -148,7 +157,10 @@ selects it and returns it. All of them do nothing when the editor is read-only o
 
 - Null arguments throw `ArgumentNullException`. `BringIntoView` and `ZoomToFit(elements)` throw `ArgumentException`
   for an element that is not on an attached page, an element of another diagram than the shown page (or the first
-  element), and a null entry, before anything changes.
+  element), and a null entry; `ZoomToFit(elements, margin)` throws `ArgumentOutOfRangeException` for a negative, NaN or
+  infinite margin. All of them check before anything changes, so page, zoom, offset and selection stay as they were.
+- An exception thrown by a node type's tooltip function or by a `ToolTipRequested` handler propagates unchanged to the
+  caller of `GetToolTipContent`, or out of the hover handling; the editor never swallows it.
 - Ports that a port provider adds or removes need no handling: the editor rebuilds its scene on the model's `Ports`
   notification, so drawing, hit testing and the connection preview always use the node's current ports, and a tooltip
   for a removed port is cleared.

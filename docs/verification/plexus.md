@@ -63,6 +63,18 @@ Each heading names a requirement; the bullets name the test methods and what the
   assigned values are stored; a value of the wrong kind or a choice outside the options is rejected; reset restores the
   default and leaves other properties untouched.
 
+### Plexus-Core-PropertyDisplayOrder
+
+- **Plexus_Properties_DisplayOrder_IsDeclaredWithoutReorderingProperties**: an envelope type declares Release, Attack,
+  Sustain, Decay with display orders 4, 1, 3, 2 and a Label without one; sorting by the hint gives Label (0), Attack,
+  Decay, Sustain, Release, while the type's property list and the node's property values keep the declaration order.
+
+### Plexus-Core-PropertyText
+
+- **Plexus_Properties_TextEditing_ParsesAndFormatsIndependentOfCulture**: under a culture with a decimal comma, the text
+  `2.5` parses to 2.5 for a double property, the stored value formats back to `2.5` for editing, and the text `abc` is
+  refused with a reason (error path).
+
 ### Plexus-Core-Pages
 
 - **Plexus_Pages_AddInsertRenameMoveRemove_KeepsOrderAndUndoesRemoval**: add, insert, rename and move produce the
@@ -139,6 +151,12 @@ Each heading names a requirement; the bullets name the test methods and what the
   reports a bend handle, and a jog and a reconnect (the wire keeps its identity and moves only its target) are undone
   one entry at a time. It covers `Plexus-Core-NetSeparation` and `Plexus-Core-WireEditing`.
 
+### Plexus-Core-GroupObstacles and Plexus-Core-GroupObstaclesOption
+
+- **Plexus_Routing_GroupFrames_AreAvoidedUnlessSwitchedOff**: with the default theme a new wire between a producer and a
+  consumer stays outside the frame of an unrelated group that spans the row between them; with the theme's group
+  obstacle option switched off the same wire runs straight through the frame.
+
 ### Plexus-Core-Scene
 
 - **Plexus_Scene_BuildPage_ContainsGridNodesAndWires**: a scene of a small page contains grid, node text and wire path
@@ -193,19 +211,62 @@ Each heading names a requirement; the bullets name the test methods and what the
 
 ### Plexus-Core-DynamicPorts
 
+The same scenario is also the evidence for Plexus-Core-DynamicPortIdentity, Plexus-Core-DynamicPortWireRemoval,
+Plexus-Core-DynamicPortResize and Plexus-Core-DynamicPortUndo.
+
 - **Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep**: a host type whose `Channels` property
   decides its inputs is set to eight channels and fed on `in0` and `in3`; lowering the count to two removes `in2` to
   `in7` and the wire on `in3`, keeps the first input object and its wire and shrinks the node back to its type's default
   height, in one undo entry; undo restores the eight inputs, both wires and the taller height.
+
+### Plexus-Core-DynamicPortRuleRevalidation
+
+- **Plexus_DynamicPorts_RetypedPort_RemovesWireTheRulesRefuse**: with a same-type rule, switching the bus inputs from
+  f32 to i32 keeps the same port object with the new type and removes the f32 wire; one undo restores the wire and the
+  type.
+
+### Plexus-Core-DynamicPortFailure
+
+- **Plexus_DynamicPorts_ProviderFails_LeavesDiagramAndHistoryUnchanged**: a provider that refuses more than eight
+  channels makes setting twelve throw its own exception with its message; the property, the port objects, the wire, the
+  bounds and the undo count are unchanged (error path).
+
+### Plexus-Core-DynamicPortLoad and Plexus-Core-DynamicPortPaste
+
 - **Plexus_DynamicPorts_SaveLoadAndPaste_RestoreWiresOnDynamicPorts**: a diagram with wires on a computed input and a
   computed output loads from JSON identical to the original (ports included) and pastes into another diagram with both
   wires on the computed ports.
 
-### Plexus-Core-ElementDescriptions
+### Plexus-Core-DynamicPortDuplicate
+
+- **Plexus_DynamicPorts_Duplicate_RestoresWiresOnDynamicPorts**: duplicating every element of that diagram in place
+  creates copies whose wires run from `value` to the computed input `in2` and from the computed output `z` to `in`,
+  with the copied bus holding three inputs, as one undo entry; one undo removes every copy.
+
+### Plexus-Core-ElementDescriptions, Plexus-Core-PortDescriptions and Plexus-Core-PortTypeNames
 
 - **Plexus_Descriptions_PortsAndNodeTypes_ProvideToolTipText**: a node type's tooltip function shows a live property
   value, a type without one falls back to its description, a port carries its description and a port type its display
   name.
+
+### Plexus-Core-LiveToolTips
+
+- **Plexus_Descriptions_ToolTipFunction_FollowsNodeState**: a tooltip function showing the current value yields
+  "Value = 1.5", then "Value = 7" after a second edit and "Value = 1.5" again after undo.
+
+### Plexus-Core-HandlerFailureKeepsChange, Plexus-Core-HandlerFailureReported and Plexus-Core-HandlerFailureUndoRedo
+
+- **Plexus_ChangeHandlerThrows_ChangeIsCompletedUndoableAndReported**: with a host `Changed` handler that throws on
+  every notification, a connect, its undo and its redo each complete (the wire is added, removed, added) and then report
+  the handler's exception; a channel change that removes the wire's port is also completed as one step, which a single
+  undo reverts once the handler is quiet.
+
+### Plexus-Core-UndoIntegrity
+
+- **Plexus_UndoIntegrity_FailingOrReentrantCommand_LeavesDiagramAndHistoryConsistent**: one transaction renames a bus,
+  records a host step that tries to clear the history and can be told to fail, and changes the channel count; a failing
+  undo leaves name, inputs and stacks as configured; once it works the undo completes, both clear attempts were
+  refused, and redo restores the configuration (error path).
 
 ### Platform requirements (Plexus-Platform-*)
 

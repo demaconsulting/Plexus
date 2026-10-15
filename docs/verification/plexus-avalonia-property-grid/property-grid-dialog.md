@@ -16,13 +16,19 @@ The headless Avalonia platform of the test project (see the PropertyGridControl 
 ### Acceptance Criteria
 
 A test passes when OK writes the staged edits once inside the scope and returns true, Cancel leaves the object untouched
-and returns false, and OK with an invalid value or a failing commit leaves the dialog open with the reason and writes
-nothing.
+and returns false, OK with an invalid value or a failing commit leaves the dialog open with the reason and writes
+nothing, a missing owner or target is rejected before a window opens, and the close-confirmed hook is raised once for a
+close that goes ahead and never for a vetoed one.
 
 ### Test Scenarios
 
 - **PropertyGridDialog_GetDefaultTitle_UsesDisplayNameOrTypeName** / **PropertyGridDialog_Constructor_CreatesStagedGridWithTitle**:
   default and given titles, the staged grid, and a null target rejected (error path).
+- **PropertyGridDialog_ShowAsync_NullOwnerOrTarget_ThrowsArgumentNullException**: a null owner and a null target are each
+  rejected with an argument-null exception and no dialog window is opened (error path).
+- **PropertyGridDialog_CloseConfirmed_IsRaisedOnlyWhenTheCloseGoesAhead**: the internal hook is not raised when a
+  `Closing` handler vetoes `Close`, and is raised exactly once when the Cancel button then closes the dialog
+  (boundary).
 - **PropertyGridDialog_Ok_CommitsAndReturnsTrue** / **PropertyGridDialog_Cancel_DiscardsAndReturnsFalse**: the awaited
   result and the object after OK and Cancel.
 - **PropertyGridDialog_Ok_RunsCommitInsideScopeOnce**: two edits are written by one call of the commit scope.

@@ -247,21 +247,83 @@ public class NodePropertiesDialogPreviewTests
         Type(dialog, dialog.Grid, FrequencyPath, "880");
         var raised = 0;
         object? nodeValueAtLastNotification = null;
+        object? contextValueAtLastNotification = null;
         context!.Changed += (_, _) =>
         {
             raised++;
             nodeValueAtLastNotification = node.Properties["Frequency"];
+            contextValueAtLastNotification = context.GetPropertyValue("Frequency");
         };
 
         // Act
         GridHarness.Click(GridHarness.Get<Button>(dialog, "PropertyGridDialog_OK"));
         GridHarness.Pump(owner);
 
-        // Assert: notified at least once, and the last notification saw the committed value on the node
+        // Assert: notified once for the commit, and that notification saw the committed value on the node and in the context
         Assert.True(task.Result);
-        Assert.True(raised > 0);
+        Assert.Equal(1, raised);
         Assert.Equal(880.0, nodeValueAtLastNotification);
+        Assert.Equal(880.0, contextValueAtLastNotification);
         Assert.Equal(880.0, context.GetPropertyValue("Frequency"));
+        owner.Close();
+    });
+
+    /// <summary>
+    ///     The dialog's Cancel button does not cancel the session and raises no notification: the context is disposed as the
+    ///     close is confirmed, before the grid is torn down.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task NodePropertiesDialog_PreviewCancelButton_RaisesNoNotification() => UiTest.Run(() =>
+    {
+        // Arrange: a staged edit, then count the notifications
+        var (_, node) = NodeFixture.Create();
+        NodePreviewContext? context = null;
+        var task = Open(node, Capturing(c => context = c), out var owner, out var dialog);
+        Type(dialog, dialog.Grid, FrequencyPath, "880");
+        var raised = 0;
+        context!.Changed += (_, _) => raised++;
+        var beforeClick = raised;
+
+        // The context must already be disposed when the close is confirmed: an edit staged by a later handler of that moment
+        // (which stands for the grid's teardown) is not notified
+        var session = dialog.Grid.Session!;
+        dialog.CloseConfirmed += (_, _) => session.SetText(session.FindItem(FrequencyPath)!, "990");
+
+        // Act
+        GridHarness.Click(GridHarness.Get<Button>(dialog, "PropertyGridDialog_Cancel"));
+        GridHarness.Pump(owner);
+
+        // Assert: the dialog closed with false and the preview heard nothing during the close
+        Assert.False(task.Result);
+        Assert.Equal(beforeClick, raised);
+        Assert.Equal(440.0, node.Properties["Frequency"]);
+        owner.Close();
+    });
+
+    /// <summary>
+    ///     Closing the window (its close button) raises no notification either.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task NodePropertiesDialog_PreviewWindowClose_RaisesNoNotification() => UiTest.Run(() =>
+    {
+        // Arrange
+        var (_, node) = NodeFixture.Create();
+        NodePreviewContext? context = null;
+        var task = Open(node, Capturing(c => context = c), out var owner, out var dialog);
+        Type(dialog, dialog.Grid, FrequencyPath, "880");
+        var raised = 0;
+        context!.Changed += (_, _) => raised++;
+
+        // Act
+        dialog.Close();
+        GridHarness.Pump(owner);
+
+        // Assert
+        Assert.True(task.IsCompleted);
+        Assert.Equal(0, raised);
+        Assert.Equal(440.0, node.Properties["Frequency"]);
         owner.Close();
     });
 
@@ -390,6 +452,49 @@ public class NodePropertiesDialogPreviewTests
         Assert.Throws<ArgumentException>(() => new NodePreviewContext(new PropertyEditSession(reflected)));
         Assert.Throws<ArgumentNullException>(() => context.GetValue(null!));
         Assert.Throws<ArgumentNullException>(() => context.GetPropertyValue(null!));
+    });
+
+    /// <summary>
+    ///     A context over a grid that comes to show something other than a node is notified once, then reads nothing while
+    ///     <see cref="NodePreviewContext.Node"/> keeps the last node shown; showing a node again restores the values.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task NodePreviewContext_GridShowsNonNodeObject_ReadsNothing() => UiTest.Run(() =>
+    {
+        // Arrange
+        var (_, node) = NodeFixture.Create();
+        var grid = new PropertyGrid { EditMode = PropertyEditMode.Staged, SelectedObject = node };
+        var window = GridHarness.Host(grid);
+        using var context = new NodePreviewContext(grid);
+        var nodeSession = grid.Session!;
+        var raised = 0;
+        context.Changed += (_, _) => raised++;
+
+        // Act: show an ordinary object, then stage in the detached node session
+        grid.SelectedObject = new Person();
+        var afterReplace = raised;
+        var nameWhileDetached = context.GetValue(NodePropertySource.NamePath);
+        var frequencyWhileDetached = context.GetPropertyValue("Frequency");
+        var nodeWhileDetached = context.Node;
+        nodeSession.SetValue(nodeSession.FindItem(FrequencyPath)!, 123.0);
+        var afterStagingInOldSession = raised;
+
+        // Act: show the node again
+        grid.SelectedObject = node;
+        var afterReturn = raised;
+        var frequencyAfterReturn = context.GetPropertyValue("Frequency");
+
+        // Assert
+        Assert.Equal(1, afterReplace);
+        Assert.Null(nameWhileDetached);
+        Assert.Null(frequencyWhileDetached);
+        Assert.Same(node, nodeWhileDetached);
+        Assert.Equal(afterReplace, afterStagingInOldSession);
+        Assert.True(afterReturn > afterReplace);
+        Assert.Equal(440.0, frequencyAfterReturn);
+        Assert.Same(node, context.Node);
+        window.Close();
     });
 
     /// <summary>

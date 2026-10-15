@@ -92,10 +92,22 @@ must pass on every supported platform for the platform requirements to be satisf
 - **PlexusAvalonia_EditingSession_ConnectRenderAndUndo_WorksOnThisPlatform**: connect by dragging, render a frame and
   undo. This is the platform-evidence scenario for every platform requirement.
 
-- **PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides**: hovering a node shows its type
-  description, hovering a port shows the host-extended port text, and turning tooltips off clears the tooltip.
-- **PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements**: a node found by name on another page is brought into view
-  (the page switches and the node is visible), and fitting two far-apart nodes of the first page shows both.
-- **PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes**: a port added by a property change is connected
-  by dragging; lowering the count removes the wire; undo restores the wire on the same port and the scene shows four
-  ports again.
+- **PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides**
+  (`PlexusAvalonia-ToolTips`, `-ToolTipHostContent`, `-ToolTipDisable`): hovering a node shows its type description,
+  hovering a port shows the host-extended port text (a handler replaced the content), and turning tooltips off clears
+  the tooltip.
+- **PlexusAvalonia_ToolTips_DefaultContent_NodePortAndWire** (`PlexusAvalonia-ToolTipDefaults`): with no handler,
+  hovering a node shows the node type's text, a port shows `"label (type)"` and its description on a new line (matching
+  `GetToolTipContent`), and a wire shows `"S.value → B.in0"`.
+- **PlexusAvalonia_ToolTips_HostCancelOrDisable_ShowNoTip** (`PlexusAvalonia-ToolTipHostCancel`, `-ToolTipDisable`): a
+  handler that cancels node tooltips leaves the node without a tooltip while a port still has one; once tooltips are
+  turned off, hovering both shows none and raises no further request.
+- **PlexusAvalonia_ToolTips_PressAndPointerExit_HideTip** (`PlexusAvalonia-ToolTipHiding`): a drag that starts with a
+  press clears the shown tooltip; hovering the node again after moving away shows it again, and moving the pointer out of
+  the editor clears it.
+- **PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements** (`PlexusAvalonia-ElementNavigation`, `-FitElements`): a
+  node found by name on another page is brought into view (the page switches and the node is visible), and fitting two
+  far-apart nodes of the first page shows both.
+- **PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes** (`PlexusAvalonia-DynamicPorts`,
+  `-DynamicPortConnect`): a port added by a property change is connected by dragging; lowering the count removes the
+  wire; undo restores the wire on the same port and the scene shows four ports again.

@@ -78,5 +78,9 @@ Values, text, standard values, children, collections and validation (`PropertyMo
 - **PropertyItem_TrySetValue_ReportsValidationAndSetterFailures**: null, wrong type, range annotation and a throwing
   setter are failed results (error paths).
 - **PropertyItem_TrySetValue_ReadOnlyItemFails**: a read-only item cannot be written (error path).
+- **PropertyItem_SupportsTextEditing_ConverterThrows_ReportsNotSupported**
+  (`PlexusAvaloniaPropertyGrid-PropertyModel-ConverterProbeFailure`): a property whose converter throws from
+  `CanConvertFrom` reports `SupportsTextEditing` false without throwing, while an ordinary string property still reports
+  true (error path).
 - **PropertyItem_TryGetValue_GetterFailureIsCaptured**: a throwing getter is a failed result and empty text (error path).
 - **PropertyResult_SuccessAndFailure_CarryTheOutcome**: the result type carries the success flag and message.

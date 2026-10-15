@@ -75,9 +75,25 @@ hit testing agrees with the drawn geometry; building and querying never change t
 - **Null arguments**
   (`Scene_NullArguments_AreRejected`): the scene builder, layout, measurer and lookups reject nulls.
 
-- **Per-node ports**
-  (`Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort`): after a property change adds a third input, the
+- **Per-node ports drawn and hit** (`Plexus-Scene-DynamicPorts`, `Plexus-Scene-DynamicPortHitTest`;
+  `Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort`): after a property change adds a third input, the
   scene hit test at that input's row returns the new port.
+- **Per-node extent and obstacles** (`Plexus-Scene-DynamicPortExtent`, `Plexus-Scene-DynamicPortObstacles`;
+  `Scene_DynamicPorts_ExtentAndObstacles_FollowCurrentPorts`): raising a bus from two to eight channels makes its visual
+  extent taller and its routing obstacles reach further down; every current port row lies inside the extent and inside
+  an obstacle, and the scene lays out all nine ports.
+- **Geometry theme** (`Plexus-Scene-GeometryTheme`; `Scene_ThemeOverride_PortsStayAtWireEnds`): a scene built with a
+  theme whose port pitch, label gap and triangle size differ from the diagram's draws both ends of a wire exactly at
+  the drawn port anchors, which equal the model anchors; the ports are hit at their hit areas and the triangles sit on
+  the anchor rows.
+- **Visual extent covers port labels** (`Plexus-Scene-NodeVisualExtent`;
+  `Scene_NodeVisualExtent_ContainsEveryDrawnPortLabel`): for a normal node and a node squeezed so short that its port
+  rows stick out of the box, every port label rectangle the scene draws lies inside the node's deterministic visual
+  extent (boundary case).
+- **Group frames as obstacles for display routes** (`Plexus-Scene-GroupObstacles`, `Plexus-Scene-GroupObstaclesOption`;
+  `Scene_GroupObstacles_CollapsedGroupWire_AvoidsUnrelatedFrameUnlessSwitchedOff`): the display route of a wire from a
+  collapsed group avoids the frame of an unrelated group between the ports; with the theme option off it runs through
+  the frame; both routes are orthogonal.
 
 Boundary conditions covered: empty selection, far elements, collapsed and expanded groups, a thousand nodes. Error
 paths: null arguments.

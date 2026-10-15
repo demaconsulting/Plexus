@@ -132,6 +132,58 @@ public class PropertySourceTests
     }
 
     /// <summary>
+    ///     A notification of a shown property annotated <c>RefreshProperties.All</c> makes the source rebuild its items
+    ///     and report a change of everything; an ordinary property only reports its own name.
+    /// </summary>
+    [Fact]
+    public void ReflectionPropertySource_ShownRefreshAllPropertyChanged_RebuildsItems()
+    {
+        // Arrange
+        var target = new Refreshing();
+        using var source = new ReflectionPropertySource(target);
+        var before = TestHelpers.Item(source, "Other");
+        var notifications = new List<PropertySourceChangedEventArgs>();
+        source.Changed += (_, e) => notifications.Add(e);
+
+        // Act
+        target.Other = 1;
+        var afterOrdinary = TestHelpers.Item(source, "Other");
+        target.Mode = 2;
+        var afterRefreshAll = TestHelpers.Item(source, "Other");
+
+        // Assert: the ordinary change keeps the items, the refresh-all change replaces them and reports everything
+        Assert.Same(before, afterOrdinary);
+        Assert.NotSame(before, afterRefreshAll);
+        Assert.Equal(2, notifications.Count);
+        Assert.Equal("Other", notifications[0].PropertyName);
+        Assert.True(notifications[1].IsAll);
+    }
+
+    /// <summary>
+    ///     A notification of a hidden property annotated <c>RefreshProperties.All</c> also rebuilds the items, although that
+    ///     property has no item.
+    /// </summary>
+    [Fact]
+    public void ReflectionPropertySource_HiddenRefreshAllPropertyChanged_RebuildsItems()
+    {
+        // Arrange
+        var target = new HiddenRefreshing();
+        using var source = new ReflectionPropertySource(target);
+        var before = TestHelpers.Item(source, "Shown");
+        var notifications = new List<PropertySourceChangedEventArgs>();
+        source.Changed += (_, e) => notifications.Add(e);
+
+        // Act
+        target.Mode = 1;
+
+        // Assert
+        Assert.DoesNotContain(source.GetItems(), i => i.Name == "Mode");
+        Assert.NotSame(before, TestHelpers.Item(source, "Shown"));
+        Assert.Single(notifications);
+        Assert.True(notifications[0].IsAll);
+    }
+
+    /// <summary>
     ///     A composite source concatenates its sources in order and forwards their changes.
     /// </summary>
     [Fact]

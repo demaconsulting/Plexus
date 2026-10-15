@@ -467,4 +467,233 @@ public class NodePortsTests
         Assert.True(group.Bounds.Height > before.Height);
         Assert.True(group.Bounds.Contains(new Rect(bus.Bounds.X, bus.Bounds.Y, bus.Bounds.Width, bus.Bounds.Height)));
     }
+
+    /// <summary>
+    ///     Creates a page with a switch node (one input <c>in</c>, one output <c>out</c> while its <c>On</c> property is true,
+    ///     no ports at all otherwise) wired to a producer and a consumer.
+    /// </summary>
+    /// <returns>The diagram, page and switch.</returns>
+    private static (Diagram Diagram, DiagramPage Page, Node Switch) CreateSwitch()
+    {
+        var types = TestModel.CreateTypes();
+        types.Add(new NodeType("acme.Switch")
+        {
+            Inputs = { new PortDefinition("in", "f32") },
+            Outputs = { new PortDefinition("out", "f32") },
+            Properties = { new PropertyDefinition("On", true) },
+            PortProvider = node => node.Properties.Get<bool>("On")
+                ? new PortSet([new PortDefinition("in", "f32")], [new PortDefinition("out", "f32")])
+                : new PortSet([], []),
+        });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var node = page.AddNode("acme.Switch", 200, 0, "S");
+        var consumer = page.AddNode("acme.Consumer", 400, 0, "C");
+        page.Connect(producer.Output("value"), node.Input("in"));
+        page.Connect(node.Output("out"), consumer.Input("in"));
+        return (diagram, page, node);
+    }
+
+    /// <summary>
+    ///     Validates that an empty port set leaves the node without ports, removes their wires and keeps the default height.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_ProviderReturnsEmptySet_RemovesEveryPortAndWire()
+    {
+        // Arrange: a wired switch with a hand-set taller size
+        var (diagram, page, node) = CreateSwitch();
+        var floor = NodeGeometry.DefaultNodeSize(node.Type, diagram.Theme).Height;
+        node.Bounds = node.Bounds with { Height = floor + 90 };
+
+        // Act / Assert: one exact entry
+        TestModel.AssertRoundTrip(diagram, () => node.Properties["On"] = false);
+
+        // Assert: no ports, no wires, and the height fits zero rows, which is the type's default height
+        Assert.Empty(node.Ports);
+        Assert.Empty(page.Wires);
+        Assert.Equal(floor, node.Bounds.Height);
+    }
+
+    /// <summary>
+    ///     Validates that when an input stops accepting several wires, the wires are re-checked in page order and the wire
+    ///     latest in page order survives, each removal being reported before the ports change.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_FanInRemoved_KeepsWireLatestInPageOrder()
+    {
+        // Arrange: a fan-in collector fed by three wires, connected in page order w0, w1, w2
+        var (diagram, page, _, producers) = Create();
+        var collector = page.AddNode("acme.Collector", 600, 0, "C");
+        collector.Properties["FanIn"] = true;
+        var wires = producers.Take(3).Select(p => page.Connect(p.Output("value"), collector.Input("in"))).ToArray();
+        var events = new List<string>();
+        diagram.Changed += (_, e) =>
+        {
+            if (e.Kind == DiagramChangeKind.ElementRemoved && e.Element is Wire wire)
+            {
+                events.Add("removed " + Array.IndexOf(wires, wire));
+            }
+            else if (e.PropertyName == "Ports")
+            {
+                events.Add("ports");
+            }
+        };
+
+        // Act
+        collector.Properties.Reset("FanIn");
+
+        // Assert: the last wire in page order survives; the others are removed in page order before the ports change
+        Assert.Same(wires[2], Assert.Single(page.Wires));
+        Assert.Equal(["removed 0", "removed 1", "ports"], events);
+    }
+
+    /// <summary>
+    ///     Validates that an exception from the port provider reverts the assignment and propagates unchanged.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_ProviderThrows_RevertsAssignmentAndPropagates()
+    {
+        // Arrange: a provider that fails for one value
+        var failure = new TimeoutException("provider failed");
+        var types = TestModel.CreateTypes();
+        types.Add(new NodeType("acme.Fragile")
+        {
+            Inputs = { new PortDefinition("in", "f32") },
+            Properties = { new PropertyDefinition("Mode", 0) },
+            PortProvider = node => node.Properties.Get<int>("Mode") == 1
+                ? throw failure
+                : new PortSet([new PortDefinition("in", "f32")], []),
+        });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var node = page.AddNode("acme.Fragile", 0, 0);
+        var before = TestModel.Dump(diagram);
+        var entries = diagram.History.UndoCount;
+
+        // Act
+        var thrown = Assert.Throws<TimeoutException>(() => node.Properties["Mode"] = 1);
+
+        // Assert: the provider's own exception; model and history unchanged
+        Assert.Same(failure, thrown);
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(entries, diagram.History.UndoCount);
+    }
+
+    /// <summary>
+    ///     Validates that a connection rule that throws while wires are re-checked rolls back every step.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_RuleThrowsDuringRevalidation_RollsBackEverything()
+    {
+        // Arrange: a rule that fails only while a wire is re-checked, and a wire on a port that will be retyped
+        var (diagram, page, bus, producers) = Create();
+        page.Connect(producers[0].Output("value"), bus.Input("in0"));
+        diagram.ConnectionRules = (from, _) => from.Node.Page?.WireBeingReconnected is not null
+            ? throw new InvalidOperationException("rule failed")
+            : ConnectionCheck.Allowed;
+        var before = TestModel.Dump(diagram);
+        var entries = diagram.History.UndoCount;
+        var portEvents = 0;
+        bus.PropertyChanged += (_, e) => portEvents += e.PropertyName == "Ports" ? 1 : 0;
+
+        // Act
+        Assert.Throws<InvalidOperationException>(() => bus.Properties["Kind"] = "i32");
+
+        // Assert: everything rolled back, nothing recorded, no ports change reported
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(entries, diagram.History.UndoCount);
+        Assert.Equal(0, portEvents);
+    }
+
+    /// <summary>
+    ///     Validates that a wire refused after a port was retyped is already removed when the ports change is reported.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_RetypedPortRefusedWire_RemovedBeforePortsChanged()
+    {
+        // Arrange: matching types required, and an f32 wire on in0
+        var (diagram, page, bus, producers) = Create();
+        diagram.ConnectionRules = ConnectionRules.All(ConnectionRules.Default, ConnectionRules.SameType);
+        var wire = page.Connect(producers[0].Output("value"), bus.Input("in0"));
+        bool? wireGoneWhenReported = null;
+        bus.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == "Ports")
+            {
+                wireGoneWhenReported = wire.Page is null && !page.Wires.Contains(wire);
+            }
+        };
+
+        // Act
+        bus.Properties["Kind"] = "i32";
+
+        // Assert
+        Assert.True(wireGoneWhenReported);
+    }
+
+    /// <summary>
+    ///     Validates that the ports change is reported once, after the node was resized and its wires re-routed.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_Resize_BoundsAndRoutesSettledWhenPortsChanged()
+    {
+        // Arrange: a wire on in0, and a handler recording what it sees when the ports change is reported
+        var (_, page, bus, producers) = Create();
+        var wire = page.Connect(producers[0].Output("value"), bus.Input("in0"));
+        var seen = new List<(Rect Bounds, Point[] Route)>();
+        bus.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == "Ports")
+            {
+                seen.Add((bus.Bounds, wire.Route.ToArray()));
+            }
+        };
+
+        // Act
+        bus.Properties["Channels"] = 8;
+
+        // Assert: exactly one report, and at that time bounds and route already had their final values
+        var (bounds, route) = Assert.Single(seen);
+        Assert.Equal(bus.Bounds, bounds);
+        Assert.Equal(wire.Route, route);
+    }
+
+    /// <summary>
+    ///     Validates that undo and redo each report the ports change once, after wires, bounds and routes are restored.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_Undo_ReportsPortsChangeOnceAfterRestore()
+    {
+        // Arrange: four wired inputs, then a shrink to two (which removes two wires and resizes)
+        var (diagram, page, bus, producers) = Create();
+        bus.Properties["Channels"] = 4;
+        foreach (var (producer, i) in producers.Select((p, i) => (p, i)))
+        {
+            page.Connect(producer.Output("value"), bus.Input($"in{i}"));
+        }
+
+        bus.Properties["Channels"] = 2;
+        var seen = new List<string>();
+        bus.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == "Ports")
+            {
+                seen.Add(TestModel.Dump(diagram));
+            }
+        };
+
+        // Act / Assert: undo reports once, when wires, bounds, routes and the property are all restored
+        Assert.True(diagram.History.Undo());
+        var atUndo = Assert.Single(seen);
+        Assert.Equal(TestModel.Dump(diagram), atUndo);
+        Assert.Equal(4, page.Wires.Count);
+
+        // Act / Assert: redo reports once, when the wires are removed and the node is resized again
+        seen.Clear();
+        Assert.True(diagram.History.Redo());
+        var atRedo = Assert.Single(seen);
+        Assert.Equal(TestModel.Dump(diagram), atRedo);
+        Assert.Equal(2, page.Wires.Count);
+    }
 }

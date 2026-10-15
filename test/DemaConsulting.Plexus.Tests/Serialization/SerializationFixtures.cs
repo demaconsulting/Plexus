@@ -35,6 +35,24 @@ internal sealed class CustomDataSerializer : INodeDataSerializer
 }
 
 /// <summary>
+///     A host exception type that no library code knows about, used to prove that unexpected host failures are contained.
+/// </summary>
+/// <param name="message">The message.</param>
+public sealed class HostFailureException(string message) : Exception(message);
+
+/// <summary>
+///     A payload serializer whose reading always fails with <see cref="HostFailureException"/> ("serializer exploded").
+/// </summary>
+internal sealed class ThrowingDataSerializer : INodeDataSerializer
+{
+    /// <inheritdoc />
+    public string Serialize(object data) => "{}";
+
+    /// <inheritdoc />
+    public object? Deserialize(string json) => throw new HostFailureException("serializer exploded");
+}
+
+/// <summary>
 ///     Shared fixtures for the snapshot, clipboard and duplicate tests.
 /// </summary>
 /// <remarks>

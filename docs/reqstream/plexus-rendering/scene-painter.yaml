@@ -2,7 +2,7 @@
 # Software Unit requirements for PlexusRendering ScenePainter.
 #
 # Decomposes the PlexusRendering system requirements into the responsibility of the unit that paints scene
-# primitives onto a pixel surface. Tests are the ScenePainterTests unit tests.
+# primitives onto a pixel surface. Each requirement states one criterion. Tests are the ScenePainterTests unit tests.
 
 sections:
   - title: PlexusRendering Requirements
@@ -10,38 +10,68 @@ sections:
       - title: ScenePainter Requirements
         requirements:
           - id: PlexusRendering-ScenePainter-Rectangles
-            title: >-
-              The painter shall fill and stroke rectangles, with optionally rounded corners, and shall keep a
-              whole-pixel border exactly one pixel wide.
+            title: The painter shall fill and stroke rectangles, covering exactly the area of the rectangle.
             justification: |
-              Decomposes PlexusRendering-Render-Content; node boxes, group frames and annotations are rectangles,
-              and blurred borders make diagrams look unprofessional.
+              Decomposes PlexusRendering-Render-Content; node boxes, group frames and annotations are rectangles.
             tests:
               - ScenePainter_Paint_FilledRect_CoversAreaOnly
-              - ScenePainter_Paint_StrokedRect_OnePixelBorderIsCrisp
+
+          - id: PlexusRendering-ScenePainter-RoundedCorners
+            title: The painter shall cut the corners away from a rectangle that has a corner radius.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; node boxes and group frames have rounded corners.
+            tests:
               - ScenePainter_Paint_RoundedRect_CornerIsCutAway
 
-          - id: PlexusRendering-ScenePainter-Paths
+          - id: PlexusRendering-ScenePainter-CrispBorder
             title: >-
-              The painter shall fill and stroke paths made of lines and cubic curves, filling an unclosed path as if
-              it were closed.
+              The painter shall draw a rectangle border whose thickness times the scale is a whole number of output
+              pixels, at least one, covering exactly that many pixel columns and rows at full coverage.
             justification: |
-              Decomposes PlexusRendering-Render-Content; wires, ports and arrow heads are paths.
+              Decomposes PlexusRendering-Render-Content; blurred borders make diagrams look unprofessional. The
+              rule is stated in output pixels because thickness is in diagram units: a one-unit border at scale one,
+              a half-unit border at scale two and a one-unit border at scale two are each crisp, at one, one and
+              two pixels.
+            tests:
+              - ScenePainter_Paint_StrokedRect_OnePixelBorderIsCrisp
+              - ScenePainter_Paint_StrokedRectAtScaleTwo_BorderIsTwoCrispPixels
+              - ScenePainter_Paint_HalfUnitBorderAtScaleTwo_IsOneCrispPixel
+
+          - id: PlexusRendering-ScenePainter-Paths
+            title: The painter shall fill paths made of lines.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; ports and arrow heads are filled paths.
             tests:
               - ScenePainter_Paint_FilledPath_FillsPolygon
+
+          - id: PlexusRendering-ScenePainter-OpenPathFill
+            title: The painter shall fill an unclosed path as if it were closed.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; vector drawing APIs conventionally close figures for filling.
+            tests:
               - ScenePainter_Paint_OpenPathWithFill_IsImplicitlyClosed
+
+          - id: PlexusRendering-ScenePainter-CurveStroke
+            title: The painter shall stroke paths with cubic curves along the curve.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; rounded wires are cubic curves.
+            tests:
               - ScenePainter_Paint_StrokedCubicPath_FollowsTheCurve
 
           - id: PlexusRendering-ScenePainter-Blending
-            title: >-
-              The painter shall anti-alias the edges of strokes and blend translucent colors with what is already
-              painted beneath them.
+            title: The painter shall blend translucent colors with what is already painted beneath them.
             justification: |
-              Decomposes PlexusRendering-Render-Content; smooth diagonals and translucent selections and groups
-              are part of the diagram's appearance.
+              Decomposes PlexusRendering-Render-Content; translucent selections and groups are part of the diagram's
+              appearance.
+            tests:
+              - ScenePainter_Paint_TranslucentFill_BlendsWithBackdrop
+
+          - id: PlexusRendering-ScenePainter-AntiAliasing
+            title: The painter shall anti-alias the edges of strokes.
+            justification: |
+              Decomposes PlexusRendering-Render-Content; smooth diagonals are part of the diagram's appearance.
             tests:
               - ScenePainter_Paint_DiagonalStroke_IsAntiAliased
-              - ScenePainter_Paint_TranslucentFill_BlendsWithBackdrop
 
           - id: PlexusRendering-ScenePainter-Order
             title: >-
@@ -62,21 +92,40 @@ sections:
               - ScenePainter_Paint_PrimitivesBeyondSurface_AreClipped
 
           - id: PlexusRendering-ScenePainter-Text
-            title: >-
-              The painter shall draw a line of text inside its rectangle, anchored to the left edge, the center or
-              the right edge as its style requires, in regular or bold weight.
+            title: The painter shall draw a line of text inside its rectangle.
             justification: |
               Decomposes PlexusRendering-Render-TextLayout; titles, names and labels are positioned from the
               rectangles the layout computed.
             tests:
               - ScenePainter_Paint_Text_PaintsGlyphsInsideRect
+
+          - id: PlexusRendering-ScenePainter-TextAlignment
+            title: >-
+              The painter shall anchor a line of text to the left edge, the center or the right edge of its rectangle
+              as its style requires.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; titles are centered, input labels right-aligned and
+              output labels left-aligned.
+            tests:
               - ScenePainter_Paint_TextAlignment_AnchorsToRectEdges
+
+          - id: PlexusRendering-ScenePainter-BoldText
+            title: The painter shall draw bold text in the bold weight.
+            justification: |
+              Decomposes PlexusRendering-Render-TextLayout; the measurer measures bold text in the bold weight, so
+              it must be painted in it.
+            tests:
               - ScenePainter_Paint_BoldText_DrawsMoreInk
 
           - id: PlexusRendering-ScenePainter-Icons
-            title: >-
-              The painter shall draw an SVG icon scaled to its rectangle, keeping the icon's transparent areas
-              transparent.
+            title: The painter shall draw an SVG icon scaled to its rectangle.
+            justification: |
+              Decomposes PlexusRendering-Render-Icons; icons are drawn at the size the layout gave them.
+            tests:
+              - ScenePainter_Paint_Icon_CompositesRasterizedSvg
+
+          - id: PlexusRendering-ScenePainter-IconTransparency
+            title: The painter shall keep the transparent areas of an icon transparent.
             justification: |
               Decomposes PlexusRendering-Render-Icons; icons are overlaid on the node box and must not hide it.
             tests:
@@ -85,13 +134,22 @@ sections:
           - id: PlexusRendering-ScenePainter-IconTint
             title: >-
               The painter shall draw a tinted icon as a silhouette in the tint color, using the icon's own alpha
-              (times the tint's alpha) as coverage, and shall scale an icon's opacity over what is beneath it.
+              times the tint's alpha as coverage.
             justification: |
               Decomposes PlexusRendering-Render-StyledNodes; recoloring an icon to show state must give the same
               flat result for any artwork, and must leave the shared rasterized icon unchanged.
             tests:
               - ScenePainter_Paint_TintedIcon_RecolorsEveryPaintedPixel
               - ScenePainter_Paint_TintAlphaAndOpacity_BlendWithTheBackground
+
+          - id: PlexusRendering-ScenePainter-IconOpacity
+            title: >-
+              The painter shall scale the coverage of an icon by the opacity of its primitive over what is beneath it.
+            justification: |
+              Decomposes PlexusRendering-Render-StyledNodes; a faded node fades its icon with it.
+            tests:
+              - ScenePainter_Paint_TintAlphaAndOpacity_BlendWithTheBackground
+
           - id: PlexusRendering-ScenePainter-MalformedIcon
             title: The painter shall skip an icon that cannot be rasterized and leave the surface unchanged there.
             justification: |
@@ -111,20 +169,43 @@ sections:
               - ScenePainter_Paint_LargeGrid_DrawsDotsAtHighCoordinates
 
           - id: PlexusRendering-ScenePainter-Placement
-            title: >-
-              The painter shall place primitives relative to a chosen origin and multiply positions, sizes and
-              stroke widths by a chosen scale.
+            title: The painter shall place primitives relative to a chosen origin.
             justification: |
-              Decomposes PlexusRendering-Render-Framing; the rendered area and resolution are realized by this
-              mapping from diagram units to pixels.
+              Decomposes PlexusRendering-Render-Framing; the rendered area is realized by this mapping from diagram
+              units to pixels.
             tests:
-              - ScenePainter_Paint_Scale_MultipliesGeometry
               - ScenePainter_Paint_Origin_OffsetsGeometry
 
-          - id: PlexusRendering-ScenePainter-InvalidInput
-            title: The painter shall throw an argument-null exception when given no surface or no primitive.
+          - id: PlexusRendering-ScenePainter-ScaleGeometry
+            title: The painter shall multiply the positions and sizes of primitives by a chosen scale.
             justification: |
-              Decomposes PlexusRendering-Render-InvalidInput; missing arguments must fail early rather than paint
+              Decomposes PlexusRendering-Render-Framing; the resolution is realized by this mapping from diagram
+              units to pixels.
+            tests:
+              - ScenePainter_Paint_Scale_MultipliesGeometry
+
+          - id: PlexusRendering-ScenePainter-ScaleStroke
+            title: >-
+              The painter shall draw a stroke with a width in output pixels equal to its thickness times the chosen
+              scale.
+            justification: |
+              Decomposes PlexusRendering-Render-Framing; strokes must scale with the picture, so a border stays in
+              proportion at any resolution.
+            tests:
+              - ScenePainter_Paint_StrokedRectAtScaleTwo_BorderIsTwoCrispPixels
+
+          - id: PlexusRendering-ScenePainter-InvalidInput
+            title: The painter shall throw an argument-null exception when given no surface.
+            justification: |
+              Decomposes PlexusRendering-Render-InvalidInput; a missing surface must fail early rather than paint
+              nothing.
+            tests:
+              - ScenePainter_Paint_NullArguments_Throw
+
+          - id: PlexusRendering-ScenePainter-NullPrimitive
+            title: The painter shall throw an argument-null exception when given no primitive or no primitive sequence.
+            justification: |
+              Decomposes PlexusRendering-Render-InvalidInput; a missing primitive must fail early rather than paint
               nothing.
             tests:
               - ScenePainter_Paint_NullArguments_Throw

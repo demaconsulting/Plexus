@@ -41,6 +41,11 @@ public sealed class SceneOptions
     /// <summary>
     ///     Gets or initializes the theme to use instead of the diagram's own theme; null (the default) uses <see cref="Diagram.Theme"/>.
     /// </summary>
+    /// <remarks>
+    ///     A per-scene theme changes the appearance (colors, fonts, text styles, decorations). Port positions, port
+    ///     triangles, port hit areas and wire ends always follow the diagram's own theme, so wires stay attached to their
+    ///     ports; set port metrics on <see cref="Diagram.Theme"/>.
+    /// </remarks>
     public DiagramTheme? Theme { get; init; }
 
     /// <summary>

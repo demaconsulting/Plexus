@@ -79,17 +79,20 @@ internal static class PropertyValues
     /// <param name="options">The allowed options when <paramref name="kind"/> is <see cref="PropertyValueKind.Choice"/>.</param>
     /// <returns>The canonical value for the kind.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when the value is incompatible with the kind or not among the options.</exception>
+    /// <exception cref="ArgumentException">
+    ///     Thrown when the value is incompatible with the kind (including a number the kind cannot hold exactly) or not
+    ///     among the options.
+    /// </exception>
     public static object Coerce(object value, PropertyValueKind kind, IReadOnlyList<string>? options)
     {
         var canonical = Normalize(value, out var actual);
 
-        // Numbers convert only when no information can be lost; everything else must match exactly
+        // Numbers convert only when the value is preserved exactly; everything else must match exactly
         object? result = kind switch
         {
             PropertyValueKind.Int32 => CoerceInt32(canonical, actual),
             PropertyValueKind.Int64 => actual is PropertyValueKind.Int32 or PropertyValueKind.Int64 ? Convert.ToInt64(canonical, CultureInfo.InvariantCulture) : null,
-            PropertyValueKind.Double => actual is PropertyValueKind.Int32 or PropertyValueKind.Int64 or PropertyValueKind.Double ? Convert.ToDouble(canonical, CultureInfo.InvariantCulture) : null,
+            PropertyValueKind.Double => CoerceDouble(canonical, actual),
             PropertyValueKind.Choice => actual == PropertyValueKind.String && options is not null && options.Contains((string)canonical, StringComparer.Ordinal) ? canonical : null,
             _ => actual == kind ? canonical : null,
         };
@@ -143,6 +146,38 @@ internal static class PropertyValues
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Coerces a canonical value to <see cref="double"/> when the conversion preserves it exactly.
+    /// </summary>
+    /// <remarks>
+    ///     Every <see cref="int"/> is exactly representable as a double. A <see cref="long"/> converts only when the
+    ///     double converts back to the very same <see cref="long"/> (for example 2^53 + 1 and
+    ///     <see cref="long.MaxValue"/> are rejected because the double would hold a different number).
+    /// </remarks>
+    /// <param name="canonical">The canonical value.</param>
+    /// <param name="actual">The kind of <paramref name="canonical"/>.</param>
+    /// <returns>The boxed double, or null when the value cannot be represented exactly.</returns>
+    private static object? CoerceDouble(object canonical, PropertyValueKind actual)
+    {
+        switch (actual)
+        {
+            case PropertyValueKind.Double:
+                return canonical;
+
+            case PropertyValueKind.Int32:
+                return (double)(int)canonical;
+
+            case PropertyValueKind.Int64:
+                // 2^63 is the first double above long.MaxValue; below it the cast back is defined and exact iff lossless
+                var l = (long)canonical;
+                var d = (double)l;
+                return d < 9223372036854775808.0 && (long)d == l ? d : null;
+
+            default:
+                return null;
+        }
     }
 
     /// <summary>

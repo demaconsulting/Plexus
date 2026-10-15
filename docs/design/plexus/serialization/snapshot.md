@@ -40,13 +40,19 @@ throws one `SnapshotException` listing them all; creates a diagram, loads each p
 shared importer in restore mode (exact ids, names, bounds, stored routes, z-order, groups, properties and payloads) and
 clears the history. Port lists are never stored: the importer recomputes each node's ports from its restored
 properties and payload (with the type's port provider, if any) before resolving the wires, keeping the stored bounds,
-so wires on computed ports load and a wire naming a port that is not recomputed fails like any unknown port.
+so wires on computed ports load and a wire naming a port that is not recomputed fails like any unknown port. Every
+non-fatal provider failure (any exception except `OutOfMemoryException`, a null result or an invalid port set) becomes a
+`SnapshotException` naming the node. A node entry whose type key is null, empty or white space is invalid content: it
+is rejected with "A node has no node type key." before the missing-type check, and `SnapshotFilter` does not treat it
+as an unknown type, so it is never skipped.
 `ToJson`/`FromJson` are the shorthands combining these steps.
 
-`PropertyCodec.Write` / `TryRead`: write values with round-trip precision and colors as `#AARRGGBB`; read strictly by token
-type so a malformed value is reported, never coerced. `NodeDataCodec.Serialize` / `TryDeserialize`: use the exact declared
-type (never a name from the text), verify that serializer output is valid JSON of limited depth, and convert reader
-failures into a problem message.
+`PropertyCodec.Write` / `TryRead`: write values with round-trip precision and colors as `#AARRGGBB` (eight digits, alpha
+first, also when opaque); read strictly by token type so a malformed value is reported, never coerced; color text is
+accepted with six digits (opaque) or eight digits (alpha first). `NodeDataCodec.Serialize` / `TryDeserialize`: use the
+exact declared type (never a name from the text), verify that serializer output is valid JSON of limited depth, and
+convert every reader failure - a null result or any exception of the host serializer or System.Text.Json except
+`OutOfMemoryException` - into a problem message (the exception message).
 
 Preconditions: nodes whose payload type is declared hold a payload of that type.
 
@@ -77,8 +83,9 @@ through the strict path, and the counts are stored in `Diagram.LoadReport`.
 
 - Malformed JSON, the wrong shape or excessive depth: `JsonException` from `Deserialize`.
 - Unsupported version, missing node types, duplicate or missing ids, dangling references, a property value of the wrong
-  kind, an unreadable payload while restoring, a port provider that fails, a wire to a port the provider does not
-  produce: `SnapshotException` (missing types listed in `MissingNodeTypes`).
+  kind, a node without a type key, an unreadable payload while restoring (any non-fatal serializer failure), a port
+  provider that fails in any non-fatal way, a wire to a port the provider does not produce: `SnapshotException`
+  (missing types listed in `MissingNodeTypes`).
 - A payload that does not match its declared type, or a serializer that returns null or invalid JSON, while capturing:
   `InvalidOperationException` naming the node, because it is a host defect.
 - Null arguments: `ArgumentNullException`.

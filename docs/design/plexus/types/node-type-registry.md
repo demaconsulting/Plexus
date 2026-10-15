@@ -44,7 +44,7 @@ Per-node ports and descriptions:
   drop previews and `NodeGeometry.RoutingObstacles(Rect, NodeType, DiagramTheme)` use them).
 - `PortSet` (sealed, immutable): the copied `Inputs` and `Outputs` declaration lists a provider returns, exposed as
   read-only wrappers. Invariant: no null entry and no repeated name within one direction (the name is the port's
-  identity when ports are recomputed).
+  identity when ports are recomputed). Either list, or both, may be empty: the node then has no ports in that direction.
 - `NodeType.Description` (`string?`) and `NodeType.ToolTip` (`Func<Node, string?>?`): text for editor tooltips;
   `PortDefinition.Description` (`string?`); `PortType.DisplayName` (defaults to the key when null or empty).
 
@@ -65,8 +65,10 @@ Per-node ports and descriptions:
 - **PortTypeRegistry.Add(type)**, **Get(key)**, **TryGet**, **Contains**: `Add` rejects a duplicate key; `Get` returns
   the registered type or a neutral gray type with the requested key without registering it.
 
-- `NodeType.GetToolTip(node)`: returns `ToolTip(node)` when a function is declared, otherwise `Description`; the editor
-  uses it as a node's default tooltip.
+- `NodeType.GetToolTip(node)`: returns `ToolTip(node)` unchanged when a function is declared - including null or an
+  empty string, which mean "no tooltip" (the `Description` is not used as a fallback) - and `Description` otherwise
+  (null when none). The function is called with the node on every request, so the text follows the node's current
+  properties and payload. The editor uses it as a node's default tooltip.
 - `NodeType.ResolvePorts(node)` (internal): calls the provider and returns its `PortSet`; used by `Node.InitializePorts`
   and `NodePortsCommand.TryCreate` (see Node Design).
 - `PortSet(inputs, outputs)`: copies both sequences into arrays, validates them and exposes them through
@@ -85,16 +87,21 @@ nothing.
 
 - `PortSet` throws `ArgumentNullException` for a null sequence and `ArgumentException` for a null entry or a repeated
   name within a direction. `ResolvePorts` throws `InvalidOperationException` (naming the type and node) when the
-  provider returns null. Exceptions thrown by the host's provider propagate unchanged to the caller of the triggering
-  change (see Node Design and PlexusClipboard Design for how they are handled).
-- `GetToolTip` throws `ArgumentNullException` for a null node.
+  provider returns null; an empty `PortSet` is not an error. Exceptions thrown by the host's provider propagate
+  unchanged to the caller of the triggering change (see Node Design and PlexusClipboard Design for how they are
+  handled).
+- `GetToolTip` throws `ArgumentNullException` for a null node; an exception thrown by the host's tooltip function
+  propagates unchanged (the library never swallows it).
 
 #### Dependencies
 
 Depends on Geometry (`Color` for port types, `Size` for the default size), on `PropertyDefinition` from the Properties
-subsystem for the property list and summary formatting, on `Node` for the summary function signature, on the Scene
-interface `INodeVisual` for the optional custom visual, and on `IconSource` (see IconSource Design) for the icon.
-There are no external dependencies.
+subsystem for the property list and summary formatting, on `Node` (Model) for the signatures of the summary, port
+provider and tooltip callbacks, on the Scene interface `INodeVisual` for the optional custom visual, and on
+`IconSource` (see IconSource Design) for the icon. The references to Model and Scene are intentional mutual references:
+the Model creates nodes from types and calls the callbacks (which must not change the model), and Scene owns the
+visual contract and reads the types for layout; this unit only stores the callbacks and the visual. There are no
+external dependencies.
 
 #### Callers
 

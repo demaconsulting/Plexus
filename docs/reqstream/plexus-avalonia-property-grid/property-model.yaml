@@ -139,3 +139,13 @@ sections:
               - PropertyItem_TrySetValue_ReadOnlyItemFails
               - PropertyItem_TryGetValue_GetterFailureIsCaptured
               - PropertyResult_SuccessAndFailure_CarryTheOutcome
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-ConverterProbeFailure
+            title: >-
+              The unit shall report a property whose type converter throws while it is asked whether it converts
+              from text as not editable as text, without throwing.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Validation; the grid asks every item whether it supports text
+              editing while it builds its rows, so a faulty user converter must not make the whole grid fail.
+            tests:
+              - PropertyItem_SupportsTextEditing_ConverterThrows_ReportsNotSupported

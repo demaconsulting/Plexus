@@ -162,3 +162,68 @@ sections:
                   - UndoHistory_TransactOfT_ReturnsResultAndRollsBackOnFailure
                   - UndoHistory_Transact_Nested_FlattensIntoOuterEntry
                   - UndoHistory_Transact_EmptyAndNullArguments
+
+              - id: Plexus-History-UndoHistory-PlanAbort
+                title: >-
+                  When a multi-step operation fails, every step it already applied shall be reverted, newest first,
+                  even when reverting one of them fails, and the original error shall then be reported together with
+                  every revert failure.
+                justification: |
+                  Decomposes Plexus-History-Transactions; operations such as removing a node with its wires apply each
+                  step before planning the next, and one step that cannot be reverted must not leave the other steps
+                  applied or hide the error that started the rollback.
+                tests:
+                  - CommandPlan_Abort_RevertsEveryStepNewestFirstAndClears
+                  - CommandPlan_Abort_InverseThrows_RevertsRemainingStepsAndReportsAllFailures
+
+              - id: Plexus-History-UndoHistory-ClearDuringReplay
+                title: >-
+                  UndoHistory shall reject clearing the history while an undo or redo is running with an
+                  invalid-operation error and leave the stacks unchanged.
+                justification: |
+                  Decomposes Plexus-History-ReplayIntegrity; the undo or redo moves its entry after the command ran, so
+                  clearing the stacks in between would lose or misplace entries.
+                tests:
+                  - UndoHistory_Clear_FromUndoCallback_ThrowsAndKeepsStacks
+                  - UndoHistory_Clear_FromRedoCallback_ThrowsAndKeepsStacks
+
+              - id: Plexus-History-UndoHistory-StateChangeDuringReplay
+                title: >-
+                  UndoHistory shall reject marking the history clean, changing its capacity and starting a suspension
+                  while an undo or redo is running, with an invalid-operation error and no change.
+                justification: |
+                  Decomposes Plexus-History-ReplayIntegrity; these operations change the stacks or the saved point that
+                  the running undo or redo is about to update.
+                tests:
+                  - UndoHistory_MarkCleanCapacityAndSuspend_FromUndoCallback_AreRejected
+
+              - id: Plexus-History-UndoHistory-SuspendEndDuringReplay
+                title: >-
+                  When the outermost suspension ends while an undo or redo is running, UndoHistory shall apply its
+                  effect (clearing the stacks and restoring the dirty state) right after the undo or redo has finished.
+                justification: |
+                  Decomposes Plexus-History-ReplayIntegrity; disposing a scope cannot fail, so its effect is deferred to
+                  the first moment the stacks are consistent.
+                tests:
+                  - UndoHistory_SuspendScopeDisposedFromUndoCallback_TakesEffectAfterUndo
+
+              - id: Plexus-History-UndoHistory-ReplayAtomic
+                title: >-
+                  When a command of a grouped entry fails during undo or redo, UndoHistory shall restore the other
+                  commands of the entry that already ran and keep the entry on its stack.
+                justification: |
+                  Decomposes Plexus-History-ReplayAtomic; the state must match the stacks again after a failure, so the
+                  user can retry the same undo or redo.
+                tests:
+                  - UndoHistory_Redo_MiddleCommandFails_RestoresStateAndKeepsEntry
+                  - UndoHistory_Undo_MiddleCommandFails_RestoresStateAndKeepsEntry
+
+              - id: Plexus-History-UndoHistory-ReplayCompensationFailure
+                title: >-
+                  When restoring the other commands of a failed grouped undo or redo also fails, UndoHistory shall
+                  report the original failure together with every restore failure.
+                justification: |
+                  Decomposes Plexus-History-ReplayAtomic; no failure may be hidden, and the original cause must come
+                  first so the host can see what started the problem.
+                tests:
+                  - UndoHistory_Undo_MiddleCommandAndCompensationFail_ReportsAllFailures

@@ -37,6 +37,11 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
   (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder`): properties declared out of alphabetical order with
   `PropertyDefinition.Order` are listed in that order (Attack, Decay, Sustain, Release under Envelope; the name row and
   then the ranked uncategorized rows under General), and each row carries its definition's order.
+- **NodePropertySource_GetItems_EqualOrder_ListsAlphabetically**
+  (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder`): properties declared Zeta, Idle, alpha, ice and Hue
+  with the same order are listed alphabetically ignoring case (alpha, Hue, ice, Idle, Zeta), also while the current
+  culture is Turkish (where a culture-sensitive comparison would list Idle before ice), after a property with a negative
+  order (boundary).
 - **NodePropertySource_SetText_ValidatesWithThePropertyDefinition** /
   **NodePropertySource_SetText_NameIsValidatedWhileTyping**: "abc" is refused as "'abc' is not a number.", "880 Hz" is
   accepted, an empty and a duplicate name are refused with the rename messages (error paths).

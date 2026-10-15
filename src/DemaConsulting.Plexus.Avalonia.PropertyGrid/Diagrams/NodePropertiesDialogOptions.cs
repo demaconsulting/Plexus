@@ -54,14 +54,16 @@ public sealed record NodePropertiesDialogOptions
     /// <remarks>
     ///     It is called once, on the UI thread, while the dialog is created. It receives the context of the dialog's grid and
     ///     must return a control (never <see langword="null"/>); subscribe to <see cref="NodePreviewContext.Changed"/> to
-    ///     redraw. The context is disposed when the dialog closes, so no notification arrives after that. The control is
+    ///     redraw (edit, reset, session cancel and commit; closing the dialog raises nothing). The context is disposed as
+    ///     soon as the dialog's close is confirmed, so no notification arrives after that. The control is
     ///     shown in a panel with the automation id <c>PropertyGridDialog_Preview</c>.
     /// </remarks>
     public Func<NodePreviewContext, Control>? Preview { get; init; }
 
     /// <summary>
     ///     Gets where the preview is placed; the default <see cref="NodePreviewPlacement.Side"/> puts it to the right of
-    ///     the grid. Ignored without a <see cref="Preview"/>.
+    ///     the grid (dialog 880 x 640, preview 400 wide); <see cref="NodePreviewPlacement.Top"/> puts it above (dialog
+    ///     480 x 860, preview 220 high). Ignored without a <see cref="Preview"/>.
     /// </summary>
     public NodePreviewPlacement PreviewPlacement { get; init; } = NodePreviewPlacement.Side;
 

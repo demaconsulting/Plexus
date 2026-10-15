@@ -752,6 +752,107 @@ public class PlexusAvaloniaTests
     });
 
     /// <summary>
+    ///     Validates that the default tooltips describe a node, a port (label, type and description) and a wire (source to target).
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_DefaultContent_NodePortAndWire() => UiTest.Run(() =>
+    {
+        // Arrange: a described bus fed by a source
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300, "S");
+        var bus = host.Page.AddNode("test.Bus", 400, 60, "B");
+        var wire = host.Page.Connect(source.Port("value"), bus.Input("in0"));
+        host.Flush();
+
+        // Act: hover the node body, a port and the wire
+        var tips = new List<object?>();
+        foreach (var at in new[] { host.CenterOf(bus), host.FindHit(HitKind.Port, bus), host.FindHit(HitKind.Wire, wire) })
+        {
+            host.Window.MouseMove(at);
+            host.Flush();
+            tips.Add(ToolTip.GetTip(host.Editor));
+        }
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal("Merges channels.", tips[0]),
+            () => Assert.Equal(host.Editor.GetToolTipContent(bus, host.Editor.HitTest(host.FindHit(HitKind.Port, bus)).Port), tips[1]),
+            () => Assert.Matches(@"^in\d \(f32\)\nChannel \d$", tips[1] as string),
+            () => Assert.Equal("S.value → B.in0", tips[2]));
+    });
+
+    /// <summary>
+    ///     Validates that a host that cancels a tooltip, or turns tooltips off, makes hovering show nothing.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_HostCancelOrDisable_ShowNoTip() => UiTest.Run(() =>
+    {
+        // Arrange: a handler that cancels node tooltips only
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var bus = host.Page.AddNode("test.Bus", 300, 100, "B");
+        var requests = 0;
+        host.Editor.ToolTipRequested += (_, e) =>
+        {
+            requests++;
+            e.Cancel = e.Port is null;
+        };
+        host.Flush();
+
+        // Act: hover the node (canceled) and a port (shown), then turn tooltips off and hover both again
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var canceled = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(host.FindHit(HitKind.Port, bus));
+        host.Flush();
+        var shown = ToolTip.GetTip(host.Editor);
+        host.Editor.ShowToolTips = false;
+        var requestsWhenOff = requests;
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Window.MouseMove(host.FindHit(HitKind.Port, bus));
+        host.Flush();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Null(canceled),
+            () => Assert.NotNull(shown),
+            () => Assert.Null(ToolTip.GetTip(host.Editor)),
+            () => Assert.Equal(requestsWhenOff, requests));
+    });
+
+    /// <summary>
+    ///     Validates that pressing a button and moving the pointer out of the editor hide the tooltip.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_PressAndPointerExit_HideTip() => UiTest.Run(() =>
+    {
+        // Arrange: a bus with a shown tooltip
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var bus = host.Page.AddNode("test.Bus", 300, 100, "B");
+        host.Flush();
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var shown = ToolTip.GetTip(host.Editor);
+
+        // Act: press and drag the node, then hover it again, then leave the editor
+        host.Drag(host.CenterOf(bus), host.CenterOf(bus) + new Point(40, 0));
+        var afterPress = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(new Point(700, 550));
+        host.Flush();
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var shownAgain = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(new Point(-50, -50));
+        host.Flush();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.NotNull(shown),
+            () => Assert.Null(afterPress),
+            () => Assert.NotNull(shownAgain),
+            () => Assert.Null(ToolTip.GetTip(host.Editor)));
+    });
+
+    /// <summary>
     ///     Validates that a host can navigate to an element on another page and fit a set of elements.
     /// </summary>
     [Fact]

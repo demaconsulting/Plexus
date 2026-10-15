@@ -49,6 +49,10 @@ Paste behavior:
 - **Argument checking** (`PlexusClipboard_InvalidArguments_Throw`).
 - **Missing types** (`PlexusClipboard_Paste_MissingNodeTypes_FailsAtomicallyListingAllKeys`,
   `PlexusClipboard_Paste_UnknownTypeInHostileContent_ListsMissingKeys`).
+- **Node without a type key** (`Plexus-Serialization-PlexusClipboard-MissingTypeKey`;
+  `PlexusClipboard_Paste_NodeWithoutTypeKey_FailsAndChangesNothing`, theory over a null, an empty and a white-space key
+  after a valid node): the paste fails with "no node type key", lists no missing type and leaves page and history
+  unchanged (error path).
 
 Untrusted input (all rejections change nothing):
 
@@ -65,7 +69,9 @@ Untrusted input (all rejections change nothing):
   self connection, duplicate wires, duplicate and empty ids, empty names, null entries, groups with unknown or shared
   members, cycles, bad z-orders, invalid annotation fill and malformed property values).
 - **Type-name members** (`PlexusClipboard_Paste_TypeNameMembers_AreIgnored`), **hostile payload**
-  (`PlexusClipboard_Paste_HostilePayload_BecomesWarning`) and **late failure**
+  (`PlexusClipboard_Paste_HostilePayload_BecomesWarning`; and
+  `PlexusClipboard_Paste_SerializerThrowsUnexpectedException_BecomesWarning`: a serializer throwing a host exception
+  type the library does not know gives a node without data and one warning carrying its message) and **late failure**
   (`PlexusClipboard_Paste_LateFailure_LeavesNothingBehind`: fifty valid nodes followed by one bad wire).
 
 Duplicate:
@@ -88,9 +94,21 @@ Paste message (`Plexus-Serialization-PlexusClipboard-PasteMessage`, `PasteResult
   of a plain success, a success with a skipped wire, a refused paste with unknown types and a foreign or empty
   clipboard.
 
-Per-node ports (`Plexus-Serialization-PlexusClipboard-DynamicPorts`):
+Per-node ports on paste (`Plexus-Serialization-PlexusClipboard-DynamicPorts`):
 
 - **PlexusClipboard_Paste_DynamicPortNodes_RecreatesWiresOnDynamicPorts**: pasting into another diagram recreates the
   wires on a computed input and a computed output and keeps the pasted node size.
+
+Per-node ports on duplicate (`Plexus-Serialization-PlexusClipboard-DynamicPortsDuplicate`):
+
 - **PlexusClipboard_Duplicate_DynamicPortNode_KeepsPortsAndWires** (`DuplicateTests.cs`): duplicating a router and its
   consumer is one exact entry; the copy has the three computed outputs and its wire leaves from the computed one.
+
+Provider failure (`Plexus-Serialization-PlexusClipboard-DynamicPortProviderFailure`):
+
+- **PlexusClipboard_Paste_ProviderThrows_FailsWithMessageAndChangesNothing**: pasting a bus whose provider throws in the
+  target diagram fails with a message naming the node and the provider's reason; no element is returned and the page
+  dump and undo count are unchanged (error path).
+- **PlexusClipboard_Duplicate_ProviderThrows_ThrowsAndChangesNothing** (`DuplicateTests.cs`): when the provider starts
+  failing after the original was wired, duplicating it throws an invalid-operation exception starting with "The
+  elements could not be duplicated" and carrying the reason; page and history unchanged (error path).

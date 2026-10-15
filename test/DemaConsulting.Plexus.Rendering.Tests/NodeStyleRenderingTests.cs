@@ -11,73 +11,9 @@ namespace DemaConsulting.Plexus.Rendering.Tests;
 public class NodeStyleRenderingTests
 {
     /// <summary>
-    ///     An SVG with an opaque red left half and an opaque blue upper right quarter, to prove a tint replaces every color.
-    /// </summary>
-    private const string TwoColorSvg =
-        "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 20 10\"><rect width=\"10\" height=\"10\" fill=\"#FF0000\"/><rect x=\"10\" width=\"10\" height=\"5\" fill=\"#0000FF\"/></svg>";
-
-    /// <summary>
-    ///     The canvas color the painter tests clear to.
-    /// </summary>
-    private static readonly Rgba32 White = new(255, 255, 255, 255);
-
-    /// <summary>
     ///     Options that render the area (0, 0, 300, 200) without a grid at scale 1, so pixels equal diagram units.
     /// </summary>
     private static readonly RenderOptions Area = new() { Bounds = new Rect(0, 0, 300, 200), ShowGrid = false };
-
-    /// <summary>
-    ///     Validates that a tinted icon becomes a silhouette in the tint color over the cached rasterization, leaving transparent areas alone.
-    /// </summary>
-    [Fact]
-    public void ScenePainter_Paint_TintedIcon_RecolorsEveryPaintedPixel()
-    {
-        // Arrange
-        using var surface = new Surface(80, 40);
-        surface.Clear(White);
-        var painter = new ScenePainter(surface, Point.Zero, 1);
-        var icon = IconSource.FromSvg(TwoColorSvg);
-        var green = Color.Parse("#00AA00");
-
-        // Act: the same icon as authored and tinted, side by side
-        painter.Paint(new IconPrimitive(icon, new Rect(0, 0, 40, 20)));
-        painter.Paint(new IconPrimitive(icon, new Rect(40, 0, 40, 20), null, green));
-
-        // Assert: the plain icon keeps both colors; tinted is green wherever the icon paints and white where it is transparent
-        Assert.Multiple(
-            () => Assert.Equal(new Rgba32(255, 0, 0, 255), surface[10, 10]),
-            () => Assert.Equal(new Rgba32(0, 0, 255, 255), surface[30, 5]),
-            () => Assert.Equal(new Rgba32(0, 170, 0, 255), surface[50, 10]),
-            () => Assert.Equal(new Rgba32(0, 170, 0, 255), surface[70, 5]),
-            () => Assert.Equal(White, surface[70, 15]));
-    }
-
-    /// <summary>
-    ///     Validates that a translucent tint scales the coverage and that the primitive opacity blends the icon with what is below it.
-    /// </summary>
-    [Fact]
-    public void ScenePainter_Paint_TintAlphaAndOpacity_BlendWithTheBackground()
-    {
-        // Arrange
-        using var surface = new Surface(60, 20);
-        surface.Clear(White);
-        var painter = new ScenePainter(surface, Point.Zero, 1);
-        var icon = IconSource.FromSvg(RenderTestModel.RedSquareSvg);
-
-        // Act: half-alpha black tint, and an icon without a tint at half opacity
-        painter.Paint(new IconPrimitive(icon, new Rect(0, 0, 20, 20), null, new Color(0, 0, 0, 128)));
-        painter.Paint(new IconPrimitive(icon, new Rect(30, 0, 20, 20), null, null, 0.5));
-
-        // Assert: 50% black over white is mid gray; 50% red over white is pink
-        var gray = surface[10, 10];
-        var pink = surface[40, 10];
-        Assert.Multiple(
-            () => Assert.InRange(gray.R, 126, 129),
-            () => Assert.Equal(gray.R, gray.B),
-            () => Assert.Equal(255, pink.R),
-            () => Assert.InRange(pink.G, 126, 129),
-            () => Assert.Equal(pink.G, pink.B));
-    }
 
     /// <summary>
     ///     Proves at system level that a page with a styled and an unstyled node renders the style where the styler decides and the theme everywhere else.

@@ -319,10 +319,29 @@ sections:
               - id: Plexus-Model-DiagramPage-AddNodePorts
                 title: >-
                   Adding a node of a type with a port provider shall give it the ports the provider returns for its
-                  default properties and payload and a height that fits them, even over a declared size, and shall
-                  add nothing and report the error when the provider fails.
+                  default properties and payload.
                 justification: |
-                  A new node must be ready to wire, with every port inside its box.
+                  Decomposes Plexus-Model-DynamicPortAddNode; a new node must be ready to wire with the ports its
+                  configuration implies.
                 tests:
                   - DiagramPage_AddNode_ProviderNeedsMoreHeight_GrowsNewNode
+
+              - id: Plexus-Model-DiagramPage-AddNodeHeight
+                title: >-
+                  Adding a node of a type with a port provider shall give it a height that fits the provider's ports,
+                  even over a declared size, and never less than the type's default height.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortAddNode; every port of a new node must be inside its box.
+                tests:
+                  - DiagramPage_AddNode_ProviderNeedsMoreHeight_GrowsNewNode
+
+              - id: Plexus-Model-DiagramPage-AddNodeProviderFailure
+                title: >-
+                  When the port provider fails while a node is added (it throws, builds an invalid port set or returns
+                  no port set), nothing shall be added or recorded and the error shall propagate.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortAddNode; a node whose ports cannot be computed must not appear in
+                  the diagram half-built.
+                tests:
                   - DiagramPage_AddNode_ProviderBuildsInvalidPortSet_ThrowsAndAddsNothing
+                  - DiagramPage_AddNode_ProviderReturnsNull_ThrowsAndAddsNothing

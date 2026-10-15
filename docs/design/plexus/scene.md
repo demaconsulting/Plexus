@@ -114,6 +114,14 @@ Ports, anchors and hit areas always come from the node layout, so a custom visua
 appearance). Customizing is a `with` expression; the shared classic instance is never modified. The model reads the
 metrics, so a custom theme changes layout, routing obstacles and painting consistently.
 
+**Geometry theme.** Each node has exactly one geometry theme: its own diagram's theme (`Diagram.Theme`, the classic
+theme for a detached node), the theme the model uses for `Port.Anchor`, stored routes, visual bounds and routing
+obstacles. `NodeLayout.Compute` uses it for port rows, anchors, triangles, label gaps and hit areas, and the scene's node
+routing obstacles for display routes use it too; the theme passed to the scene (a `SceneOptions.Theme`, render or editor
+override) supplies everything else (colors, fonts, text styles, header band, icon box, text gaps). A per-scene theme
+therefore changes the look but never where ports and wire ends are, so drawn wires stay attached. Collapsed-group proxy
+ports and their display routes exist only in the scene and are computed from the scene theme consistently.
+
 **Performance.** Building touches each element once, wire display routes are computed only for collapsed-group wires,
 and hit tests and queries visit only the cells near the point. Speed is assessed by profiling, not by timed tests; the
 thousand-node tests check only that building succeeds and every hit is correct.
@@ -122,3 +130,7 @@ thousand-node tests check only that building succeeds and every hit is correct.
 ports (`Node.Ports`), never the node type's declared ports, so nodes whose ports a port provider computed are drawn,
 hit and routed around correctly; the only exception is `NodeGeometry.RoutingObstacles(Rect, NodeType, DiagramTheme)`,
 which a caller uses for a type without a node (its declared defaults). See NodeLayout Design.
+
+**Visual extent.** `NodeGeometry.VisualBounds` is the deterministic extent of everything drawn for a node; each port
+row in it covers the port triangle or the full line height of the port label, whichever is taller, from the box edge to
+the anchor, so group frames (which enclose the visual extents of their members) contain complete port labels.

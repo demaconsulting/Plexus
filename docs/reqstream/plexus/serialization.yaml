@@ -24,6 +24,7 @@ sections:
               - Plexus-Serialization-Snapshot-RoundTrip
               - Plexus-Serialization-Snapshot-Tree
               - Plexus-Serialization-Snapshot-Streams
+              - Plexus-Serialization-Snapshot-ColorText
             tests:
               - Serialization_DiagramJson_RichDiagram_RoundTripsExactly
 
@@ -97,6 +98,7 @@ sections:
             children:
               - Plexus-Serialization-Snapshot-RejectInvalidContent
               - Plexus-Serialization-Snapshot-RejectMalformedJson
+              - Plexus-Serialization-Snapshot-PayloadReadFailure
             tests:
               - Serialization_InvalidSnapshots_ThrowTheDocumentedExceptions
 
@@ -164,6 +166,7 @@ sections:
               - Plexus-Serialization-PlexusClipboard-ConsistencyValidation
               - Plexus-Serialization-PlexusClipboard-HostilePayload
               - Plexus-Serialization-PlexusClipboard-AtomicOnFailure
+              - Plexus-Serialization-PlexusClipboard-MissingTypeKey
             tests:
               - Serialization_InvalidClipboardContent_FailsWithoutChangingTheDiagram
 
@@ -185,14 +188,70 @@ sections:
 
           - id: Plexus-Serialization-DynamicPorts
             title: >-
-              Loading a snapshot, pasting and duplicating shall recompute each node's ports from its restored
-              properties and payload before its wires are connected, without storing port lists, and shall treat a
-              wire to a port that is not recomputed like a wire to any unknown port.
+              Loading a snapshot shall recompute each node's ports from its restored properties and payload before
+              its wires are connected.
             justification: |
-              Decomposes Plexus-Core-DynamicPorts; ports derive from configuration, so storing them would duplicate
-              state, while wires on computed ports must still be restored.
+              Decomposes Plexus-Core-DynamicPortLoad; ports derive from configuration, while wires on computed ports
+              must still be restored.
             children:
               - Plexus-Serialization-Snapshot-DynamicPorts
+              - Plexus-Serialization-Snapshot-DynamicPortBounds
+            tests:
+              - Serialization_DynamicPorts_RoundTripAndPaste_RecomputePortsBeforeWires
+
+          - id: Plexus-Serialization-DynamicPortsPaste
+            title: >-
+              Pasting shall recompute each pasted node's ports from its copied properties and payload before its wires
+              are connected.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortPaste; clipboard text holds no port lists either.
+            children:
               - Plexus-Serialization-PlexusClipboard-DynamicPorts
             tests:
               - Serialization_DynamicPorts_RoundTripAndPaste_RecomputePortsBeforeWires
+
+          - id: Plexus-Serialization-DynamicPortsDuplicate
+            title: >-
+              Duplicating shall recompute each copy's ports from its copied properties and payload before its wires
+              are connected.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortDuplicate; duplicate copies through the same content as paste.
+            children:
+              - Plexus-Serialization-PlexusClipboard-DynamicPortsDuplicate
+            tests:
+              - Serialization_DynamicPorts_RoundTripAndPaste_RecomputePortsBeforeWires
+
+          - id: Plexus-Serialization-NoStoredPorts
+            title: Saved diagrams and copied clipboard text shall hold no port lists of their nodes.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortLoad; storing ports would duplicate state that derives from the
+              configuration and could contradict it.
+            children:
+              - Plexus-Serialization-Snapshot-NoStoredPorts
+            tests:
+              - Serialization_DynamicPorts_Save_StoresNoPortLists
+
+          - id: Plexus-Serialization-DynamicPortUnknownPort
+            title: >-
+              Loading and pasting shall reject a wire to a port that the recomputed ports of its node do not include,
+              like a wire to any unknown port.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortLoad; content that no longer fits the host's port rules must be
+              refused rather than restored wrong.
+            children:
+              - Plexus-Serialization-Snapshot-DynamicPortMissing
+            tests:
+              - Serialization_DynamicPorts_WireToPortNotRecomputed_IsRejected
+
+          - id: Plexus-Serialization-DynamicPortProviderFailure
+            title: >-
+              When a port provider fails while content is loaded or pasted, loading shall throw a snapshot exception
+              and pasting shall return a failed result, both leaving the target unchanged.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortLoad; a host provider failure must be reported through the documented
+              import errors, never leave partial content behind.
+            children:
+              - Plexus-Serialization-Snapshot-DynamicPortProviderFailure
+              - Plexus-Serialization-PlexusClipboard-DynamicPortProviderFailure
+            tests:
+              - Serialization_DynamicPorts_ProviderFails_ReportsImportError

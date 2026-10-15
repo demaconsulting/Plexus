@@ -151,46 +151,128 @@ sections:
               - id: Plexus-Model-Node-DynamicPorts
                 title: >-
                   A node whose type has a port provider shall have the ports the provider returns for its current
-                  properties and payload, recomputed after each change of them; a port whose name remains within its
-                  direction shall keep its port object and wires and take its new row, label and type, new names
-                  shall get new ports, and a node of a type without a provider shall keep its declared ports.
+                  properties and payload.
                 justification: |
-                  Hosts and wires hold ports by reference; keeping them by name is what lets wires survive a
-                  reconfiguration such as adding channels or reordering outputs.
+                  Decomposes Plexus-Model-DynamicPorts; the node is where hosts and wires find the ports, so it must
+                  show the provider's ports as soon as it exists.
                 tests:
                   - Node_Ports_PortProvider_NewNodeUsesProviderPorts
-                  - Node_Ports_NoPortProvider_KeepsTypePorts
+
+              - id: Plexus-Model-Node-DynamicPortRecompute
+                title: >-
+                  A node whose type has a port provider shall recompute its ports after each change of its properties
+                  or payload.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPorts; ports that follow the configuration must change whenever the
+                  configuration changes, whichever member of the node was edited.
+                tests:
+                  - Node_Ports_DataChange_RecomputesPorts
+                  - Node_Ports_CountIncreased_AddsPortsKeepingExistingInstancesAndWires
+
+              - id: Plexus-Model-Node-DynamicPortIdentity
+                title: >-
+                  When a node's ports are recomputed, a port whose name remains within its direction shall keep its
+                  port object and its wires and take its new row, label and type.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortIdentity; hosts and wires hold ports by reference, and keeping them
+                  by name is what lets wires survive a reconfiguration such as adding channels or reordering outputs.
+                tests:
                   - Node_Ports_CountIncreased_AddsPortsKeepingExistingInstancesAndWires
                   - Node_Ports_RenamedByName_ReattachesWiresByName
-                  - Node_Ports_DataChange_RecomputesPorts
+                  - Node_Ports_SurvivingPortRetyped_KeepsWiresStillAllowed
+
+              - id: Plexus-Model-Node-DynamicPortNewNames
+                title: >-
+                  When a node's ports are recomputed, a port name that the node did not have in that direction shall
+                  get a new port object.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortIdentity; a new name is a new port that starts without wires.
+                tests:
+                  - Node_Ports_CountIncreased_AddsPortsKeepingExistingInstancesAndWires
+
+              - id: Plexus-Model-Node-StaticPorts
+                title: >-
+                  A node of a type without a port provider shall keep the type's declared ports when its properties or
+                  payload change.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPorts; most node types have fixed ports, and their nodes must not pay
+                  for or be affected by port recomputation.
+                tests:
+                  - Node_Ports_NoPortProvider_KeepsTypePorts
+
+              - id: Plexus-Model-Node-EmptyPortSet
+                title: >-
+                  When a port provider returns no ports for a direction, the node shall have no ports in that
+                  direction and the wires of its former ports there shall be removed.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPorts; a configuration may legitimately switch every port of a
+                  direction off, which is not a failure.
+                tests:
+                  - Node_Ports_ProviderReturnsEmptySet_RemovesEveryPortAndWire
 
               - id: Plexus-Model-Node-DynamicPortWires
                 title: >-
-                  When recomputed ports remove a port, its wires shall be removed; when a kept port changes its type
-                  or fan-in, each of its wires shall be checked again with the connection rules and removed when
-                  refused, and kept otherwise.
+                  When recomputed ports remove a port, the wires attached to that port shall be removed.
                 justification: |
-                  A wire must never end at a port the node no longer has or connect ports the host's rules forbid.
+                  Decomposes Plexus-Model-DynamicPortWireRemoval; a wire must never end at a port the node no longer
+                  has.
                 tests:
                   - Node_Ports_CountDecreased_RemovesPortsAndTheirWires
+
+              - id: Plexus-Model-Node-DynamicPortRevalidation
+                title: >-
+                  When a kept port changes its type or fan-in, each of its wires shall be checked again with the
+                  connection rules, removed when the rules refuse it and kept when they allow it.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortRuleRevalidation; a wire must never connect ports the host's rules
+                  forbid, and a wire the rules still allow must not be lost.
+                tests:
                   - Node_Ports_SurvivingPortRetyped_RemovesWiresTheRulesRefuse
                   - Node_Ports_SurvivingPortRetyped_KeepsWiresStillAllowed
                   - Node_Ports_SurvivingPortFanInRemoved_RemovesWiresTheRulesRefuse
+
+              - id: Plexus-Model-Node-DynamicPortRevalidationOrder
+                title: >-
+                  The wires of retyped ports shall be checked in page order, each as a reconnect of itself after the
+                  wires refused before it were removed, so that on an input that now accepts a single wire the wire
+                  latest in page order is kept.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortRuleRevalidation; which wire survives must be predictable and
+                  repeatable, and a wire must not count against its own port when it is judged.
+                tests:
+                  - Node_Ports_FanInRemoved_KeepsWireLatestInPageOrder
 
               - id: Plexus-Model-Node-DynamicPortSize
                 title: >-
                   When recomputed ports change the number of inputs or outputs, the node shall take the height its
                   longer port column needs but never less than its type's default height, keeping its position and
-                  width; the wires whose ends moved shall be re-routed and the frames of the groups around it shall
-                  follow.
+                  width.
                 justification: |
-                  Ports must stay inside the node box, and a node that loses ports should not stay taller than a
-                  freshly added node with the same ports; wires must stay attached to the moved anchors, as after any
-                  resize.
+                  Decomposes Plexus-Model-DynamicPortResize; ports must stay inside the node box, and a node that loses
+                  ports should not stay taller than a freshly added node with the same ports.
                 tests:
                   - Node_Ports_MorePortsThanHeight_GrowsNodeAndReroutesWires
                   - Node_Ports_FewerPorts_ShrinksToFitNotBelowDefaultHeight
                   - Node_Ports_DeclaredSize_ShrinksNotBelowDeclaredHeight
+                  - Node_Ports_ProviderReturnsEmptySet_RemovesEveryPortAndWire
+
+              - id: Plexus-Model-Node-DynamicPortReroute
+                title: >-
+                  When recomputed ports move the end anchor of a remaining wire of the node, that wire shall be
+                  re-routed.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortResize; wires must stay attached to the moved anchors, as after any
+                  resize.
+                tests:
+                  - Node_Ports_MorePortsThanHeight_GrowsNodeAndReroutesWires
+                  - Node_Ports_RenamedByName_ReattachesWiresByName
+
+              - id: Plexus-Model-Node-DynamicPortGroupFrame
+                title: >-
+                  When recomputed ports change a node, the frames of the groups around it shall follow.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortResize; a group frame must keep enclosing its members.
+                tests:
                   - Node_Ports_NodeInGroup_GroupFrameFollowsNewPorts
 
               - id: Plexus-Model-Node-DynamicPortKeepsSize
@@ -206,24 +288,66 @@ sections:
               - id: Plexus-Model-Node-DynamicPortUndo
                 title: >-
                   A property or payload change that recomputes ports shall be one undo entry whose undo and redo
-                  restore the value, the same port objects, the wires and the bounds exactly; a change that leaves the
-                  ports as they are shall record only the change; and a provider failure shall roll the change back,
-                  record nothing and report the error.
+                  restore the value, the same port objects, the wires and the bounds exactly.
                 justification: |
-                  Users undo what they did, not its internal steps; a failure must not leave a half-applied edit.
+                  Decomposes Plexus-Model-DynamicPortUndo; users undo what they did, not its internal steps.
                 tests:
                   - Node_Ports_PropertyChange_IsOneUndoEntryAndRoundTripsExactly
                   - Node_Ports_Shrink_UndoRedoRestoreExactBounds
+
+              - id: Plexus-Model-Node-UnchangedPorts
+                title: >-
+                  A property or payload change after which the provider returns equivalent ports shall record only the
+                  change and report no ports change.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortUndo; most edits do not affect the ports, and they must keep their
+                  plain undo entry (so consecutive edits still merge) and not make observers rebuild ports.
+                tests:
                   - Node_Ports_UnchangedPorts_RaisesNoPortsChangeAndOneEntry
+
+              - id: Plexus-Model-Node-ProviderFailure
+                title: >-
+                  When the port provider throws, builds an invalid port set, or a connection rule throws while wires
+                  are checked again, the property or payload change shall be rolled back with every step it caused,
+                  nothing shall be recorded, and the exception shall propagate.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortProviderFailure; a failure must never leave a half-applied edit in
+                  the model or the history.
+                tests:
                   - Node_Ports_ProviderDuplicateNames_ThrowsAndRevertsAssignment
+                  - Node_Ports_ProviderThrows_RevertsAssignmentAndPropagates
+                  - Node_Ports_RuleThrowsDuringRevalidation_RollsBackEverything
+
+              - id: Plexus-Model-Node-ProviderNull
+                title: >-
+                  When the port provider returns no port set, the change shall fail with an invalid-operation error
+                  naming the node type, and the change shall be reverted.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortProviderFailure; a missing result is a host bug that must be
+                  reported where it can be found, not turned into a node without ports.
+                tests:
                   - Node_Ports_ProviderReturnsNull_ThrowsInvalidOperation
 
               - id: Plexus-Model-Node-DynamicPortNotification
                 title: >-
-                  A recomputation of ports shall be reported through the diagram's change notifications, with the
-                  removal of each affected wire reported before the node reports its ports as changed.
+                  When a change recomputes a node's ports, the node shall report its ports as changed exactly once,
+                  after every wire removal, the new bounds and every re-routed wire of the recomputation have been
+                  applied and reported, followed by a bounds change of each enclosing group.
                 justification: |
-                  Hosts that track wires (for example to update their own data) must learn about wires removed by a
-                  port change through the notifications they already handle.
+                  Decomposes Plexus-Model-DynamicPortNotification; observers that react to the ports change (for
+                  example by rebuilding their view of the node) must see the settled model, and hosts that track wires
+                  must learn about removed wires first.
                 tests:
                   - Node_Ports_Change_ReportsWireRemovalsBeforePortsChanged
+                  - Node_Ports_RetypedPortRefusedWire_RemovedBeforePortsChanged
+                  - Node_Ports_Resize_BoundsAndRoutesSettledWhenPortsChanged
+
+              - id: Plexus-Model-Node-DynamicPortUndoNotification
+                title: >-
+                  Undo and redo of a change that recomputed a node's ports shall each report the node's ports as
+                  changed exactly once, after the wires, bounds, routes and the changed value are restored.
+                justification: |
+                  Decomposes Plexus-Model-DynamicPortNotification; observers must see a settled model whichever
+                  direction the history moves.
+                tests:
+                  - Node_Ports_Undo_ReportsPortsChangeOnceAfterRestore

@@ -2,7 +2,7 @@
 # Software Unit requirements for PlexusRendering IconCache.
 #
 # Decomposes the PlexusRendering icon requirement into the responsibility of the unit that rasterizes and caches
-# SVG icons. Tests are the IconCacheTests unit tests.
+# SVG icons. Each requirement states one criterion. Tests are the IconCacheTests unit tests.
 
 sections:
   - title: PlexusRendering Requirements
@@ -11,11 +11,19 @@ sections:
         requirements:
           - id: PlexusRendering-IconCache-SharedRasterization
             title: >-
-              The cache shall rasterize an icon once per pixel size and return the same surface for every later
-              request of that icon at that size, and a separate surface of the requested size for another size.
+              The cache shall return the same surface for every request of an icon at one pixel size, rasterizing
+              it only once.
             justification: |
               Decomposes PlexusRendering-Render-Icons; diagrams repeat the same few icons many times and
               rasterizing SVG is the most expensive step of painting a node.
+            tests:
+              - IconCache_Get_SameKeyAndSize_ReturnsSharedSurface
+
+          - id: PlexusRendering-IconCache-PerSizeSurface
+            title: The cache shall return a separate surface of the requested size for a request at another pixel size.
+            justification: |
+              Decomposes PlexusRendering-Render-Icons; an icon drawn at several zoom levels must be crisp at each,
+              so a bitmap of one size must not be stretched to another.
             tests:
               - IconCache_Get_SameKeyAndSize_ReturnsSharedSurface
 
@@ -30,12 +38,26 @@ sections:
               - IconCache_Get_MalformedSvg_ReturnsNull
 
           - id: PlexusRendering-IconCache-BoundedMemory
-            title: The cache shall not grow without bound when many different icons or icon sizes are requested.
+            title: The cache shall hold at most 512 rasterized icon sizes.
             justification: |
               Decomposes PlexusRendering-Render-Icons; hosts that animate zoom would otherwise accumulate one
-              bitmap per zoom step for the life of the process.
+              bitmap per zoom step for the life of the process. The limit is a stated number so it can be verified.
             tests:
+              - IconCache_Get_MoreSizesThanCapacity_NeverHoldsMoreThanCapacity
+              - IconCache_Shared_HasCapacityOf512
               - IconCache_Get_ManyDistinctIcons_KeepsCacheBounded
+
+          - id: PlexusRendering-IconCache-Eviction
+            title: >-
+              The cache shall, when a request for an icon size that is not cached finds the cache full, discard the
+              cached rasterizations before adding the new one.
+            justification: |
+              Decomposes PlexusRendering-Render-Icons; the eviction rule makes the memory bound objective: after any
+              single request the cache holds at most its capacity, and an icon requested after the discard is
+              rasterized again.
+            tests:
+              - IconCache_Get_FullCache_DiscardsEarlierRasterizations
+              - IconCache_Get_FullCacheCachedSize_KeepsEntries
 
           - id: PlexusRendering-IconCache-ConcurrentUse
             title: >-

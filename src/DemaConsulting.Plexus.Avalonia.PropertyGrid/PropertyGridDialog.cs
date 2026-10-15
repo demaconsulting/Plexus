@@ -133,9 +133,32 @@ public sealed class PropertyGridDialog : Window
     }
 
     /// <summary>
+    ///     Occurs when the close of the dialog is confirmed (OK, Cancel or the window's close button), before the grid leaves
+    ///     the window. It is not raised when a handler of <c>Closing</c> cancels the close.
+    /// </summary>
+    /// <remarks>
+    ///     Internal: the Plexus adapter layer uses it to dispose its preview context before the grid's session is replaced by
+    ///     the window's teardown, so the preview is never notified by a dialog that is closing.
+    /// </remarks>
+    internal event EventHandler? CloseConfirmed;
+
+    /// <summary>
     ///     Gets the grid that shows and edits the object.
     /// </summary>
     public PropertyGrid Grid { get; }
+
+    /// <summary>
+    ///     Raises <see cref="CloseConfirmed"/> when the close is not cancelled.
+    /// </summary>
+    /// <param name="e">The closing event data.</param>
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (!e.Cancel)
+        {
+            CloseConfirmed?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>
     ///     Shows the dialog modally.
@@ -148,10 +171,12 @@ public sealed class PropertyGridDialog : Window
     ///     A task that completes with <see langword="true"/> when the user pressed OK and the edits were committed, and
     ///     <see langword="false"/> when the user cancelled (the edits are discarded).
     /// </returns>
-    /// <exception cref="ArgumentNullException"><paramref name="owner"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="owner"/> or <paramref name="target"/> is <see langword="null"/>
+    ///     (checked before a window is created).</exception>
     public static Task<bool> ShowAsync(Window owner, object target, string? title = null, Action<Action>? commitScope = null)
     {
         ArgumentNullException.ThrowIfNull(owner);
+        ArgumentNullException.ThrowIfNull(target);
         return new PropertyGridDialog(target, title, commitScope).ShowDialog<bool>(owner);
     }
 

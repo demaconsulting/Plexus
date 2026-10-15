@@ -27,7 +27,10 @@ changes: element presence, group membership and layout. Duplicating elements is 
   positions of groups and old and new routes of wires, stored in first-seen order. Merging two commands for the same page
   keeps the first old and the last new value for every target, which makes a drag a single compact entry.
 - **Notifications**: the page raises a property change for its name; element additions and removals raise the diagram's
-  `Changed` event after the element is fully attached or detached.
+  `Changed` event after the element is fully attached or detached. The name change and the content lists (whose
+  `Insert` and `RemoveAt` raise their collection changes) are performed through the history's notification gate
+  (`InsertAt` and `RemoveFrom` are instance methods for that), so a list is already correct when its handlers run and a
+  throwing handler is reported after the change completed.
 
 #### Key Methods
 
@@ -97,16 +100,20 @@ changes: element presence, group membership and layout. Duplicating elements is 
   obstacles of the current layout are used.
 - **PlanPortUpdate(plan, node)** (internal, `DiagramPage.PortUpdates.cs`): plans everything a recomputation of a node's
   ports implies into the open plan of the triggering property or data change, in an order whose reverse restores the
-  model exactly: (1) asks for the change (`NodePortsCommand.TryCreate`; null means nothing to do), (2) removes the
-  wires of
-  removed ports in page order, (3) remembers the anchors of the node's remaining wires, (4) runs the port swap, (5)
-  checks each remaining wire on a retyped port with the connection rules as a reconnect of itself (so it does not count
-  against its own port) and removes it when refused, (6) when the number of inputs or outputs changed, sets the
+  model exactly: (1) asks for the change (`NodePortsCommand.TryCreate`; null means nothing to do) and records the
+  opening notification marker at the start of the plan (`CommandPlan.AddFirst`), (2) removes the wires of removed ports
+  in page order, (3) remembers the anchors of the node's remaining wires, (4) runs the port swap, (5) checks each
+  remaining wire on a retyped port with the connection rules, in page order (`Wires`), as a reconnect of itself (it
+  does not count against its own ports and is published as `WireBeingReconnected`) after the wires refused before it
+  were removed, and removes it when refused - so on an input that now accepts a single wire every earlier wire is
+  refused and the wire latest in page order survives, (6) when the number of inputs or outputs changed, sets the
   node's height to `NodeGeometry.ProviderNodeHeight` (the height its longer port column needs, never less than the
   type's default height - the sizing AddNode uses), keeping position and width, so it grows or shrinks; when both counts
   are unchanged it leaves the bounds alone (a size the host set survives a retype or relabel); and re-routes, through
-  one layout command, every remaining wire of the node whose anchor moved, like after a resize. Removed wires are
-  therefore reported through `Diagram.Changed` before the node reports `Ports`.
+  one layout command, every remaining wire of the node whose anchor moved, like after a resize, and (7) runs the
+  closing notification marker. Removed wires are therefore reported through `Diagram.Changed` before the node reports
+  `Ports`, and `Ports` (with the enclosing groups' `Bounds`) is reported once, when the model is settled; undo reports
+  it once after everything is restored (see Node Design).
 - **CreateGroup(members, title, id)**: ignores wires, requires members on this page that are ungrouped or share one
   parent, and as one multi-step operation adds the group, replaces the members in the parent by the new group, adds the
   members and records the collapsed position. **Ungroup / ReleaseGroup**: members take the frame's slot in the parent or

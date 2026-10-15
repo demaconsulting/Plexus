@@ -41,8 +41,9 @@ internal static class ElementImporter
         var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var node in nodes)
         {
+            // A blank key is invalid content, not a missing type; the builder reports it separately
             var key = node?.TypeKey;
-            if (key is not null && !types.Contains(key) && seen.Add(key))
+            if (!string.IsNullOrWhiteSpace(key) && !types.Contains(key) && seen.Add(key))
             {
                 missing.Add(key);
             }
@@ -86,6 +87,16 @@ internal static class ElementImporter
         /// <param name="missingNodeTypes">Missing node types when that is the problem, otherwise null.</param>
         public ImportException(string message, IReadOnlyList<string>? missingNodeTypes = null)
             : base(message) => MissingNodeTypes = missingNodeTypes;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ImportException"/> class for a problem caused by another exception.
+        /// </summary>
+        /// <param name="message">The problem description.</param>
+        /// <param name="innerException">The exception that caused the problem.</param>
+        public ImportException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
 
         /// <summary>
         ///     Gets the missing node type keys, or null.
@@ -189,6 +200,12 @@ internal static class ElementImporter
             if (total > _options.MaxElements)
             {
                 throw new ImportException($"The content has {total} elements; at most {_options.MaxElements} are accepted.");
+            }
+
+            // A node that names no type at all is invalid content (not an unknown type, never skipped)
+            if (nodes.Any(node => string.IsNullOrWhiteSpace(Require(node, "node").TypeKey)))
+            {
+                throw new ImportException("A node has no node type key.");
             }
 
             // Report all unknown node types together so the user can fix them in one go
@@ -385,6 +402,10 @@ internal static class ElementImporter
         /// <summary>
         ///     Builds a detached node.
         /// </summary>
+        /// <remarks>
+        ///     The type key was validated by <see cref="Build"/> before (not blank and registered), so the type lookup
+        ///     cannot fail here.
+        /// </remarks>
         /// <param name="snapshot">The node snapshot.</param>
         /// <param name="bounds">The validated source bounds.</param>
         /// <returns>The node.</returns>
@@ -414,18 +435,20 @@ internal static class ElementImporter
         ///     then fails like any unknown port.
         /// </remarks>
         /// <param name="node">The node.</param>
-        /// <exception cref="ImportException">Thrown when the provider fails.</exception>
+        /// <exception cref="ImportException">
+        ///     Thrown when the provider fails in any way except running out of memory (an exception of any type, a null
+        ///     result or an invalid port set); the provider's exception is kept as the inner exception.
+        /// </exception>
         private static void LoadPorts(Node node)
         {
             try
             {
                 node.InitializePorts();
             }
-            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or FormatException
-                or InvalidCastException or KeyNotFoundException or OverflowException)
+            catch (Exception ex) when (ex is not OutOfMemoryException)
             {
-                // Providers signal bad configuration with these; anything else is a real bug and propagates
-                throw new ImportException($"The ports of node '{node.Name}' (type '{node.Type.Key}') could not be computed: {ex.Message}");
+                // Host provider code is untrusted here: every non-fatal failure is an import problem, so the target stays unchanged
+                throw new ImportException($"The ports of node '{node.Name}' (type '{node.Type.Key}') could not be computed: {ex.Message}", ex);
             }
         }
 

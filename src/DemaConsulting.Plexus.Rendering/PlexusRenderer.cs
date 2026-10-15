@@ -14,6 +14,10 @@ namespace DemaConsulting.Plexus.Rendering;
 ///     layout matches the pixels), and the scene's primitives are painted with CanvasNet. The
 ///     renderer is stateless and thread-safe as long as the page is not modified concurrently.
 ///     The image covers the scene content plus padding unless explicit bounds are requested.
+///     Exceptions: invalid arguments throw <see cref="ArgumentNullException"/> or <see cref="ArgumentException"/>
+///     before any surface is allocated; failures of CanvasNet while painting or encoding, and of the file system in
+///     <see cref="SavePng"/>, propagate unchanged (a surface is disposed first); a failing icon is skipped. The
+///     renderer translates no exception.
 /// </remarks>
 /// <example>
 ///     Render a page with the diagram's own look, then a 2x copy of a fixed area with a transparent background.
@@ -65,12 +69,19 @@ public static class PlexusRenderer
     /// <summary>
     ///     Renders a page and writes the PNG to a file, replacing any existing file.
     /// </summary>
-    /// <remarks>The folder of <paramref name="path"/> must already exist; it is not created (a missing folder throws <see cref="DirectoryNotFoundException"/>).</remarks>
+    /// <remarks>
+    ///     The folder of <paramref name="path"/> must already exist; it is not created (a missing folder throws
+    ///     <see cref="DirectoryNotFoundException"/>). The image is rendered completely before the file is opened, so an
+    ///     invalid argument or a rendering failure never creates, truncates or replaces a file. File-system failures
+    ///     while writing propagate unchanged; the renderer translates no exception.
+    /// </remarks>
     /// <param name="page">The page to render. Must not be null.</param>
     /// <param name="path">The destination file path. Must not be null or empty.</param>
     /// <param name="options">The render options; null uses the default <see cref="RenderOptions"/>.</param>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="page"/> is null.</exception>
     /// <exception cref="ArgumentException">Thrown when <paramref name="path"/> is empty or the options are invalid.</exception>
+    /// <exception cref="IOException">Thrown when the file cannot be written, including a missing folder (<see cref="DirectoryNotFoundException"/>) and a path that is too long.</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the caller may not write the file.</exception>
     public static void SavePng(DiagramPage page, string path, RenderOptions? options = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);

@@ -221,8 +221,10 @@ public sealed partial class Node : DiagramElement
     ///     </para>
     ///     <para>
     ///         Hosts observe a recomputation through <see cref="DiagramElement.PropertyChanged"/> and <see cref="Diagram.Changed"/>
-    ///         with the property name <c>Ports</c>, raised after the removal of the affected wires has been reported.
-    ///         Copy the list (for example with <c>ToList()</c>) to keep a snapshot.
+    ///         with the property name <c>Ports</c>, raised exactly once per change, undo and redo, after the model is settled:
+    ///         after every wire removal (or re-add on undo), the node's new bounds and every re-routed wire, followed by a
+    ///         <c>Bounds</c> change of each enclosing group. A recomputation that fails is rolled back without a <c>Ports</c>
+    ///         notification. Copy the list (for example with <c>ToList()</c>) to keep a snapshot.
     ///     </para>
     /// </remarks>
     public IReadOnlyList<Port> Ports { get; }

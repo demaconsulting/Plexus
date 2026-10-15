@@ -67,7 +67,41 @@ public class CanvasTextMeasurerTests
     }
 
     /// <summary>
-    ///     Validates that empty text has no width and degenerate sizes measure as empty.
+    ///     Validates that every text of one style has the same line height, whatever its length or glyphs.
+    /// </summary>
+    [Fact]
+    public void CanvasTextMeasurer_Measure_DifferentTexts_ShareLineHeight()
+    {
+        // Arrange
+        var measurer = new CanvasTextMeasurer();
+
+        // Act
+        var heights = new[] { "a", "Hello", "WWWWWWWW", "line with spaces" }.Select(text => measurer.Measure(text, Regular).Height).ToList();
+
+        // Assert
+        Assert.All(heights, height => Assert.Equal(heights[0], height));
+    }
+
+    /// <summary>
+    ///     Validates that an empty string (as opposed to null) measures zero width and the line height of the style.
+    /// </summary>
+    [Fact]
+    public void CanvasTextMeasurer_Measure_EmptyString_HasZeroWidth()
+    {
+        // Arrange
+        var measurer = new CanvasTextMeasurer();
+
+        // Act
+        var empty = measurer.Measure(string.Empty, Regular);
+        var text = measurer.Measure("abc", Regular);
+
+        // Assert
+        Assert.Equal(0, empty.Width);
+        Assert.Equal(text.Height, empty.Height);
+    }
+
+    /// <summary>
+    ///     Validates that empty text has no width and a zero font size measures as empty.
     /// </summary>
     [Fact]
     public void CanvasTextMeasurer_Measure_EmptyTextOrZeroSize_HasNoWidth()
@@ -82,6 +116,20 @@ public class CanvasTextMeasurerTests
         // Assert
         Assert.Equal(0, empty.Width);
         Assert.Equal(DemaConsulting.Plexus.Geometry.Size.Empty, zero);
+    }
+
+    /// <summary>
+    ///     Validates that negative, NaN and infinite font sizes measure as an empty size instead of failing.
+    /// </summary>
+    [Fact]
+    public void CanvasTextMeasurer_Measure_NegativeOrNonFiniteFontSize_IsEmpty()
+    {
+        // Arrange
+        var measurer = new CanvasTextMeasurer();
+        double[] sizes = [-1, double.NaN, double.PositiveInfinity, double.NegativeInfinity];
+
+        // Act / Assert
+        Assert.All(sizes, size => Assert.Equal(DemaConsulting.Plexus.Geometry.Size.Empty, measurer.Measure("abc", Regular with { FontSize = size })));
     }
 
     /// <summary>

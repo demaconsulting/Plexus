@@ -43,6 +43,7 @@ sections:
                 tests:
                   - PropertyBag_Set_IncompatibleValues_ThrowArgumentException
                   - PropertyBag_Set_ChoiceOutsideOptions_ThrowsArgumentException
+                  - PropertyBag_Set_Int64NotExactlyRepresentableAsDouble_ThrowsArgumentException
 
               - id: Plexus-Properties-PropertyBag-AdHoc
                 title: >-
@@ -146,14 +147,39 @@ sections:
 
               - id: Plexus-Properties-PropertyBag-PortRecompute
                 title: >-
-                  PropertyBag shall recompute the node's ports after setting (a declared or an ad-hoc value), resetting
-                  (including removing an ad-hoc value) or batch-editing a property of a node whose type has a port
-                  provider, as part of the same single undo entry.
+                  PropertyBag shall recompute the node's ports after a declared property of a node whose type has a
+                  port provider is set, as part of the assignment's single undo entry.
                 justification: |
                   A property edit and the port change it causes are one user action and must undo together.
                 tests:
                   - PropertyBag_Set_ProviderProperty_RecomputesPortsInSameEntry
-                  - PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry
+
+              - id: Plexus-Properties-PropertyBag-PortRecomputeReset
+                title: >-
+                  PropertyBag shall recompute the node's ports after a declared property of a node whose type has a
+                  port provider is reset, as part of the reset's single undo entry.
+                justification: |
+                  Decomposes Plexus-Properties-PortRecomputeReset; resetting a property can change the ports just
+                  like setting it.
+                tests:
                   - PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts
+
+              - id: Plexus-Properties-PropertyBag-PortRecomputeBatch
+                title: >-
+                  PropertyBag shall recompute the node's ports once after a batch edit of a node whose type has a
+                  port provider, as part of the batch edit's single undo entry.
+                justification: |
+                  Decomposes Plexus-Properties-PortRecomputeBatch; a dialog applying several values is one user
+                  action.
+                tests:
+                  - PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry
+
+              - id: Plexus-Properties-PropertyBag-PortRecomputeAdHoc
+                title: >-
+                  PropertyBag shall recompute the node's ports after an ad-hoc value of a node whose type has a port
+                  provider is set or removed, as part of that change's single undo entry.
+                justification: |
+                  Decomposes Plexus-Properties-PortRecomputeAdHoc; a provider may read undeclared values too.
+                tests:
                   - PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry
                   - PropertyBag_Reset_AdHocProviderValue_RecomputesPortsInSameEntry

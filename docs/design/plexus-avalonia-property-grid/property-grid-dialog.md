@@ -22,10 +22,15 @@ commits the edits (inside the host's commit scope, so the dialog is one undo ste
 ### Key Methods
 
 - **`ShowAsync`** — creates the dialog and shows it modally; the task completes with true after a successful OK and false
-  after Cancel.
+  after Cancel. A null owner or target is rejected before any window is created.
 - **`Accept` (OK)** — refuses while the session has errors: it selects the first row with an error and shows the
   reason in the status line. Otherwise it commits; when the commit reports a failure the dialog stays open with the
   reason and the failed edits stay pending with their errors. On success it closes with true.
+- **`CloseConfirmed`** (internal event) and **`OnClosing`** — the window's closing override raises `CloseConfirmed`
+  once, after the base class has run the `Closing` handlers, when no handler cancelled the close; this is the moment
+  just before the window and its grid are torn down, for OK, the Cancel button and the window's close button alike.
+  Nothing is raised when a handler vetoes the close. The Plexus adapter layer uses it to dispose its preview context,
+  so a closing dialog raises no preview notification. It uses only Avalonia types.
 - **`GetDefaultTitle`** — the default title.
 - **`SetPreview(control, dock, size)`** (internal) — shows a control next to the grid: it wraps it in a border with the
   automation id `PropertyGridDialog_Preview`, the automation name "Preview" (exposed to UI Automation as a content
@@ -35,7 +40,8 @@ commits the edits (inside the host's commit scope, so the dialog is one undo ste
 
 ### Error Handling
 
-Invalid input and failed commits are shown, never thrown; a null owner or target raises `ArgumentNullException`.
+Invalid input and failed commits are shown, never thrown; a null owner or target raises `ArgumentNullException`, from
+`ShowAsync` before a window is created and from the constructor.
 
 ### Dependencies
 

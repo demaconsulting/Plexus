@@ -379,4 +379,72 @@ public class NodeTypeRegistryTests
         Assert.Contains("t.Broken", ex.Message, StringComparison.Ordinal);
         Assert.Empty(page.Nodes);
     }
+
+    /// <summary>
+    ///     Validates that an empty port set is a valid provider result that gives a node without ports.
+    /// </summary>
+    [Fact]
+    public void NodeType_PortProvider_EmptyPortSet_AddsNodeWithoutPorts()
+    {
+        // Arrange: declared defaults, but a provider that returns nothing in either direction
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("t.Empty")
+        {
+            Inputs = { new PortDefinition("x", "f32") },
+            Outputs = { new PortDefinition("y", "f32") },
+            PortProvider = _ => new PortSet([], []),
+        });
+        var page = new Diagram(types).Pages.Add("P");
+
+        // Act
+        var node = page.AddNode("t.Empty", 0, 0);
+
+        // Assert: the node was added without ports
+        Assert.Same(node, Assert.Single(page.Nodes));
+        Assert.Empty(node.Inputs);
+        Assert.Empty(node.Outputs);
+    }
+
+    /// <summary>
+    ///     Validates that a tooltip function returning null or an empty string means no tooltip, not the description.
+    /// </summary>
+    [Fact]
+    public void NodeType_GetToolTip_FunctionReturnsNullOrEmpty_DoesNotUseDescription()
+    {
+        // Arrange: two types with a description and a tooltip function that yields nothing
+        var types = new NodeTypeRegistry();
+        var nullTip = new NodeType("t.NullTip") { Description = "described", ToolTip = _ => null };
+        var emptyTip = new NodeType("t.EmptyTip") { Description = "described", ToolTip = _ => string.Empty };
+        types.Add(nullTip);
+        types.Add(emptyTip);
+        var page = new Diagram(types).Pages.Add("P");
+
+        // Act
+        var fromNull = nullTip.GetToolTip(page.AddNode("t.NullTip", 0, 0));
+        var fromEmpty = emptyTip.GetToolTip(page.AddNode("t.EmptyTip", 0, 0));
+
+        // Assert: the function's result is returned unchanged
+        Assert.Null(fromNull);
+        Assert.Equal(string.Empty, fromEmpty);
+    }
+
+    /// <summary>
+    ///     Validates that an exception thrown by the tooltip function reaches the caller unchanged.
+    /// </summary>
+    [Fact]
+    public void NodeType_GetToolTip_FunctionThrows_PropagatesException()
+    {
+        // Arrange
+        var failure = new InvalidOperationException("tooltip failed");
+        var types = new NodeTypeRegistry();
+        var type = new NodeType("t.Failing") { Description = "described", ToolTip = _ => throw failure };
+        types.Add(type);
+        var node = new Diagram(types).Pages.Add("P").AddNode("t.Failing", 0, 0);
+
+        // Act
+        var thrown = Assert.Throws<InvalidOperationException>(() => type.GetToolTip(node));
+
+        // Assert: the same exception instance, not wrapped
+        Assert.Same(failure, thrown);
+    }
 }

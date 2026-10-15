@@ -85,6 +85,49 @@ public class DiagramEditorToolTipTests
     });
 
     /// <summary>
+    ///     Validates that a node type's tooltip function returning an empty string or null means no tooltip, not the description.
+    /// </summary>
+    [Fact]
+    public Task DiagramEditor_GetToolTipContent_NodeFunctionReturnsEmpty_IsNull() => RunWithBus(host =>
+    {
+        // Arrange: two types whose tooltip function returns "" and null although they have a description
+        var empty = host.Page.AddNode("test.EmptyTip", 0, 0);
+        var none = host.Page.AddNode("test.NullTip", 300, 0);
+
+        // Act
+        var emptyContent = host.Editor.GetToolTipContent(empty);
+        var nullContent = host.Editor.GetToolTipContent(none);
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Null(emptyContent),
+            () => Assert.Null(nullContent));
+    });
+
+    /// <summary>
+    ///     Validates that a group, which has no default tooltip, shows what a handler supplies.
+    /// </summary>
+    [Fact]
+    public Task DiagramEditor_GetToolTipContent_GroupWithHandlerContent_ReturnsHandlerContent() => UiTest.Run(host =>
+    {
+        // Arrange: a handler that describes groups
+        var group = host.Page.CreateGroup([host.AddSource(300, 300)], "G");
+        host.Editor.ToolTipRequested += (_, e) =>
+        {
+            if (e.Element is Group g)
+            {
+                e.Content = $"Group {g.Title}";
+            }
+        };
+
+        // Act
+        var content = host.Editor.GetToolTipContent(group);
+
+        // Assert
+        Assert.Equal("Group G", content);
+    });
+
+    /// <summary>
     ///     Validates that a handler sees the default and can replace or suppress it.
     /// </summary>
     [Fact]
@@ -288,13 +331,17 @@ public class DiagramEditorToolTipTests
         var afterOff = ToolTip.GetTip(host.Editor);
         Hover(host, new Point(700, 550));
         Hover(host, host.CenterOf(bus));
+        var hoverRequests = requests;
+        var queried = host.Editor.GetToolTipContent(bus);
 
-        // Assert: one request while on, none after
+        // Assert: one request while on, none by hovering after, and the content query ignores the setting
         Assert.Multiple(
             () => Assert.NotNull(shown),
             () => Assert.Null(afterOff),
             () => Assert.Null(ToolTip.GetTip(host.Editor)),
-            () => Assert.Equal(1, requests));
+            () => Assert.Equal(1, hoverRequests),
+            () => Assert.Equal("Merges channels.", queried),
+            () => Assert.Equal(2, requests));
     });
 
     /// <summary>
@@ -319,6 +366,8 @@ public class DiagramEditorToolTipTests
         types.Add(new NodeType("test.Live") { Title = "LIVE", Description = "unused", ToolTip = node => $"{node.Name} is live" });
         types.PortTypes.Add(new PortType("flag", Geometry.Color.Parse("#2EBF5B")) { DisplayName = "Flag value" });
         types.Add(new NodeType("test.Flag") { Title = "FLAG", Outputs = { new PortDefinition("on", "flag") } });
+        types.Add(new NodeType("test.EmptyTip") { Title = "EMPTY", Description = "Has a description", ToolTip = _ => string.Empty });
+        types.Add(new NodeType("test.NullTip") { Title = "NULL", Description = "Has a description", ToolTip = _ => null });
     }
 
     /// <summary>

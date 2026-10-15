@@ -28,13 +28,15 @@ sections:
 
           - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder
             title: >-
-              The rows of declared properties shall carry their definition's display order as their item rank, so a
-              category lists them in ascending definition order, with equal orders alphabetical.
+              The node source shall list the rows of declared properties within their category by ascending display
+              order of their definitions (a negative order first), with equal orders alphabetical by display name,
+              ignoring case and culture.
             justification: |
-              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; a node type that declares an order (an envelope's
-              attack, decay, sustain and release) must be shown in that order, not alphabetically.
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-NodePropertyOrder; a node type that declares an order (an
+              envelope's attack, decay, sustain and release) must be shown in that order, not alphabetically.
             tests:
               - NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder
+              - NodePropertySource_GetItems_EqualOrder_ListsAlphabetically
 
           - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Validation
             title: >-

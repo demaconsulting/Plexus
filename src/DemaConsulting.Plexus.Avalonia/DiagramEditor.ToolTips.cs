@@ -34,7 +34,9 @@ public sealed partial class DiagramEditor
     ///         request is in progress and <see cref="ShowToolTips"/> is true. <see cref="DiagramToolTipRequestedEventArgs.Content"/>
     ///         carries the editor's default text (see <see cref="GetToolTipContent"/>); replace it, for example with the host's
     ///         validation messages or live values, or set <see cref="DiagramToolTipRequestedEventArgs.Cancel"/> to show nothing.
-    ///         Also raised by <see cref="GetToolTipContent"/>.
+    ///         Setting <see cref="DiagramToolTipRequestedEventArgs.Content"/> to null or an empty string also shows nothing.
+    ///         A handler may supply content for annotations and groups, which have no default text.
+    ///         Also raised by <see cref="GetToolTipContent"/>, which does not depend on <see cref="ShowToolTips"/>.
     ///     </para>
     ///     <para>
     ///         The tooltip itself is Avalonia's: it opens after <c>ToolTip.ShowDelay</c> near the pointer (<c>ToolTip.Placement</c>
@@ -65,7 +67,8 @@ public sealed partial class DiagramEditor
     ///     Gets or sets a value indicating whether hovering nodes, ports and wires shows tooltips (default true).
     /// </summary>
     /// <remarks>
-    ///     Turning it off hides a tooltip that is showing and stops <see cref="ToolTipRequested"/> from being raised by hovering.
+    ///     Turning it off hides a tooltip that is showing; while it is false hovering neither sets a tooltip nor raises
+    ///     <see cref="ToolTipRequested"/>. It does not affect <see cref="GetToolTipContent"/>, which always raises the event.
     /// </remarks>
     public bool ShowToolTips
     {
@@ -79,14 +82,17 @@ public sealed partial class DiagramEditor
     /// <remarks>
     ///     <para>
     ///         The default text is: for a port, <c>"label (type)"</c> where type is the <c>PortType.DisplayName</c> of the port's
-    ///         type (its key when the type is not registered), followed by the port's description on a new line when it has one;
-    ///         for a node, <c>NodeType.GetToolTip</c> (the type's tooltip function, else its description); for a wire,
-    ///         <c>"source → target"</c> (for example <c>"A.out → B.in"</c>); for annotations and groups, nothing.
+    ///         type (the type key itself when the type is not registered), followed by the port's description on a new line when
+    ///         it has one; for a node, <c>NodeType.GetToolTip</c> (the type's tooltip function when it has one, else its description;
+    ///         a null or empty result means no tooltip and the description is not used instead); for a wire,
+    ///         <c>"source → target"</c> (for example <c>"A.out → B.in"</c>); for annotations and groups, nothing unless a handler
+    ///         supplies content.
     ///     </para>
     ///     <para>
     ///         Raises <see cref="ToolTipRequested"/> with that default, then returns what the handlers left. Usable for any element,
     ///         also one on another page, for example to show the same text in a host's own panel or in automation. Does not depend
-    ///         on <see cref="ShowToolTips"/>.
+    ///         on <see cref="ShowToolTips"/>. An exception thrown by a node type's tooltip function or by a handler propagates
+    ///         unchanged to the caller (and, while hovering, out of the pointer-move handling); the editor never swallows it.
     ///     </para>
     /// </remarks>
     /// <param name="element">The element; for a port, the port's node.</param>
