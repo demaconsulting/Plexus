@@ -168,4 +168,37 @@ public class IconCacheTests
         Assert.NotNull(results[0]);
         Assert.All(results, result => Assert.Same(results[0], result));
     }
+
+    /// <summary>
+    ///     Validates that concurrent requests for many distinct sizes never make the cache hold more than its capacity.
+    /// </summary>
+    [Fact]
+    public void IconCache_Get_ConcurrentMisses_NeverHoldMoreThanCapacity()
+    {
+        // Arrange: a small cache and many threads that each request their own distinct sizes, so most requests miss at once
+        const int capacity = 4;
+        var cache = new IconCache(capacity);
+        var icon = UniqueIcon("#00FFFF");
+        var largest = 0;
+        var gate = new Lock();
+
+        // Act: after every request each thread records the largest count it observed
+        Parallel.For(0, 16, new ParallelOptions { MaxDegreeOfParallelism = 16 }, thread =>
+        {
+            for (var step = 0; step < 40; step++)
+            {
+                var size = 1 + (thread * 40) + step;
+                cache.Get(icon, size, size);
+                var count = cache.Count;
+                lock (gate)
+                {
+                    largest = Math.Max(largest, count);
+                }
+            }
+        });
+
+        // Assert
+        Assert.InRange(largest, 1, capacity);
+        Assert.InRange(cache.Count, 1, capacity);
+    }
 }

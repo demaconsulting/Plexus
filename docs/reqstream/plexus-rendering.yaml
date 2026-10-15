@@ -238,6 +238,7 @@ sections:
         tags: [system]
         children:
           - PlexusRendering-IconCache-ConcurrentUse
+          - PlexusRendering-IconCache-ConcurrentBound
           - PlexusRendering-CanvasTextMeasurer-Deterministic
         tests:
           - PlexusRendering_Render_ConcurrentCalls_ProduceIdenticalImages

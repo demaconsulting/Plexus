@@ -67,3 +67,13 @@ sections:
               Decomposes PlexusRendering-Render-Concurrency; renders on several threads share the cache.
             tests:
               - IconCache_Get_ConcurrentRequests_ReturnTheSameSurface
+
+          - id: PlexusRendering-IconCache-ConcurrentBound
+            title: >-
+              The cache shall hold at most its capacity of rasterized icon sizes also while several threads request
+              icon sizes that are not cached at the same time.
+            justification: |
+              Decomposes PlexusRendering-Render-Concurrency; the stated memory bound must hold for the renders that
+              share the cache on several threads, not only for one render at a time.
+            tests:
+              - IconCache_Get_ConcurrentMisses_NeverHoldMoreThanCapacity

@@ -40,3 +40,6 @@ capacity of 512.
   rejected.
 - **IconCache_Get_ConcurrentRequests_ReturnTheSameSurface**: thirty-two parallel requests for one icon and size all
   return the same surface.
+- **IconCache_Get_ConcurrentMisses_NeverHoldMoreThanCapacity** (`PlexusRendering-IconCache-ConcurrentBound`): sixteen
+  threads each request forty distinct sizes of one icon from a cache of capacity four; the largest count observed after
+  any request, and the final count, never exceed four.

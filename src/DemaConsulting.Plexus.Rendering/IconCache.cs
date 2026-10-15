@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text;
 using DemaConsulting.CanvasNet.Canvas;
 using DemaConsulting.CanvasNet.Svg;
@@ -18,10 +17,9 @@ namespace DemaConsulting.Plexus.Rendering;
 ///     <see cref="Capacity"/> (<see cref="DefaultCapacity"/> for <see cref="Shared"/>): a request for an
 ///     uncached icon size that finds the cache full first discards every cached rasterization and then
 ///     adds the new one, because hosts that animate zoom levels would otherwise accumulate one surface
-///     per zoom step. After any single-threaded request the cache therefore holds at most
-///     <see cref="Capacity"/> entries; concurrent requests may transiently exceed the bound by the number
-///     of racing threads. The painter uses the <see cref="Shared"/> instance; tests create private
-///     instances with a small capacity.
+///     per zoom step. The lookup, eviction and insertion run under one lock (rasterizing does not), so the cache never holds
+///     more than <see cref="Capacity"/> entries, also when several renders request icons at once. The painter uses the
+///     <see cref="Shared"/> instance; tests create private instances with a small capacity.
 /// </remarks>
 internal sealed class IconCache
 {
@@ -31,9 +29,15 @@ internal sealed class IconCache
     public const int DefaultCapacity = 512;
 
     /// <summary>
-    ///     Rasterized icons keyed by icon key and pixel size; null marks an icon that failed to load.
+    ///     Rasterized icons keyed by icon key and pixel size; null marks an icon that failed to load. Guarded by <see cref="_gate"/>.
     /// </summary>
-    private readonly ConcurrentDictionary<(string Key, int Width, int Height), Surface?> _cache = new();
+    private readonly Dictionary<(string Key, int Width, int Height), Surface?> _cache = [];
+
+    /// <summary>
+    ///     Serializes the lookup, eviction and insertion so the capacity also holds under concurrent renders; rasterizing runs
+    ///     outside it.
+    /// </summary>
+    private readonly Lock _gate = new();
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="IconCache"/> class.
@@ -59,7 +63,16 @@ internal sealed class IconCache
     /// <summary>
     ///     Gets the number of rasterizations currently cached.
     /// </summary>
-    public int Count => _cache.Count;
+    public int Count
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _cache.Count;
+            }
+        }
+    }
 
     /// <summary>
     ///     Gets the rasterized icon for a pixel size, rasterizing it on the first request.
@@ -70,15 +83,35 @@ internal sealed class IconCache
     /// <returns>The shared surface (straight alpha, transparent background), or null when the SVG cannot be rasterized.</returns>
     public Surface? Get(IconSource icon, int width, int height)
     {
-        // Bound the memory held by stale sizes: a new size that finds the cache full empties it first.
-        // Losing the cache only costs a re-rasterization
         var key = (icon.Key, width, height);
-        if (!_cache.ContainsKey(key) && _cache.Count >= Capacity)
+        lock (_gate)
         {
-            _cache.Clear();
+            if (_cache.TryGetValue(key, out var cached))
+            {
+                return cached;
+            }
         }
 
-        return _cache.GetOrAdd(key, static (_, state) => Rasterize(state.Icon, state.Width, state.Height), (Icon: icon, Width: width, Height: height));
+        // Rasterizing is slow, so it runs outside the lock; two threads missing the same key at once may both rasterize
+        var surface = Rasterize(icon, width, height);
+        lock (_gate)
+        {
+            // A racing thread that stored the key first wins, so every caller shares one surface
+            if (_cache.TryGetValue(key, out var winner))
+            {
+                return winner;
+            }
+
+            // Bound the memory held by stale sizes: a new size that finds the cache full empties it first.
+            // Losing the cache only costs a re-rasterization
+            if (_cache.Count >= Capacity)
+            {
+                _cache.Clear();
+            }
+
+            _cache.Add(key, surface);
+            return surface;
+        }
     }
 
     /// <summary>
