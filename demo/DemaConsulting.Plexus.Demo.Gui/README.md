@@ -31,23 +31,30 @@ Features each domain shows off:
 - Ports that vary per node: AND, OR and XOR have an `Inputs` property (2 to 8, edited with a number box; other
   values are clamped). A `NodeType.PortProvider` (`DemoNodeTypes.GatePorts`) gives the gate that many inputs named
   `a`, `b`, `c`, ...: raising the count adds inputs and makes the gate taller, lowering it removes the last inputs and
-  their wires, all in one undo entry, and wires on the inputs that remain stay connected. Two-input gates are exactly
-  the gates of earlier versions, so older files load unchanged. AND is on when every input is on, OR when any is, and
-  XOR when an odd number are (parity). The `logic` sample has a three-input AND gate (`All`).
+  their wires and shrinks the gate back (never below its default size), all in one undo entry, and wires on the inputs
+  that remain stay connected. Two-input gates are exactly the gates of earlier versions, so older files load unchanged.
+  AND is on when every input is on, OR when any is, and XOR when an odd number are (parity); an unconnected input counts
+  as off. The `logic` sample has a three-input AND gate (`All`) with a note explaining the `Inputs` property.
 - Tooltips: rest the pointer on a node, a port or a wire. Ports show their label, type (`Boolean`, `Number`, ...) and
-  description; logic nodes show their live state (a switch on or off, a gate's output, a lamp lit or dark) from their
-  `NodeType.ToolTip`; other nodes show their `NodeType.Description`; wires show `source → target`, and the window's
-  `DiagramEditor.ToolTipRequested` handler adds `= on` or `= off` to boolean wires and gives an oscillator a control
-  as its tooltip: a small waveform thumbnail of its current settings above its name and a short description such as
-  `Sine, 440 Hz`. View > Show Tooltips turns them off.
-- Audio inspectors: the oscillator (Waveform, Frequency, Phase in degrees, and Amplitude 0 to 1 and DC Offset under
-  Level), the envelope and the filter open a custom inspector: the library's properties dialog with a live preview next
+  description (every demo port has one). Every node type has a `NodeType.Description`, and most add a live summary of
+  their current values from their `NodeType.ToolTip` (a pump `Water · 12 L/min · 20 m`, a filter `Low-pass, 900 Hz`,
+  an envelope `A 10 ms · D 120 ms · S 70 % · R 300 ms`; logic nodes their live state: a switch on or off, a gate's
+  output, a lamp lit or dark). Wires show `source → target`, and the window's `DiagramEditor.ToolTipRequested` handler
+  adds `= on` or `= off` to boolean wires and gives an oscillator, an envelope and a filter a control as their tooltip:
+  a small plot thumbnail of their current settings (waveform, ADSR curve or magnitude response) above their name and
+  the short summary, such as `Sine, 440 Hz`. View > Show Tooltips turns them off.
+- Audio inspectors: the oscillator (under Oscillator: Waveform, Frequency, Amplitude 0 to 1, Phase in degrees and DC
+  Offset), the envelope (under Envelope: Attack, Decay, Sustain and Release, in that order, through
+  `PropertyDefinition.Order`) and the filter (under Filter: Type, then Cutoff) open a custom inspector: the library's
+  properties dialog with a live preview next
   to the grid. The oscillator shows two cycles of its signal against time (ms) with amplitude grid lines, the envelope its
   ADSR curve with the A, D, S and R phases (an illustrative 200 ms sustain hold), and the filter its magnitude response
   (a second-order model) from 20 Hz to 20 kHz on a logarithmic axis with the cutoff marked and a dB axis. The previews
   redraw on every committed edit, reset and cancel, before OK. The math is in the model (`AudioPreview`,
   `OscillatorSettings`, `EnvelopeSettings`, `FilterSettings`) and the plots are drawn by a small theme-aware control
-  (`Inspectors/SignalPlot.cs`) that follows light and dark mode. Files saved before the new oscillator properties
+  (`Inspectors/SignalPlot.cs`) that follows light and dark mode; its phase labels stay inside the plot area, clear of
+  the axis labels and of each other (a label with no room near its phase is left out), and the vertical axis title
+  starts at the plot's left edge so it never covers the top tick label. Files saved before the new oscillator properties
   existed load with their defaults.
 - Workflow: `Task` nodes carry a `TaskDetails` host data object whose annotations show off the property grid (see
   Host data and the property grid below), edited in the properties dialog and in the properties panel.
@@ -324,9 +331,9 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
 - `zoom-to` (`ids` or `names`, `margin?` default 30) -> `{page,zoom,offsetX,offsetY}`; `DiagramEditor.ZoomToFit` of
   the elements (the first element's page is shown).
 - `tooltip` (`element` or `node`, or `port` + optional `direction`) -> `{text,preview}`: the tooltip the editor would
-  show (`DiagramEditor.GetToolTipContent`), or a null `text` when there is none. When the tooltip is a control (an
-  oscillator's waveform thumbnail), `text` is the texts of its text blocks, one per line (for example
-  `Osc1\nSaw, 220 Hz`), and `preview` is true; for text tooltips `preview` is false.
+  show (`DiagramEditor.GetToolTipContent`), or a null `text` when there is none. When the tooltip is a control (the
+  plot thumbnail of an oscillator, envelope or filter), `text` is the texts of its text blocks, one per line (for example
+  `Osc1\nSaw, 220 Hz` or `Tone\nLow-pass, 900 Hz`), and `preview` is true; for text tooltips `preview` is false.
 - `save` (`path?`, default the current file) -> `{path}`; `open` (`path`) -> like `info`, without an unsaved-changes
   prompt; `new` -> like `info`.
 - `render` (`path`, `page?`, `scale?`) -> `{path,page,bytes}`; writes a PNG through `PlexusRenderer`.
@@ -364,6 +371,7 @@ element is scrolled out of the editor; `view` with `fit` or an offset brings it 
 
 `test/DemaConsulting.Plexus.Demo.Tests` covers the command line (`GuiOptions`), the properties dialog and panel (the
 library grid in the demo, the host data annotations, the collection editor, the slider editor and the audio inspectors
-with their live previews, the oscillator tooltip and the plot control), the audio preview math (`AudioPreviewTests`),
+with their live previews, the oscillator, envelope and filter tooltips, the plot control and its label layout
+(`SignalPlotLayoutTests`)), the audio preview math (`AudioPreviewTests`),
 the automation dispatcher (headless Avalonia, no pipe), the pipe transport (with a fake executor) and the real main
 window (menus, AutomationIds, status bar, context menu, dialogs) on the headless platform.

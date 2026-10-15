@@ -26,8 +26,11 @@ public sealed partial class NodeType
     ///     </para>
     ///     <para>
     ///         The recomputation is part of the same undo entry as the change that triggered it, so one undo restores the
-    ///         property (or data), the previous ports (the same objects) and every removed wire exactly. When the new ports need
-    ///         more height than the node has, the node grows (it never shrinks) and the wires whose ends moved are re-routed.
+    ///         property (or data), the previous ports (the same objects) and every removed wire exactly. When the number of ports
+    ///         changes, the node takes the height its ports need, never less than its type's default height (the sizing a newly
+    ///         added node gets), so it grows or shrinks while keeping its position and width, and the wires whose ends moved are
+    ///         re-routed. A recomputation that keeps the number of inputs and outputs leaves the size alone; loading, pasting and
+    ///         duplicating keep stored sizes.
     ///         Removed wires are reported through <see cref="Diagram.Changed"/> (an <see cref="DiagramChangeKind.ElementRemoved"/>
     ///         per wire) before the node reports <c>Ports</c> as changed.
     ///     </para>

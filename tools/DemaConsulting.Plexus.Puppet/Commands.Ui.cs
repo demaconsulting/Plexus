@@ -266,14 +266,18 @@ internal static partial class Commands
     /// <param name="context">The attached instance.</param>
     /// <param name="file">The output path.</param>
     /// <param name="fromScreen"><see langword="true"/> to copy the screen pixels (needs the window uncovered).</param>
+    /// <param name="bringToFront">
+    ///     <see langword="true"/> (the default) to raise the window before a screen copy; <see langword="false"/> when the caller
+    ///     has just raised and checked it and raising it again could close what the shot should show (a hover tooltip).
+    /// </param>
     /// <returns>The exit code.</returns>
-    private static int SaveShot(AttachContext context, string file, bool fromScreen)
+    private static int SaveShot(AttachContext context, string file, bool fromScreen, bool bringToFront = true)
     {
         var path = Path.GetFullPath(file);
         Directory.CreateDirectory(Path.GetDirectoryName(path) ?? Directory.GetCurrentDirectory());
 
         // PrintWindow renders each window itself, so a covering window does not end up in the picture
-        if (fromScreen)
+        if (fromScreen && bringToFront)
         {
             InputDriver.BringToFront(context);
         }

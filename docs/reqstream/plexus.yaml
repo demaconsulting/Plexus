@@ -434,8 +434,8 @@ sections:
           The library shall let a node type compute the ports of each node from the node's properties and host
           payload, recompute them in the same undo entry as every change of those properties or that payload, keep
           the ports (and their wires) whose names remain, remove the wires of ports that disappear or that the
-          connection rules no longer allow, grow the node to fit its ports, and restore the ports from the saved
-          properties and payload when a diagram is loaded, pasted or duplicated.
+          connection rules no longer allow, resize the node to fit its ports when their number changes, and restore
+          the ports from the saved properties and payload when a diagram is loaded, pasted or duplicated.
         justification: |
           Configurable blocks (a bus with N channels, a gate with N inputs) are common in node editors. Ports that
           follow the configuration, with wires kept by stable port names and one undo step per edit, let hosts model

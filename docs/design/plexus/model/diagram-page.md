@@ -35,8 +35,9 @@ changes: element presence, group membership and layout. Duplicating elements is 
   the position is finite; resolves the id (unique, generated as a dash-free GUID when null) and the name (trimmed and
   validated, or generated as the lowest unused `{key last segment}{n}`); sizes the node from the type's declared size or
   the theme default grown to fit its ports; stores the type's default payload. Only for a type with a port provider does
-  it let the provider replace the declared ports (`Node.InitializePorts`) and grow the height (never the width) to
-  `NodeGeometry.PortColumnHeight` of those ports, even over a declared size. A type without a provider keeps exactly
+  it let the provider replace the declared ports (`Node.InitializePorts`) and set the height (never the width) to
+  `NodeGeometry.ProviderNodeHeight`: the `PortColumnHeight` of those ports, never less than the default height, even
+  over a declared size. A type without a provider keeps exactly
   `NodeGeometry.DefaultNodeSize`, so a declared size is authoritative and the palette ghost matches the dropped node. A
   provider that returns null (`InvalidOperationException`) or builds an invalid `PortSet` (`ArgumentException`) makes
   AddNode throw before anything is recorded. Finally it executes an element presence command "Add node".
@@ -100,9 +101,12 @@ changes: element presence, group membership and layout. Duplicating elements is 
   wires of
   removed ports in page order, (3) remembers the anchors of the node's remaining wires, (4) runs the port swap, (5)
   checks each remaining wire on a retyped port with the connection rules as a reconnect of itself (so it does not count
-  against its own port) and removes it when refused, (6) grows the node to the height its longer port column needs
-  (never shrinking) and re-routes, through one layout command, every remaining wire of the node whose anchor moved,
-  like after a resize. Removed wires are therefore reported through `Diagram.Changed` before the node reports `Ports`.
+  against its own port) and removes it when refused, (6) when the number of inputs or outputs changed, sets the
+  node's height to `NodeGeometry.ProviderNodeHeight` (the height its longer port column needs, never less than the
+  type's default height - the sizing AddNode uses), keeping position and width, so it grows or shrinks; when both counts
+  are unchanged it leaves the bounds alone (a size the host set survives a retype or relabel); and re-routes, through
+  one layout command, every remaining wire of the node whose anchor moved, like after a resize. Removed wires are
+  therefore reported through `Diagram.Changed` before the node reports `Ports`.
 - **CreateGroup(members, title, id)**: ignores wires, requires members on this page that are ungrouped or share one
   parent, and as one multi-step operation adds the group, replaces the members in the parent by the new group, adds the
   members and records the collapsed position. **Ungroup / ReleaseGroup**: members take the frame's slot in the parent or

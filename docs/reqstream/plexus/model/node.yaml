@@ -177,18 +177,31 @@ sections:
                   - Node_Ports_SurvivingPortRetyped_KeepsWiresStillAllowed
                   - Node_Ports_SurvivingPortFanInRemoved_RemovesWiresTheRulesRefuse
 
-              - id: Plexus-Model-Node-DynamicPortGrowth
+              - id: Plexus-Model-Node-DynamicPortSize
                 title: >-
-                  When recomputed ports need more height than the node has, the node shall grow to the height its
-                  longer port column needs (never shrinking), the wires whose ends moved shall be re-routed, and the
-                  frames of the groups around it shall follow.
+                  When recomputed ports change the number of inputs or outputs, the node shall take the height its
+                  longer port column needs but never less than its type's default height, keeping its position and
+                  width; the wires whose ends moved shall be re-routed and the frames of the groups around it shall
+                  follow.
                 justification: |
-                  Ports must stay inside the node box and wires must stay attached to the moved anchors, as after any
+                  Ports must stay inside the node box, and a node that loses ports should not stay taller than a
+                  freshly added node with the same ports; wires must stay attached to the moved anchors, as after any
                   resize.
                 tests:
                   - Node_Ports_MorePortsThanHeight_GrowsNodeAndReroutesWires
-                  - Node_Ports_FewerPorts_DoesNotShrinkNode
+                  - Node_Ports_FewerPorts_ShrinksToFitNotBelowDefaultHeight
+                  - Node_Ports_DeclaredSize_ShrinksNotBelowDeclaredHeight
                   - Node_Ports_NodeInGroup_GroupFrameFollowsNewPorts
+
+              - id: Plexus-Model-Node-DynamicPortKeepsSize
+                title: >-
+                  A recomputation that leaves the number of inputs and outputs unchanged shall leave the node's size
+                  unchanged, including a size the host set.
+                justification: |
+                  Retyping, relabeling or reordering ports does not change how much room they need, so a size the user
+                  or host chose must survive such an edit.
+                tests:
+                  - Node_Ports_SameCount_KeepsHandSetSize
 
               - id: Plexus-Model-Node-DynamicPortUndo
                 title: >-
@@ -200,6 +213,7 @@ sections:
                   Users undo what they did, not its internal steps; a failure must not leave a half-applied edit.
                 tests:
                   - Node_Ports_PropertyChange_IsOneUndoEntryAndRoundTripsExactly
+                  - Node_Ports_Shrink_UndoRedoRestoreExactBounds
                   - Node_Ports_UnchangedPorts_RaisesNoPortsChangeAndOneEntry
                   - Node_Ports_ProviderDuplicateNames_ThrowsAndRevertsAssignment
                   - Node_Ports_ProviderReturnsNull_ThrowsInvalidOperation

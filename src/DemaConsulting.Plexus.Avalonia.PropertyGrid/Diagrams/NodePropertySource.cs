@@ -11,7 +11,8 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 /// <remarks>
 ///     <para>
 ///         <b>Rows and paths.</b> The <c>(Name)</c> row and the node's properties without a category are listed under "General"
-///         (shown first); properties with a <see cref="PropertyDefinition.Category"/> are listed under it. Every row has a
+///         (shown first); properties with a <see cref="PropertyDefinition.Category"/> are listed under it. Within a category the
+///         rows follow <see cref="PropertyDefinition.Order"/> (lower first, equal values alphabetically). Every row has a
 ///         collision-free <see cref="PropertyItem.Path"/>: <c>Node.Name</c> (<see cref="NamePath"/>), <c>Property.&lt;name&gt;</c>
 ///         for declared properties (<see cref="PropertyPath"/>) and <c>Data.&lt;path&gt;</c> for host data properties
 ///         (<see cref="DataPath"/>); the row's automation id is <c>PropertyGrid_Row_{path}</c>. A property
@@ -321,6 +322,7 @@ public sealed class NodePropertySource : IPropertySource, IPropertyCommitScope, 
             DisplayName = string.IsNullOrEmpty(definition.Unit) ? definition.DisplayName : $"{definition.DisplayName} ({definition.Unit})",
             Category = uncategorized ? GeneralCategory : definition.Category,
             CategoryOrder = uncategorized ? -1 : 0,
+            Order = definition.Order,
             Description = definition.Description,
             ForceReadOnly = definition.IsReadOnly,
             EditorKey = definition.EditorHint,

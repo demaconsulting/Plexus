@@ -648,19 +648,25 @@ public class AutomationDispatcherTests
     [Fact]
     public Task AutomationDispatcher_TooltipCommand_OscillatorReportsTextAndPreview() => GuiTest.RunAsync(async () =>
     {
-        // Arrange: the real window, whose tooltip handler gives oscillators a waveform thumbnail
+        // Arrange: the real window, whose tooltip handler gives oscillators, envelopes and filters a plot thumbnail
         using var host = new MainWindowHost(MainWindowHost.Options("--sample", "audio"));
         var commands = new Gui.Automation.AutomationDispatcher(host.Session);
 
         // Act
         var osc = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","node":"Osc1"}""")).Json)!["result"]!;
         var port = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","port":"Osc1.out"}""")).Json)!["result"]!;
+        var shape = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","node":"Shape"}""")).Json)!["result"]!;
+        var tone = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","node":"Tone"}""")).Json)!["result"]!;
 
-        // Assert
+        // Assert: the oscillator, envelope and filter tooltips carry a plot; the port tooltip adds the port description
         Assert.Equal("Osc1\nSaw, 220 Hz", osc["text"]!.GetValue<string>());
         Assert.True(osc["preview"]!.GetValue<bool>());
-        Assert.Equal("out (Audio)", port["text"]!.GetValue<string>());
+        Assert.Equal("out (Audio)\nThe generated wave.", port["text"]!.GetValue<string>());
         Assert.False(port["preview"]!.GetValue<bool>());
+        Assert.Equal("Shape\nA 10 ms · D 120 ms · S 70 % · R 300 ms", shape["text"]!.GetValue<string>());
+        Assert.True(shape["preview"]!.GetValue<bool>());
+        Assert.Equal("Tone\nLow-pass, 900 Hz", tone["text"]!.GetValue<string>());
+        Assert.True(tone["preview"]!.GetValue<bool>());
     });
 
     /// <summary>

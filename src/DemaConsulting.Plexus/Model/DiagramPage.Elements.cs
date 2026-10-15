@@ -94,7 +94,7 @@ public sealed partial class DiagramPage
         if (type.PortProvider is not null)
         {
             node.InitializePorts();
-            node.InitializeBounds(new Rect(position, new Size(size.Width, Math.Max(size.Height, NodeGeometry.PortColumnHeight(node, Diagram.Theme)))));
+            node.InitializeBounds(new Rect(position, new Size(size.Width, NodeGeometry.ProviderNodeHeight(node, Diagram.Theme))));
         }
 
         Diagram.History.Execute(new ElementPresenceCommand("Add node", this, node, add: true));

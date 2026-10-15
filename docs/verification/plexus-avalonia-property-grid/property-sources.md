@@ -1,7 +1,7 @@
 ## PropertySources Unit Verification Design
 
 Scope: Supplies property items: reflection over any object through the component model, host-supplied items, merging of
-sources, source selection by factory and category ordering.
+sources, source selection by factory and category and item ordering.
 
 ### Verification Approach
 
@@ -55,5 +55,10 @@ arguments rejected.
   input gives no groups.
 - **PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically** (`CommitScopeTests.cs`): a category with a lower
   `CategoryOrder` is first, a category ranks as its lowest item, equal ranks are alphabetical.
+- **PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel** (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`):
+  within a category a parenthesized item comes first whatever its rank, then the items by ascending `Order` (the
+  default 0 before 1), equal ranks alphabetical.
+- **PropertyOrdering_Order_AlphabeticalIgnoresItemOrder** (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`): the
+  alphabetical view sorts by label even when the ranks say otherwise.
 - **CompositePropertySource_RunCommit_ChainsTheSourceScopes** (`CommitScopeTests.cs`): the scopes of the sources that
   have one are chained, the first outermost, and the action runs once; a null action is rejected (error path).

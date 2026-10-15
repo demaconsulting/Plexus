@@ -103,8 +103,8 @@ the host application from the library's one exposure to untrusted data and from 
    executes an undoable command on the diagram's history. The command changes the model, re-routes affected wires
    through the router, updates indexes and raises `Diagram.Changed` and collection events. Undo and redo replay the same
    commands in the reverse or forward direction and raise the same events. A property or payload change of a node whose
-   type has a port provider also recomputes the node's ports, removes the wires the change invalidates and grows the
-   node, inside the same command.
+   type has a port provider also recomputes the node's ports, removes the wires the change invalidates and resizes the
+   node when the number of its ports changed, inside the same command.
 3. **Presentation.** On a change, a painter asks `SceneBuilder.Build` for a `DiagramScene` of a page. The builder
    computes node layouts (theme and text measurer), drawing order, culling, wires (from their routes), selection and
    hover state, and the hit targets. The painter draws the primitives; an editor control uses `HitTest` to translate
@@ -176,9 +176,11 @@ designs.
   entry of the change that caused them and are never saved, so a document stays the single source of truth and undo is
   exact. Within a direction the port name identifies a port: a surviving name keeps its `Port` object and wires, a
   vanished name takes its wires along, and a kept port whose type changed keeps only the wires the connection rules
-  still allow. Hosts therefore use stable port names (renumbering channels re-attaches wires by name). Nodes grow to fit
-  more ports but never shrink, and stored bounds are kept on load so a restore is exact. Removed wires are reported
-  through the existing `Diagram.Changed` notifications rather than a dedicated event.
+  still allow. Hosts therefore use stable port names (renumbering channels re-attaches wires by name). When the number
+  of ports changes, a node takes the height its ports need but never less than its type's default height (the size a
+  new node gets), so it grows and shrinks with its ports; a recomputation that keeps the counts leaves the size alone,
+  and stored bounds are kept on load so a restore is exact. Removed wires are reported through the existing
+  `Diagram.Changed` notifications rather than a dedicated event.
 - **Descriptions live with the declarations.** Tooltip text for ports, port types and node types (including a function
   of the node for live state or validation messages) is declared on the types, so every editor shows the same text and
   the core still draws none of it.

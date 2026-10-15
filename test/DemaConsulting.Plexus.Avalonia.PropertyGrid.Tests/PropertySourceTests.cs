@@ -369,6 +369,52 @@ public class PropertySourceTests
         Assert.Equal(["a", "b", "c"], single.Items.Select(i => i.Name));
         Assert.Empty(PropertyOrdering.Group([], PropertySortMode.Categorized));
     }
+
+    /// <summary>
+    ///     Categorized ordering puts parenthesized names first, then sorts a category's items by their rank, ties alphabetically.
+    /// </summary>
+    [Fact]
+    public void PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel()
+    {
+        // Arrange: ranks out of alphabetical order, a tie, a parenthesized item with a high rank and a default-rank item
+        var items = new[]
+        {
+            new CustomPropertyItem("Release", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 4 }),
+            new CustomPropertyItem("Attack", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 1 }),
+            new CustomPropertyItem("Sustain", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 2 }),
+            new CustomPropertyItem("Decay", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 2 }),
+            new CustomPropertyItem("Zero", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope" }),
+            new CustomPropertyItem("(Name)", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 9, IsParenthesized = true }),
+        };
+
+        // Act
+        var ordered = PropertyOrdering.Order(items, PropertySortMode.Categorized);
+
+        // Assert: parenthesized first, then ascending rank (0 before 1), equal ranks alphabetical
+        Assert.Equal(["(Name)", "Zero", "Attack", "Decay", "Sustain", "Release"], ordered.Select(i => i.Name));
+        Assert.Equal(4, items[0].Order);
+    }
+
+    /// <summary>
+    ///     Alphabetical ordering ignores item ranks.
+    /// </summary>
+    [Fact]
+    public void PropertyOrdering_Order_AlphabeticalIgnoresItemOrder()
+    {
+        // Arrange
+        var items = new[]
+        {
+            new CustomPropertyItem("Attack", typeof(int), () => 1, null, new CustomPropertyOptions { Order = 3 }),
+            new CustomPropertyItem("Decay", typeof(int), () => 1, null, new CustomPropertyOptions { Order = 2 }),
+            new CustomPropertyItem("Release", typeof(int), () => 1, null, new CustomPropertyOptions { Order = 1 }),
+        };
+
+        // Act
+        var ordered = PropertyOrdering.Order(items, PropertySortMode.Alphabetical);
+
+        // Assert
+        Assert.Equal(["Attack", "Decay", "Release"], ordered.Select(i => i.Name));
+    }
 }
 
 /// <summary>

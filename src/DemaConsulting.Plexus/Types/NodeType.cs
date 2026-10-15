@@ -184,7 +184,8 @@ public sealed partial class NodeType
     ///     Existing nodes are not affected when it changes. A declared size is authoritative:
     ///     a title wider than it wraps onto further lines (or shrinks) instead of widening the box. See <see cref="Scene.NodeGeometry.DefaultNodeSize"/>.
     ///     The one exception is a type with a <see cref="PortProvider"/>: <see cref="DiagramPage.AddNode(NodeType, Point, string?, string?)"/>
-    ///     grows a new node taller (never wider) when the ports the provider computes for it need more room.
+    ///     grows a new node taller (never wider) when the ports the provider computes for it need more room, and a later change in
+    ///     the number of its ports resizes the height again (never below this size's height).
     /// </remarks>
     public Size? DefaultSize { get; init; }
 

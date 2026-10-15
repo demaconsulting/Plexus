@@ -217,7 +217,7 @@ public sealed partial class Node : DiagramElement
     ///         A live read-only view. For a type without a <see cref="NodeType.PortProvider"/> it never changes. With a
     ///         provider it is recomputed (in the same undo entry) whenever <see cref="Properties"/> or <see cref="Data"/> change:
     ///         ports whose name survives within their direction keep their objects and wires, other ports and their wires
-    ///         are removed, new names get new ports, and the node grows when the ports need more height.
+    ///         are removed, new names get new ports, and the node is resized to fit when the number of ports changes.
     ///     </para>
     ///     <para>
     ///         Hosts observe a recomputation through <see cref="DiagramElement.PropertyChanged"/> and <see cref="Diagram.Changed"/>

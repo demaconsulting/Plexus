@@ -28,7 +28,7 @@ when the package loads.
   through `TypeDescriptor`), `CustomPropertySource` with `CustomPropertyItem` (host-supplied items without reflection),
   `CompositePropertySource` (merge), `PropertySourceFactory` (pick a source for an object, with registrable
   adapters), `IPropertyCommitScope` (a source that brackets the commits of its session) and `PropertyOrdering`
-  (categorized and alphabetical order and grouping, with a category rank).
+  (categorized and alphabetical order and grouping, with a category rank and an item rank within a category).
 - **EditSession** (unit, public) — `PropertyEditSession` applies edits live or staged until commit, with per-property
   errors and a host commit scope (and the commit scope of its source, outermost);
   `PropertyCommitRefusedException` lets a scope refuse a commit because of one property; `CollectionEditor` edits

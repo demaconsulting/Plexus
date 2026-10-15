@@ -26,6 +26,16 @@ sections:
               - NodePropertySource_GetItems_NodeWithoutDataHasNoDataRows
               - NodePropertySource_Constructor_DetachedNode_Throws
 
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder
+            title: >-
+              The rows of declared properties shall carry their definition's display order as their item rank, so a
+              category lists them in ascending definition order, with equal orders alphabetical.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Nodes; a node type that declares an order (an envelope's
+              attack, decay, sustain and release) must be shown in that order, not alphabetically.
+            tests:
+              - NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder
+
           - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Validation
             title: >-
               The node source shall validate typed values with the property definitions (invariant culture, units

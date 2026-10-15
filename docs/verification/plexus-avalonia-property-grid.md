@@ -56,9 +56,15 @@ All system tests must pass on every supported platform for the platform requirem
   editor adds, moves and renames a member on its working list; OK records a pending edit that the commit applies.
 - **PlexusAvaloniaPropertyGrid_CustomEditor_IsUsedForAnnotatedProperty**: a slider registered under the key of an
   annotation edits the annotated property.
+- **PlexusAvaloniaPropertyGrid_CustomSource_OrdersCategoryItemsByRank**: the grid control shows custom items supplied
+  out of order in the order of their ranks within their category (Attack, Decay, Sustain, Release), then the next
+  category.
 - **PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry**: a node given to the factory is shown
   by the node source; a staged commit of a rename, a property and a data edit is one undo entry; two live edits are
   two entries; the previous data object is never mutated.
+- **PlexusAvaloniaPropertyGrid_PlexusNode_ListsPropertiesInDefinitionOrder**: the grid control given a node whose
+  properties declare a display order lists the name and the ranked General rows, then the Envelope rows in declared
+  order rather than alphabetically.
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_CommitsOrDiscardsAsOneUndoEntry**: a node dialog cancelled changes
   nothing; a second one commits a rename and a data edit with OK as one undo entry.
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce**: a node dialog with a live

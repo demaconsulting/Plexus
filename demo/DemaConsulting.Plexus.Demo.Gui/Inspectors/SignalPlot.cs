@@ -14,7 +14,7 @@ namespace DemaConsulting.Plexus.Demo.Gui.Inspectors;
 /// <remarks>
 ///     <para>
 ///         The demo's audio inspectors use it for the oscillator waveform, the ADSR envelope and the filter response, and
-///         the oscillator tooltip uses it small (<see cref="IsCompact"/>). It is deliberately tiny and has no charting
+///         their tooltips use it small (<see cref="IsCompact"/>). It is deliberately tiny and has no charting
 ///         dependency: a host migrating a custom inspector needs only <c>Render</c>. What to draw comes from
 ///         <see cref="PlotData"/>, computed in the model (<see cref="AudioPreview"/>) so the math stays unit-testable.
 ///     </para>
@@ -90,6 +90,16 @@ internal sealed class SignalPlot : Control
     ///     The font size of labels and titles.
     /// </summary>
     private const double FontSize = 10;
+
+    /// <summary>
+    ///     The least distance between a region label and the left or right edge of the plot area.
+    /// </summary>
+    private const double LabelPadding = 3;
+
+    /// <summary>
+    ///     The least horizontal gap between two region labels.
+    /// </summary>
+    private const double LabelGap = 4;
 
     /// <summary>
     ///     The size a full plot asks for when its container leaves it unbounded.
@@ -235,6 +245,8 @@ internal sealed class SignalPlot : Control
     {
         var band = GetBrush(GridKey);
         var text = GetBrush(TextKey);
+        var labels = new List<FormattedText>();
+        var spans = new List<(double Left, double Right, double Width)>();
         for (var i = 0; i < data.Regions.Count; i++)
         {
             var region = data.Regions[i];
@@ -251,9 +263,89 @@ internal sealed class SignalPlot : Control
             }
 
             var label = Text(region.Label, text);
-            context.DrawText(label, new Point(((left + right) / 2) - (label.Width / 2), area.Top + 2));
+            labels.Add(label);
+            spans.Add((left, right, label.Width));
+        }
+
+        // The labels go inside the area, clear of the tick labels and of each other; one with no room is left out
+        var positions = LayoutRegionLabels(spans, area.Left, area.Right);
+        for (var i = 0; i < labels.Count; i++)
+        {
+            if (positions[i] is { } x)
+            {
+                context.DrawText(labels[i], new Point(x, area.Top + 2));
+            }
         }
     }
+
+    /// <summary>
+    ///     Places the labels of the regions along the top of the plot area.
+    /// </summary>
+    /// <remarks>
+    ///     A label is centered over its region when that keeps it inside the area and clear of the label before it.
+    ///     Otherwise it is shifted: right to stay at least <see cref="LabelPadding"/> inside the left edge of the area (so
+    ///     it never reaches the tick labels, which end left of the area) and right of the previous label by at least
+    ///     <see cref="LabelGap"/>; left to stay inside the right edge. A label that cannot be placed that way, or that would
+    ///     end up more than <see cref="LabelGap"/> away from its own region (so it would name the wrong phase), is skipped.
+    ///     Pure, so the rules are unit-tested without drawing.
+    /// </remarks>
+    /// <param name="labels">The regions in drawing order: their left and right pixel columns and their label widths.</param>
+    /// <param name="areaLeft">The left edge of the plot area.</param>
+    /// <param name="areaRight">The right edge of the plot area.</param>
+    /// <returns>The left edge of each label, or <see langword="null"/> for a label that is skipped.</returns>
+    internal static IReadOnlyList<double?> LayoutRegionLabels(IReadOnlyList<(double Left, double Right, double Width)> labels, double areaLeft, double areaRight)
+    {
+        var positions = new List<double?>(labels.Count);
+        var minimum = areaLeft + LabelPadding;
+        var maximum = areaRight - LabelPadding;
+        var previousRight = double.NegativeInfinity;
+        foreach (var (left, right, width) in labels)
+        {
+            // Start centered, then push right past the area edge and the previous label, then pull back from the right edge
+            var x = ((left + right) / 2) - (width / 2);
+            x = Math.Max(x, Math.Max(minimum, previousRight + LabelGap));
+            x = Math.Min(x, maximum - width);
+
+            // Pulling back may make it collide again, and a label far from its region would be misleading: skip it then
+            var fits = x >= minimum && x >= previousRight + LabelGap;
+            var nearItsRegion = x <= right + LabelGap && x + width >= left - LabelGap;
+            if (fits && nearItsRegion)
+            {
+                positions.Add(x);
+                previousRight = x + width;
+            }
+            else
+            {
+                positions.Add(null);
+            }
+        }
+
+        return positions;
+    }
+
+    /// <summary>
+    ///     Computes where a vertical-axis tick label is drawn: right-aligned left of the plot area, centered on its grid line.
+    /// </summary>
+    /// <param name="area">The plot area.</param>
+    /// <param name="y">The pixel row of the tick.</param>
+    /// <param name="label">The size of the label.</param>
+    /// <returns>The label's bounds.</returns>
+    internal static Rect YTickLabelBounds(Rect area, double y, Size label) =>
+        new(area.Left - 4 - label.Width, y - (label.Height / 2), label.Width, label.Height);
+
+    /// <summary>
+    ///     Computes where the vertical axis title is drawn: above the plot area, left-aligned with it.
+    /// </summary>
+    /// <remarks>
+    ///     The tick labels end <c>4</c> pixels left of the area and the top one is centered on the area's top edge, so a title
+    ///     that starts at the area's left edge never overlaps them, whatever their width; it is kept at least at the top of the
+    ///     control.
+    /// </remarks>
+    /// <param name="area">The plot area.</param>
+    /// <param name="title">The size of the title.</param>
+    /// <returns>The top-left corner of the title.</returns>
+    internal static Point YAxisTitleOrigin(Rect area, Size title) =>
+        new(area.Left, Math.Max(0, area.Top - title.Height - 4));
 
     /// <summary>
     ///     Draws the grid lines at the ticks of both axes, with the tick labels outside the plot area.
@@ -273,7 +365,7 @@ internal sealed class SignalPlot : Control
             var y = map.Y(tick.Value);
             context.DrawLine(grid, new Point(area.Left, y), new Point(area.Right, y));
             var label = Text(tick.Label, text);
-            context.DrawText(label, new Point(area.Left - 4 - label.Width, y - (label.Height / 2)));
+            context.DrawText(label, YTickLabelBounds(area, y, new Size(label.Width, label.Height)).TopLeft);
         }
 
         // Vertical grid lines with the time or frequency labels centered below the area
@@ -299,12 +391,13 @@ internal sealed class SignalPlot : Control
         context.DrawLine(axis, area.TopLeft, area.BottomLeft);
         context.DrawLine(axis, area.BottomLeft, area.BottomRight);
 
-        // The horizontal title is centered under the tick labels; the vertical title sits above the area, near its left edge
+        // The horizontal title is centered under the tick labels; the vertical title sits above the area, starting at its
+        // left edge so it stays clear of the top tick label
         var text = GetBrush(TextKey);
         var xTitle = Text(data.XAxis.Title, text);
         context.DrawText(xTitle, new Point(area.Left + ((area.Width - xTitle.Width) / 2), bounds.Bottom - xTitle.Height - 2));
         var yTitle = Text(data.YAxis.Title, text);
-        context.DrawText(yTitle, new Point(Math.Max(2, area.Left - (LeftMargin / 2)), Math.Max(0, area.Top - yTitle.Height - 4)));
+        context.DrawText(yTitle, YAxisTitleOrigin(area, new Size(yTitle.Width, yTitle.Height)));
     }
 
     /// <summary>

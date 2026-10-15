@@ -117,9 +117,13 @@ What happens when the ports are recomputed:
 - **Wires the rules no longer allow are removed.** When a kept port changes its type or its fan-in, each of its wires
   is checked again with the diagram's `ConnectionRules`; with `ConnectionRules.SameType` installed, a wire whose types
   no longer match is removed.
-- **The node grows, never shrinks.** When the ports need more height than the node has, it grows (keeping its position
-  and width) and the wires whose ends moved are re-routed. Fewer ports leave the node as it is.
-- **One undo entry.** The property (or data) change, the removed wires, the new ports, the growth and the re-routes
+- **The node fits its ports when their number changes.** When the number of inputs or outputs changes, the node takes
+  the height its longer port column needs, but never less than its type's default height (exactly the size a newly
+  added node with those ports gets), keeping its position and width, and the wires whose ends moved are re-routed. So
+  it grows when ports are added and shrinks back when they are removed; a height the user set is replaced by the fitted
+  height. A recomputation that keeps the number of inputs and outputs (a retyped, relabeled or reordered port) leaves
+  the size alone.
+- **One undo entry.** The property (or data) change, the removed wires, the new ports, the resize and the re-routes
   are one entry; undo restores the exact previous ports (the same objects), wires and size. An edit that does not
   change the ports records only the edit.
 - **Hosts see it through the usual notifications.** `Diagram.Changed` reports each removed wire
@@ -188,10 +192,22 @@ types.Add(new NodeType("math.Clamp")
 });
 ```
 
-Presentation members (`DisplayName`, `Category`, `Description`, `Unit`, `EditorHint`, `IsReadOnly`, `Format`) are hints
-for the property grid, the host's own property editor and for the node summary; they never restrict programmatic
-changes. `ShowInSummary` puts `Name: value unit` in the text drawn under the node, and `Format` customizes how a
-value is written there.
+Presentation members (`DisplayName`, `Category`, `Order`, `Description`, `Unit`, `EditorHint`, `IsReadOnly`, `Format`)
+are hints for the property grid, the host's own property editor and for the node summary; they never restrict
+programmatic changes. `ShowInSummary` puts `Name: value unit` in the text drawn under the node, and `Format` customizes
+how a value is written there. `Order` sets where a property appears within its category in a property editor: lower
+values come first, and properties with equal values (all of them are 0 by default) stay alphabetical. Use it when
+properties read naturally in a fixed sequence:
+
+```csharp
+Properties =
+{
+    new PropertyDefinition("Attack", 10.0) { Unit = "ms", Category = "Envelope", Order = 1 },
+    new PropertyDefinition("Decay", 120.0) { Unit = "ms", Category = "Envelope", Order = 2 },
+    new PropertyDefinition("Sustain", 70.0) { Unit = "%", Category = "Envelope", Order = 3 },
+    new PropertyDefinition("Release", 300.0) { Unit = "ms", Category = "Envelope", Order = 4 },
+},
+```
 
 A node's values live in its `PropertyBag`. Reading and writing are one-liners; every write is validated against the
 declaration, converted where lossless and recorded as an undo entry:

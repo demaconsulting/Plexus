@@ -22,8 +22,10 @@ of annotation text (`TextWrapper`).
   whose label reaches beyond the margin). The visual bounds and the `RoutingObstacles(Rect, Node, DiagramTheme)`
   overload use the node's current ports (which a `NodeType.PortProvider` may compute per node); the
   `RoutingObstacles(Rect, NodeType, DiagramTheme)` overload uses the type's declared ports. The internal
-  `PortColumnHeight(node, theme)` is the required height of the node's longer current port column, used to size new
-  nodes of types with a port provider and to grow nodes whose ports were recomputed.
+  `PortColumnHeight(node, theme)` is the required height of the node's longer current port column. The internal
+  `ProviderNodeHeight(node, theme)` is the larger of that and the type's `DefaultNodeSize` height: the height of a new
+  node of a type with a port provider, and of a node whose recomputed ports changed in number (so it grows or shrinks,
+  never below the type's default height).
 - Port rows follow `DiagramTheme.PortAlignment`. With `Center` (the default) each column (all inputs, all outputs) is
   a stack centered vertically on the box: row `i` of `n` lies at `Top + Height/2 + (i - (n-1)/2) * PortPitch`, so an odd
   count puts the middle port on the box center and an even count straddles it on half-grid positions (nodes still

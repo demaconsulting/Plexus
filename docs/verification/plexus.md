@@ -194,8 +194,9 @@ Each heading names a requirement; the bullets name the test methods and what the
 ### Plexus-Core-DynamicPorts
 
 - **Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep**: a host type whose `Channels` property
-  decides its inputs is fed on two channels; lowering the count removes the last input and its wire, keeps the first
-  input object and its wire and the node height, in one undo entry; undo restores the four inputs and both wires.
+  decides its inputs is set to eight channels and fed on `in0` and `in3`; lowering the count to two removes `in2` to
+  `in7` and the wire on `in3`, keeps the first input object and its wire and shrinks the node back to its type's default
+  height, in one undo entry; undo restores the eight inputs, both wires and the taller height.
 - **Plexus_DynamicPorts_SaveLoadAndPaste_RestoreWiresOnDynamicPorts**: a diagram with wires on a computed input and a
   computed output loads from JSON identical to the original (ports included) and pastes into another diagram with both
   wires on the computed ports.

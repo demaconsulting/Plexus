@@ -114,6 +114,11 @@ public sealed class CustomPropertyItem : PropertyItem
     public override int CategoryOrder => _options.CategoryOrder;
 
     /// <summary>
+    ///     Gets the rank within the category (see <see cref="PropertyItem.Order"/>); 0 when none was given.
+    /// </summary>
+    public override int Order => _options.Order;
+
+    /// <summary>
     ///     Gets the description; empty when none was given.
     /// </summary>
     public override string Description => _options.Description ?? string.Empty;

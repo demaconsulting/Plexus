@@ -30,15 +30,19 @@ sections:
 
       - id: PlexusAvaloniaPropertyGrid-Order
         title: >-
-          The system shall order and group the properties alphabetically or by category.
+          The system shall order and group the properties alphabetically or by category, and within a category
+          follow the order a source gives its properties before ordering them alphabetically.
         justification: |
-          Categorized and alphabetical views are the two familiar ways to find a property.
+          Categorized and alphabetical views are the two familiar ways to find a property; some properties read
+          naturally in a fixed sequence that the source knows best.
         tags: [system]
         children:
           - PlexusAvaloniaPropertyGrid-PropertySources-Ordering
           - PlexusAvaloniaPropertyGrid-PropertySources-CategoryOrder
+          - PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder
         tests:
           - PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject
+          - PlexusAvaloniaPropertyGrid_CustomSource_OrdersCategoryItemsByRank
 
       - id: PlexusAvaloniaPropertyGrid-Text-Values
         title: >-
@@ -253,7 +257,8 @@ sections:
       - id: PlexusAvaloniaPropertyGrid-Plexus-Nodes
         title: >-
           The system shall show and edit Plexus nodes, annotations and groups in the grid with one assignment: a node
-          shows its name, its declared properties with their definitions' presentation and its host data, and every
+          shows its name, its declared properties with their definitions' presentation (in their declared display
+          order within a category) and its host data, and every
           commit is one undo entry of the diagram (one step for a staged dialog, one step per edit for a live panel)
           that leaves the live host data untouched until it is replaced.
         justification: |
@@ -269,8 +274,10 @@ sections:
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Refusal
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Live
           - PlexusAvaloniaPropertyGrid-PlexusNodeSource-Elements
+          - PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder
         tests:
           - PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry
+          - PlexusAvaloniaPropertyGrid_PlexusNode_ListsPropertiesInDefinitionOrder
 
       - id: PlexusAvaloniaPropertyGrid-Plexus-Dialog
         title: >-

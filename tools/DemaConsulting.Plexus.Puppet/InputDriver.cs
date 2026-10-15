@@ -218,6 +218,33 @@ internal static class InputDriver
     }
 
     /// <summary>
+    ///     Rests the cursor on a target the way a user hovers it: away from everything first, then onto the target in small
+    ///     steps, then still for a while so a tooltip can open.
+    /// </summary>
+    /// <remarks>
+    ///     Stale modifier keys are released first (a held Ctrl or Shift would change what the editor shows). The moves are
+    ///     real pointer moves, so the editor sees the pointer leave whatever it was on and arrive at the target.
+    /// </remarks>
+    /// <param name="park">Where to park the cursor first (empty canvas), or <see langword="null"/> to go straight to the target.</param>
+    /// <param name="target">The pixel to rest on.</param>
+    /// <param name="rest">How long to rest on the target before returning.</param>
+    internal static void Hover(ScreenPoint? park, ScreenPoint target, TimeSpan rest)
+    {
+        using var held = new HeldModifiers(KeyChordModifiers.None);
+
+        // Parking on empty canvas closes any open tooltip and lets the editor forget its last tooltip target
+        if (park is { } parked)
+        {
+            MoveTo(parked);
+            Thread.Sleep(Settle * 3);
+        }
+
+        // Arrive at the target in steps, then keep still so the tooltip delay can run out
+        MoveTo(target);
+        Thread.Sleep(rest);
+    }
+
+    /// <summary>
     ///     Presses a key chord on the keyboard.
     /// </summary>
     /// <param name="chord">The chord.</param>

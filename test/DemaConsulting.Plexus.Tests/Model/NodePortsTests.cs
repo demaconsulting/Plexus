@@ -216,22 +216,102 @@ public class NodePortsTests
     }
 
     /// <summary>
-    ///     Validates that a node never shrinks when ports are removed.
+    ///     Validates that a node shrinks to fit fewer ports, but never below its type's default height.
     /// </summary>
     [Fact]
-    public void Node_Ports_FewerPorts_DoesNotShrinkNode()
+    public void Node_Ports_FewerPorts_ShrinksToFitNotBelowDefaultHeight()
+    {
+        // Arrange: a tall eight-channel bus with a wire on in0
+        var (diagram, page, bus, producers) = Create();
+        var floor = NodeGeometry.DefaultNodeSize(bus.Type, diagram.Theme).Height;
+        bus.Properties["Channels"] = 8;
+        var wire = page.Connect(producers[0].Output("value"), bus.Input("in0"));
+        var tall = bus.Bounds;
+
+        // Act: three channels still need more than the default height; then a single channel does not
+        bus.Properties["Channels"] = 3;
+        var three = bus.Bounds;
+        bus.Properties["Channels"] = 1;
+
+        // Assert: each step fits the ports but never goes below the default; position and width are kept
+        Assert.Equal(Math.Max(floor, NodeGeometry.RequiredHeight(3, diagram.Theme)), three.Height);
+        Assert.True(three.Height < tall.Height);
+        Assert.Equal(Math.Max(floor, NodeGeometry.RequiredHeight(1, diagram.Theme)), bus.Bounds.Height);
+        Assert.Equal(floor, bus.Bounds.Height);
+        Assert.Equal(tall.Position, bus.Bounds.Position);
+        Assert.Equal(tall.Width, bus.Bounds.Width);
+        Assert.Single(bus.Inputs);
+        Assert.Equal(page.ComputeRoute(wire.Source, wire.Target, wire), wire.Route);
+    }
+
+    /// <summary>
+    ///     Validates that a node of a type with a declared size shrinks back no further than the declared height.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_DeclaredSize_ShrinksNotBelowDeclaredHeight()
+    {
+        // Arrange: a router (declared 120 x 60) grown by five outputs
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var router = page.AddNode("acme.Router", 40, 20, "R");
+        router.Data = new RouterData("a,b,c,d,e");
+        var grown = router.Bounds;
+
+        // Act
+        router.Data = new RouterData("x");
+
+        // Assert: the height fits one output but stays at least the declared height; the width stays declared
+        Assert.Equal(NodeGeometry.RequiredHeight(5, diagram.Theme), grown.Height);
+        Assert.Equal(Math.Max(60, NodeGeometry.RequiredHeight(1, diagram.Theme)), router.Bounds.Height);
+        Assert.Equal(120, router.Bounds.Width);
+        Assert.Equal(new Point(40, 20), router.Bounds.Position);
+    }
+
+    /// <summary>
+    ///     Validates that a recomputation that keeps the number of ports leaves a host-set size alone, taller or shorter.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_SameCount_KeepsHandSetSize()
     {
         // Arrange
         var (_, _, bus, _) = Create();
+        var taller = bus.Bounds with { Height = bus.Bounds.Height + 60 };
+        var shorter = bus.Bounds with { Height = 30 };
+
+        // Act / Assert: retyping the ports keeps a taller size
+        bus.Bounds = taller;
+        bus.Properties["Kind"] = "i32";
+        Assert.Equal(taller, bus.Bounds);
+
+        // Act / Assert: and keeps a shorter one too (the count did not change, so nothing is refitted)
+        bus.Bounds = shorter;
+        bus.Properties["Kind"] = "f32";
+        Assert.Equal(shorter, bus.Bounds);
+    }
+
+    /// <summary>
+    ///     Validates that undo and redo of a shrinking port change restore the exact previous and new bounds.
+    /// </summary>
+    [Fact]
+    public void Node_Ports_Shrink_UndoRedoRestoreExactBounds()
+    {
+        // Arrange: an eight-channel bus with wires on its first two inputs
+        var (diagram, page, bus, producers) = Create();
         bus.Properties["Channels"] = 8;
-        var grown = bus.Bounds;
+        page.Connect(producers[0].Output("value"), bus.Input("in0"));
+        page.Connect(producers[1].Output("value"), bus.Input("in1"));
+        var tall = bus.Bounds;
 
-        // Act
-        bus.Properties["Channels"] = 1;
+        // Act / Assert: one exact entry (the dump covers bounds and routes)
+        TestModel.AssertRoundTrip(diagram, () => bus.Properties["Channels"] = 2);
+        var shrunk = bus.Bounds;
 
-        // Assert
-        Assert.Equal(grown, bus.Bounds);
-        Assert.Single(bus.Inputs);
+        // Assert: undo restores the tall bounds exactly; redo the shrunk ones
+        Assert.True(shrunk.Height < tall.Height);
+        Assert.True(diagram.History.Undo());
+        Assert.Equal(tall, bus.Bounds);
+        Assert.True(diagram.History.Redo());
+        Assert.Equal(shrunk, bus.Bounds);
     }
 
     /// <summary>

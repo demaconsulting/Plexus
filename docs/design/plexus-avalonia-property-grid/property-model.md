@@ -33,8 +33,9 @@ belongs to this unit because nested items are built from it.
 ### Key Methods
 
 - **Metadata members** (`DisplayName`, `Category`, `CategoryOrder` (the rank of the category when sorting by
-  category, default 0), `Description`, `IsReadOnly`, `IsBrowsable`, `IsPasswordText`,
-  `IsParenthesized`, `RefreshMode`, `EditorKey`, `EditorType`, `Label`) — read the `System.ComponentModel`
+  category, default 0), `Order` (the rank of the item within its category when sorting by category, default 0; the
+  reflection item keeps 0, a custom item takes `CustomPropertyOptions.Order`), `Description`, `IsReadOnly`,
+  `IsBrowsable`, `IsPasswordText`, `IsParenthesized`, `RefreshMode`, `EditorKey`, `EditorType`, `Label`) — read the `System.ComponentModel`
   annotations (`DisplayName`, `Category` with the default "Misc", `Description`, `ReadOnly`, `Browsable`,
   `PasswordPropertyText`, `ParenthesizePropertyName`, `RefreshProperties`, `PropertyEditor`) and, when those are
   absent, the data annotations `Display` and `Editable`. The editor key comes from a `PropertyEditor` annotation of the

@@ -259,6 +259,61 @@ public class PlexusAvaloniaPropertyGridTests
     });
 
     /// <summary>
+    ///     The grid control lists the items of a category by the rank their source gives them, ties alphabetically.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_CustomSource_OrdersCategoryItemsByRank() => UiTest.Run(() =>
+    {
+        // Arrange: items supplied out of order, ranked A-D-S-R, plus an item without a rank in another category
+        var source = new CustomPropertySource(
+        [
+            new CustomPropertyItem("Release", typeof(int), () => 4, null, new CustomPropertyOptions { Category = "Envelope", Order = 4 }),
+            new CustomPropertyItem("Sustain", typeof(int), () => 3, null, new CustomPropertyOptions { Category = "Envelope", Order = 3 }),
+            new CustomPropertyItem("Attack", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 1 }),
+            new CustomPropertyItem("Decay", typeof(int), () => 2, null, new CustomPropertyOptions { Category = "Envelope", Order = 2 }),
+            new CustomPropertyItem("Level", typeof(int), () => 5, null, new CustomPropertyOptions { Category = "Output" }),
+        ]);
+
+        // Act
+        var grid = new PropertyGrid { Source = source };
+        var window = GridHarness.Host(grid);
+
+        // Assert: the rows follow the ranks inside Envelope; Output keeps its own row
+        Assert.Equal(["Attack", "Decay", "Sustain", "Release", "Level"], GridHarness.PropertyPaths(grid));
+        window.Close();
+    });
+
+    /// <summary>
+    ///     A Plexus node's declared properties are listed in the order their definitions declare within each category.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_PlexusNode_ListsPropertiesInDefinitionOrder() => UiTest.Run(() =>
+    {
+        // Arrange
+        var (_, node) = NodeFixture.CreateOrdered();
+
+        // Act
+        var grid = new PropertyGrid { SelectedObject = node };
+        var window = GridHarness.Host(grid);
+
+        // Assert: General (name, then Gate 1, Mode 2) before Envelope (Attack, Decay, Sustain, Release)
+        Assert.Equal(
+            [
+                NodePropertySource.NamePath,
+                NodePropertySource.PropertyPath("Gate"),
+                NodePropertySource.PropertyPath("Mode"),
+                NodePropertySource.PropertyPath("Attack"),
+                NodePropertySource.PropertyPath("Decay"),
+                NodePropertySource.PropertyPath("Sustain"),
+                NodePropertySource.PropertyPath("Release"),
+            ],
+            GridHarness.PropertyPaths(grid));
+        window.Close();
+    });
+
+    /// <summary>
     ///     A Plexus node is shown by a grid given the node, a staged session over it commits the rename, a property and an edited
     ///     data object as one undo entry, and a live session makes each edit its own entry.
     /// </summary>

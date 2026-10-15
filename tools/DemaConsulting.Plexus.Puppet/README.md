@@ -3,7 +3,7 @@
 `plexus-puppet` is a stateless driver for the Plexus demo application (`plexus-demo`). It lets an AI coding agent or a
 test script drive the **real GUI** one action at a time: UI Automation (FlaUI UIA3) for menus, dialogs, keyboard and
 screenshots; the demo's named-pipe automation endpoint for model queries and geometry; and **real operating-system
-mouse input** for canvas gestures (drag, connect, rubber band, wheel, palette drag and drop).
+mouse input** for canvas gestures (drag, connect, rubber band, wheel, palette drag and drop, hover).
 
 It exists to test the Plexus editor control end to end: hit testing, gestures, inline editing, undo/redo and the OS
 clipboard are exercised exactly as a user would, which the headless unit tests cannot do. It is **not shipped**.
@@ -132,6 +132,10 @@ plexus-puppet click-at <x> <y> [--shift|--ctrl] [--double]
 plexus-puppet drag-at <x1> <y1> <x2> <y2> [--shift|--ctrl]   # rubber band on empty canvas
 plexus-puppet drag-element <automationId> <dx> <dy>          # drag a control by screen pixels, e.g. Main_PaletteSplitter
 plexus-puppet wheel <notches> [--ctrl] [--at <x>,<y>]        # +up / -down; Ctrl zooms around the cursor
+plexus-puppet hover-node <name> [--wait <ms>] [--shot <path.png>]               # see Hovering and tooltips
+plexus-puppet hover-port <Node.port[@in|@out]> [--wait <ms>] [--shot <path.png>]
+plexus-puppet hover-wire (<wire id> | <Source.port> <Target.port>) [--wait <ms>] [--shot <path.png>]
+plexus-puppet hover-at <x> <y> [--wait <ms>] [--shot <path.png>]
 ```
 
 Presses land on a point of the node body that is neither its name label nor a port; `drag-connect` presses inside the
@@ -146,6 +150,40 @@ Puppet restates that rule in `PaletteIds`; a unit test asserts that both agree):
 with every character other than a letter, digit or underscore replaced by an underscore. A short name such as `Mixer`
 is resolved against the entries that exist. When the entry is scrolled out of the palette the Puppet asks it to scroll
 itself into view with the UI Automation ScrollItem pattern before reading its position, so it needs no filtering.
+
+### Hovering and tooltips
+
+The hover commands rest the real cursor on something so its tooltip opens, the way a user would see it:
+
+- `hover-node <name>` rests on the node body (a point that is neither its name nor a port), which shows the node's
+  tooltip (its description and live summary, or the oscillator, envelope or filter thumbnail).
+- `hover-port <Node.port>` rests inside the port's hit area, which shows its label, type and description. A port tries
+  its `in` side first; add `@in` or `@out` to choose (the flow meter has `flow` on both sides).
+- `hover-wire` takes a wire id (`wires` or `pipe list-wires` lists them) or the source and target ports as
+  `Node.port Node.port`, and rests on the middle of the wire's longest drawn segment.
+- `hover-at <x> <y>` rests on a diagram point (whatever is there, or empty canvas).
+
+Each command first **parks the cursor on empty canvas** near the target (outside every node, with room for its name,
+ports and summary, every annotation and group, and away from every wire; the nearest free point of rings 40 to 240
+diagram units around the target that is visible and on the instance's window), then moves onto the target in small
+steps and rests there. Parking closes a tooltip that is showing and resets the editor's tooltip state, so the tooltip
+opens fresh even when the cursor was already on the target or had just clicked it. When no free point is found the
+cursor goes straight to the target (`park=none` in the output).
+
+- `--wait <ms>` is how long the cursor rests on the target before the command returns: a whole number of milliseconds,
+  default **700**, comfortably longer than Avalonia's default tooltip delay of 400 ms (`ToolTip.ShowDelay`). Raise it
+  when an application sets a longer delay.
+- `--shot <path.png>` saves a **screen copy** (as `shot --screen`) while the cursor still rests, so it shows the open
+  tooltip. The window is not raised again before the copy (raising it could close the tooltip), so keep it uncovered.
+
+Targets are given in diagram units like every other gesture and converted to physical screen pixels with the demo's
+`geometry` command; the Puppet is per-monitor DPI aware, so the pixels are right on scaled monitors. A target that
+would land on another window is refused (exit 11) before the cursor moves; a park point that would is skipped.
+Stale modifier keys are released first, since a held Ctrl or Shift would change what the editor shows. The output names
+the target, the park point and the wait, for example
+`OK hover-node node=Shape at=(812,455) park=(812,391) wait=700 shot="C:\temp\tip.png"`
+(preceded by the `OK shot ...` line of the copy). `pipe tooltip` reports the same tooltip text without moving the
+cursor, which is the better check when no real hover is needed.
 
 ### Safety checks
 
@@ -222,5 +260,6 @@ Another sequence: drag a node, check the wires and undo it.
   does: releasing it at once reaches the window before a dialog the chord opens and moves the focus to the menu bar.
   Before a chord the Puppet releases only the modifier keys that really are down (a key-up of a key that is not down
   is not something a keyboard sends, and a lone Alt key-up opens the menu bar of an Avalonia window).
-- The Puppet is not a Plexus feature: it is built and unit-tested (argument, chord, geometry and format parsing) in
-  `test/DemaConsulting.Plexus.Puppet.Tests`, but no UI runs in those tests.
+- The Puppet is not a Plexus feature: it is built and unit-tested (argument, chord, geometry and format parsing, and
+  the hover planning: options, park points, wire points and wire lookup) in `test/DemaConsulting.Plexus.Puppet.Tests`,
+  but no UI runs in those tests.

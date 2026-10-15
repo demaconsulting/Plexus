@@ -33,6 +33,10 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
 - **NodePropertySource_GetItems_ListsHostDataProperties** / **NodePropertySource_GetItems_NodeWithoutDataHasNoDataRows**:
   data rows with their annotations (hidden ones left out), and none for a node without data.
 - **NodePropertySource_Constructor_DetachedNode_Throws**: a detached node and a null node are refused (error paths).
+- **NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder**
+  (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder`): properties declared out of alphabetical order with
+  `PropertyDefinition.Order` are listed in that order (Attack, Decay, Sustain, Release under Envelope; the name row and
+  then the ranked uncategorized rows under General), and each row carries its definition's order.
 - **NodePropertySource_SetText_ValidatesWithThePropertyDefinition** /
   **NodePropertySource_SetText_NameIsValidatedWhileTyping**: "abc" is refused as "'abc' is not a number.", "880 Hz" is
   accepted, an empty and a duplicate name are refused with the rename messages (error paths).

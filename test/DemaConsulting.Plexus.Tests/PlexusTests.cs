@@ -897,7 +897,7 @@ public class PlexusTests
     [Fact]
     public void Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep()
     {
-        // Arrange: a host type with a "Channels" property deciding its inputs, fed on its last channel
+        // Arrange: a host type with a "Channels" property deciding its inputs, fed on its first and fourth channels
         var types = new NodeTypeRegistry();
         types.Add(new NodeType("acme.Source") { Outputs = { new PortDefinition("out", "f32") } });
         types.Add(new NodeType("acme.Bus")
@@ -913,28 +913,32 @@ public class PlexusTests
         page.AddNode("acme.Source", 0, 0, "S1");
         page.AddNode("acme.Source", 0, 150, "S2");
         var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
-        bus.Properties["Channels"] = 4;
+        bus.Properties["Channels"] = 8;
         var first = page.Connect("S1.out", "Bus.in0");
         var last = page.Connect("S2.out", "Bus.in3");
         var in0 = bus.Input("in0");
         var entries = diagram.History.UndoCount;
         var height = bus.Bounds.Height;
+        var defaultHeight = NodeGeometry.DefaultNodeSize(bus.Type, diagram.Theme).Height;
 
         // Act: drop to two channels
         bus.Properties["Channels"] = 2;
 
-        // Assert: in3 and its wire are gone, in0 kept its object and wire, one undo entry
+        // Assert: in3 and its wire are gone, in0 kept its object and wire, the node shrank back to its
+        // default height, one undo entry
         Assert.Equal(["in0", "in1"], bus.Inputs.Select(p => p.Name));
         Assert.Same(in0, bus.Inputs[0]);
         Assert.Equal([first], page.Wires);
-        Assert.Equal(height, bus.Bounds.Height);
+        Assert.True(height > defaultHeight);
+        Assert.Equal(defaultHeight, bus.Bounds.Height);
         Assert.Equal(entries + 1, diagram.History.UndoCount);
 
-        // Act / Assert: undo restores the four ports and both wires exactly
+        // Act / Assert: undo restores the eight ports, both wires and the taller height exactly
         Assert.True(diagram.History.Undo());
-        Assert.Equal(4, bus.Inputs.Count);
+        Assert.Equal(8, bus.Inputs.Count);
         Assert.Equal([first, last], page.Wires);
         Assert.Same(bus.Input("in3"), last.Target);
+        Assert.Equal(height, bus.Bounds.Height);
     }
 
     /// <summary>

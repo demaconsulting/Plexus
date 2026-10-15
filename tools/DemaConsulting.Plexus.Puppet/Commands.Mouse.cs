@@ -389,9 +389,7 @@ internal static partial class Commands
     /// <returns>The point inside the port's hit area.</returns>
     private static TargetPoint PortPress(string alias, string reference, string preferred)
     {
-        var at = reference.LastIndexOf('@');
-        var path = at < 0 ? reference : reference[..at];
-        var explicitSide = at < 0 ? null : reference[(at + 1)..];
+        var (path, explicitSide) = HoverPlanner.SplitPortReference(reference);
 
         // Some nodes (the flow meter) have a port of the same name on both sides: prefer the side the role needs, else let the demo decide
         JsonNode geometry;

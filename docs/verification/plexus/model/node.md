@@ -113,18 +113,29 @@ history entry exists per change, no entry exists for a no-op, and undo and redo 
 - `Node_Ports_SurvivingPortFanInRemoved_RemovesWiresTheRulesRefuse`: turning fan-in off keeps a single wire on the
   input (the same port object) and is one exact undo entry.
 
-**Node growth** (`Plexus-Model-Node-DynamicPortGrowth`, `NodePortsTests.cs`)
+**Node size** (`Plexus-Model-Node-DynamicPortSize`, `NodePortsTests.cs`)
 
 - `Node_Ports_MorePortsThanHeight_GrowsNodeAndReroutesWires`: eight inputs grow the node to exactly the height they need
-  (position and width unchanged) and the attached wire equals a fresh route (boundary: growth only when needed).
-- `Node_Ports_FewerPorts_DoesNotShrinkNode`: fewer ports keep the grown height.
+  (position and width unchanged) and the attached wire equals a fresh route.
+- `Node_Ports_FewerPorts_ShrinksToFitNotBelowDefaultHeight`: going from eight to three inputs shrinks the node to the
+  height three need, and on to one input shrinks it to the type's default height and no further (boundary: the default
+  height is the floor); position and width are kept and the attached wire equals a fresh route.
+- `Node_Ports_DeclaredSize_ShrinksNotBelowDeclaredHeight`: a node of a type with a declared size grows for five outputs
+  and shrinks back for one, never below the declared height, keeping the declared width and its position.
 - `Node_Ports_NodeInGroup_GroupFrameFollowsNewPorts`: the enclosing group reports a bounds change and still contains the
   node.
+
+**Unchanged port count** (`Plexus-Model-Node-DynamicPortKeepsSize`, `NodePortsTests.cs`)
+
+- `Node_Ports_SameCount_KeepsHandSetSize`: retyping the ports (same number of inputs and outputs) keeps a size the host
+  set, both taller and shorter than the fitted height.
 
 **One undo entry** (`Plexus-Model-Node-DynamicPortUndo`, `NodePortsTests.cs`)
 
 - `Node_Ports_PropertyChange_IsOneUndoEntryAndRoundTripsExactly`: removing wired ports and growing the node are each one
   entry that undo and redo restore exactly, twice over, with the same port objects.
+- `Node_Ports_Shrink_UndoRedoRestoreExactBounds`: shrinking a wired eight-input node to two inputs is one entry; undo
+  restores the exact previous bounds and redo the exact shrunk bounds.
 - `Node_Ports_UnchangedPorts_RaisesNoPortsChangeAndOneEntry`: an edit that leaves the ports alone keeps the definitions,
   raises no `Ports` notification and records only the plain property entry.
 - `Node_Ports_ProviderDuplicateNames_ThrowsAndRevertsAssignment`: a provider producing duplicate names throws; the model

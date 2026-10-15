@@ -165,6 +165,30 @@ public static class AudioPreview
     }
 
     /// <summary>
+    ///     Describes an envelope in a few words for its tooltip, for example <c>A 10 ms · D 120 ms · S 70 % · R 300 ms</c>.
+    /// </summary>
+    /// <param name="settings">The envelope settings.</param>
+    /// <returns>The four phases in A-D-S-R order (as set, not clamped), formatted with the invariant culture.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
+    public static string Describe(EnvelopeSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        return $"A {Format(settings.Attack)} ms · D {Format(settings.Decay)} ms · S {Format(settings.Sustain)} % · R {Format(settings.Release)} ms";
+    }
+
+    /// <summary>
+    ///     Describes a filter in a few words for its tooltip, for example <c>Low-pass, 900 Hz</c>.
+    /// </summary>
+    /// <param name="settings">The filter settings.</param>
+    /// <returns>The filter type and the cutoff (as set, not clamped), formatted with the invariant culture.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="settings"/> is <see langword="null"/>.</exception>
+    public static string Describe(FilterSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        return $"{settings.Type}, {Format(settings.Cutoff)} Hz";
+    }
+
+    /// <summary>
     ///     Computes the corner points of an ADSR envelope: silence, the attack peak, the sustain level reached after the decay,
     ///     the end of the illustrative sustain hold, and silence again after the release.
     /// </summary>

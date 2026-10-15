@@ -20,8 +20,11 @@ public sealed partial class DiagramPage
     ///         <item><description>the ports are swapped (<see cref="NodePortsCommand"/>; surviving names keep their port objects);</description></item>
     ///         <item><description>each remaining wire on a port whose type or fan-in changed is checked with the connection rules
     ///         (as a reconnect of itself, so it does not count against its own port) and removed when refused;</description></item>
-    ///         <item><description>the node grows to the height its longest port column needs (it never shrinks), and every remaining
-    ///         wire of the node whose end anchor moved is re-routed like after a resize.</description></item>
+    ///         <item><description>when the number of inputs or outputs changed, the node takes the height its longer port column
+    ///         needs but never less than its type's default height (the sizing <see cref="AddNode(NodeType, Point, string?, string?)"/>
+    ///         uses), so it grows or shrinks while keeping its position and width; a recomputation that keeps both counts leaves
+    ///         the size alone, including a size the host set. Every remaining wire of the node whose end anchor moved is
+    ///         re-routed like after a resize.</description></item>
     ///     </list>
     ///     Nothing is planned when the provider returns ports equivalent to the current ones.
     /// </remarks>
@@ -45,10 +48,13 @@ public sealed partial class DiagramPage
             plan.Run(new ElementPresenceCommand("Remove wire", this, wire, add: false));
         }
 
-        // Remember where the remaining wires of the node attach, to find the ones whose anchors move
+        // Remember where the remaining wires of the node attach, to find the ones whose anchors move, and how many
+        // ports each column had, to decide whether the node must be resized
         var before = _wires
             .Where(w => ReferenceEquals(w.Source.Node, node) || ReferenceEquals(w.Target.Node, node))
             .ToDictionary(w => w, w => (Source: w.Source.Anchor, Target: w.Target.Anchor));
+        var inputCount = node.Inputs.Count;
+        var outputCount = node.Outputs.Count;
 
         // 2. Swap the ports
         plan.Run(change);
@@ -64,15 +70,19 @@ public sealed partial class DiagramPage
             }
         }
 
-        // 4. Grow the node when the ports need more height, and re-route the wires whose anchors moved
+        // 4. When the number of ports changed, fit the height to them (never below the type's default height, keeping
+        //    position and width); an unchanged count leaves the size alone. Then re-route the wires whose anchors moved
         var layout = new LayoutCommand("Update ports", this);
         var changed = new Dictionary<Node, Rect>();
-        var required = NodeGeometry.PortColumnHeight(node, Diagram.Theme);
-        if (node.Bounds.Height < required)
+        if (node.Inputs.Count != inputCount || node.Outputs.Count != outputCount)
         {
-            var grown = node.Bounds with { Height = required };
-            layout.AddBounds(node, node.Bounds, grown);
-            changed[node] = grown;
+            // Only a real difference is recorded (a node already at the fitted height needs no layout entry)
+            var resized = node.Bounds with { Height = NodeGeometry.ProviderNodeHeight(node, Diagram.Theme) };
+            if (resized != node.Bounds)
+            {
+                layout.AddBounds(node, node.Bounds, resized);
+                changed[node] = resized;
+            }
         }
 
         var forced = before

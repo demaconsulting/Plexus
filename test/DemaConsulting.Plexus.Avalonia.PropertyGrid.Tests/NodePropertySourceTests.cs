@@ -113,6 +113,27 @@ public class NodePropertySourceTests
     }
 
     /// <summary>
+    ///     Rows of declared properties carry their definition's order, so a category lists them in that order.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder()
+    {
+        // Arrange
+        var (_, node) = NodeFixture.CreateOrdered();
+        using var source = new NodePropertySource(node);
+
+        // Act
+        var groups = PropertyOrdering.Group(source.GetItems(), PropertySortMode.Categorized);
+
+        // Assert: General keeps the name row first, then the ranked rows; Envelope reads A-D-S-R
+        Assert.Equal(["General", "Envelope"], groups.Select(g => g.Category));
+        Assert.Equal(["Name", "Gate", "Mode"], groups[0].Items.Select(i => i.Name));
+        Assert.Equal(["Attack", "Decay", "Sustain", "Release"], groups[1].Items.Select(i => i.Name));
+        Assert.Equal(3, Item(source, "Sustain").Order);
+        Assert.Equal(0, Item(source, "Name").Order);
+    }
+
+    /// <summary>
     ///     A node that is not attached to a diagram cannot be shown.
     /// </summary>
     [Fact]

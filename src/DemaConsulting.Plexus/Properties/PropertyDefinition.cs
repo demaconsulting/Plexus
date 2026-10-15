@@ -13,7 +13,7 @@ namespace DemaConsulting.Plexus;
 ///     <c>new PropertyDefinition("Mode", "Fast") { Choices = ["Fast", "Slow"], ShowInSummary = true }</c>; its
 ///     <see cref="ValueKind"/> then reads <see cref="PropertyValueKind.Choice"/>. Assigning a value that is not one of the
 ///     choices (or any value of the wrong kind) through <see cref="PropertyBag"/> throws <see cref="ArgumentException"/>.
-///     Presentation members (<see cref="DisplayName"/>, <see cref="Category"/>,
+///     Presentation members (<see cref="DisplayName"/>, <see cref="Category"/>, <see cref="Order"/>,
 ///     <see cref="Unit"/>, <see cref="EditorHint"/>, <see cref="IsReadOnly"/>) are hints for UIs and
 ///     summaries; they never restrict programmatic changes through <see cref="PropertyBag"/>. All members other than
 ///     <see cref="Name"/>, <see cref="ValueKind"/> and <see cref="DefaultValue"/> are set with an object initializer.
@@ -148,6 +148,17 @@ public sealed class PropertyDefinition
     ///     Gets or initializes the category used to group properties in editors; null (the default) means uncategorized. A hint for host UIs only.
     /// </summary>
     public string? Category { get; init; }
+
+    /// <summary>
+    ///     Gets or initializes the position of the property within its category in a property editor: lower values come
+    ///     first; equal values (the default 0 for all) keep alphabetical order by display name. A hint for host UIs only.
+    /// </summary>
+    /// <remarks>
+    ///     Lets a type list related properties in a meaningful sequence (for example an envelope's Attack, Decay, Sustain
+    ///     and Release) instead of alphabetically. Only the relative values matter; leaving every property at 0 keeps the
+    ///     alphabetical order. It never affects the order of <see cref="NodeType.Properties"/>, node summaries or storage.
+    /// </remarks>
+    public int Order { get; init; }
 
     /// <summary>
     ///     Gets or initializes the unit appended to the value in node summaries (for example "ms"); null (the default) means none.

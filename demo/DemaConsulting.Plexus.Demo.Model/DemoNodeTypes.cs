@@ -224,9 +224,10 @@ public static partial class DemoNodeTypes
     /// <param name="category">The category a properties editor groups the property under, or null.</param>
     /// <param name="description">The help text of the property, or null.</param>
     /// <param name="editorHint">The key of the custom editor a properties editor should use (for example <c>slider</c>), or null.</param>
+    /// <param name="order">The position of the property within its category in a properties editor (lower first); 0 keeps alphabetical order.</param>
     /// <returns>The property definition.</returns>
-    private static PropertyDefinition Summarized(string name, object value, string? unit = null, string? category = null, string? description = null, string? editorHint = null) =>
-        new(name, value) { Unit = unit, ShowInSummary = true, Category = category, Description = description, EditorHint = editorHint };
+    private static PropertyDefinition Summarized(string name, object value, string? unit = null, string? category = null, string? description = null, string? editorHint = null, int order = 0) =>
+        new(name, value) { Unit = unit, ShowInSummary = true, Category = category, Description = description, EditorHint = editorHint, Order = order };
 
     /// <summary>
     ///     Creates a choice property that is shown in the node summary.
@@ -236,7 +237,35 @@ public static partial class DemoNodeTypes
     /// <param name="choices">The allowed values.</param>
     /// <param name="category">The category a properties editor groups the property under, or null.</param>
     /// <param name="description">The help text of the property, or null.</param>
+    /// <param name="order">The position of the property within its category in a properties editor (lower first); 0 keeps alphabetical order.</param>
     /// <returns>The property definition.</returns>
-    private static PropertyDefinition Choice(string name, string value, IReadOnlyList<string> choices, string? category = null, string? description = null) =>
-        new(name, value) { Choices = choices, ShowInSummary = true, Category = category, Description = description };
+    private static PropertyDefinition Choice(string name, string value, IReadOnlyList<string> choices, string? category = null, string? description = null, int order = 0) =>
+        new(name, value) { Choices = choices, ShowInSummary = true, Category = category, Description = description, Order = order };
+
+    /// <summary>
+    ///     Formats a node's current property value with its unit for a tooltip, for example <c>12 L/min</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Uses the definition's own formatting (invariant culture), so a tooltip shows a value the way the node summary does.
+    ///     A value missing from the bag (a property declared after the node was stored) shows the default.
+    /// </remarks>
+    /// <param name="node">The node.</param>
+    /// <param name="name">The name of a property its type declares.</param>
+    /// <returns>The formatted value, followed by a space and the unit when the property has one.</returns>
+    private static string Value(Node node, string name)
+    {
+        var definition = node.Type.Properties.First(p => p.Name == name);
+        var value = node.Properties.TryGetValue(name, out var current) ? current : definition.DefaultValue;
+        var text = definition.FormatValue(value);
+        return string.IsNullOrEmpty(definition.Unit) ? text : $"{text} {definition.Unit}";
+    }
+
+    /// <summary>
+    ///     Makes a live tooltip: the type's description on the first line and a summary of the node's current values below it.
+    /// </summary>
+    /// <param name="description">The node type's description.</param>
+    /// <param name="summary">Builds the one-line summary of a node's current values.</param>
+    /// <returns>The tooltip function for <see cref="NodeType.ToolTip"/>.</returns>
+    private static Func<Node, string?> Live(string description, Func<Node, string> summary) =>
+        node => $"{description}\n{summary(node)}";
 }

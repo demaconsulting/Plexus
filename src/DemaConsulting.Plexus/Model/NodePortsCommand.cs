@@ -12,7 +12,7 @@ namespace DemaConsulting.Plexus;
 ///         calling the provider again.
 ///     </para>
 ///     <para>
-///         The command only swaps ports. Removing the wires of removed ports, re-checking retyped ports, growing the node
+///         The command only swaps ports. Removing the wires of removed ports, re-checking retyped ports, resizing the node
 ///         and re-routing wires are planned around it by <see cref="DiagramPage.PlanPortUpdate"/>.
 ///     </para>
 /// </remarks>

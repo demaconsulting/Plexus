@@ -64,7 +64,7 @@ public sealed partial class Node
     ///     <para>
     ///         Without a <see cref="NodeType.PortProvider"/> this is exactly <see cref="UndoHistory.Execute(IUndoableCommand)"/>.
     ///         With one, the change is applied, the page plans the port update (wire removals, the port swap, rule
-    ///         re-checks, growth and re-routing) and everything is recorded as one entry. When the ports do not change,
+    ///         re-checks, resize and re-routing) and everything is recorded as one entry. When the ports do not change,
     ///         the command itself is recorded, so consecutive edits of the same value still merge.
     ///     </para>
     ///     <para>

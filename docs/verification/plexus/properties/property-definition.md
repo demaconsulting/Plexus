@@ -1,6 +1,6 @@
 ### PropertyDefinition Unit Verification Design
 
-Scope: Property metadata: name, value kind, default, constraints and editor hints.
+Scope: Property metadata: name, value kind, default, constraints and editor and display-order hints.
 
 #### Verification Approach
 
@@ -55,8 +55,9 @@ the PropertyBag test class; the remaining tests are in the PropertyDefinition te
 ##### Presentation (`Plexus-Properties-PropertyDefinition-Presentation`)
 
 - **PropertyDefinition_Presentation_Defaults_AreEmpty**: the display name defaults to the name; all other hints are
-  empty.
-- **PropertyDefinition_Presentation_ExplicitHints_AreStored**: explicit hints are stored unchanged.
+  empty and the display order is 0.
+- **PropertyDefinition_Presentation_ExplicitHints_AreStored**: explicit hints, the display order included, are stored
+  unchanged.
 
 ##### Formatting (`Plexus-Properties-PropertyDefinition-Formatting`)
 

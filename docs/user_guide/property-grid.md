@@ -62,7 +62,10 @@ var mixer = new Mixer();
 var grid = new PropertyGrid { SelectedObject = mixer };      // categorized, with search and a description pane
 ```
 
-The grid lists the properties in categories (or alphabetically), with a search box, collapsible categories, a
+The grid lists the properties in categories (or alphabetically), within a category in the order the source gives
+(`PropertyItem.Order`, set with `CustomPropertyOptions.Order` for custom items and taken from
+`PropertyDefinition.Order` for Plexus nodes; ties and the alphabetical view go by name), with a search box, collapsible
+categories, a
 description pane, expandable nested objects (`Range`), a "..." button that opens the collection editor for collections
 (`Channels`) and inline validation: a value that cannot be converted, or that fails a `[Range]` or `[Required]`
 attribute, gets a red border and the reason. A value that differs from its `[DefaultValue]` is shown in bold, and a
@@ -262,7 +265,8 @@ up in the panel. A wire is not an element the adapters know; show only nodes, an
   veto it; the reason appears on the name row and the dialog stays open.
 - **The declared properties** (paths `Property.<name>`), each from its `PropertyDefinition`: the category (properties
   without one are listed under
-  "General", with the name), the display name with the unit in parentheses, the description, read-only, a bold value
+  "General", with the name), the position within the category (`Order`, lower first, then by name), the display name
+  with the unit in parentheses, the description, read-only, a bold value
   when it differs from the default (and a reset), a drop-down for `Choices`, a check box for booleans, a color editor for
   colors, text for numbers and strings that is parsed with `definition.TryParse` (invariant culture, a trailing unit
   such as `880 Hz` is accepted, a mistake is shown as `'abc' is not a number.`), and the custom editor named by

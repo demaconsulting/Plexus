@@ -59,7 +59,8 @@ sections:
               - id: Plexus-Properties-PropertyDefinition-Presentation
                 title: >-
                   PropertyDefinition shall default the display name to the property name and carry optional
-                  description, category, unit, editor hint, summary and read-only hints without restricting the value.
+                  description, category, display order, unit, editor hint, summary and read-only hints without
+                  restricting the value; the display order shall default to 0.
                 justification: |
                   Editors and summaries need labels and grouping information, but the hints must never change which
                   values are legal.

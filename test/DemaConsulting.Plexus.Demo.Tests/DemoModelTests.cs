@@ -430,17 +430,121 @@ public class DemoModelTests
 
         // Assert
         Assert.Equal(1.0, amplitude.DefaultValue);
-        Assert.Equal("Level", amplitude.Category);
         Assert.False(string.IsNullOrEmpty(amplitude.Description));
         Assert.Equal(0.0, phase.DefaultValue);
         Assert.Equal("°", phase.Unit);
-        Assert.Equal("Signal", phase.Category);
         Assert.False(string.IsNullOrEmpty(phase.Description));
         Assert.Equal(0.0, offset.DefaultValue);
         Assert.Equal("DC Offset", offset.DisplayName);
-        Assert.Equal("Level", offset.Category);
         Assert.False(string.IsNullOrEmpty(offset.Description));
         Assert.All([amplitude, phase, offset], p => Assert.False(p.ShowInSummary));
+
+        // Assert: every setting is under "Oscillator", ordered waveform, frequency, amplitude, phase, DC offset
+        Assert.All(type.Properties, p => Assert.Equal(DemoNodeTypes.OscillatorCategory, p.Category));
+        Assert.Equal(
+            [DemoNodeTypes.WaveformProperty, DemoNodeTypes.FrequencyProperty, DemoNodeTypes.AmplitudeProperty, DemoNodeTypes.PhaseProperty, DemoNodeTypes.DcOffsetProperty],
+            type.Properties.OrderBy(p => p.Order).Select(p => p.Name));
+    }
+
+    /// <summary>
+    ///     Validates that the envelope lists its properties under "Envelope" in attack, decay, sustain, release order, each
+    ///     with a description.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_Envelope_PropertiesInAdsrOrderUnderEnvelope()
+    {
+        // Arrange
+        var type = DemoNodeTypes.CreateRegistry().Get(DemoNodeTypes.Envelope);
+
+        // Act
+        var ordered = type.Properties.OrderBy(p => p.Order).ToList();
+
+        // Assert
+        Assert.Equal(
+            [DemoNodeTypes.AttackProperty, DemoNodeTypes.DecayProperty, DemoNodeTypes.SustainProperty, DemoNodeTypes.ReleaseProperty],
+            ordered.Select(p => p.Name));
+        Assert.Equal([1, 2, 3, 4], ordered.Select(p => p.Order));
+        Assert.All(ordered, p => Assert.Equal(DemoNodeTypes.EnvelopeCategory, p.Category));
+        Assert.All(ordered, p => Assert.False(string.IsNullOrEmpty(p.Description)));
+    }
+
+    /// <summary>
+    ///     Validates that every demo node type has a description and a tooltip that starts with it.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_EveryType_HasDescriptionAndToolTip()
+    {
+        // Arrange: one node of every type on a page, so live tooltips can read their page
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200))).ToList();
+
+        // Act / Assert
+        Assert.All(nodes, node =>
+        {
+            Assert.False(string.IsNullOrEmpty(node.Type.Description), node.Type.Key);
+            var tip = node.Type.GetToolTip(node);
+            Assert.NotNull(tip);
+            Assert.StartsWith(node.Type.Description, tip, StringComparison.Ordinal);
+        });
+    }
+
+    /// <summary>
+    ///     Validates that every port of every demo node type has a description.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_EveryPort_HasDescription()
+    {
+        // Arrange: nodes, so ports a provider computes are included too
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200))).ToList();
+
+        // Act
+        var ports = nodes.SelectMany(n => n.Ports).ToList();
+
+        // Assert
+        Assert.NotEmpty(ports);
+        Assert.All(ports, port => Assert.False(string.IsNullOrEmpty(port.Description), $"{port.Node.Type.Key}.{port.Name}"));
+    }
+
+    /// <summary>
+    ///     Validates that the audio sample's tooltips summarize the live settings of its filter and envelope.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_AudioToolTips_SummarizeSettings()
+    {
+        // Arrange
+        var diagram = DemoSamples.Audio();
+
+        // Act
+        var tone = diagram.FindNode("Tone")!;
+        var shape = diagram.FindNode("Shape")!;
+
+        // Assert
+        Assert.Contains("Low-pass, 900 Hz", tone.Type.GetToolTip(tone), StringComparison.Ordinal);
+        Assert.Contains("A 10 ms · D 120 ms · S 70 % · R 300 ms", shape.Type.GetToolTip(shape), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that the logic sample's note on the three-input AND gate explains the Inputs property in words that
+    ///     hold for any value, and fits above the gate.
+    /// </summary>
+    [Fact]
+    public void DemoSamples_Logic_GateAnnotation_DescribesInputsProperty()
+    {
+        // Arrange
+        var page = DemoSamples.Logic().Pages[0];
+
+        // Act
+        var note = page.Annotations.Single(a => a.Text.Contains("Inputs property", StringComparison.Ordinal));
+        var gate = page.Nodes.Single(n => n.Name == "All");
+
+        // Assert
+        Assert.Contains($"{DemoNodeTypes.MinGateInputs}–{DemoNodeTypes.MaxGateInputs}", note.Text, StringComparison.Ordinal);
+        Assert.Contains("every input is on; an unconnected input is off", note.Text.Replace('\n', ' '), StringComparison.Ordinal);
+        Assert.DoesNotContain("Inputs = 3", note.Text, StringComparison.Ordinal);
+        Assert.True(note.Bounds.Bottom < gate.Bounds.Top);
     }
 
     /// <summary>

@@ -236,15 +236,17 @@ sections:
             title: >-
               The Model subsystem shall recompute the ports of a node whose type has a port provider whenever the
               node's properties or payload change, keeping ports by name within their direction, removing the wires
-              of ports that disappear or that the connection rules no longer allow, growing the node to fit its
-              ports, and recording all of it with the triggering change as one undo entry.
+              of ports that disappear or that the connection rules no longer allow, resizing the node to fit its
+              ports when their number changes, and recording all of it with the triggering change as one undo
+              entry.
             justification: |
               Decomposes Plexus-Core-DynamicPorts; the model owns ports, wires, bounds and history, so it must keep
               them consistent with each other when ports change.
             children:
               - Plexus-Model-Node-DynamicPorts
               - Plexus-Model-Node-DynamicPortWires
-              - Plexus-Model-Node-DynamicPortGrowth
+              - Plexus-Model-Node-DynamicPortSize
+              - Plexus-Model-Node-DynamicPortKeepsSize
               - Plexus-Model-Node-DynamicPortUndo
               - Plexus-Model-Node-DynamicPortNotification
               - Plexus-Model-DiagramPage-DetachedPorts

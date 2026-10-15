@@ -33,7 +33,8 @@ public static class NodeGeometry
     ///     <see cref="DiagramTheme.GridSize"/>. The default width is therefore a minimum, and short titles keep it.
     ///     The port columns counted here are the type's declared <see cref="NodeType.Inputs"/> and <see cref="NodeType.Outputs"/>;
     ///     when a <see cref="NodeType.PortProvider"/> gives a new node more ports, <see cref="DiagramPage.AddNode(NodeType, Point, string?, string?)"/>
-    ///     grows its height (never its width) to fit them, even over a declared size.
+    ///     grows its height (never its width) to fit them, even over a declared size, and a later recomputation that changes the
+    ///     number of ports resizes the height the same way (growing or shrinking, never below the height returned here).
     /// </remarks>
     /// <param name="type">The node type.</param>
     /// <param name="theme">The theme supplying metrics.</param>
@@ -258,14 +259,29 @@ public static class NodeGeometry
     ///     Computes the height a node needs for its current ports: <see cref="RequiredHeight"/> of its longer port column.
     /// </summary>
     /// <remarks>
-    ///     Used when a node's ports come from a <see cref="NodeType.PortProvider"/>: a new node, and a node whose ports
-    ///     were recomputed, grow to at least this height so no port overflows the box.
+    ///     Used when a node's ports come from a <see cref="NodeType.PortProvider"/>; the height such a node is given is
+    ///     <see cref="ProviderNodeHeight"/>, which never goes below this value so no port overflows the box.
     /// </remarks>
     /// <param name="node">The node.</param>
     /// <param name="theme">The theme supplying metrics.</param>
     /// <returns>The minimum height that keeps every port anchor inside the box with padding.</returns>
     internal static double PortColumnHeight(Node node, DiagramTheme theme) =>
         RequiredHeight(Math.Max(node.Inputs.Count, node.Outputs.Count), theme);
+
+    /// <summary>
+    ///     Computes the height of a node whose ports come from a <see cref="NodeType.PortProvider"/>: the height its
+    ///     current ports need, but never less than its type's default height.
+    /// </summary>
+    /// <remarks>
+    ///     One sizing rule shared by a newly added provider node and a node whose recomputed ports changed in number, so a
+    ///     node that gains ports grows and a node that loses them shrinks back, never below
+    ///     <see cref="DefaultNodeSize"/>'s height (a declared <see cref="NodeType.DefaultSize"/> included).
+    /// </remarks>
+    /// <param name="node">The node, with its current ports.</param>
+    /// <param name="theme">The theme supplying metrics.</param>
+    /// <returns>The larger of the type's default height and <see cref="PortColumnHeight"/>.</returns>
+    internal static double ProviderNodeHeight(Node node, DiagramTheme theme) =>
+        Math.Max(DefaultNodeSize(node.Type, theme).Height, PortColumnHeight(node, theme));
 
     /// <summary>
     ///     Lists the labels of a column of ports.

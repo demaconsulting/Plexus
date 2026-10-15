@@ -2,7 +2,7 @@
 
 ![Properties Structure](PropertiesView.svg)
 
-Scope: Property metadata: name, value kind, default, constraints and editor hints.
+Scope: Property metadata: name, value kind, default, constraints and editor and display-order hints.
 
 #### Purpose
 
@@ -17,8 +17,9 @@ an internal helper that normalizes, coerces and formats values.
   default value and changed to choice when a choice list is set.
 - **DefaultValue**: the default in canonical form (bool, int, long, double, string or color).
 - **Choices**: null, or an immutable copy of a non-empty list of distinct strings that contains the default value.
-- **Presentation hints**: display name (defaults to the name), description, category, unit, summary flag, read-only
-  flag, editor hint and an optional formatting function. All are set at construction and never restrict values.
+- **Presentation hints**: display name (defaults to the name), description, category, display order within the
+  category (`Order`, default 0: equal orders keep alphabetical order), unit, summary flag, read-only flag, editor hint and
+  an optional formatting function. All are set at construction and never restrict values.
 - **Canonical types**: small integral types widen to int, larger signed and unsigned types up to the long range widen
   to long, floating-point and decimal types become double. Other types, non-finite numbers and unsigned values above the
   long range are not allowed.

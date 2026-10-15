@@ -410,7 +410,7 @@ internal static class ElementImporter
         /// <remarks>
         ///     Ports are never stored: a type with a <see cref="NodeType.PortProvider"/> recomputes them here, after the
         ///     properties and data and before any wire is resolved, so wires on computed ports find them. The stored bounds
-        ///     are kept as they are (no growth), so a restore is exact. A wire naming a port the provider does not produce
+        ///     are kept as they are (no resize), so a restore is exact. A wire naming a port the provider does not produce
         ///     then fails like any unknown port.
         /// </remarks>
         /// <param name="node">The node.</param>

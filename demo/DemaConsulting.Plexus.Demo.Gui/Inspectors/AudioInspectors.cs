@@ -7,8 +7,8 @@ using DemaConsulting.Plexus.Demo.Model;
 namespace DemaConsulting.Plexus.Demo.Gui.Inspectors;
 
 /// <summary>
-///     The demo's custom node inspectors: live previews for the oscillator, envelope and filter properties dialogs, and the
-///     oscillator's waveform tooltip.
+///     The demo's custom node inspectors: live previews for the oscillator, envelope and filter properties dialogs, and their
+///     thumbnail tooltips.
 /// </summary>
 /// <remarks>
 ///     This is the pattern a host migrating custom inspectors follows: the library's
@@ -26,7 +26,7 @@ internal static class AudioInspectors
     private const double PlotHeight = 260;
 
     /// <summary>
-    ///     The size of the waveform thumbnail in the oscillator tooltip, in device-independent pixels.
+    ///     The size of the plot thumbnail in the oscillator, envelope and filter tooltips, in device-independent pixels.
     /// </summary>
     private static readonly Size ThumbnailSize = new(160, 60);
 
@@ -82,24 +82,42 @@ internal static class AudioInspectors
         () => AudioPreview.Filter(FilterSettings.Read(context.GetPropertyValue)));
 
     /// <summary>
-    ///     Creates the oscillator's hover tooltip: a waveform thumbnail of its current values above its name and a short
-    ///     description such as <c>Sine, 440 Hz</c>.
+    ///     Creates the hover tooltip of an oscillator, envelope or filter: a thumbnail plot of its current values above its
+    ///     name and a short summary such as <c>Sine, 440 Hz</c>, <c>A 10 ms · D 120 ms · S 70 % · R 300 ms</c> or
+    ///     <c>Low-pass, 900 Hz</c>.
     /// </summary>
-    /// <param name="node">The oscillator node.</param>
-    /// <returns>The tooltip content.</returns>
-    internal static Control CreateOscillatorToolTip(Node node)
+    /// <remarks>
+    ///     The thumbnail is the compact form of the same plot the node's properties dialog previews, computed by the model's
+    ///     math (<see cref="AudioPreview"/>), so the tooltip and the dialog always agree.
+    /// </remarks>
+    /// <param name="node">The node.</param>
+    /// <returns>The tooltip content; <see langword="null"/> for every other node type (its text tooltip is kept).</returns>
+    internal static Control? CreateToolTip(Node node)
     {
-        var settings = OscillatorSettings.FromNode(node);
+        // Pick the plot and the summary of the node's current settings
+        (PlotData Plot, string Summary)? content = node.Type.Key switch
+        {
+            DemoNodeTypes.Oscillator => (AudioPreview.Oscillator(OscillatorSettings.FromNode(node)), AudioPreview.Describe(OscillatorSettings.FromNode(node))),
+            DemoNodeTypes.Envelope => (AudioPreview.Envelope(EnvelopeSettings.FromNode(node)), AudioPreview.Describe(EnvelopeSettings.FromNode(node))),
+            DemoNodeTypes.Filter => (AudioPreview.Filter(FilterSettings.FromNode(node)), AudioPreview.Describe(FilterSettings.FromNode(node))),
+            _ => null,
+        };
+        if (content is not { } shown)
+        {
+            return null;
+        }
+
+        // A compact thumbnail above the bold name and the one-line summary
         var panel = new StackPanel { Spacing = 4 };
         panel.Children.Add(new SignalPlot
         {
             IsCompact = true,
             Width = ThumbnailSize.Width,
             Height = ThumbnailSize.Height,
-            Data = AudioPreview.Oscillator(settings),
+            Data = shown.Plot,
         });
         panel.Children.Add(new TextBlock { Text = node.Name, FontWeight = FontWeight.Bold });
-        panel.Children.Add(new TextBlock { Text = AudioPreview.Describe(settings) });
+        panel.Children.Add(new TextBlock { Text = shown.Summary });
         return panel;
     }
 

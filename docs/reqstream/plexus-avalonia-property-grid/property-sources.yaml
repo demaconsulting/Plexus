@@ -75,7 +75,8 @@ sections:
 
           - id: PlexusAvaloniaPropertyGrid-PropertySources-Ordering
             title: >-
-              The ordering helper shall order items by category and then display name, or by display name alone,
+              The ordering helper shall order items by category, then by item rank (see
+              PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder) and then display name, or by display name alone,
               ignoring case and culture, with parenthesized names first, and group them into categories.
             justification: |
               Decomposes PlexusAvaloniaPropertyGrid-Order; users migrating from the WinForms property grid
@@ -94,6 +95,19 @@ sections:
               needs its own category first without renaming the others.
             tests:
               - PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically
+
+          - id: PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder
+            title: >-
+              In the categorized view the ordering helper shall order the items of a category by their item rank
+              (lower first), after parenthesized names and before the display name, so equal ranks (the default 0)
+              stay alphabetical; the alphabetical view shall ignore the item rank.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Order; some properties read naturally in a fixed sequence (an
+              envelope's attack, decay, sustain and release) rather than alphabetically, while sources that set no
+              rank must keep the familiar alphabetical order.
+            tests:
+              - PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel
+              - PropertyOrdering_Order_AlphabeticalIgnoresItemOrder
 
           - id: PlexusAvaloniaPropertyGrid-PropertySources-CommitScope
             title: >-

@@ -1,6 +1,6 @@
 package Plexus {
     part def PropertyDefinition {
-        doc /* Property metadata: name, value kind, default, constraints and editor hints. */
+        doc /* Property metadata: name, value kind, default, constraints and editor and display-order hints. */
 
         comment sourceRef /* Source: src/DemaConsulting.Plexus/Properties/PropertyDefinition.cs, src/DemaConsulting.Plexus/Properties/PropertyValueKind.cs, src/DemaConsulting.Plexus/Properties/PropertyValues.cs */
         comment testRef /* Test: test/DemaConsulting.Plexus.Tests/Properties/PropertyDefinitionTests.cs, test/DemaConsulting.Plexus.Tests/PropertyBagTests.cs */

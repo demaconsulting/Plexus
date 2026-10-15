@@ -3,7 +3,7 @@
 ![PlexusAvaloniaPropertyGrid Structure](PlexusAvaloniaPropertyGridView.svg)
 
 Scope: Supplies property items: reflection over any object through the component model, host-supplied items, merging of
-sources, source selection by factory and category ordering.
+sources, source selection by factory and category and item ordering.
 
 ### Purpose
 
@@ -44,8 +44,11 @@ data). `PropertySourceFactory` chooses the source for an object and lets adapter
   first source outermost) around the writes and runs them once; **`IPropertyCommitScope`** is the interface a source
   implements to bracket the commits of its session (for example in an undo transaction).
 - **`PropertyOrdering.Order`** — orders by category rank (the lowest `PropertyItem.CategoryOrder` of a category), then by
-  category (categorized mode) and then by parenthesized names first and display
-  name, comparing with the invariant culture and ignoring case; the sort is stable. **`Group`** splits the ordered items
+  category (categorized mode) and then by parenthesized names first, the item rank (`PropertyItem.Order`, lower first;
+  categorized mode only, so the alphabetical view ignores it) and display
+  name, comparing with the invariant culture and ignoring case; the sort is stable. Every item ranks 0 unless its source
+  sets a rank (`CustomPropertyOptions.Order`, or `PropertyDefinition.Order` through the node source), so sources that set
+  none keep the alphabetical order. **`Group`** splits the ordered items
   into category groups (a single group without a category in alphabetical mode).
 
 ### Error Handling

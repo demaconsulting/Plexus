@@ -86,11 +86,11 @@ internal sealed partial class AutomationDispatcher
     }
 
     /// <summary>
-    ///     Describes tooltip content for the <c>tooltip</c> command: its text, and whether it shows a waveform preview.
+    ///     Describes tooltip content for the <c>tooltip</c> command: its text, and whether it shows a plot preview.
     /// </summary>
     /// <remarks>
-    ///     Most tooltips are text. An oscillator's tooltip is a control (a waveform thumbnail above text), so its text is the
-    ///     texts of its text blocks, one per line, rather than the control's type name.
+    ///     Most tooltips are text. An oscillator, envelope or filter tooltip is a control (a plot thumbnail above text), so its
+    ///     text is the texts of its text blocks, one per line, rather than the control's type name.
     /// </remarks>
     /// <param name="content">The tooltip content, or <see langword="null"/> for none.</param>
     /// <returns><c>{text, preview}</c>: the text (null for no tooltip) and true when the content contains a plot.</returns>

@@ -16,7 +16,7 @@ namespace DemaConsulting.Plexus.Demo.Tests;
 
 /// <summary>
 ///     Tests for the demo's custom node inspectors: the live previews of the audio nodes' properties dialogs, the plain dialog
-///     of the other nodes, the oscillator's waveform tooltip and the theme-aware plot control.
+///     of the other nodes, the oscillator, envelope and filter thumbnail tooltips and the theme-aware plot control.
 /// </summary>
 public class InspectorTests
 {
@@ -134,6 +134,27 @@ public class InspectorTests
     });
 
     /// <summary>
+    ///     Validates that the envelope's properties dialog lists attack, decay, sustain and release in that order under
+    ///     "Envelope".
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task MainWindow_PropertiesDialog_EnvelopeListsAdsrInOrder() => GuiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new MainWindowHost(MainWindowHost.Options("--sample", "audio"));
+
+        // Act
+        var (_, dialog) = OpenProperties(host, "Shape");
+        var groups = PropertyOrdering.Group(dialog.Grid.Session!.Source.GetItems(), PropertySortMode.Categorized);
+        Press(host, dialog, AutomationIds.PropertiesCancel);
+
+        // Assert
+        var envelope = Assert.Single(groups, g => g.Category == DemoNodeTypes.EnvelopeCategory);
+        Assert.Equal(["Attack (ms)", "Decay (ms)", "Sustain (%)", "Release (ms)"], envelope.Items.Select(i => i.DisplayName));
+    });
+
+    /// <summary>
     ///     Validates that nodes other than the oscillator, envelope and filter get the plain dialog without a preview.
     /// </summary>
     /// <returns>A task for xUnit to await.</returns>
@@ -182,6 +203,32 @@ public class InspectorTests
             () => Assert.Contains("Osc1", parts.OfType<TextBlock>().Select(t => t.Text)),
             () => Assert.IsNotAssignableFrom<Control>(portTip),
             () => Assert.IsNotAssignableFrom<Control>(ampTip));
+    });
+
+    /// <summary>
+    ///     Validates that the envelope and filter tooltips also show a plot thumbnail of their current values with their
+    ///     name and a short summary.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task MainWindow_EnvelopeAndFilterToolTips_ShowThumbnailAndSummary() => GuiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new MainWindowHost(MainWindowHost.Options("--sample", "audio"));
+        var shape = host.Session.Diagram.FindNode("Shape")!;
+        var tone = host.Session.Diagram.FindNode("Tone")!;
+
+        // Act
+        var shapeParts = Assert.IsAssignableFrom<Control>(host.Editor.GetToolTipContent(shape)).GetSelfAndLogicalDescendants().ToList();
+        var toneParts = Assert.IsAssignableFrom<Control>(host.Editor.GetToolTipContent(tone)).GetSelfAndLogicalDescendants().ToList();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.True(shapeParts.OfType<SignalPlot>().Single().IsCompact),
+            () => Assert.Equal(["Shape", "A 10 ms · D 120 ms · S 70 % · R 300 ms"], shapeParts.OfType<TextBlock>().Select(t => t.Text)),
+            () => Assert.True(toneParts.OfType<SignalPlot>().Single().IsCompact),
+            () => Assert.True(toneParts.OfType<SignalPlot>().Single().Data!.XAxis.IsLogarithmic),
+            () => Assert.Equal(["Tone", "Low-pass, 900 Hz"], toneParts.OfType<TextBlock>().Select(t => t.Text)));
     });
 
     /// <summary>

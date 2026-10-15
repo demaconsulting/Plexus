@@ -89,6 +89,9 @@ internal sealed class ElementPropertyItem : PropertyItem
     public override int CategoryOrder => _options.CategoryOrder;
 
     /// <inheritdoc />
+    public override int Order => _options.Order;
+
+    /// <inheritdoc />
     public override string Description => _options.Description ?? string.Empty;
 
     /// <inheritdoc />

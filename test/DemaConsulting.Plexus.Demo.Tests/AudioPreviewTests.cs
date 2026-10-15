@@ -117,6 +117,36 @@ public class AudioPreviewTests
     }
 
     /// <summary>
+    ///     Validates the short envelope summary used by the tooltip: the four phases in A-D-S-R order, as set.
+    /// </summary>
+    [Fact]
+    public void AudioPreview_Describe_Envelope_ListsAdsrTimesAndLevel()
+    {
+        // Arrange
+        var settings = new EnvelopeSettings(2.5, 80, 45, 1000);
+
+        // Act / Assert
+        Assert.Equal("A 10 ms · D 120 ms · S 70 % · R 300 ms", AudioPreview.Describe(EnvelopeSettings.Default));
+        Assert.Equal("A 2.5 ms · D 80 ms · S 45 % · R 1000 ms", AudioPreview.Describe(settings));
+        Assert.Throws<ArgumentNullException>(() => AudioPreview.Describe((EnvelopeSettings)null!));
+    }
+
+    /// <summary>
+    ///     Validates the short filter summary used by the tooltip: the type and the cutoff, as set.
+    /// </summary>
+    [Fact]
+    public void AudioPreview_Describe_Filter_IsTypeAndCutoff()
+    {
+        // Arrange
+        var settings = new FilterSettings("High-pass", 99999);
+
+        // Act / Assert
+        Assert.Equal("Low-pass, 1200 Hz", AudioPreview.Describe(FilterSettings.Default));
+        Assert.Equal("High-pass, 99999 Hz", AudioPreview.Describe(settings));
+        Assert.Throws<ArgumentNullException>(() => AudioPreview.Describe((FilterSettings)null!));
+    }
+
+    /// <summary>
     ///     Validates that the envelope follows attack, decay to sustain, the illustrative hold and release, with each phase
     ///     labelled on a ms axis.
     /// </summary>
