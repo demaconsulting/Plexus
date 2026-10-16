@@ -26,8 +26,7 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     <para>
 ///         The dialog's grid uses the shared <see cref="PropertyGrid.DefaultEditors"/>, so custom editors registered there at start-up work in
 ///         every dialog. To give one dialog its own editors, construct it, assign <c>dialog.Grid.EditorRegistry</c> and show it yourself.
-///         The dialog derives from Avalonia's <c>Window</c>: <c>Show()</c>, <c>ShowDialog()</c>, <c>Close()</c>, <c>Title</c>, <c>Width</c> and the rest of the window API are available but are not
-///         repeated in the member tables of this page.
+///         The dialog derives from Avalonia's <c>Window</c>, so the window API (<c>Show()</c>, <c>ShowDialog()</c>, <c>Close()</c>, <c>Title</c>, <c>Width</c>, ...) applies; see Inherited Members.
 ///     </para>
 ///     <para>
 ///         The dialog's controls carry automation ids: <c>PropertyGridDialog</c> (the window), <c>PropertyGridDialog_OK</c>,
@@ -148,7 +147,7 @@ public sealed class PropertyGridDialog : Window
     public PropertyGrid Grid { get; }
 
     /// <summary>
-    ///     Raises <see cref="CloseConfirmed"/> when the close is not cancelled.
+    ///     Handles the dialog closing (OK, Cancel or the window's close button); when no handler cancels the close, the dialog's preview, if any, is released before the grid leaves the window.
     /// </summary>
     /// <param name="e">The closing event data.</param>
     protected override void OnClosing(WindowClosingEventArgs e)

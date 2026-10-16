@@ -27,10 +27,7 @@ namespace DemaConsulting.Plexus;
 ///         <see cref="GroupProxyPortLayout"/>.
 ///     </para>
 ///     <para>
-///         Inherited from <see cref="DiagramElement"/> (the member tables of this page list only what <see cref="Group"/> declares): <see cref="DiagramElement.Id"/>,
-///         <see cref="DiagramElement.Page"/> (null while the group is removed), <see cref="DiagramElement.Parent"/> (the enclosing group of a nested group, or null),
-///         <see cref="DiagramElement.IsVisible"/>, <see cref="DiagramElement.GetBounds"/> (the same rectangle as <see cref="Bounds"/>), <see cref="DiagramElement.Remove"/>
-///         and the <see cref="DiagramElement.PropertyChanged"/> event.
+///         <see cref="DiagramElement.Parent"/> is the enclosing group of a nested group, or null.
 ///     </para>
 /// </remarks>
 /// <example>

@@ -83,7 +83,7 @@ public class StandardNodeVisual : INodeVisual
     /// <remarks>
     ///     The halo is <see cref="GlowRings"/> concentric translucent rounded outlines that fade outward,
     ///     drawn below the box so only the part outside it shows. It reaches
-    ///     <c>GlowRings * 2</c> diagram units beyond the box. Protected virtual: an extension point of derived visuals.
+    ///     <c>GlowRings * 2</c> diagram units beyond the box.
     /// </remarks>
     /// <param name="context">The visual context.</param>
     protected virtual void AddGlow(NodeVisualContext context)
@@ -108,7 +108,7 @@ public class StandardNodeVisual : INodeVisual
     }
 
     /// <summary>
-    ///     Adds the filled, bordered node box, using the node's style where it sets the fill, border or border thickness. Protected virtual: an extension point of derived visuals.
+    ///     Adds the filled, bordered node box, using the node's style where it sets the fill, border or border thickness.
     /// </summary>
     /// <param name="context">The visual context.</param>
     protected virtual void AddBox(NodeVisualContext context)
@@ -122,7 +122,7 @@ public class StandardNodeVisual : INodeVisual
     }
 
     /// <summary>
-    ///     Adds the node type title in the header band. Protected virtual: an extension point of derived visuals.
+    ///     Adds the node type title in the header band.
     /// </summary>
     /// <remarks>
     ///     A title wider than the box wraps onto further lines and, when a single word is still too
@@ -166,7 +166,7 @@ public class StandardNodeVisual : INodeVisual
     }
 
     /// <summary>
-    ///     Adds the node type icon, when the type has one, tinted and faded as the node's style says. Protected virtual: an extension point of derived visuals.
+    ///     Adds the node type icon, when the type has one, tinted and faded as the node's style says.
     /// </summary>
     /// <param name="context">The visual context.</param>
     protected virtual void AddIcon(NodeVisualContext context)
@@ -178,7 +178,7 @@ public class StandardNodeVisual : INodeVisual
     }
 
     /// <summary>
-    ///     Adds the instance name above the box. Protected virtual: an extension point of derived visuals.
+    ///     Adds the instance name above the box.
     /// </summary>
     /// <param name="context">The visual context.</param>
     protected virtual void AddName(NodeVisualContext context)
@@ -188,7 +188,7 @@ public class StandardNodeVisual : INodeVisual
     }
 
     /// <summary>
-    ///     Adds the property summary lines below the box. Protected virtual: an extension point of derived visuals.
+    ///     Adds the property summary lines below the box.
     /// </summary>
     /// <param name="context">The visual context.</param>
     protected virtual void AddSummary(NodeVisualContext context)
@@ -200,7 +200,7 @@ public class StandardNodeVisual : INodeVisual
     }
 
     /// <summary>
-    ///     Adds each port's colored triangle and label. Protected virtual: an extension point of derived visuals.
+    ///     Adds each port's colored triangle and label.
     /// </summary>
     /// <param name="context">The visual context.</param>
     protected virtual void AddPorts(NodeVisualContext context)

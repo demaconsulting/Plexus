@@ -35,7 +35,7 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///         <see cref="DiagramContextRequested"/>, <see cref="SelectionChanged"/>, <see cref="ToolTipRequested"/>, <see cref="PasteFailed"/> and <see cref="ClipboardFailed"/>.
 ///         For a properties dialog on double-click use <c>NodePropertiesDialog.ShowAsync(window, e.Node)</c> from the <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c> package.
 ///         The application must include a full Avalonia theme such as <c>&lt;FluentTheme /&gt;</c> in App.axaml.
-///         The editor derives from Avalonia's <c>Control</c> (a <c>Visual</c> and <c>InputElement</c>), so all of that is available too and is not repeated in the member tables of this page: for example
+///         The editor derives from Avalonia's <c>Control</c> (a <c>Visual</c> and <c>InputElement</c>), so the usual control members apply too; see Inherited Members: for example
 ///         <c>Bounds</c>, <c>IsVisible</c>, <c>IsEnabled</c>, <c>Width</c>, <c>Height</c>, <c>Focusable</c>, <c>Focus()</c>, <c>InvalidateVisual()</c> and <c>ContextMenu</c>.
 ///         It must be used on the UI thread, like the model it shows. Its AutomationId defaults to
 ///         <c>DiagramEditor</c>; give it an <c>x:Name</c> or <c>AutomationProperties.AutomationId</c> when a

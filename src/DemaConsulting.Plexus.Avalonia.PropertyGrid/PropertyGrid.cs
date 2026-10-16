@@ -56,8 +56,7 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     <para>
 ///         <b>Threading and theming.</b> Use the grid from the UI thread. It uses the Fluent theme resources, so the application must include
 ///         <c>&lt;FluentTheme /&gt;</c> in App.axaml; it works in light and dark variants. Rows expose the automation ids <c>PropertyGrid_Row_{path}</c>
-///         and <c>PropertyGrid_Editor_{path}</c>, where <c>{path}</c> is <see cref="PropertyItem.Path"/>. The grid derives from Avalonia's <c>UserControl</c>, so the members every
-///         control has (<c>Content</c> is managed by the grid and must not be set; <c>Bounds</c>, <c>IsVisible</c>, <c>Width</c>, <c>Focus()</c>, ...) are available but not repeated in the member tables of this page.
+///         and <c>PropertyGrid_Editor_{path}</c>, where <c>{path}</c> is <see cref="PropertyItem.Path"/>. The grid derives from Avalonia's <c>UserControl</c>, so the usual control members (<c>Bounds</c>, <c>IsVisible</c>, <c>Width</c>, <c>Focus()</c>, ...) apply; see Inherited Members. <c>Content</c> is managed by the grid and must not be set.
 ///     </para>
 /// </remarks>
 /// <example>

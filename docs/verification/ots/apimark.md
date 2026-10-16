@@ -182,15 +182,12 @@ their own summary prose ("Re-reads the source's items and values", "Writes the p
 
 ### Evidence Limitations
 
-- **Virtual modifiers.** ApiMark does not show `virtual`, `override` or `abstract` in a signature, and the generated
-  pages do not list inherited members; the documentation text states both where they matter, and the assertions do
-  not cover that text beyond its presence.
 - **Cross-package link targets.** The link assertions show that ApiMark generated the link, not that its target
   exists: the target resolves only where the core package of the same version sits beside the dependent package, as in
   the NuGet package cache, and not in a build from source.
 - **Example correctness.** That an example compiles and behaves as described is a property of the doc comments, not
   of ApiMark, and is not asserted by these tests; the examples were compiled against the shipped assemblies when
-  ApiMark 0.5.8 was adopted.
+  ApiMark was first adopted (0.5.8), and later ApiMark updates change only how they are rendered.
 
 ### Requirements Coverage
 

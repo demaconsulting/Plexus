@@ -15,10 +15,7 @@ namespace DemaConsulting.Plexus;
 ///     <see cref="PropertyBag"/> of typed values (<see cref="Properties"/>) and an optional host payload
 ///     (<see cref="Data"/>). Not thread-safe.
 ///     <para>
-///         Inherited from <see cref="DiagramElement"/> (the member tables of this page list only what <see cref="Node"/> declares): <see cref="DiagramElement.Id"/>,
-///         <see cref="DiagramElement.Page"/> (the page the node is on; null while it is removed, so <c>node.Page!.Diagram</c> reaches the diagram and its history),
-///         <see cref="DiagramElement.Parent"/> (the group it belongs to, or null), <see cref="DiagramElement.IsVisible"/>, <see cref="DiagramElement.GetBounds"/>,
-///         <see cref="DiagramElement.Remove"/> and the <see cref="DiagramElement.PropertyChanged"/> event.
+///         <see cref="DiagramElement.Page"/> is null while the node is removed, so <c>node.Page!.Diagram</c> reaches the diagram and its history.
 ///     </para>
 /// </remarks>
 /// <example>

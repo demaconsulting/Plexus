@@ -43,7 +43,7 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///         <see cref="NodeTypeRegistry"/>, its port types are unknown and ports are drawn neutral grey;
 ///         pass the registry for the exact port colors. A registry that changes after it was given
 ///         (types added or removed) is picked up by <see cref="Refresh"/>. It must be used on the UI thread. The palette derives from Avalonia's <c>Control</c>,
-///         so the members every control has (<c>Bounds</c>, <c>IsVisible</c>, <c>Width</c>, <c>Focus()</c>, ...) are available but not repeated in the member tables of this page.
+///         so the usual control members (<c>Bounds</c>, <c>IsVisible</c>, <c>Width</c>, <c>Focus()</c>, ...) apply; see Inherited Members.
 ///     </para>
 /// </remarks>
 /// <example>
