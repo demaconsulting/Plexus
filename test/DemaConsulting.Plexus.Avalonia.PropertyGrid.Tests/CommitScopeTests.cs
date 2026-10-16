@@ -277,6 +277,44 @@ public class CommitScopeTests
     }
 
     /// <summary>
+    ///     A failed edit whose previous value could not be read is still accounted for when a later edit makes the scope
+    ///     refuse: the other writes are restored and the refusal names the property that could not be put back.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterFailedWriteWithoutSnapshot_NamesItAsNotRestored()
+    {
+        // Arrange: during the commit the first value cannot be read (no snapshot), and its setter writes and then throws
+        var partial = "old";
+        var other = "b";
+        var readFails = false;
+        var first = new CustomPropertyItem(
+            "First",
+            typeof(string),
+            () => readFails ? throw new InvalidOperationException("unreadable") : partial,
+            v =>
+            {
+                partial = (string)v!;
+                throw new InvalidOperationException("rejected after the write");
+            });
+        var second = new CustomPropertyItem("Second", typeof(string), () => other, v => other = (string)v!);
+        var source = new ApplyThenRefuseSource(new CustomPropertySource([first, second]), "Second");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(first, "half-written");
+        session.SetText(second, "changed");
+        readFails = true;
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: nothing applied, the restorable write is undone and the one that cannot be put back is reported instead of hidden
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.Applied);
+        Assert.Equal("Refused: Second The previous value of 'First' could not be restored.", result.Error);
+        Assert.Equal("b", other);
+        Assert.Equal(2, session.GetPendingEdits().Count);
+    }
+
+    /// <summary>
     ///     A scope that already rolled the writes back by itself leaves nothing to restore: no extra write happens.
     /// </summary>
     [Fact]

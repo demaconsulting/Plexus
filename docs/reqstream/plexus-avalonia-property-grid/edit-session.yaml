@@ -255,6 +255,17 @@ sections:
             tests:
               - PropertyEditSession_Commit_RefusalAfterPartialFailedWrite_RestoresTheTarget
 
+          - id: PlexusAvaloniaPropertyGrid-EditSession-CommitRestoreUnreadable
+            title: >-
+              When the commit scope refuses or fails a staged commit, the session shall name in the commit error every
+              edit whose own write failed and whose previous value could not be read before the write.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Edit-Transaction; such an edit may have changed the target before
+              it threw and cannot be written back, so the commit must report it instead of claiming that nothing
+              remains applied.
+            tests:
+              - PropertyEditSession_Commit_RefusalAfterFailedWriteWithoutSnapshot_NamesItAsNotRestored
+
           - id: PlexusAvaloniaPropertyGrid-EditSession-PrefixedRoots
             title: >-
               The session shall find an item by the path of a top-level item even when that path contains dots, and

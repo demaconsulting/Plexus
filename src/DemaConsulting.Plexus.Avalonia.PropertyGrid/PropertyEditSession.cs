@@ -533,11 +533,9 @@ public sealed class PropertyEditSession
                     {
                         failed.Add(edit);
 
-                        // A setter or applier may have changed the target before it threw, so a scope refusal must undo it too
-                        if (snapshot is not null)
-                        {
-                            before.Add((edit, snapshot));
-                        }
+                        // A setter or applier may have changed the target before it threw, so a scope refusal must undo it too;
+                        // without a snapshot it cannot be undone, and the refusal then names it as not restored
+                        before.Add((edit, snapshot));
                     }
                 }
             },

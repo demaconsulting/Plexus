@@ -45,7 +45,8 @@ an OK / Cancel dialog needs. A host-supplied commit scope wraps the writes, typi
   newest first, skipping every item that already holds its snapshot (a scope that rolled back by itself needs no
   restore, and no spurious write or undo entry results). Every attempted write is remembered, also one whose setter or
   applier changed the target and then threw, so a refusal puts that partial write back too. A value that cannot be put
-  back is named in `CommitResult.Error`. When the scope does not refuse, a failed edit is not restored: it stays pending
+  back, including a failed edit whose previous value could not be read before its write, is named in
+  `CommitResult.Error`. When the scope does not refuse, a failed edit is not restored: it stays pending
   with its error and the other edits are still applied.
 - **`Commit`** — snapshots the pending edits and applies them in order inside the commit scope. Failed edits stay pending
   with their error; the others are removed and their collection editors end. If the scope throws or does not run the

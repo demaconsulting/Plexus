@@ -108,6 +108,10 @@ Source commit scope and refusals (`CommitScopeTests.cs`; a test source records t
   (`PlexusAvaloniaPropertyGrid-EditSession-CommitRestoreFailedWrite`): the setter of the first edit writes its field and
   then throws, and the scope refuses the second edit after the writes ran; both fields are back to their old values,
   `Applied` is 0 and both edits are still pending (error path).
+- **PropertyEditSession_Commit_RefusalAfterFailedWriteWithoutSnapshot_NamesItAsNotRestored**
+  (`PlexusAvaloniaPropertyGrid-EditSession-CommitRestoreUnreadable`): during the commit the first value cannot be read,
+  and its setter writes and then throws; the scope refuses the second edit, which is restored, and the commit error
+  names the first property as not restored; `Applied` is 0 and both edits are still pending (error path).
 - **PropertyEditSession_Commit_RefusalAfterScopeRolledBack_WritesNothingAgain**: a scope that rolled its write back
   itself before refusing causes no second write (the setter log shows one write).
 - **PropertyEditSession_Commit_RefusalAfterWrites_ReportsAValueThatCouldNotBeRestored**: when the setter rejects the
