@@ -110,6 +110,9 @@ public sealed partial class DiagramPage : INotifyPropertyChanged
     /// <summary>
     ///     Occurs after the page's <see cref="Name"/> changed, including by undo and redo.
     /// </summary>
+    /// <remarks>
+    ///     A handler that throws does not interrupt the rename; see <see cref="Diagram.Changed"/> for how its exception is reported.
+    /// </remarks>
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
@@ -151,7 +154,13 @@ public sealed partial class DiagramPage : INotifyPropertyChanged
                 v =>
                 {
                     _name = v;
-                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Name)));
+                    if (PropertyChanged is { } handler)
+                    {
+                        Diagram.History.Notify(
+                            (Handler: handler, Sender: this, Args: new PropertyChangedEventArgs(nameof(Name))),
+                            static s => s.Handler(s.Sender, s.Args));
+                    }
+
                     Diagram.RaiseChanged(DiagramChangeKind.PageRenamed, this, null, nameof(Name));
                 }));
         }
@@ -160,26 +169,41 @@ public sealed partial class DiagramPage : INotifyPropertyChanged
     /// <summary>
     ///     Gets the nodes in the order they were added.
     /// </summary>
+    /// <remarks>
+    ///     A collection-changed handler that throws does not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
+    /// </remarks>
     public ReadOnlyObservableCollection<Node> Nodes { get; }
 
     /// <summary>
     ///     Gets the wires in the order they were added.
     /// </summary>
+    /// <remarks>
+    ///     A collection-changed handler that throws does not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
+    /// </remarks>
     public ReadOnlyObservableCollection<Wire> Wires { get; }
 
     /// <summary>
     ///     Gets the annotations in the order they were added.
     /// </summary>
+    /// <remarks>
+    ///     A collection-changed handler that throws does not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
+    /// </remarks>
     public ReadOnlyObservableCollection<Annotation> Annotations { get; }
 
     /// <summary>
     ///     Gets the groups in the order they were created.
     /// </summary>
+    /// <remarks>
+    ///     A collection-changed handler that throws does not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
+    /// </remarks>
     public ReadOnlyObservableCollection<Group> Groups { get; }
 
     /// <summary>
     ///     Gets every element of the page in z-order (first is bottom-most).
     /// </summary>
+    /// <remarks>
+    ///     A collection-changed handler that throws does not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
+    /// </remarks>
     public ReadOnlyObservableCollection<DiagramElement> Elements { get; }
 
     /// <summary>
@@ -270,29 +294,37 @@ public sealed partial class DiagramPage : INotifyPropertyChanged
     /// <summary>
     ///     Inserts an item at an index, or appends when the index is negative.
     /// </summary>
+    /// <remarks>
+    ///     The list changes before its collection-changed handlers run, so a throwing handler (reported by the history after
+    ///     the change completed) leaves the list correct.
+    /// </remarks>
     /// <typeparam name="T">The item type.</typeparam>
     /// <param name="list">The list to change.</param>
     /// <param name="item">The item to insert.</param>
     /// <param name="index">The position, or a negative value to append.</param>
     /// <returns>The position used.</returns>
-    private static int InsertAt<T>(ObservableCollection<T> list, T item, int index)
+    private int InsertAt<T>(ObservableCollection<T> list, T item, int index)
     {
         var position = index < 0 ? list.Count : index;
-        list.Insert(position, item);
+        Diagram.History.Notify((List: list, Item: item, Position: position), static s => s.List.Insert(s.Position, s.Item));
         return position;
     }
 
     /// <summary>
     ///     Removes an item and reports the position it had.
     /// </summary>
+    /// <remarks>
+    ///     The list changes before its collection-changed handlers run, so a throwing handler (reported by the history after
+    ///     the change completed) leaves the list correct.
+    /// </remarks>
     /// <typeparam name="T">The item type.</typeparam>
     /// <param name="list">The list to change.</param>
     /// <param name="item">The item to remove.</param>
     /// <returns>The position the item had.</returns>
-    private static int RemoveFrom<T>(ObservableCollection<T> list, T item)
+    private int RemoveFrom<T>(ObservableCollection<T> list, T item)
     {
         var position = list.IndexOf(item);
-        list.RemoveAt(position);
+        Diagram.History.Notify((List: list, Position: position), static s => s.List.RemoveAt(s.Position));
         return position;
     }
 }

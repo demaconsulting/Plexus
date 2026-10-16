@@ -71,6 +71,16 @@ internal static class AutomationIds
 
     /// <summary>The text of the properties dialog that tells why OK was refused.</summary>
     public const string PropertiesStatus = "PropertyGridDialog_Status";
+
+    /// <summary>
+    ///     The live preview panel of the properties dialog of an oscillator, envelope or filter (the library's
+    ///     <c>NodePropertiesDialog</c> uses this id for the panel that holds a preview).
+    /// </summary>
+    public const string PropertiesPreview = "PropertyGridDialog_Preview";
+
+    /// <summary>The plot inside the live preview of an audio node's properties dialog.</summary>
+    public const string InspectorPlot = "Inspector_Plot";
+
     /// <summary>The prompt dialog window.</summary>
     public const string PromptDialog = "Dialog_Prompt";
 

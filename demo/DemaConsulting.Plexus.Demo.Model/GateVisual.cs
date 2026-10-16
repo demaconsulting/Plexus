@@ -14,6 +14,8 @@ namespace DemaConsulting.Plexus.Demo.Model;
 ///     drawn inside the node's own box, hit testing, selection and wire attachment work unchanged. It also
 ///     honors the node's <see cref="NodeVisualContext.Style"/> (fill, border, title color and opacity),
 ///     so a <see cref="Diagram.NodeStyler"/> restyles gates like any other node.
+///     Gates with more than two inputs (see <see cref="DemoNodeTypes.GatePorts"/>) are taller: the symbol fills the taller box
+///     (an AND gate keeps its round front corners and gains a straight front edge) and a lead line is drawn to every input row.
 /// </remarks>
 public sealed class GateVisual : StandardNodeVisual
 {
@@ -41,6 +43,14 @@ public sealed class GateVisual : StandardNodeVisual
     ///     The length of the lead lines that join port rows to the gate symbol, in diagram units.
     /// </summary>
     private const double LeadLength = 26;
+
+    /// <summary>
+    ///     The largest vertical radius of the rounded front of an AND gate: half the height of a two-input gate.
+    /// </summary>
+    /// <remarks>
+    ///     A taller gate keeps corners of this radius and a straight front edge between them, rather than an ever narrower ellipse.
+    /// </remarks>
+    private const double MaxFrontRadius = 37.5;
 
     /// <summary>
     ///     The symbol this visual draws.
@@ -140,19 +150,26 @@ public sealed class GateVisual : StandardNodeVisual
         switch (_shape)
         {
             case GateShape.And:
-                // Flat back, straight top and bottom, then a half ellipse for the front
+                // Flat back, straight top and bottom, then a rounded front: two quarter ellipses joined by a straight
+                // edge (no edge at all for a two-input gate, whose front is a half ellipse)
                 var mid = l + (w / 2);
                 var rx = w / 2;
-                var ry = h / 2;
-                return
-                [
+                var ry = Math.Min(h / 2, MaxFrontRadius);
+                var and = new List<PathCommand>
+                {
                     PathCommand.MoveTo(new Point(l, t)),
                     PathCommand.LineTo(new Point(mid, t)),
-                    PathCommand.CubicTo(new Point(mid + (rx * Quarter), t), new Point(r, cy - (ry * Quarter)), new Point(r, cy)),
-                    PathCommand.CubicTo(new Point(r, cy + (ry * Quarter)), new Point(mid + (rx * Quarter), b), new Point(mid, b)),
-                    PathCommand.LineTo(new Point(l, b)),
-                    PathCommand.Close(),
-                ];
+                    PathCommand.CubicTo(new Point(mid + (rx * Quarter), t), new Point(r, t + ry - (ry * Quarter)), new Point(r, t + ry)),
+                };
+                if (b - ry > t + ry)
+                {
+                    and.Add(PathCommand.LineTo(new Point(r, b - ry)));
+                }
+
+                and.Add(PathCommand.CubicTo(new Point(r, b - ry + (ry * Quarter)), new Point(mid + (rx * Quarter), b), new Point(mid, b)));
+                and.Add(PathCommand.LineTo(new Point(l, b)));
+                and.Add(PathCommand.Close());
+                return and;
             case GateShape.Not:
                 // A triangle that stops short of the right edge to leave room for the bubble
                 return

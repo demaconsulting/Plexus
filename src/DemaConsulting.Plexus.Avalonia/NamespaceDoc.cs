@@ -7,7 +7,9 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///     <para>
 ///         <see cref="DiagramEditor"/> shows one <c>DemaConsulting.Plexus.DiagramPage</c> (<see cref="DiagramEditor.Page"/>) with the diagram's
 ///         own theme, and handles selecting, moving, resizing, connecting, rewiring, renaming, copy and paste
-///         (<see cref="IDiagramClipboard"/>; the system clipboard by default), undo and redo (Ctrl+Z and Ctrl+Y), zoom and pan.
+///         (<see cref="IDiagramClipboard"/>; the system clipboard by default), undo and redo (Ctrl+Z and Ctrl+Y), zoom and pan, hover
+///         tooltips for nodes, ports and wires (<see cref="DiagramEditor.ToolTipRequested"/>), and navigation to any element
+///         (<see cref="DiagramEditor.BringIntoView"/>, <see cref="DiagramEditor.ZoomToFit(IEnumerable{DiagramElement}, double)"/>).
 ///         It owns only view state (<see cref="DiagramEditor.Zoom"/>, <see cref="DiagramEditor.Offset"/>, <see cref="DiagramEditor.Selection"/>);
 ///         every edit goes through the Core model API, so the editor and your code stay in sync through <c>Diagram.Changed</c>.
 ///         <see cref="NodePalette"/> lists the node types of the editor's diagram (or of any <c>NodeTypeRegistry</c> given as
@@ -24,7 +26,7 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///     <para>
 ///         The editor opens no dialogs or menus: it raises events and you decide what happens. The main extension points are the events
 ///         (<see cref="DiagramEditor.NodeDoubleClicked"/>, <see cref="DiagramEditor.DiagramContextRequested"/>,
-///         <see cref="DiagramEditor.SelectionChanged"/>, <see cref="DiagramEditor.PasteFailed"/>, <see cref="DiagramEditor.ClipboardFailed"/>,
+///         <see cref="DiagramEditor.SelectionChanged"/>, <see cref="DiagramEditor.ToolTipRequested"/>, <see cref="DiagramEditor.PasteFailed"/>, <see cref="DiagramEditor.ClipboardFailed"/>,
 ///         <see cref="NodePalette.NodeTypeActivated"/>), the appearance settings of the diagram itself (<see cref="DiagramEditor.DiagramTheme"/>,
 ///         <c>Diagram.WireStyler</c>, <c>NodeType.Visual</c>), a custom <see cref="IDiagramClipboard"/>, and <see cref="PlexusIcons"/> to show node
 ///         icons in your own controls. Use these controls on the UI thread. The application must include a full Avalonia theme such as

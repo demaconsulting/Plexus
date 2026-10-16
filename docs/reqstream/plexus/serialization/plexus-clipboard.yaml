@@ -119,6 +119,18 @@ sections:
                   - PlexusClipboard_Paste_MissingNodeTypes_FailsAtomicallyListingAllKeys
                   - PlexusClipboard_Paste_UnknownTypeInHostileContent_ListsMissingKeys
 
+              - id: Plexus-Serialization-PlexusClipboard-MissingTypeKey
+                title: >-
+                  Pasting content with a node that names no node type (a missing, empty or blank type key) shall fail
+                  with a message saying so, report no missing node type and change nothing.
+                justification: |
+                  Decomposes Plexus-Serialization-ClipboardValidation; clipboard text is untrusted, and a node without
+                  a type is invalid content that must neither crash the paste nor be mistaken for an unknown type.
+                tags:
+                  - security
+                tests:
+                  - PlexusClipboard_Paste_NodeWithoutTypeKey_FailsAndChangesNothing
+
               - id: Plexus-Serialization-PlexusClipboard-RejectForeignContent
                 title: >-
                   Pasting text that is empty, is not JSON, is not a clipboard object, lacks the format marker, has
@@ -213,6 +225,7 @@ sections:
                   - security
                 tests:
                   - PlexusClipboard_Paste_HostilePayload_BecomesWarning
+                  - PlexusClipboard_Paste_SerializerThrowsUnexpectedException_BecomesWarning
 
               - id: Plexus-Serialization-PlexusClipboard-AtomicOnFailure
                 title: >-
@@ -268,3 +281,35 @@ sections:
                   - PasteResult_Message_SuccessWithWarnings_IncludesThem
                   - PasteResult_Message_MissingNodeTypes_NamesThem
                   - PasteResult_Message_OtherFailure_UsesTheError
+
+              - id: Plexus-Serialization-PlexusClipboard-DynamicPorts
+                title: >-
+                  Pasting shall recompute the ports of each pasted node from its copied properties and payload before
+                  recreating the wires.
+                justification: |
+                  Decomposes Plexus-Serialization-DynamicPortsPaste; copying a configured block with its connections
+                  must give the same block and connections.
+                tests:
+                  - PlexusClipboard_Paste_DynamicPortNodes_RecreatesWiresOnDynamicPorts
+
+              - id: Plexus-Serialization-PlexusClipboard-DynamicPortsDuplicate
+                title: >-
+                  Duplicating shall recompute the ports of each copy from its copied properties and payload before
+                  recreating the wires.
+                justification: |
+                  Decomposes Plexus-Serialization-DynamicPortsDuplicate; a duplicated block must keep its configured
+                  ports and the connections between the duplicated elements.
+                tests:
+                  - PlexusClipboard_Duplicate_DynamicPortNode_KeepsPortsAndWires
+
+              - id: Plexus-Serialization-PlexusClipboard-DynamicPortProviderFailure
+                title: >-
+                  When a port provider fails for a copied node, pasting shall return a failed result with the
+                  provider's message and duplicating shall throw an invalid-operation exception, both leaving the page
+                  and the undo history unchanged.
+                justification: |
+                  Decomposes Plexus-Serialization-DynamicPortProviderFailure; a host provider bug must never leave a
+                  half-pasted or half-duplicated selection behind.
+                tests:
+                  - PlexusClipboard_Paste_ProviderThrows_FailsWithMessageAndChangesNothing
+                  - PlexusClipboard_Duplicate_ProviderThrows_ThrowsAndChangesNothing

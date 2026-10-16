@@ -11,10 +11,7 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     The item is read-only when no setter is supplied (or <see cref="CustomPropertyOptions.ForceReadOnly"/> is set).
 ///     Text conversion, standard values, expandable objects and collections come from the converter and the property
 ///     type exactly as for reflection items. The class is sealed: it overrides the abstract and virtual members of <see cref="PropertyItem"/>
-///     from the constructor arguments, and the member tables of this page list only what it declares itself. Inherited from <see cref="PropertyItem"/>, among others:
-///     <see cref="PropertyItem.Label"/>, <see cref="PropertyItem.Path"/>, <see cref="PropertyItem.IsChanged"/>, <see cref="PropertyItem.TryGetValue"/>,
-///     <see cref="PropertyItem.TrySetValue"/>, <see cref="PropertyItem.TrySetText"/>, <see cref="PropertyItem.ConvertToString"/>, <see cref="PropertyItem.Children"/>
-///     and <see cref="PropertyItem.GetCollectionItems"/>. Derive from <see cref="PropertyItem"/> directly only when delegates are not enough.
+///     from the constructor arguments. Derive from <see cref="PropertyItem"/> directly only when delegates are not enough.
 /// </remarks>
 /// <example>
 ///     <code><![CDATA[
@@ -112,6 +109,11 @@ public sealed class CustomPropertyItem : PropertyItem
     ///     Gets the category rank (see <see cref="PropertyItem.CategoryOrder"/>); 0 when none was given.
     /// </summary>
     public override int CategoryOrder => _options.CategoryOrder;
+
+    /// <summary>
+    ///     Gets the rank within the category (see <see cref="PropertyItem.Order"/>); 0 when none was given.
+    /// </summary>
+    public override int Order => _options.Order;
 
     /// <summary>
     ///     Gets the description; empty when none was given.

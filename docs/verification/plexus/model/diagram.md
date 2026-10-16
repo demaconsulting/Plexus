@@ -119,4 +119,44 @@ ReqStream trace matrix.
   per created or loaded diagram after the configuration (and, for loaders, after the content is loaded and the history
   is clean), a rename veto attached in it is live on every loaded diagram, and `Apply` calls it last on every call.
 
+##### Change handlers that throw (`Plexus-Model-Diagram-HandlerFailureKeepsChange`)
+
+All in `DiagramChangedEventTests.cs`:
+
+- **Diagram_Changed_HandlerThrowsOnAdd_NodeIsAddedRecordedAndExceptionRethrown**: a `Changed` handler that always
+  throws: the node is added, findable and recorded as one entry, and undo (handler detached) removes it again.
+- **Diagram_Changed_HandlerThrowsDuringMultiStepOperation_IsOneCompleteEntry**: removing a node with two wires while a
+  handler throws on every removal removes the node and both wires as one entry; one undo restores the full model dump.
+- **Diagram_PropertyChanged_HandlersThrow_ChangesAreRecorded**: in turn, a throwing element `PropertyChanged`,
+  property-bag `PropertyChanged`, page `Nodes` collection change, page-list collection change, `NodeRenamed` and page
+  `PropertyChanged` handler: each change (move, value, add node, add page, rename node, rename page) is applied and
+  recorded as one entry, and the handler's exception reaches the caller.
+- **Diagram_Changed_HandlerThrows_VersionStillAdvances**: the version advances by exactly the number of notifications
+  although the last handler of each throws.
+
+##### Reported handler exception (`Plexus-Model-Diagram-HandlerFailureReported`)
+
+- **Diagram_Changed_HandlerThrowsOnAdd_NodeIsAddedRecordedAndExceptionRethrown**: the exception instance thrown by the
+  handler is the one the caller receives, after the change was recorded.
+- **Diagram_Changed_TwoHandlerFailures_FirstIsRethrown**: when the element handler and then the diagram handler of one
+  rename throw, the first exception is reported, the later `NodeRenamed` handler still runs and the rename is complete.
+
+##### Undo and redo (`Plexus-Model-Diagram-HandlerFailureUndoRedo`)
+
+- **Diagram_Changed_HandlerThrowsOnUndoAndRedo_EntryMoves**: with a handler that always throws, undo removes the node
+  and moves the entry to the redo stack, and redo adds it back and moves the entry back, each reporting the handler's
+  exception afterwards.
+
+##### Transactions (`Plexus-Model-Diagram-HandlerFailureTransaction`)
+
+- **Diagram_Changed_HandlerThrowsInsideTransact_TransactionIsRolledBack**: a handler exception raised by the add inside
+  a `Transact` that first renamed a node rolls back the rename and the add; the handler's exception propagates, the
+  model dump and the undo count are unchanged and no transaction stays open.
+
+##### Failing change (`Plexus-Model-Diagram-HandlerFailureOperationFails`)
+
+- **Diagram_Changed_OperationFailsAndHandlerThrows_OperationExceptionPropagates**: a property change whose port
+  provider throws while a handler throws on every notification propagates the provider's exception type; the value is
+  rolled back and nothing is recorded (error path).
+
 **Expected**: each test passes, proving the Diagram requirements.

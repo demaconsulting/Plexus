@@ -28,6 +28,34 @@ Features each domain shows off:
 - Logic: the gates use a custom `INodeVisual` (`GateVisual`) that draws classic gate symbols while name, ports and
   hit testing keep working; `LogicEvaluator.Evaluate(page)` computes the live true/false value of every logic port,
   which colors the logic wires by state (see Wire appearance). Double-click a switch to flip it.
+- Ports that vary per node: AND, OR and XOR have an `Inputs` property (2 to 8, edited with a number box; other
+  values are clamped). A `NodeType.PortProvider` (`DemoNodeTypes.GatePorts`) gives the gate that many inputs named
+  `a`, `b`, `c`, ...: raising the count adds inputs and makes the gate taller, lowering it removes the last inputs and
+  their wires and shrinks the gate back (never below its default size), all in one undo entry, and wires on the inputs
+  that remain stay connected. Two-input gates are exactly the gates of earlier versions, so older files load unchanged.
+  AND is on when every input is on, OR when any is, and XOR when an odd number are (parity); an unconnected input counts
+  as off. The `logic` sample has a three-input AND gate (`All`) with a note explaining the `Inputs` property.
+- Tooltips: rest the pointer on a node, a port or a wire. Ports show their label, type (`Boolean`, `Number`, ...) and
+  description (every demo port has one). Every node type has a `NodeType.Description`, and most add a live summary of
+  their current values from their `NodeType.ToolTip` (a pump `Water · 12 L/min · 20 m`, a filter `Low-pass, 900 Hz`,
+  an envelope `A 10 ms · D 120 ms · S 70 % · R 300 ms`; logic nodes their live state: a switch on or off, a gate's
+  output, a lamp lit or dark). Wires show `source → target`, and the window's `DiagramEditor.ToolTipRequested` handler
+  adds `= on` or `= off` to boolean wires and gives an oscillator, an envelope and a filter a control as their tooltip:
+  a small plot thumbnail of their current settings (waveform, ADSR curve or magnitude response) above their name and
+  the short summary, such as `Sine, 440 Hz`. View > Show Tooltips turns them off.
+- Audio inspectors: the oscillator (under Oscillator: Waveform, Frequency, Amplitude 0 to 1, Phase in degrees and DC
+  Offset), the envelope (under Envelope: Attack, Decay, Sustain and Release, in that order, through
+  `PropertyDefinition.Order`) and the filter (under Filter: Type, then Cutoff) open a custom inspector: the library's
+  properties dialog with a live preview next
+  to the grid. The oscillator shows two cycles of its signal against time (ms) with amplitude grid lines, the envelope its
+  ADSR curve with the A, D, S and R phases (an illustrative 200 ms sustain hold), and the filter its magnitude response
+  (a second-order model) from 20 Hz to 20 kHz on a logarithmic axis with the cutoff marked and a dB axis. The previews
+  redraw on every committed edit, reset and cancel, before OK. The math is in the model (`AudioPreview`,
+  `OscillatorSettings`, `EnvelopeSettings`, `FilterSettings`) and the plots are drawn by a small theme-aware control
+  (`Inspectors/SignalPlot.cs`) that follows light and dark mode; its phase labels stay inside the plot area, clear of
+  the axis labels and of each other (a label with no room near its phase is left out), and the vertical axis title
+  starts at the plot's left edge so it never covers the top tick label. Files saved before the new oscillator properties
+  existed load with their defaults.
 - Workflow: `Task` nodes carry a `TaskDetails` host data object whose annotations show off the property grid (see
   Host data and the property grid below), edited in the properties dialog and in the properties panel.
 - Samples: `math`, `plumbing` (a water circuit plus an oil and a steam circuit), `logic`, `audio`, `workflow`,
@@ -88,9 +116,13 @@ paste in the basic one: nothing is pasted and the status bar reports
 ## Features
 
 - **Menus** - File (New, Open, Save, Save As, Open Sample, Export Page PNG, Exit), Edit (Undo and Redo showing the
-  action's description, Cut, Copy, Paste, Duplicate, Delete, Select All, Rename, Properties...), Insert (Node per type,
-  Annotation, Group Selection, Ungroup, Toggle Collapse), Page (Add, Rename, Delete, Move Left/Right, Move
-  Selection To), View (Zoom In/Out/To Fit, Show Grid, Snap To Grid, Properties Panel, Show Toolbar).
+  action's description, Cut, Copy, Paste, Duplicate, Delete, Select All, Find Node..., Rename, Properties...), Insert
+  (Node per type, Annotation, Group Selection, Ungroup, Toggle Collapse), Page (Add, Rename, Delete, Move Left/Right,
+  Move Selection To), View (Zoom In/Out/To Fit, Zoom To Selection, Show Grid, Snap To Grid, Show Tooltips, Properties
+  Panel, Show Toolbar).
+- **Navigation**: Edit > Find Node... (Ctrl+F) asks for a node name and shows that node with
+  `DiagramEditor.BringIntoView`, switching to its page and showing the collapsed group that hides it, then selects it;
+  View > Zoom To Selection fits the selection with `DiagramEditor.ZoomToFit(Editor.Selection)`.
 - **Toolbar** under the menu bar: compact flat icon buttons (28 pixels) in groups with separators: New, Open, Save |
   Undo, Redo | Cut, Copy, Paste, Delete | Group, Ungroup, Toggle Collapse, Add Annotation | Zoom In, Zoom Out, Zoom To
   Fit, Show Grid, Snap To Grid | Properties, Properties Panel | Export PNG. A button owns no behavior: it raises the
@@ -135,7 +167,10 @@ paste in the basic one: nothing is pasted and the status bar reports
   annotated `TaskDetails` host data. OK applies everything as one undo entry; Cancel changes nothing; a rejected or
   vetoed rename keeps the dialog open with the reason. The whole integration is one line:
   `Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(this, e.Node);` (the demo also
-  flips switches on double-click, hence `ActivateNodeAsync`).
+  flips switches on double-click, hence `ActivateNodeAsync`). For oscillators, envelopes and filters `ShowPropertiesAsync`
+  passes `new NodePropertiesDialogOptions { Preview = ... }` from `Inspectors/AudioInspectors.cs`, which shows the live
+  preview to the right of the grid in a wider dialog; the preview reads the staged values through `NodePreviewContext`
+  and never writes, so OK and Cancel behave exactly as in the plain dialog.
 - **Properties panel** (View > Properties Panel, F4; hidden at start): a second, docked way to show the same grid. The
   panel is a live `PropertyGrid` (`EditMode = Live`) on the right of the window, between a `GridSplitter` and the
   window edge, and follows the selection: one node, annotation or group is shown (the whole integration is
@@ -184,13 +219,15 @@ across the five demo domains) in the menu ids; `<index>` is zero-based.
   showcase), `Menu_File_ExportPng`,
   `Menu_File_Exit`.
 - Edit menu: `Menu_Edit`, `Menu_Edit_Undo`, `Menu_Edit_Redo`, `Menu_Edit_Cut`, `Menu_Edit_Copy`, `Menu_Edit_Paste`,
-  `Menu_Edit_Duplicate`, `Menu_Edit_Delete`, `Menu_Edit_SelectAll`, `Menu_Edit_Rename`, `Menu_Edit_Properties`.
+  `Menu_Edit_Duplicate`, `Menu_Edit_Delete`, `Menu_Edit_SelectAll`, `Menu_Edit_FindNode`, `Menu_Edit_Rename`,
+  `Menu_Edit_Properties`.
 - Insert menu: `Menu_Insert`, `Menu_Insert_Node`, `Menu_Insert_Node_<Type>`, `Menu_Insert_Annotation`,
   `Menu_Insert_Group`, `Menu_Insert_Ungroup`, `Menu_Insert_ToggleCollapse`.
 - Page menu: `Menu_Page`, `Menu_Page_Add`, `Menu_Page_Rename`, `Menu_Page_Delete`, `Menu_Page_MoveLeft`,
   `Menu_Page_MoveRight`, `Menu_Page_MoveSelectionTo`, `Menu_Page_MoveSelectionTo_<index>` (target page index).
-- View menu: `Menu_View`, `Menu_View_ZoomIn`, `Menu_View_ZoomOut`, `Menu_View_ZoomToFit`, `Menu_View_ShowGrid`,
-  `Menu_View_SnapToGrid`, `Menu_View_PropertiesPanel`, `Menu_View_ShowToolbar`.
+- View menu: `Menu_View`, `Menu_View_ZoomIn`, `Menu_View_ZoomOut`, `Menu_View_ZoomToFit`, `Menu_View_ZoomToSelection`,
+  `Menu_View_ShowGrid`, `Menu_View_SnapToGrid`, `Menu_View_ShowToolTips`, `Menu_View_PropertiesPanel`,
+  `Menu_View_ShowToolbar`.
 - Toolbar: `Toolbar` (the bar) and one button per command, `Toolbar_<Command>`, where `<Command>` is the name of the
   menu item it mirrors without its menu: `Toolbar_New`, `Toolbar_Open`, `Toolbar_Save`, `Toolbar_Undo`,
   `Toolbar_Redo`, `Toolbar_Cut`, `Toolbar_Copy`, `Toolbar_Paste`, `Toolbar_Delete`, `Toolbar_Group`,
@@ -209,8 +246,10 @@ across the five demo domains) in the menu ids; `<index>` is zero-based.
 - Page tabs: `Pages_Tabs`, `Page_Tab_<index>` (current order; renumbered when pages move).
 - Status bar: `Status_Text`, `Status_Selection`, `Status_Zoom`, `Status_Dirty`.
 - Properties dialog (the library's `PropertyGridDialog`): `PropertyGridDialog` (the window), `PropertyGridDialog_OK`,
-  `PropertyGridDialog_Cancel`, `PropertyGridDialog_Status` (why OK was refused). It replaces the former `Properties_Dialog`,
-  `Properties_Name`, `Properties_Prop_<name>`, `Properties_Details_*`, `Properties_Ok` and `Properties_Cancel` ids.
+  `PropertyGridDialog_Cancel`, `PropertyGridDialog_Status` (why OK was refused), `PropertyGridDialog_Preview` (the live
+  preview panel of an oscillator, envelope or filter dialog) and `Inspector_Plot` (the plot inside it). It replaces
+  the former `Properties_Dialog`, `Properties_Name`, `Properties_Prop_<name>`, `Properties_Details_*`, `Properties_Ok`
+  and `Properties_Cancel` ids.
 - Property grid rows (in the dialog and in the panel; the library assigns them): `PropertyGrid` (the grid),
   `PropertyGrid_Row_<path>` (a row; node rows are `Node.Name`, `Property.<name>` for a declared property such as
   `Property.Capacity` and `Data.<path>` for host data such as `Data.Priority`, `Data.Contact.Email` or
@@ -260,7 +299,8 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
 - `select-page` (`page`), `add-page` (`name?`; the new page is shown), `rename-page` (`page`, `name`),
   `delete-page` (`page`; the last page cannot be deleted) -> the page.
 - `list-nodes` (`page?`, default the shown page) -> `[{id,name,typeKey,bounds,properties,data,visible,page,ports}]`;
-  `data` is the host data as a JSON object (or null).
+  `data` is the host data as a JSON object (or null); `ports` are the node's current ports
+  (`[{name,direction,type}]`), so `set-property` of a gate's `Inputs` followed by `list-nodes` shows the new inputs.
 - `list-wires` (`page?`) -> `[{id,source:"Node.port",target:"Node.port",route:[{x,y}],visible}]`.
 - `list-annotations` (`page?`) -> `[{id,text,bounds,visible}]`.
 - `list-groups` (`page?`) -> `[{id,title,collapsed,bounds,members,visible}]`.
@@ -286,6 +326,14 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
 - `move-to-page` (`ids` or `names`, `page`) -> `{moved,page}`.
 - `geometry` (one of `node`, `port` + optional `direction`, `element`, `point:{x,y}` or `editor:true`) -> see below.
 - `view` (`zoom?`, `offsetX?`, `offsetY?`, `fit?`) -> `{zoom,offsetX,offsetY}`.
+- `bring-into-view` (`element`, `node` or `name`) -> `{page,zoom,offsetX,offsetY}` (`page` is the shown page's index);
+  `DiagramEditor.BringIntoView`: switches to the element's page and centers it without zooming in.
+- `zoom-to` (`ids` or `names`, `margin?` default 30) -> `{page,zoom,offsetX,offsetY}`; `DiagramEditor.ZoomToFit` of
+  the elements (the first element's page is shown).
+- `tooltip` (`element` or `node`, or `port` + optional `direction`) -> `{text,preview}`: the tooltip the editor would
+  show (`DiagramEditor.GetToolTipContent`), or a null `text` when there is none. When the tooltip is a control (the
+  plot thumbnail of an oscillator, envelope or filter), `text` is the texts of its text blocks, one per line (for example
+  `Osc1\nSaw, 220 Hz` or `Tone\nLow-pass, 900 Hz`), and `preview` is true; for text tooltips `preview` is false.
 - `save` (`path?`, default the current file) -> `{path}`; `open` (`path`) -> like `info`, without an unsaved-changes
   prompt; `new` -> like `info`.
 - `render` (`path`, `page?`, `scale?`) -> `{path,page,bytes}`; writes a PNG through `PlexusRenderer`.
@@ -322,6 +370,8 @@ element is scrolled out of the editor; `view` with `fit` or an offset brings it 
 ## Tests
 
 `test/DemaConsulting.Plexus.Demo.Tests` covers the command line (`GuiOptions`), the properties dialog and panel (the
-library grid in the demo, the host data annotations, the collection editor and the slider editor), the automation
-dispatcher (headless Avalonia, no pipe), the pipe transport (with a fake executor) and the real main window (menus,
-AutomationIds, status bar, context menu, dialogs) on the headless platform.
+library grid in the demo, the host data annotations, the collection editor, the slider editor and the audio inspectors
+with their live previews, the oscillator, envelope and filter tooltips, the plot control and its label layout
+(`SignalPlotLayoutTests`)), the audio preview math (`AudioPreviewTests`),
+the automation dispatcher (headless Avalonia, no pipe), the pipe transport (with a fake executor) and the real main
+window (menus, AutomationIds, status bar, context menu, dialogs) on the headless platform.

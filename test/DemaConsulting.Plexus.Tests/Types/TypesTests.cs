@@ -183,4 +183,133 @@ public class TypesTests
         // Assert: nodes can be created again
         Assert.Equal("Temp2", page.AddNode("acme.Temp", 0, 0).Name);
     }
+
+    /// <summary>
+    ///     Validates that a port provider declared on a node type supplies each node's ports while the declared ports stay the defaults.
+    /// </summary>
+    [Fact]
+    public void Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts()
+    {
+        // Arrange
+        var types = TestModel.CreateDynamicTypes();
+        var page = new Diagram(types).Pages.Add("Main");
+        var a = page.AddNode("acme.Bus", 0, 0);
+        var b = page.AddNode("acme.Bus", 0, 200);
+
+        // Act: configure one node only
+        a.Properties["Channels"] = 5;
+
+        // Assert: each node has its own ports; the type's declared defaults are unchanged
+        Assert.Equal(5, a.Inputs.Count);
+        Assert.Equal(2, b.Inputs.Count);
+        Assert.Equal(["in0", "in1"], types.Get("acme.Bus").Inputs.Select(p => p.Name));
+        Assert.NotNull(types.Get("acme.Bus").PortProvider);
+    }
+
+    /// <summary>
+    ///     Validates that port, node type and port type descriptions are exposed for tooltips.
+    /// </summary>
+    [Fact]
+    public void Types_Descriptions_PortNodeAndPortType_AreExposed()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        types.PortTypes.Add(new PortType("bool", Color.Red) { DisplayName = "Boolean" });
+        types.Add(new NodeType("t.Gate")
+        {
+            Description = "A logic gate.",
+            Inputs = { new PortDefinition("a", "bool") { Description = "First operand." } },
+        });
+        var node = new Diagram(types).Pages.Add("Main").AddNode("t.Gate", 0, 0);
+
+        // Act
+        var port = node.Input("a");
+
+        // Assert
+        Assert.Equal("First operand.", port.Description);
+        Assert.Equal("A logic gate.", node.Type.GetToolTip(node));
+        Assert.Equal("Boolean", types.PortTypes.Get(port.TypeKey).DisplayName);
+    }
+
+    /// <summary>
+    ///     Validates that a port provider computes both the inputs and the outputs of each node from its own properties.
+    /// </summary>
+    [Fact]
+    public void Types_PortProvider_InputsAndOutputs_ComputedPerNode()
+    {
+        // Arrange: a splitter whose input and output counts are both properties
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("t.Splitter")
+        {
+            Inputs = { new PortDefinition("i0", "number") },
+            Outputs = { new PortDefinition("o0", "number") },
+            Properties = { new PropertyDefinition("Ins", 1), new PropertyDefinition("Outs", 1) },
+            PortProvider = node => new PortSet(
+                Enumerable.Range(0, node.Properties.Get<int>("Ins")).Select(i => new PortDefinition($"i{i}", "number")),
+                Enumerable.Range(0, node.Properties.Get<int>("Outs")).Select(i => new PortDefinition($"o{i}", "number"))),
+        });
+        var page = new Diagram(types).Pages.Add("Main");
+        var a = page.AddNode("t.Splitter", 0, 0);
+        var b = page.AddNode("t.Splitter", 0, 200);
+
+        // Act: configure the two nodes differently in both directions
+        a.Properties["Ins"] = 3;
+        b.Properties["Outs"] = 4;
+
+        // Assert: each node has its own inputs and outputs; the declared defaults are unchanged
+        Assert.Equal(["i0", "i1", "i2"], a.Inputs.Select(p => p.Name));
+        Assert.Equal(["o0"], a.Outputs.Select(p => p.Name));
+        Assert.Equal(["i0"], b.Inputs.Select(p => p.Name));
+        Assert.Equal(["o0", "o1", "o2", "o3"], b.Outputs.Select(p => p.Name));
+        Assert.Equal(["i0"], types.Get("t.Splitter").Inputs.Select(p => p.Name));
+        Assert.Equal(["o0"], types.Get("t.Splitter").Outputs.Select(p => p.Name));
+    }
+
+    /// <summary>
+    ///     Validates that a port provider returning null makes node creation fail with an error naming the type.
+    /// </summary>
+    [Fact]
+    public void Types_PortProvider_ReturnsNull_AddNodeFails()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("t.Broken") { PortProvider = _ => null! });
+        var page = new Diagram(types).Pages.Add("Main");
+
+        // Act
+        var ex = Assert.Throws<InvalidOperationException>(() => page.AddNode("t.Broken", 0, 0));
+
+        // Assert
+        Assert.Contains("t.Broken", ex.Message, StringComparison.Ordinal);
+        Assert.Empty(page.Nodes);
+    }
+
+    /// <summary>
+    ///     Validates that a node type's tooltip function produces text from the node's current properties and payload.
+    /// </summary>
+    [Fact]
+    public void Types_Descriptions_ToolTipFunction_FollowsNodeState()
+    {
+        // Arrange: a tooltip built from a property and the payload
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("t.Gauge")
+        {
+            Description = "Shows a value.",
+            DataType = typeof(string),
+            CreateData = () => "ok",
+            Properties = { new PropertyDefinition("Value", 0.0) },
+            ToolTip = node => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Value = {node.Properties.Get<double>("Value")} ({node.Data})"),
+        });
+        var node = new Diagram(types).Pages.Add("Main").AddNode("t.Gauge", 0, 0);
+        var initial = node.Type.GetToolTip(node);
+
+        // Act: change both inputs of the function
+        node.Properties["Value"] = 2.5;
+        node.Data = "stale";
+        var changed = node.Type.GetToolTip(node);
+
+        // Assert: each call reflects the state at that time
+        Assert.Equal("Value = 0 (ok)", initial);
+        Assert.Equal("Value = 2.5 (stale)", changed);
+    }
 }

@@ -71,7 +71,10 @@ internal sealed class NodePrototype
     ///     above the box tells the user which type it is. The scratch diagram uses
     ///     <paramref name="sizingTheme"/> for the default node size (as
     ///     <see cref="DiagramPage.AddNode(NodeType, PlexusPoint, string?, string?)"/> does for a real node) and the scene is drawn
-    ///     with <paramref name="sceneTheme"/> (the editor's theme override, when it has one).
+    ///     with <paramref name="sceneTheme"/> (the editor's theme override, when it has one). The visual extent uses
+    ///     <paramref name="sizingTheme"/>, the scratch node's own diagram theme, for the port geometry, because port positions
+    ///     (and so the extent they span) always follow the node's diagram theme, whatever theme the scene is drawn with, and
+    ///     <paramref name="sceneTheme"/> for the name, summary and port label texts, which the scene draws with it.
     /// </remarks>
     /// <param name="registry">A registry that contains <paramref name="type"/>.</param>
     /// <param name="type">The node type.</param>
@@ -89,7 +92,7 @@ internal sealed class NodePrototype
 
         // Same builder, theme and measurer as the canvas; the grid is decoration and is left out
         var scene = SceneBuilder.Build(page, new SceneOptions { Theme = sceneTheme, TextMeasurer = measurer, ShowGrid = false });
-        return new NodePrototype(type, scene, node.Bounds, NodeGeometry.VisualBounds(node, sceneTheme));
+        return new NodePrototype(type, scene, node.Bounds, NodeGeometry.VisualBounds(node, sizingTheme, sceneTheme));
     }
 
     /// <summary>

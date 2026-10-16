@@ -46,6 +46,17 @@ sections:
               - PropertyItem_Annotation_ShouldSerializePattern_DrivesIsChanged
               - PropertyItem_Annotation_Reset_RestoresTheDefaultValue
 
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-ResetOnly
+            title: >-
+              The unit shall let a property that only has a Reset method (no DefaultValue annotation and no
+              ShouldSerialize default rule) be reset, and shall never report such a property as changed.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Show-Properties; the WinForms convention allows a reset method
+              without a default value, and the grid must honor the component model's answer instead of hiding the
+              reset; without a known default there is nothing to compare, so the value is not shown in bold.
+            tests:
+              - PropertyItem_Reset_ResetMethodOnlyProperty_CanBeResetAndIsNeverChanged
+
           - id: PlexusAvaloniaPropertyGrid-PropertyModel-Converter
             title: >-
               The unit shall use the type converter named by the TypeConverter annotation of the property, or
@@ -126,6 +137,16 @@ sections:
               - PropertyItem_GetCollectionItems_ExpandableElementHasChildren
               - PropertyItem_ConvertToString_CollectionShowsCollectionText
 
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-CollectionSnapshotFailure
+            title: >-
+              The unit shall report a collection property whose enumeration throws a non-fatal exception as having
+              no elements, instead of throwing.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Nested-Collections; a collection that cannot be read must not
+              break the grid, matching the documented empty result of an unreadable collection.
+            tests:
+              - PropertyItem_GetCollectionValues_ThrowingEnumerator_ReturnsEmpty
+
           - id: PlexusAvaloniaPropertyGrid-PropertyModel-Validation
             title: >-
               The unit shall report a null for a non-nullable value type, a value of the wrong type, a failed
@@ -139,3 +160,13 @@ sections:
               - PropertyItem_TrySetValue_ReadOnlyItemFails
               - PropertyItem_TryGetValue_GetterFailureIsCaptured
               - PropertyResult_SuccessAndFailure_CarryTheOutcome
+
+          - id: PlexusAvaloniaPropertyGrid-PropertyModel-ConverterProbeFailure
+            title: >-
+              The unit shall report a property whose type converter throws while it is asked whether it converts
+              from text as not editable as text, without throwing.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Validation; the grid asks every item whether it supports text
+              editing while it builds its rows, so a faulty user converter must not make the whole grid fail.
+            tests:
+              - PropertyItem_SupportsTextEditing_ConverterThrows_ReportsNotSupported

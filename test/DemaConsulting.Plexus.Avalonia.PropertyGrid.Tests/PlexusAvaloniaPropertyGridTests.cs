@@ -259,6 +259,119 @@ public class PlexusAvaloniaPropertyGridTests
     });
 
     /// <summary>
+    ///     The grid control lists the items of a category by the rank their source gives them, ties alphabetically.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_CustomSource_OrdersCategoryItemsByRank() => UiTest.Run(() =>
+    {
+        // Arrange: items supplied out of order, ranked A-D-S-R, plus an Output category with two equal ranks declared out of
+        // alphabetical order (Level before Balance) and a lower rank (Pan)
+        var source = new CustomPropertySource(
+        [
+            new CustomPropertyItem("Release", typeof(int), () => 4, null, new CustomPropertyOptions { Category = "Envelope", Order = 4 }),
+            new CustomPropertyItem("Sustain", typeof(int), () => 3, null, new CustomPropertyOptions { Category = "Envelope", Order = 3 }),
+            new CustomPropertyItem("Attack", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 1 }),
+            new CustomPropertyItem("Decay", typeof(int), () => 2, null, new CustomPropertyOptions { Category = "Envelope", Order = 2 }),
+            new CustomPropertyItem("Level", typeof(int), () => 5, null, new CustomPropertyOptions { Category = "Output", Order = 2 }),
+            new CustomPropertyItem("Balance", typeof(int), () => 6, null, new CustomPropertyOptions { Category = "Output", Order = 2 }),
+            new CustomPropertyItem("Pan", typeof(int), () => 7, null, new CustomPropertyOptions { Category = "Output", Order = 1 }),
+        ]);
+
+        // Act
+        var grid = new PropertyGrid { Source = source };
+        var window = GridHarness.Host(grid);
+
+        // Assert: the rows follow the ranks inside each category and equal ranks are alphabetical
+        Assert.Equal(["Attack", "Decay", "Sustain", "Release", "Pan", "Balance", "Level"], GridHarness.PropertyPaths(grid));
+        window.Close();
+    });
+
+    /// <summary>
+    ///     The alphabetical view of the grid ignores the ranks a source gives its items.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_AlphabeticalView_IgnoresItemRank() => UiTest.Run(() =>
+    {
+        // Arrange: the same ranked items in two categories
+        var source = new CustomPropertySource(
+        [
+            new CustomPropertyItem("Release", typeof(int), () => 4, null, new CustomPropertyOptions { Category = "Envelope", Order = 4 }),
+            new CustomPropertyItem("Attack", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 1 }),
+            new CustomPropertyItem("Level", typeof(int), () => 5, null, new CustomPropertyOptions { Category = "Output", Order = 2 }),
+            new CustomPropertyItem("Balance", typeof(int), () => 6, null, new CustomPropertyOptions { Category = "Output", Order = 3 }),
+        ]);
+
+        // Act
+        var grid = new PropertyGrid { Source = source, SortMode = PropertySortMode.Alphabetical };
+        var window = GridHarness.Host(grid);
+
+        // Assert: one flat alphabetical list, whatever the ranks and categories
+        Assert.Equal(["Attack", "Balance", "Level", "Release"], GridHarness.PropertyPaths(grid));
+        window.Close();
+    });
+
+    /// <summary>
+    ///     A Plexus node's declared properties are listed in the order their definitions declare within each category.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_PlexusNode_ListsPropertiesInDefinitionOrder() => UiTest.Run(() =>
+    {
+        // Arrange
+        var (_, node) = NodeFixture.CreateOrdered();
+
+        // Act
+        var grid = new PropertyGrid { SelectedObject = node };
+        var window = GridHarness.Host(grid);
+
+        // Assert: General (name, then Gate 1, Mode 2) before Envelope (Attack, Decay, Sustain, Release)
+        Assert.Equal(
+            [
+                NodePropertySource.NamePath,
+                NodePropertySource.PropertyPath("Gate"),
+                NodePropertySource.PropertyPath("Mode"),
+                NodePropertySource.PropertyPath("Attack"),
+                NodePropertySource.PropertyPath("Decay"),
+                NodePropertySource.PropertyPath("Sustain"),
+                NodePropertySource.PropertyPath("Release"),
+            ],
+            GridHarness.PropertyPaths(grid));
+        window.Close();
+    });
+
+    /// <summary>
+    ///     Properties of a node whose definitions declare the same display order are listed alphabetically by display name,
+    ///     ignoring case, after a negative order.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_PlexusNode_EqualOrders_ListAlphabetically() => UiTest.Run(() =>
+    {
+        // Arrange: ties declared Zeta, Idle, alpha, ice, Hue; Early has a negative order
+        var (_, node) = NodeFixture.CreateTied();
+
+        // Act
+        var grid = new PropertyGrid { SelectedObject = node };
+        var window = GridHarness.Host(grid);
+
+        // Assert
+        Assert.Equal(
+            [
+                NodePropertySource.NamePath,
+                NodePropertySource.PropertyPath("Early"),
+                NodePropertySource.PropertyPath("alpha"),
+                NodePropertySource.PropertyPath("Hue"),
+                NodePropertySource.PropertyPath("ice"),
+                NodePropertySource.PropertyPath("Idle"),
+                NodePropertySource.PropertyPath("Zeta"),
+            ],
+            GridHarness.PropertyPaths(grid));
+        window.Close();
+    });
+
+    /// <summary>
     ///     A Plexus node is shown by a grid given the node, a staged session over it commits the rename, a property and an edited
     ///     data object as one undo entry, and a live session makes each edit its own entry.
     /// </summary>
@@ -329,6 +442,185 @@ public class PlexusAvaloniaPropertyGridTests
         Assert.Equal(before + 1, diagram.History.UndoCount);
         owner.Close();
     });
+
+    /// <summary>
+    ///     The node properties dialog with a live preview: the preview follows the staged edits before OK and is notified
+    ///     of them, Cancel changes nothing and OK commits everything as one undo entry.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce() => UiTest.Run(() =>
+    {
+        // Arrange: a preview that shows the staged frequency
+        var (diagram, node) = NodeFixture.Create();
+        var before = diagram.History.UndoCount;
+        var owner = GridHarness.Host(new global::Avalonia.Controls.TextBlock { Text = "owner" });
+        var options = new NodePropertiesDialogOptions
+        {
+            Preview = context =>
+            {
+                var text = new global::Avalonia.Controls.TextBlock();
+                void Redraw() => text.Text = $"{context.GetPropertyValue("Frequency")}";
+                context.Changed += (_, _) => Redraw();
+                Redraw();
+                return text;
+            },
+        };
+        var frequency = NodePropertySource.PropertyPath("Frequency");
+
+        // Act: stage an edit and cancel
+        var cancelled = NodePropertiesDialog.ShowAsync(owner, node, options);
+        GridHarness.Pump(owner);
+        var first = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
+        first.Grid.Session!.SetText(first.Grid.Session.FindItem(frequency)!, "880");
+        var firstPreview = GridHarness.Get<global::Avalonia.Controls.Border>(first, "PropertyGridDialog_Preview");
+        var stagedText = ((global::Avalonia.Controls.TextBlock)firstPreview.Child!).Text;
+        GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(first, "PropertyGridDialog_Cancel"));
+        GridHarness.Pump(owner);
+        var afterCancel = (double)node.Properties["Frequency"];
+
+        // Act: stage edits and accept
+        var accepted = NodePropertiesDialog.ShowAsync(owner, node, options);
+        GridHarness.Pump(owner);
+        var second = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
+        second.Grid.Session!.SetText(second.Grid.Session.FindItem(frequency)!, "660");
+        second.Grid.Session.SetText(second.Grid.Session.FindItem(NodePropertySource.NamePath)!, "Kept");
+        GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(second, "PropertyGridDialog_OK"));
+        GridHarness.Pump(owner);
+
+        // Assert
+        Assert.Equal("880", stagedText);
+        Assert.Equal(440.0, afterCancel);
+        Assert.False(cancelled.Result);
+        Assert.True(accepted.Result);
+        Assert.Equal(660.0, node.Properties["Frequency"]);
+        Assert.Equal("Kept", node.Name);
+        Assert.Equal(before + 1, diagram.History.UndoCount);
+        owner.Close();
+    });
+
+    /// <summary>
+    ///     The preview of the node properties dialog is notified of an edit, a reset and a session cancel, is silent for the
+    ///     dialog's Cancel button, and OK notifies once for its commit; nothing is raised after the dialog closed.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewNotifiedOnEditResetAndSessionCancel() => UiTest.Run(() =>
+    {
+        // Arrange: a preview that records every notification and what it read
+        var (_, node) = NodeFixture.Create();
+        var owner = GridHarness.Host(new global::Avalonia.Controls.TextBlock { Text = "owner" });
+        var frequency = NodePropertySource.PropertyPath("Frequency");
+        NodePreviewContext? context = null;
+        var seen = new List<object?>();
+        var options = new NodePropertiesDialogOptions
+        {
+            Preview = c =>
+            {
+                context = c;
+                c.Changed += (_, _) => seen.Add(c.GetPropertyValue("Frequency"));
+                return new global::Avalonia.Controls.TextBlock();
+            },
+        };
+
+        // Act: stage an edit, reset it and cancel the session
+        var cancelled = NodePropertiesDialog.ShowAsync(owner, node, options);
+        GridHarness.Pump(owner);
+        var first = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
+        var session = first.Grid.Session!;
+        session.SetText(session.FindItem(frequency)!, "880");
+        var afterEdit = seen.ToList();
+        session.Reset(session.FindItem(frequency)!);
+        var afterReset = seen.ToList();
+        session.SetText(session.FindItem(frequency)!, "990");
+        session.Cancel();
+        var afterSessionCancel = seen.ToList();
+
+        // Act: the dialog's Cancel button raises nothing
+        var beforeButton = seen.Count;
+        GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(first, "PropertyGridDialog_Cancel"));
+        GridHarness.Pump(owner);
+        var afterButton = seen.Count;
+
+        // Act: a second dialog, OK notifies once for the commit
+        seen.Clear();
+        var accepted = NodePropertiesDialog.ShowAsync(owner, node, options);
+        GridHarness.Pump(owner);
+        var second = owner.OwnedWindows.OfType<PropertyGridDialog>().Single();
+        second.Grid.Session!.SetText(second.Grid.Session.FindItem(frequency)!, "660");
+        var beforeOk = seen.Count;
+        GridHarness.Click(GridHarness.Get<global::Avalonia.Controls.Button>(second, "PropertyGridDialog_OK"));
+        GridHarness.Pump(owner);
+
+        // Assert
+        Assert.Equal([880.0], afterEdit);
+        Assert.Equal([880.0, 440.0], afterReset);
+        Assert.Equal(990.0, afterSessionCancel[^2]);
+        Assert.Equal(440.0, afterSessionCancel[^1]);
+        Assert.Equal(beforeButton, afterButton);
+        Assert.False(cancelled.Result);
+        Assert.True(accepted.Result);
+        Assert.Equal(beforeOk + 1, seen.Count);
+        Assert.Equal(660.0, seen[^1]);
+        Assert.Equal(660.0, node.Properties["Frequency"]);
+        Assert.NotNull(context);
+        owner.Close();
+    });
+
+    /// <summary>
+    ///     A host that builds its own window uses the preview context over its own grid or over a bare session: both follow
+    ///     the staged edits while the node stays untouched.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task PlexusAvaloniaPropertyGrid_NodePreviewContext_HostGridAndSession_FollowStagedEdits() => UiTest.Run(() =>
+    {
+        // Arrange: a host-built window with a staged grid and a preview text that redraws from the context
+        var (diagram, node) = NodeFixture.Create();
+        var before = diagram.History.UndoCount;
+        var frequency = NodePropertySource.PropertyPath("Frequency");
+        var grid = new PropertyGrid { EditMode = PropertyEditMode.Staged, SelectedObject = node };
+        var preview = new global::Avalonia.Controls.TextBlock();
+        var panel = new global::Avalonia.Controls.DockPanel();
+        panel.Children.Add(preview);
+        panel.Children.Add(grid);
+        var window = GridHarness.Host(panel);
+        using var gridContext = new NodePreviewContext(grid);
+        void Redraw() => preview.Text = $"{gridContext.GetPropertyValue("Frequency")} Hz";
+        gridContext.Changed += (_, _) => Redraw();
+        Redraw();
+
+        // Arrange: a second context over a bare staged session of the same node
+        using var source = new NodePropertySource(node);
+        var bare = new PropertyEditSession(source, PropertyEditMode.Staged);
+        using var sessionContext = new NodePreviewContext(bare);
+
+        // Act
+        var initial = preview.Text;
+        var session = grid.Session!;
+        session.SetText(session.FindItem(frequency)!, "880");
+        var staged = preview.Text;
+        bare.SetText(bare.FindItem(frequency)!, "1000");
+        var bareStaged = sessionContext.GetPropertyValue("Frequency");
+        var gridUnaffected = gridContext.GetPropertyValue("Frequency");
+        session.Cancel();
+        var cancelled = preview.Text;
+        gridContext.Dispose();
+        session.SetText(session.FindItem(frequency)!, "2000");
+        var afterDispose = preview.Text;
+
+        // Assert: the preview follows the staged value, a cancel restores the node's value, disposing stops the redraws
+        Assert.Equal("440 Hz", initial);
+        Assert.Equal("880 Hz", staged);
+        Assert.Equal(1000.0, bareStaged);
+        Assert.Equal(880.0, gridUnaffected);
+        Assert.Equal("440 Hz", cancelled);
+        Assert.Equal("440 Hz", afterDispose);
+        Assert.Equal(440.0, node.Properties["Frequency"]);
+        Assert.Equal(before, diagram.History.UndoCount);
+        window.Close();
+    });
+
     /// <summary>
     ///     The headless Avalonia session used by the UI phase starts and runs a body on the UI thread.
     /// </summary>

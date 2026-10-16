@@ -73,7 +73,11 @@ public sealed class HistoryTransaction : IDisposable
     ///     Reverts and discards every command recorded since this transaction began.
     /// </summary>
     /// <remarks>
-    ///     After a rollback the transaction is complete; disposing it afterwards does nothing.
+    ///     After a rollback the transaction is complete; disposing it afterwards does nothing. A change handler that throws
+    ///     while the commands are reverted does not stop the rollback; the first such exception is rethrown once the
+    ///     rollback has completed. A command whose inverse throws does not stop the rollback either: every inverse is
+    ///     attempted, the transaction is completed (disposing it afterwards commits nothing), and the failure is rethrown
+    ///     afterwards (several failures as an <see cref="AggregateException"/>).
     /// </remarks>
     /// <exception cref="InvalidOperationException">Thrown when the transaction is already complete or is not the innermost open one.</exception>
     public void Rollback()
@@ -83,8 +87,32 @@ public sealed class HistoryTransaction : IDisposable
             throw new InvalidOperationException("The transaction has already been completed.");
         }
 
-        _history.EndTransaction(_depth, _startIndex, commit: false);
+        var handlerFailure = _history.EndTransaction(_depth, _startIndex, commit: false);
         _completed = true;
+        handlerFailure?.Throw();
+    }
+
+    /// <summary>
+    ///     Reverts and discards every command recorded since this transaction began because the transaction failed.
+    /// </summary>
+    /// <remarks>
+    ///     Like <see cref="Rollback"/>, but change-handler exceptions raised while reverting are dropped, so the caller can
+    ///     rethrow the failure that caused the rollback. Does nothing when the transaction is already complete (for example
+    ///     when the failing code rolled it back itself). Every inverse is attempted; when some fail, an
+    ///     <see cref="AggregateException"/> carrying <paramref name="cause"/> first and then the inverse failures is thrown instead.
+    /// </remarks>
+    /// <param name="cause">The failure that caused the rollback.</param>
+    /// <exception cref="AggregateException">Thrown when at least one inverse failed.</exception>
+    internal void RollbackAfterFailure(Exception cause)
+    {
+        if (_completed)
+        {
+            return;
+        }
+
+        var failure = _history.EndTransaction(_depth, _startIndex, commit: false, discardHandlerFailures: true, cause: cause);
+        _completed = true;
+        failure?.Throw();
     }
 
     /// <summary>

@@ -6,7 +6,10 @@ namespace DemaConsulting.Plexus;
 /// <remarks>
 ///     Implementations must make <see cref="Do"/> and <see cref="Undo"/> exact inverses of each
 ///     other and repeatable: after any sequence of Undo/Do pairs the model must be bit-for-bit
-///     identical to the state before the first call. They run on the UI thread only.
+///     identical to the state before the first call. They run on the UI thread only. Each of them must be
+///     atomic: it either completes or throws without having changed anything, because when one command of a grouped
+///     entry (a transaction) fails during undo or redo, the history restores the other commands of that entry.
+///     Neither may change the history itself (clear it, mark it clean, change its capacity or suspend it).
 /// </remarks>
 public interface IUndoableCommand
 {

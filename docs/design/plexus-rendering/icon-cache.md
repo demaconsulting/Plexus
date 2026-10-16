@@ -12,29 +12,41 @@ the same few icons many times, so caching dominates icon performance.
 
 ### Data Model
 
-A process-wide, thread-safe dictionary maps (icon key, pixel width, pixel height) to a CanvasNet surface, or to null
-when the icon failed to rasterize. Invariants: cached surfaces are never modified after creation (so they can be shared
-between renders and threads); a failure is cached as null so a broken icon is parsed only once; the number of entries
-is bounded (the cache is cleared when it holds more than 512 entries, so hosts that animate zoom cannot accumulate
-one bitmap per zoom step). The `Count` property exposes the number of entries for verification.
+`IconCache` is an instance class (internal) with one shared default instance, `IconCache.Shared`, which `ScenePainter`
+uses; tests create private instances with a small capacity. Each instance holds a dictionary, guarded by one lock, that
+maps
+(icon key, pixel width, pixel height) to a CanvasNet surface, or to null when the icon failed to rasterize. Invariants:
+cached surfaces are never modified after creation (so they can be shared between renders and threads); a failure is
+cached as null so a broken icon is parsed only once; the number of entries is bounded by the instance's `Capacity`
+(512 for the shared instance, `IconCache.DefaultCapacity`; at least 1 for any instance), so hosts that animate zoom
+cannot accumulate one bitmap per zoom step. The `Count` and `Capacity` properties expose the number of entries and the
+bound for verification.
+
+The eviction rule is _clear when full_: a request for a key that is not cached, made while the cache holds `Capacity`
+entries, first discards every cached rasterization and then adds the new one. The lookup, the discard and the insertion
+run under the instance's lock, so the cache never holds more than `Capacity` entries, also under concurrent requests;
+an icon requested after a discard is rasterized again (a new surface). Failed rasterizations count as entries.
 
 ### Key Methods
 
 - **`Get(icon, width, height)`** — returns the shared straight-alpha surface with a transparent background, or null
   when the SVG cannot be rasterized.
   - Preconditions: width and height are at least 1 pixel.
-  - Algorithm: when the cache holds more than the limit it is cleared; the entry is looked up by key and size and, when
-    absent, rasterized from the icon's SVG text at exactly that size.
+  - Algorithm: the key is looked up under the lock and a cached entry (surface or null) is returned. Otherwise the
+    icon's SVG text is rasterized at exactly that size outside the lock, because rasterizing is slow; then, under the
+    lock again, an entry stored meanwhile by another thread is returned instead, or else the cache is cleared when it
+    holds `Capacity` entries and the new entry is added.
   - Post-conditions: concurrent requests for the same key and size receive the same stored surface (a duplicate
-    rasterization by a losing thread is discarded).
+    rasterization by a losing thread is discarded), and the cache holds at most `Capacity` entries.
 - **Rasterization (private)** — loads the SVG text with CanvasNet's SVG codec; invalid data or invalid arguments
   from malformed or unsupported SVG are caught and reported as null.
 
 ### Error Handling
 
-Malformed or unsupported SVG is detected through the codec's invalid-data and argument exceptions and handled locally by
-caching and returning null, because a bad icon must not prevent the rest of a diagram from rendering. The caller
-(`ScenePainter`) treats null as "draw nothing".
+- A capacity of less than one throws `ArgumentOutOfRangeException` when an instance is created.
+- Malformed or unsupported SVG is detected through the codec's invalid-data and argument exceptions and handled locally
+  by caching and returning null, because a bad icon must not prevent the rest of a diagram from rendering. The caller
+  (`ScenePainter`) treats null as "draw nothing".
 
 ### Dependencies
 
@@ -43,4 +55,4 @@ caching and returning null, because a bad icon must not prevent the rest of a di
 
 ### Callers
 
-`ScenePainter` is the only caller.
+`ScenePainter` is the only caller, through `IconCache.Shared`.

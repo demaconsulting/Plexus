@@ -45,6 +45,12 @@ public sealed record CustomPropertyOptions
     public int CategoryOrder { get; init; }
 
     /// <summary>
+    ///     Gets the rank of the item within its category when a grid sorts by category (see <see cref="PropertyItem.Order"/>);
+    ///     the default 0 means alphabetical order only. Lower ranks come first.
+    /// </summary>
+    public int Order { get; init; }
+
+    /// <summary>
     ///     Gets the description; <see langword="null"/> means none.
     /// </summary>
     public string? Description { get; init; }

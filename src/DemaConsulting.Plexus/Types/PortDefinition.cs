@@ -6,6 +6,7 @@ namespace DemaConsulting.Plexus;
 /// <remarks>
 ///     Whether the port is an input or an output is decided by which list of the node type it is
 ///     added to, keeping the definition itself direction-neutral. The type key is a host-defined string; see <see cref="PortType"/>.
+///     Definitions are immutable, so a <see cref="NodeType.PortProvider"/> may cache and reuse them for many nodes.
 /// </remarks>
 /// <example>
 ///     Declare ports, including an input that accepts many wires and a port with a label that differs from its name.
@@ -17,7 +18,11 @@ namespace DemaConsulting.Plexus;
 ///         Inputs =
 ///         {
 ///             new PortDefinition("in", "audio") { AllowsMultipleWires = true },   // fan-in: many sources may feed this input
-///             new PortDefinition("gain", "number") { Label = "Gain (dB)" },       // name for code, label for display
+///             new PortDefinition("gain", "number")
+///             {
+///                 Label = "Gain (dB)",                                            // name for code, label for display
+///                 Description = "Output level relative to the input.",            // shown in the editor's port tooltip
+///             },
 ///         },
 ///         Outputs = { new PortDefinition("out", "audio") },                       // outputs always allow any number of wires
 ///     };
@@ -83,4 +88,30 @@ public sealed class PortDefinition
     ///     (or <see cref="ConnectionRules.SingleInputWire"/>) is not bound by it.
     /// </remarks>
     public bool AllowsMultipleWires { get; init; }
+
+    /// <summary>
+    ///     Gets or initializes an optional description of what the port carries; null (the default) means none.
+    /// </summary>
+    /// <remarks>
+    ///     A presentation hint: the library never draws it on a node. Editors show it in the port's tooltip, below the port's
+    ///     label and type (for example the Avalonia <c>DiagramEditor</c>); hosts may use it in their own help or documentation.
+    /// </remarks>
+    public string? Description { get; init; }
+
+    /// <summary>
+    ///     Determines whether another definition declares the same port in every respect.
+    /// </summary>
+    /// <remarks>
+    ///     Used when ports are recomputed by a <see cref="NodeType.PortProvider"/>: when every new definition is equivalent to
+    ///     the current one at the same position, nothing changed and no undo entry or notification is produced.
+    /// </remarks>
+    /// <param name="other">The other definition.</param>
+    /// <returns><see langword="true"/> when the name, type key, label, fan-in flag and description are all equal (ordinal).</returns>
+    internal bool IsEquivalentTo(PortDefinition other) =>
+        ReferenceEquals(this, other)
+        || (string.Equals(Name, other.Name, StringComparison.Ordinal)
+            && string.Equals(TypeKey, other.TypeKey, StringComparison.Ordinal)
+            && string.Equals(Label, other.Label, StringComparison.Ordinal)
+            && AllowsMultipleWires == other.AllowsMultipleWires
+            && string.Equals(Description, other.Description, StringComparison.Ordinal));
 }

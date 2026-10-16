@@ -16,7 +16,7 @@ internal static class RenderTestModel
 
     /// <summary>
     ///     Creates node types: <c>t.Plain</c> (no title, no ports), <c>t.Titled</c>, <c>t.Icon</c> (red square icon),
-    ///     <c>t.Source</c> (one output) and <c>t.Sink</c> (one input).
+    ///     <c>t.Source</c> (one output), <c>t.Sink</c> (one input) and <c>t.Bus</c> (one unlabeled input per <c>Channels</c>, from a port provider).
     /// </summary>
     /// <returns>The registry.</returns>
     public static NodeTypeRegistry CreateTypes()
@@ -28,6 +28,15 @@ internal static class RenderTestModel
         types.Add(new NodeType("t.Icon") { Title = string.Empty, Icon = IconSource.FromSvg(RedSquareSvg) });
         types.Add(new NodeType("t.Source") { Title = string.Empty, Outputs = { new PortDefinition("value", "f32") } });
         types.Add(new NodeType("t.Sink") { Title = string.Empty, Inputs = { new PortDefinition("in", "f32") } });
+        types.Add(new NodeType("t.Bus")
+        {
+            Title = string.Empty,
+            Inputs = { new PortDefinition("in0", "f32") { Label = string.Empty } },
+            Properties = { new PropertyDefinition("Channels", 1) },
+            PortProvider = node => new PortSet(
+                Enumerable.Range(0, node.Properties.Get<int>("Channels")).Select(i => new PortDefinition($"in{i}", "f32") { Label = string.Empty }),
+                []),
+        });
         return types;
     }
 

@@ -59,7 +59,12 @@ building blocks) share a name on purpose.
 
 Rules are consulted wherever a wire is created or moved: `Connect`, `CanConnect`, `Reconnect`, `CanReconnect`, the
 editor's drag gestures, paste and duplicate (a wire the rules refuse is skipped and a warning names the reason).
-Loading a snapshot does not run the rules: a saved diagram is restored as written.
+Loading a snapshot does not run the rules: a saved diagram is restored as written. They are also consulted when a
+node's ports are recomputed by its type's `PortProvider` (see *Ports That Vary per Node* in *Describing Your Domain*):
+a kept port whose type or fan-in changed keeps only the wires the rules still allow, and the wires of ports that
+disappeared are removed. Such removals are part of the same undo entry as the edit that caused them, and
+`Diagram.Changed` reports each removed wire (`ElementRemoved`) before the node reports its `Ports` as changed, so a host
+that tracks wires learns about them through the notifications it already handles.
 
 ### Fan-in
 

@@ -40,6 +40,9 @@ on the values and the history.
   and null are rejected without changing the value or the history.
 - **PropertyBag_Set_ChoiceOutsideOptions_ThrowsArgumentException**: a value outside the choices is rejected and the
   message names the choices.
+- **PropertyBag_Set_Int64NotExactlyRepresentableAsDouble_ThrowsArgumentException**: boundary of the lossless rule for a
+  double property: 2^53 + 1 and the largest 64-bit integer are rejected with the value and the history unchanged, while
+  2^53 converts exactly.
 
 ##### Ad-hoc properties (`Plexus-Properties-PropertyBag-AdHoc`)
 
@@ -50,6 +53,9 @@ on the values and the history.
 
 - **PropertyBag_Read_MissingKeysAndConversions_BehaveAsDocumented**: lookup, missing names and typed conversions.
 - **PropertyBag_Get_OverflowingConversion_ThrowsInvalidCastException**: an overflowing conversion is an invalid cast.
+- **PropertyBag_Get_LossyConversion_ThrowsInvalidCastException**: 1.5 read as `int` or `long`, a large `long` read as
+  `double` and 0.1 read as `float` are invalid casts (error path); an integral double as `int`, 2^53 as `double` and
+  1.5 as `float` convert exactly.
 
 ##### Enumeration (`Plexus-Properties-PropertyBag-Enumeration`)
 
@@ -97,3 +103,32 @@ on the values and the history.
   null and a foreign object) change nothing, add no entry and report a message for each rejected name.
 - **PropertyBag_TrySetAll_NoEffectiveChange_RecordsNothing** and **PropertyBag_TrySetAll_EmptyName_IsReported**; a
   removed node and null arguments are refused.
+
+##### Port recomputation on set (`Plexus-Properties-PropertyBag-PortRecompute`)
+
+- **PropertyBag_Set_ProviderProperty_RecomputesPortsInSameEntry**: one entry; undoing it restores the value and the
+  ports.
+
+##### Port recomputation on reset (`Plexus-Properties-PropertyBag-PortRecomputeReset`)
+
+- **PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts**: resetting the count restores the default inputs.
+
+##### Port recomputation on batch edit (`Plexus-Properties-PropertyBag-PortRecomputeBatch`)
+
+- **PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry**: a batch of text and choice values that removes a wired
+  input and retypes the remaining one is one exact entry, the wire included.
+
+##### Port recomputation once for the final batch state (`Plexus-Properties-PropertyBag-PortRecomputeBatchFinal`)
+
+- **PropertyBag_TrySetAll_PortAbsentInIntermediateState_KeepsWireInOneEntry**: a provider whose port `keep` exists only
+  while A equals B; a batch changing A then B has an intermediate state without the port. The wire and the port object
+  survive, the provider runs once for the batch, and the batch is one exact undo entry (undo and redo twice).
+- **PropertyBag_TrySetAll_ProviderFailsOnFinalState_RollsBackEverything**: the provider throws for the final state; the
+  exception propagates, the model dump and the undo count are unchanged (error path), and a following valid batch works.
+
+##### Port recomputation for ad-hoc values (`Plexus-Properties-PropertyBag-PortRecomputeAdHoc`)
+
+- **PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry**: adding an ad-hoc value the provider reads turns
+  fan-in on in one exact undo entry; the value stays ad-hoc (no definition).
+- **PropertyBag_Reset_AdHocProviderValue_RecomputesPortsInSameEntry**: removing that ad-hoc value turns fan-in off in
+  one exact undo entry.

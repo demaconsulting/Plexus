@@ -74,3 +74,6 @@ results. The headless platform itself is proven by every test running at all.
   DiagramEditor_CopyPaste_SystemClipboard_RoundTripsWhenAvailable
 - **`Plexus-OTS-Avalonia-Headless`**: DiagramEditor_Defaults_NewEditor_HasDocumentedValues,
   DiagramEditor_ZoomToFit_FarApartNodes_BringsBothIntoView
+
+- **`Plexus-OTS-Avalonia-ToolTips`**: DiagramEditor_ToolTip_OpenThenMoveToAnotherElement_ShowsNewContent,
+  DiagramEditor_ToolTip_PointerLeaves_ClearsTip

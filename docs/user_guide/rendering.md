@@ -14,7 +14,10 @@ byte[] png = PlexusRenderer.RenderPng(page);           // or keep the bytes (a w
 ```
 
 Without options the image fits the page content plus a margin. `SavePng` replaces an existing file and does not
-create folders. Exporting every page of a diagram is a loop:
+create folders: a missing folder throws `DirectoryNotFoundException`, and other file-system problems (access denied, a
+path that is too long) propagate unchanged as `IOException` or `UnauthorizedAccessException`; the library translates no
+exception. The picture is rendered completely before the file is opened, so a failed render or an invalid option never
+leaves a half-written file. Exporting every page of a diagram is a loop:
 
 ```csharp
 Directory.CreateDirectory("out");
@@ -41,6 +44,13 @@ byte[] picture = PlexusRenderer.RenderPng(page, new RenderOptions
     Theme = DiagramTheme.Classic with { WireColor = Color.Black },    // override the diagram's theme for this image
 });
 ```
+
+`RenderOptions.Theme` changes the look of the image only: ports and wire ends stay where the diagram's own theme puts
+them, so set port metrics on `Diagram.Theme` instead.
+
+`RenderOptions.Selection` is copied when the options are created, so you can reuse and change your own list afterwards
+without affecting options that already exist (a `null` selection throws `ArgumentNullException`). The selected
+elements themselves are not copied. An options object is therefore safe to share between renders and threads.
 
 `RenderOptions.Bounds` renders a fixed area of the page (in diagram units) instead of fitting the content, which is how
 to produce a series of identical frames. An image may be at most 8192 pixels on either side: lower `Scale` or the

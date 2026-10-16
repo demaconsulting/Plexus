@@ -70,4 +70,68 @@ internal static class NodeFixture
         node.Data = new ToneSettings { Level = 5, Label = "lead", Tags = ["a", "b"] };
         return (diagram, node);
     }
+
+    /// <summary>
+    ///     The key of the node type whose properties declare a display order.
+    /// </summary>
+    internal const string EnvelopeKey = "test.Envelope";
+
+    /// <summary>
+    ///     Creates a diagram with an envelope node named "Env" whose properties are declared out of alphabetical order and
+    ///     ranked with <see cref="PropertyDefinition.Order"/>: Attack 1, Decay 2, Sustain 3, Release 4 under "Envelope",
+    ///     plus two uncategorized properties (Mode with order 2, Gate with order 1) that land under General.
+    /// </summary>
+    /// <returns>The diagram and the envelope node.</returns>
+    internal static (Diagram Diagram, Node Node) CreateOrdered()
+    {
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType(EnvelopeKey)
+        {
+            Properties =
+            {
+                new PropertyDefinition("Release", 300.0) { Unit = "ms", Category = "Envelope", Order = 4 },
+                new PropertyDefinition("Sustain", 70.0) { Unit = "%", Category = "Envelope", Order = 3 },
+                new PropertyDefinition("Attack", 10.0) { Unit = "ms", Category = "Envelope", Order = 1 },
+                new PropertyDefinition("Decay", 120.0) { Unit = "ms", Category = "Envelope", Order = 2 },
+                new PropertyDefinition("Mode", "Linear") { Order = 2 },
+                new PropertyDefinition("Gate", true) { Order = 1 },
+            },
+        });
+
+        var diagram = new Diagram(types);
+        var node = diagram.Pages.Add("Main").AddNode(EnvelopeKey, 0, 0, name: "Env");
+        return (diagram, node);
+    }
+
+    /// <summary>
+    ///     The key of the node type whose properties share one display order.
+    /// </summary>
+    internal const string TiedKey = "test.Tied";
+
+    /// <summary>
+    ///     Creates a diagram with a node named "Tie" whose properties are declared out of alphabetical order and mostly share
+    ///     the same <see cref="PropertyDefinition.Order"/>: Zeta, Idle, alpha, ice and Hue all rank 7 under "Tied" (mixed case,
+    ///     so the alphabetical tie-break must ignore case), and Early ranks -5 (a negative order lists first).
+    /// </summary>
+    /// <returns>The diagram and the tied node.</returns>
+    internal static (Diagram Diagram, Node Node) CreateTied()
+    {
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType(TiedKey)
+        {
+            Properties =
+            {
+                new PropertyDefinition("Zeta", 1) { Category = "Tied", Order = 7 },
+                new PropertyDefinition("Idle", 1) { Category = "Tied", Order = 7 },
+                new PropertyDefinition("alpha", 1) { Category = "Tied", Order = 7 },
+                new PropertyDefinition("Early", 1) { Category = "Tied", Order = -5 },
+                new PropertyDefinition("ice", 1) { Category = "Tied", Order = 7 },
+                new PropertyDefinition("Hue", 1) { Category = "Tied", Order = 7 },
+            },
+        });
+
+        var diagram = new Diagram(types);
+        var node = diagram.Pages.Add("Main").AddNode(TiedKey, 0, 0, name: "Tie");
+        return (diagram, node);
+    }
 }

@@ -21,9 +21,11 @@ namespace DemaConsulting.Plexus.Rendering;
 ///     The painter maps diagram coordinates to pixels with a fixed origin offset and a uniform
 ///     scale, and draws every primitive kind with anti-aliasing: rectangles (optionally rounded and
 ///     stroked), paths (filled and/or stroked, curves included), text, SVG icons (rasterized once,
-///     cached, composited) and dot grids. Rectangle edges that carry a whole-pixel stroke are
-///     snapped to the pixel grid so 1-pixel borders stay crisp instead of smearing across two
-///     pixel rows. A painter instance is tied to one surface and is not thread-safe.
+///     cached, composited) and dot grids. A rectangle outline whose stroke thickness times the scale is
+///     a whole number of output pixels (at least one) is snapped to the pixel grid, so a 1-pixel border
+///     (thickness 1 at scale 1, or thickness 0.5 at scale 2) and a 2-pixel border (thickness 1 at
+///     scale 2) stay crisp instead of smearing across extra pixel rows. A painter instance is tied to
+///     one surface and is not thread-safe.
 /// </remarks>
 internal sealed class ScenePainter
 {
@@ -165,7 +167,7 @@ internal sealed class ScenePainter
     ///     Snaps a device coordinate so a stroke of the given whole-pixel width is pixel-aligned.
     /// </summary>
     /// <param name="value">The device coordinate of the stroke's center line.</param>
-    /// <param name="strokePixels">The stroke width in device pixels.</param>
+    /// <param name="strokePixels">The stroke width in output pixels (thickness times scale).</param>
     /// <returns>An odd width centers on a pixel middle, an even width on a pixel boundary.</returns>
     private static double Snap(double value, double strokePixels) =>
         (long)Math.Round(strokePixels) % 2 == 1 ? Math.Floor(value) + 0.5 : Math.Round(value);
@@ -376,7 +378,7 @@ internal sealed class ScenePainter
             return;
         }
 
-        var icon = IconCache.Get(primitive.Icon, width, height);
+        var icon = IconCache.Shared.Get(primitive.Icon, width, height);
         if (icon is null)
         {
             return;

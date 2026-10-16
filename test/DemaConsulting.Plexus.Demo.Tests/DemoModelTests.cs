@@ -88,7 +88,7 @@ public class DemoModelTests
         var plumbing = diagrams["plumbing"].Pages.Single();
         Assert.Equal((14, 11), (plumbing.Nodes.Count, plumbing.Wires.Count));
         var logic = diagrams["logic"].Pages.Single();
-        Assert.Equal((9, 10), (logic.Nodes.Count, logic.Wires.Count));
+        Assert.Equal((12, 14), (logic.Nodes.Count, logic.Wires.Count));
         var audio = diagrams["audio"].Pages.Single();
         Assert.Equal((7, 6), (audio.Nodes.Count, audio.Wires.Count));
         var workflow = diagrams["workflow"].Pages.Single();
@@ -333,5 +333,285 @@ public class DemoModelTests
         // Assert
         Assert.Equal(7, pngs.Count);
         Assert.All(pngs, png => Assert.True(png.Length > 1000));
+    }
+
+    /// <summary>
+    ///     Validates that the Inputs property of AND, OR and XOR gives the gate inputs a, b, c, ... clamped to 2..8.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_Gates_InputsProperty_ProducesNamedInputs()
+    {
+        // Arrange
+        var page = new Diagram(DemoNodeTypes.CreateRegistry()).Pages.Add("Main");
+        var and = page.AddNode(DemoNodeTypes.And, 0, 0);
+        var or = page.AddNode(DemoNodeTypes.Or, 0, 150);
+        var xor = page.AddNode(DemoNodeTypes.Xor, 0, 300);
+        var defaults = and.Inputs.Select(p => p.Name).ToArray();
+
+        // Act
+        and.Properties[DemoNodeTypes.GateInputsProperty] = 4;
+        or.Properties[DemoNodeTypes.GateInputsProperty] = 1;
+        xor.Properties[DemoNodeTypes.GateInputsProperty] = 9;
+
+        // Assert: names follow the alphabet; out-of-range counts are clamped; the NOT gate has no such property
+        Assert.Equal(["a", "b"], defaults);
+        Assert.Equal(["a", "b", "c", "d"], and.Inputs.Select(p => p.Name));
+        Assert.Equal(["a", "b"], or.Inputs.Select(p => p.Name));
+        Assert.Equal(["a", "b", "c", "d", "e", "f", "g", "h"], xor.Inputs.Select(p => p.Name));
+        Assert.All(and.Inputs, p => Assert.Equal($"Gate input {p.Name}.", p.Description));
+        Assert.Null(page.Diagram.Types.Get(DemoNodeTypes.Not).FindProperty(DemoNodeTypes.GateInputsProperty));
+        Assert.Equal(NodeGeometry.RequiredHeight(8, page.Diagram.Theme), xor.Bounds.Height);
+    }
+
+    /// <summary>
+    ///     Validates the three-input AND gate of the logic sample.
+    /// </summary>
+    [Fact]
+    public void DemoSamples_Logic_ThreeInputGate_IsWired()
+    {
+        // Arrange / Act
+        var diagram = DemoSamples.Logic();
+        var gate = diagram.FindNode("All")!;
+
+        // Assert
+        Assert.Equal(3, gate.Properties.Get<int>(DemoNodeTypes.GateInputsProperty));
+        Assert.Equal(["a", "b", "c"], gate.Inputs.Select(p => p.Name));
+        Assert.Equal(["SwitchA.out", "SwitchB.out", "SwitchC.out"], gate.Inputs.Select(p => p.Wires.Single().Source.ToString()));
+        Assert.Equal("AllLamp.in", gate.Output("out").Wires.Single().Target.ToString());
+    }
+
+    /// <summary>
+    ///     Validates that a file saved before gates had an Inputs property still loads with its wires on a and b.
+    /// </summary>
+    [Fact]
+    public void DemoDocument_Load_OldTwoInputGateFile_KeepsWires()
+    {
+        // Arrange: a two-input gate wired on both inputs, saved without the Inputs property (as older versions wrote it)
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        page.AddNode(DemoNodeTypes.Switch, 0, 0, "A");
+        page.AddNode(DemoNodeTypes.Switch, 0, 150, "B");
+        page.AddNode(DemoNodeTypes.Or, 240, 75, "G");
+        page.Connect("A.out", "G.a");
+        page.Connect("B.out", "G.b");
+        var root = System.Text.Json.Nodes.JsonNode.Parse(diagram.ToJson())!;
+        foreach (var node in root["pages"]![0]!["nodes"]!.AsArray())
+        {
+            (node!["properties"] as System.Text.Json.Nodes.JsonObject)?.Remove(DemoNodeTypes.GateInputsProperty);
+        }
+
+        using var temp = new TempDirectory();
+        var path = Path.Combine(temp.Create(), "old.json");
+        File.WriteAllText(path, root.ToJsonString());
+
+        // Act
+        var loaded = DemoDocument.Load(path);
+
+        // Assert
+        var gate = loaded.FindNode("G")!;
+        Assert.Equal(2, gate.Properties.Get<int>(DemoNodeTypes.GateInputsProperty));
+        Assert.Equal(["A.out -> G.a", "B.out -> G.b"], loaded.Pages[0].Wires.Select(w => $"{w.Source} -> {w.Target}"));
+    }
+
+    /// <summary>
+    ///     Validates that the oscillator has amplitude, phase and DC offset properties with their categories, units,
+    ///     descriptions and defaults, outside the node summary so the node keeps its look.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_Oscillator_HasAmplitudePhaseAndOffsetProperties()
+    {
+        // Arrange
+        var type = DemoNodeTypes.CreateRegistry().Get(DemoNodeTypes.Oscillator);
+
+        // Act
+        var amplitude = type.FindProperty(DemoNodeTypes.AmplitudeProperty)!;
+        var phase = type.FindProperty(DemoNodeTypes.PhaseProperty)!;
+        var offset = type.FindProperty(DemoNodeTypes.DcOffsetProperty)!;
+
+        // Assert
+        Assert.Equal(1.0, amplitude.DefaultValue);
+        Assert.False(string.IsNullOrEmpty(amplitude.Description));
+        Assert.Equal(0.0, phase.DefaultValue);
+        Assert.Equal("°", phase.Unit);
+        Assert.False(string.IsNullOrEmpty(phase.Description));
+        Assert.Equal(0.0, offset.DefaultValue);
+        Assert.Equal("DC Offset", offset.DisplayName);
+        Assert.False(string.IsNullOrEmpty(offset.Description));
+        Assert.All([amplitude, phase, offset], p => Assert.False(p.ShowInSummary));
+
+        // Assert: every setting is under "Oscillator", ordered waveform, frequency, amplitude, phase, DC offset
+        Assert.All(type.Properties, p => Assert.Equal(DemoNodeTypes.OscillatorCategory, p.Category));
+        Assert.Equal(
+            [DemoNodeTypes.WaveformProperty, DemoNodeTypes.FrequencyProperty, DemoNodeTypes.AmplitudeProperty, DemoNodeTypes.PhaseProperty, DemoNodeTypes.DcOffsetProperty],
+            type.Properties.OrderBy(p => p.Order).Select(p => p.Name));
+    }
+
+    /// <summary>
+    ///     Validates that the envelope lists its properties under "Envelope" in attack, decay, sustain, release order, each
+    ///     with a description.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_Envelope_PropertiesInAdsrOrderUnderEnvelope()
+    {
+        // Arrange
+        var type = DemoNodeTypes.CreateRegistry().Get(DemoNodeTypes.Envelope);
+
+        // Act
+        var ordered = type.Properties.OrderBy(p => p.Order).ToList();
+
+        // Assert
+        Assert.Equal(
+            [DemoNodeTypes.AttackProperty, DemoNodeTypes.DecayProperty, DemoNodeTypes.SustainProperty, DemoNodeTypes.ReleaseProperty],
+            ordered.Select(p => p.Name));
+        Assert.Equal([1, 2, 3, 4], ordered.Select(p => p.Order));
+        Assert.All(ordered, p => Assert.Equal(DemoNodeTypes.EnvelopeCategory, p.Category));
+        Assert.All(ordered, p => Assert.False(string.IsNullOrEmpty(p.Description)));
+    }
+
+    /// <summary>
+    ///     Validates that every demo node type has a description and a tooltip that starts with it.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_EveryType_HasDescriptionAndToolTip()
+    {
+        // Arrange: one node of every type on a page, so live tooltips can read their page
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200))).ToList();
+
+        // Act / Assert
+        Assert.All(nodes, node =>
+        {
+            Assert.False(string.IsNullOrEmpty(node.Type.Description), node.Type.Key);
+            var tip = node.Type.GetToolTip(node);
+            Assert.NotNull(tip);
+            Assert.StartsWith(node.Type.Description, tip, StringComparison.Ordinal);
+        });
+    }
+
+    /// <summary>
+    ///     Validates that every port of every demo node type has a description.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_EveryPort_HasDescription()
+    {
+        // Arrange: nodes, so ports a provider computes are included too
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200))).ToList();
+
+        // Act
+        var ports = nodes.SelectMany(n => n.Ports).ToList();
+
+        // Assert
+        Assert.NotEmpty(ports);
+        Assert.All(ports, port => Assert.False(string.IsNullOrEmpty(port.Description), $"{port.Node.Type.Key}.{port.Name}"));
+    }
+
+    /// <summary>
+    ///     Validates that the audio sample's tooltips summarize the live settings of its filter and envelope.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_AudioToolTips_SummarizeSettings()
+    {
+        // Arrange
+        var diagram = DemoSamples.Audio();
+
+        // Act
+        var tone = diagram.FindNode("Tone")!;
+        var shape = diagram.FindNode("Shape")!;
+
+        // Assert
+        Assert.Contains("Low-pass, 900 Hz", tone.Type.GetToolTip(tone), StringComparison.Ordinal);
+        Assert.Contains("A 10 ms · D 120 ms · S 70 % · R 300 ms", shape.Type.GetToolTip(shape), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that the logic sample's note on the three-input AND gate explains the Inputs property in words that
+    ///     hold for any value, and fits above the gate.
+    /// </summary>
+    [Fact]
+    public void DemoSamples_Logic_GateAnnotation_DescribesInputsProperty()
+    {
+        // Arrange
+        var page = DemoSamples.Logic().Pages[0];
+
+        // Act
+        var note = page.Annotations.Single(a => a.Text.Contains("Inputs property", StringComparison.Ordinal));
+        var gate = page.Nodes.Single(n => n.Name == "All");
+
+        // Assert
+        Assert.Contains($"{DemoNodeTypes.MinGateInputs}–{DemoNodeTypes.MaxGateInputs}", note.Text, StringComparison.Ordinal);
+        Assert.Contains("every input is on; an unconnected input is off", note.Text.Replace('\n', ' '), StringComparison.Ordinal);
+        Assert.DoesNotContain("Inputs = 3", note.Text, StringComparison.Ordinal);
+        Assert.True(note.Bounds.Bottom < gate.Bounds.Top);
+    }
+
+    /// <summary>
+    ///     Validates that an oscillator saved before it had amplitude, phase and DC offset loads with their defaults and
+    ///     keeps its saved waveform and frequency.
+    /// </summary>
+    [Fact]
+    public void DemoDocument_Load_OldOscillatorFile_AppliesNewPropertyDefaults()
+    {
+        // Arrange: an oscillator saved without the new properties (as older versions wrote it)
+        var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
+        var page = diagram.Pages.Add("Main");
+        var osc = page.AddNode(DemoNodeTypes.Oscillator, 0, 0, "Osc");
+        osc.Properties[DemoNodeTypes.WaveformProperty] = "Saw";
+        osc.Properties[DemoNodeTypes.FrequencyProperty] = 220.0;
+        var root = System.Text.Json.Nodes.JsonNode.Parse(diagram.ToJson())!;
+        foreach (var node in root["pages"]![0]!["nodes"]!.AsArray())
+        {
+            if (node!["properties"] is System.Text.Json.Nodes.JsonObject properties)
+            {
+                properties.Remove(DemoNodeTypes.AmplitudeProperty);
+                properties.Remove(DemoNodeTypes.PhaseProperty);
+                properties.Remove(DemoNodeTypes.DcOffsetProperty);
+            }
+        }
+
+        using var temp = new TempDirectory();
+        var path = Path.Combine(temp.Create(), "old.json");
+        File.WriteAllText(path, root.ToJsonString());
+
+        // Act
+        var loaded = DemoDocument.Load(path).FindNode("Osc")!;
+
+        // Assert
+        Assert.Equal("Saw", loaded.Properties[DemoNodeTypes.WaveformProperty]);
+        Assert.Equal(220.0, loaded.Properties[DemoNodeTypes.FrequencyProperty]);
+        Assert.Equal(1.0, loaded.Properties[DemoNodeTypes.AmplitudeProperty]);
+        Assert.Equal(0.0, loaded.Properties[DemoNodeTypes.PhaseProperty]);
+        Assert.Equal(0.0, loaded.Properties[DemoNodeTypes.DcOffsetProperty]);
+        Assert.Equal(new OscillatorSettings("Saw", 220.0, 1.0, 0.0, 0.0), OscillatorSettings.FromNode(loaded));
+    }
+
+    /// <summary>
+    ///     Validates the live tooltips of the logic node types and the descriptions of their ports.
+    /// </summary>
+    [Fact]
+    public void DemoNodeTypes_LogicToolTips_ShowLiveState()
+    {
+        // Arrange
+        var diagram = DemoSamples.Logic();
+        var switchA = diagram.FindNode("SwitchA")!;
+        var sum = diagram.FindNode("Sum")!;
+        var lamp = diagram.FindNode("SumLamp")!;
+        var carryLamp = diagram.FindNode("CarryLamp")!;
+
+        // Act
+        var switchTip = switchA.Type.GetToolTip(switchA);
+        var gateTip = sum.Type.GetToolTip(sum);
+        var lampTip = lamp.Type.GetToolTip(lamp);
+        var darkTip = carryLamp.Type.GetToolTip(carryLamp);
+
+        // Assert
+        Assert.EndsWith("Now: on", switchTip, StringComparison.Ordinal);
+        Assert.StartsWith("XOR gate.", gateTip, StringComparison.Ordinal);
+        Assert.EndsWith("Output now: on", gateTip, StringComparison.Ordinal);
+        Assert.EndsWith("Now: lit", lampTip, StringComparison.Ordinal);
+        Assert.EndsWith("Now: dark", darkTip, StringComparison.Ordinal);
+        Assert.Equal("Lights the lamp while on.", lamp.Input("in").Description);
     }
 }

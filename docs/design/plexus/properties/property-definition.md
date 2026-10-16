@@ -2,7 +2,7 @@
 
 ![Properties Structure](PropertiesView.svg)
 
-Scope: Property metadata: name, value kind, default, constraints and editor hints.
+Scope: Property metadata: name, value kind, default, constraints and editor and display-order hints.
 
 #### Purpose
 
@@ -16,9 +16,15 @@ an internal helper that normalizes, coerces and formats values.
 - **ValueKind**: one of boolean, 32-bit integer, 64-bit integer, double, string, choice or color; inferred from the
   default value and changed to choice when a choice list is set.
 - **DefaultValue**: the default in canonical form (bool, int, long, double, string or color).
-- **Choices**: null, or an immutable copy of a non-empty list of distinct strings that contains the default value.
+- **Choices**: null, or an immutable copy of a non-empty list of distinct, non-null strings that contains the default
+  value.
 - **Presentation hints**: display name (defaults to the name), description, category, unit, summary flag, read-only
   flag, editor hint and an optional formatting function. All are set at construction and never restrict values.
+- **Display order** (`Order`): an `int` hint, default 0; any value including negative ones and the extremes is accepted
+  without validation. Contract for editors: in a categorized view a category lists its properties by ascending `Order`,
+  equal values by display name (case-insensitive, culture-invariant); an alphabetical view ignores it. It never changes
+  the order of the node type's property list, the property bag's enumeration, node summaries or saved documents. The
+  definition only stores it; the Plexus property grid's node source maps it to the grid's item rank.
 - **Canonical types**: small integral types widen to int, larger signed and unsigned types up to the long range widen
   to long, floating-point and decimal types become double. Other types, non-finite numbers and unsigned values above the
   long range are not allowed.
@@ -29,12 +35,14 @@ an internal helper that normalizes, coerces and formats values.
 
 - **Constructor(name, defaultValue)**: validates the name, normalizes the default to its canonical type and infers the
   kind. Preconditions: non-blank name, non-null supported default. Postcondition: kind and default are set.
-- **Choices (initializer)**: requires a string property, a non-empty list without duplicates and a default contained in
-  the list (checked by coercing the default to the choice kind); copies the list and sets the kind to choice.
+- **Choices (initializer)**: requires a string property and a list without null entries (checked first), non-empty,
+  without duplicates and containing the default (checked by coercing the default to the choice kind); copies the list
+  and sets the kind to choice.
 - **Normalize (helper)**: maps a value to its canonical type and kind; used by definitions and by ad-hoc assignment.
 - **Coerce (helper)**: converts a value to the representation required by a declared kind: integers to int only when in
-  range, integers to long, integers and doubles to double, choices only when listed, every other kind only on an exact
-  match. Anything else fails with a descriptive message.
+  range, integers to long, doubles and 32-bit integers to double, 64-bit integers to double only when the double
+  converts back to exactly the same integer (below 2^63 and equal after the round trip), choices only when listed, every
+  other kind only on an exact match. Anything else fails with a descriptive message.
 - **FormatValue(value)**: applies the custom formatting function when present; otherwise formats with the invariant
   culture (empty text for null, the hexadecimal text for colors).
 - **FormatSummary(value)**: returns the display name, a colon, the formatted value and, when a unit is set, a space and
@@ -52,8 +60,9 @@ value: invariant culture, `true/false`, shortest round-trip doubles, `Color.ToSt
 
 - A blank name, an unsupported default type, a non-finite number or an unsigned value above the long range raises an
   argument error; a null default raises an argument-null error.
-- A choice list on a non-string property, an empty list, duplicates or a default not in the list raise an argument
-  error from the initializer, so the declaration fails at the point where it is written.
+- A choice list on a non-string property, a list with a null entry (message naming the property), an empty list,
+  duplicates or a default not in the list raise an argument error from the initializer, so the declaration fails at
+  the point where it is written.
 - Coercion failures raise an argument error whose message names the value, the kind or the allowed choices; the caller
   (the property bag) lets it propagate unchanged.
 

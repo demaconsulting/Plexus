@@ -13,7 +13,7 @@ namespace DemaConsulting.Plexus;
 ///     <c>new PropertyDefinition("Mode", "Fast") { Choices = ["Fast", "Slow"], ShowInSummary = true }</c>; its
 ///     <see cref="ValueKind"/> then reads <see cref="PropertyValueKind.Choice"/>. Assigning a value that is not one of the
 ///     choices (or any value of the wrong kind) through <see cref="PropertyBag"/> throws <see cref="ArgumentException"/>.
-///     Presentation members (<see cref="DisplayName"/>, <see cref="Category"/>,
+///     Presentation members (<see cref="DisplayName"/>, <see cref="Category"/>, <see cref="Order"/>,
 ///     <see cref="Unit"/>, <see cref="EditorHint"/>, <see cref="IsReadOnly"/>) are hints for UIs and
 ///     summaries; they never restrict programmatic changes through <see cref="PropertyBag"/>. All members other than
 ///     <see cref="Name"/>, <see cref="ValueKind"/> and <see cref="DefaultValue"/> are set with an object initializer.
@@ -100,8 +100,8 @@ public sealed class PropertyDefinition
     ///     <see cref="PropertyValueKind.Choice"/> property. The list is copied.
     /// </remarks>
     /// <exception cref="ArgumentException">
-    ///     Thrown when the property is not a string, the list is empty or has duplicates, or the
-    ///     default value is not one of the choices.
+    ///     Thrown when the property is not a string, the list contains a null entry, is empty or has duplicates, or
+    ///     the default value is not one of the choices.
     /// </exception>
     public IReadOnlyList<string>? Choices
     {
@@ -116,6 +116,12 @@ public sealed class PropertyDefinition
             if (ValueKind != PropertyValueKind.String)
             {
                 throw new ArgumentException($"Property \"{Name}\" has choices, so its default value must be a string.", nameof(value));
+            }
+
+            // A null choice could never be selected or stored, so it is rejected before the other list rules
+            if (value.Any(c => c is null))
+            {
+                throw new ArgumentException($"The choices of property \"{Name}\" cannot contain null entries.", nameof(value));
             }
 
             if (value.Count == 0 || value.Distinct(StringComparer.Ordinal).Count() != value.Count)
@@ -148,6 +154,28 @@ public sealed class PropertyDefinition
     ///     Gets or initializes the category used to group properties in editors; null (the default) means uncategorized. A hint for host UIs only.
     /// </summary>
     public string? Category { get; init; }
+
+    /// <summary>
+    ///     Gets or initializes the display-order hint of the property within its category in a categorized property
+    ///     editor: lower values come first; equal values (the default 0 for all) are ordered by display name. A hint for
+    ///     host UIs only.
+    /// </summary>
+    /// <remarks>
+    ///     <para>
+    ///         Lets a type list related properties in a meaningful sequence (for example an envelope's Attack, Decay,
+    ///         Sustain and Release) instead of alphabetically. Any <see cref="int"/> is valid, including negative values
+    ///         and the extremes; it is not validated. Only the relative values matter; leaving every property at 0 keeps
+    ///         the alphabetical order.
+    ///     </para>
+    ///     <para>
+    ///         Contract for editors (the Plexus property grid follows it): in the categorized view a category lists its
+    ///         properties by ascending <see cref="Order"/>; equal values are ordered by display name, case-insensitive
+    ///         and culture-invariant. An alphabetical view ignores it. It never changes the order of
+    ///         <see cref="NodeType.Properties"/>, the enumeration order of a node's <see cref="PropertyBag"/>, node
+    ///         summaries or saved documents.
+    ///     </para>
+    /// </remarks>
+    public int Order { get; init; }
 
     /// <summary>
     ///     Gets or initializes the unit appended to the value in node summaries (for example "ms"); null (the default) means none.

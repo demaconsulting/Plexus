@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using DemaConsulting.Plexus.Avalonia;
 using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
 using DemaConsulting.Plexus.Demo.Gui.Dialogs;
+using DemaConsulting.Plexus.Demo.Gui.Inspectors;
 using DemaConsulting.Plexus.Demo.Model;
 
 namespace DemaConsulting.Plexus.Demo.Gui;
@@ -152,6 +154,41 @@ internal sealed partial class MainWindow
     }
 
     /// <summary>
+    ///     Edit &gt; Find Node...: asks for a node name, then shows and selects that node, switching pages when needed.
+    /// </summary>
+    /// <returns>A task that completes when the command is done.</returns>
+    private async Task FindNodeAsync()
+    {
+        var name = await PromptDialog.AskAsync(this, "Find node", "Node name", string.Empty).ConfigureAwait(true);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            Session.SetMessage(ShowNode(name.Trim()));
+        }
+    }
+
+    /// <summary>
+    ///     Brings a node into view by name and selects it.
+    /// </summary>
+    /// <remarks>
+    ///     <see cref="DiagramEditor.BringIntoView"/> switches to the node's page and scrolls (zooming out only if the node
+    ///     does not fit); the selection is set afterwards because a page switch clears it.
+    /// </remarks>
+    /// <param name="name">The node name.</param>
+    /// <returns>The status message describing the result.</returns>
+    internal string ShowNode(string name)
+    {
+        if (Session.Diagram.FindNode(name) is not { } node)
+        {
+            return $"No node named '{name}'.";
+        }
+
+        Editor.BringIntoView(node);
+        Editor.Select(node);
+        Editor.Focus();
+        return $"Found {node.Name} on page '{node.Page!.Name}'.";
+    }
+
+    /// <summary>
     ///     Edit &gt; Rename: starts the inline rename of the selected node.
     /// </summary>
     private void RenameSelectedNode()
@@ -248,12 +285,20 @@ internal sealed partial class MainWindow
     /// <summary>
     ///     Opens the properties dialog for a node; OK applies everything as one undo entry.
     /// </summary>
+    /// <remarks>
+    ///     Oscillators, envelopes and filters get a custom inspector: the same dialog with a live preview of what their
+    ///     settings do (see <see cref="AudioInspectors"/>). Every other node gets the plain dialog.
+    /// </remarks>
     /// <param name="node">The node.</param>
     /// <returns>A task that completes when the dialog is closed.</returns>
     private async Task ShowPropertiesAsync(Node node)
     {
-        // The library's dialog does everything: the staged property grid, validation and one undo entry on OK
-        if (await NodePropertiesDialog.ShowAsync(this, node).ConfigureAwait(true))
+        // The library's dialog does everything: the staged property grid, validation and one undo entry on OK;
+        // the demo only supplies the preview of the audio nodes
+        var dialog = AudioInspectors.GetPreview(node) is { } preview
+            ? NodePropertiesDialog.ShowAsync(this, node, new NodePropertiesDialogOptions { Preview = preview })
+            : NodePropertiesDialog.ShowAsync(this, node);
+        if (await dialog.ConfigureAwait(true))
         {
             Session.SetMessage($"Edited {node.Name}");
         }

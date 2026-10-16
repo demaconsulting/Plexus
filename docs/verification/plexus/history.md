@@ -60,3 +60,16 @@ individual behaviors are verified in isolation by the UndoHistory unit tests (se
 - **History_StateNotification_Workflow_RaisesChangedOncePerStateChange**: execute, undo, redo, mark clean, transaction
   commit, end of suspension and capacity trim each raise exactly one notification; commands inside a transaction raise
   none.
+
+#### Replay integrity (`Plexus-History-ReplayIntegrity`)
+
+- **History_ReplayIntegrity_CommandChangesHistoryDuringUndo_IsRejected**: a host command whose undo and redo try to
+  clear the history, mark it clean, change the capacity and suspend it has all eight attempts refused; the undo and
+  redo move the entry exactly as a plain undo and redo, and capacity and suspension are unchanged.
+
+#### Failure-atomic replay (`Plexus-History-ReplayAtomic`)
+
+- **History_ReplayAtomic_FailingCommandInGroupedEntry_LeavesStateAndStacksUnchanged**: a transaction of three host
+  commands whose middle one fails: a failing undo leaves the document value and the stacks as before; once it works the
+  undo completes; a failing redo then leaves value and stacks as before; and the retry replays the whole entry
+  (error paths).

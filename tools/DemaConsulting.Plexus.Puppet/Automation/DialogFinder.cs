@@ -8,7 +8,7 @@ namespace DemaConsulting.Plexus.Puppet.Automation;
 /// </summary>
 /// <param name="AutomationId">The AutomationId, or <see langword="null"/> when there is none.</param>
 /// <param name="Name">The control's name (its caption or text).</param>
-/// <param name="Kind">The kind: <c>button</c>, <c>edit</c>, <c>checkbox</c> or <c>combo</c>.</param>
+/// <param name="Kind">The kind: <c>button</c>, <c>edit</c>, <c>checkbox</c>, <c>combo</c> or <c>preview</c> (a live preview pane).</param>
 /// <param name="IsEnabled">Whether the control accepts input.</param>
 internal sealed record DialogControl(string? AutomationId, string Name, string Kind, bool IsEnabled);
 
@@ -24,6 +24,11 @@ internal sealed record DialogDescription(string Title, IReadOnlyList<DialogContr
 /// </summary>
 internal static class DialogFinder
 {
+    /// <summary>
+    ///     The AutomationId of the live preview pane of a properties dialog (the library's <c>NodePropertiesDialog</c>).
+    /// </summary>
+    internal const string PreviewAutomationId = "PropertyGridDialog_Preview";
+
     /// <summary>
     ///     Lists the open dialogs: the titled, visible top-level windows of the process other than the main window.
     /// </summary>
@@ -77,7 +82,7 @@ internal static class DialogFinder
     }
 
     /// <summary>
-    ///     Lists the buttons, edits, check boxes and combo boxes of a dialog.
+    ///     Lists the buttons, edits, check boxes and combo boxes of a dialog, and its live preview pane when it has one.
     /// </summary>
     /// <param name="dialog">The dialog window.</param>
     /// <param name="title">The dialog title.</param>
@@ -89,7 +94,8 @@ internal static class DialogFinder
                 cf.ByControlType(ControlType.Button)
                     .Or(cf.ByControlType(ControlType.Edit))
                     .Or(cf.ByControlType(ControlType.CheckBox))
-                    .Or(cf.ByControlType(ControlType.ComboBox))),
+                    .Or(cf.ByControlType(ControlType.ComboBox))
+                    .Or(cf.ByAutomationId(PreviewAutomationId))),
             []);
 
         var controls = new List<DialogControl>();
@@ -101,14 +107,16 @@ internal static class DialogFinder
                 continue;
             }
 
-            var kind = element.ControlType switch
-            {
-                ControlType.Edit => "edit",
-                ControlType.CheckBox => "checkbox",
-                ControlType.ComboBox => "combo",
-                _ => "button",
-            };
             var id = UiActions.Safe(() => element.AutomationId, string.Empty);
+            var kind = id == PreviewAutomationId
+                ? "preview"
+                : element.ControlType switch
+                {
+                    ControlType.Edit => "edit",
+                    ControlType.CheckBox => "checkbox",
+                    ControlType.ComboBox => "combo",
+                    _ => "button",
+                };
             var name = UiActions.Safe(() => element.Name, string.Empty);
             controls.Add(new DialogControl(string.IsNullOrWhiteSpace(id) ? null : id, name, kind, UiActions.Safe(() => element.IsEnabled, true)));
         }

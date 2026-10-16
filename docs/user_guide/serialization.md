@@ -37,6 +37,8 @@ For any other format use the *tree* below, which has the same schema without tho
 - `NodeSnapshot`: `Id`, `TypeKey`, `Name`, `Bounds`, `Properties` and `Data` (the host payload as JSON text).
 - `PropertySnapshot`: the `Kind` and the `Value`, which is a `JsonElement`.
 - `WireSnapshot`: `Id`, the source and target node ids and port names, and the `Route` (the interior bend points).
+  Port lists are not part of the snapshot: loading recomputes each node's ports from its properties and data (see
+  *Ports That Vary per Node* in *Describing Your Domain*) before it resolves the wires' port names.
 - `AnnotationSnapshot`: `Id`, `Text`, `Bounds` and `Fill` (`#AARRGGBB`, or `null` for the theme's fill).
 - `GroupSnapshot`: `Id`, `Title`, `MemberIds`, `IsCollapsed` and `CollapsedPosition`.
 
@@ -47,7 +49,8 @@ names; a property is written as `{"kind": "double", "value": 2.5}` so that an `i
 `long`.
 
 `Diagram.FromJson` and `FromSnapshot` throw `SnapshotException` for a snapshot they cannot restore (an unsupported
-format version, unknown node types, invalid content); its `MissingNodeTypes` lists every unknown key at once (to open
+format version, unknown node types, invalid content such as a node without a type key or a payload the node type's
+serializer cannot read); its `MissingNodeTypes` lists every unknown key at once (to open
 such a file anyway, see *Files With Unknown Node Types* in *Saving, Loading and the Clipboard*). Text that is not valid
 snapshot JSON throws `System.Text.Json.JsonException`.
 
@@ -351,5 +354,5 @@ always deserialized as the type the node type declares. A custom format keeps th
   `System.Text.Json.JsonException`, `SnapshotException`, `InvalidCastException` and `KeyNotFoundException` from an
   adapter that expected a table where the file has a string, and I/O errors. Load completely before replacing the open
   document, so that a bad file changes nothing.
-- A custom `INodeDataSerializer` must treat its input as untrusted too; returning `null` or throwing one of the
-  documented exceptions marks the payload unreadable instead of failing the process.
+- A custom `INodeDataSerializer` must treat its input as untrusted too; returning `null` or throwing any exception
+  (except running out of memory) marks the payload unreadable instead of failing the process.

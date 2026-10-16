@@ -29,6 +29,7 @@ public class DiagramEditorViewTests
             () => Assert.True(editor.ShowGrid),
             () => Assert.True(editor.SnapToGrid),
             () => Assert.False(editor.IsReadOnly),
+            () => Assert.True(editor.ShowToolTips),
             () => Assert.Empty(editor.Selection));
     });
 

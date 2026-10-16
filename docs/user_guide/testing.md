@@ -159,10 +159,13 @@ $puppet = '.\tools\DemaConsulting.Plexus.Puppet\bin\Release\net10.0-windows\plex
 & $puppet pipe paste --instance basic                 # paste in the second instance
 & $puppet read Status_Text --instance basic           # Paste failed: this application does not know the node type(s) ...
 & $puppet shot C:\temp\basic.png --instance basic     # a screenshot of the window
+& $puppet hover-node Shape --shot C:\temp\tip.png --instance full   # capture a node's tooltip
 ```
 
 Gestures are expressed in diagram units (`drag-node Tone 0 120`, `drag-connect Tone.out Mix.in`, `drag-palette Mixer
-300 200`, `wheel 3 --ctrl`), so they do not depend on zoom, window position or monitor scaling. Before any real input
+300 200`, `wheel 3 --ctrl`, `hover-port Tone.out`), so they do not depend on zoom, window position or monitor scaling.
+Hover commands park the cursor on empty canvas first and then rest on the target long enough for its tooltip to open,
+so a `--shot` screen copy shows the tooltip a user would see. Before any real input
 the Puppet checks that the window at the target pixel belongs to the instance and refuses otherwise, so it cannot click
 into another application. The commands change the model directly (the pipe) or through the real editor input (the
 mouse and keys): use the pipe to set up and to verify, and the mouse and keys to test the editor itself.

@@ -20,6 +20,17 @@ sections:
                   their ports.
                 tests:
                   - NodeLayout_Compute_PortAnchors_MatchModelAndNodeGeometry
+                  - NodeLayout_Compute_OtherThemeWithChangedPortMetrics_KeepsModelAnchors
+
+              - id: Plexus-Scene-NodeLayout-GeometryTheme
+                title: >-
+                  The layout shall compute port rows, anchors, triangles and hit areas from the node's own diagram
+                  theme, whatever theme it is given for colors, fonts and decorations.
+                justification: |
+                  Decomposes Plexus-Scene-GeometryTheme; the model routes wires to anchors computed with the diagram's
+                  theme, so a display theme that moved the ports would detach the drawn ports from the wire ends.
+                tests:
+                  - NodeLayout_Compute_OtherThemeWithChangedPortMetrics_KeepsModelAnchors
 
               - id: Plexus-Scene-NodeLayout-PortAnchorsTextIndependent
                 title: The port attachment points shall be the same whichever text measurer computes the layout.
@@ -43,23 +54,45 @@ sections:
               - id: Plexus-Scene-NodeLayout-CenteredPorts
                 title: >-
                   With centered port alignment (the default) the inputs and the outputs of a node shall each form a
-                  stack, one port pitch apart, that is vertically centered on the node box, with triangles, labels
-                  and hit areas on the same rows; the default node height shall grow so that the topmost anchor of
-                  the longer stack lies at least the header height plus the first-port offset below the box top and
-                  the bottommost at least the bottom padding above the box bottom; and the wire between two nodes
-                  that have the same box height and top and the same number of ports on the connected sides shall
-                  be perfectly straight.
+                  stack, one port pitch apart, that is vertically centered on the node box.
                 justification: |
-                  Ports centered on the box look balanced and keep wires between aligned nodes straight; growing the
-                  default height keeps a centered stack from running into the header.
+                  Ports centered on the box look balanced and keep wires between aligned nodes straight.
                 tests:
                   - NodeGeometry_PortEdge_Center_OddCountPutsMiddlePortOnTheBoxCenter
                   - NodeGeometry_PortEdge_Center_EvenCountStraddlesTheBoxCenter
                   - NodeGeometry_PortEdge_Center_FollowsTheBoxHeight
+
+              - id: Plexus-Scene-NodeLayout-CenteredPortRows
+                title: >-
+                  With centered port alignment the layout shall place each port's triangle, label and hit area on the
+                  row of its anchor.
+                justification: |
+                  Decomposes Plexus-Scene-PortPlacement; everything drawn and hit for a port must line up with the
+                  point its wire attaches to.
+                tests:
+                  - NodeLayout_Compute_Center_StacksAreSymmetricAboutTheBoxCenter
+
+              - id: Plexus-Scene-NodeLayout-CenteredPortHeight
+                title: >-
+                  With centered port alignment the default node height shall keep the topmost anchor of the longer
+                  stack at least the header height plus the first-port offset below the box top and the bottommost
+                  anchor at least the bottom padding above the box bottom.
+                justification: |
+                  Decomposes Plexus-Scene-PortPlacement; growing the default height keeps a centered stack from running
+                  into the header.
+                tests:
                   - NodeGeometry_RequiredHeight_Center_IsTwiceTheHeaderClearancePlusTheSpan
                   - NodeGeometry_DefaultNodeSize_Center_KeepsTheTopPortBelowTheHeader
                   - NodeGeometry_DefaultNodeSize_Center_KeepsMinimumAndHonorsDeclaredSize
-                  - NodeLayout_Compute_Center_StacksAreSymmetricAboutTheBoxCenter
+
+              - id: Plexus-Scene-NodeLayout-CenteredPortStraightWires
+                title: >-
+                  With centered port alignment the wire between two nodes that have the same box height and top and
+                  the same number of ports on the connected sides shall be straight.
+                justification: |
+                  Decomposes Plexus-Scene-PortPlacement; straight wires between aligned blocks are the main benefit of
+                  centered ports.
+                tests:
                   - DiagramPage_Connect_AlignedNodesWithSamePortCounts_RouteStraight
 
               - id: Plexus-Scene-NodeLayout-TopPorts
@@ -134,17 +167,67 @@ sections:
 
               - id: Plexus-Scene-NodeLayout-DefaultWidth
                 title: >-
-                  The default size of a node type without a declared size shall be at least the theme's default width
-                  and wide enough, in whole grid steps, for its title to fit the header on one line when measured by
-                  the deterministic text measurer, while a declared size stays authoritative.
+                  The default width of a node type without a declared size shall be at least the theme's default
+                  width.
                 justification: |
-                  A title that wraps in the middle of a word, such as a long uppercase title split after its last
-                  few letters, looks like a defect; sizing the
-                  default box from the title fixes that without every host declaring sizes, and measuring with the
-                  deterministic measurer keeps the model, routers and painters in agreement.
+                  A theme sets the minimum size of its boxes so that short titles still give nodes a usable size.
                 tests:
                   - NodeGeometry_DefaultNodeSize_ShortTitle_KeepsThemeDefaultWidth
-                  - NodeGeometry_DefaultNodeSize_LongTitle_GrowsWidthToFitSnappedToTheGrid
-                  - NodeGeometry_DefaultNodeSize_DeclaredSize_WinsOverTheTitle
                   - NodeGeometry_DefaultNodeSize_WideThemeMinimumAndNoGrid_AreHonored
+
+              - id: Plexus-Scene-NodeLayout-DefaultWidthTitle
+                title: >-
+                  The default width of a node type without a declared size shall be wide enough, in whole grid steps,
+                  for its title to fit the header on one line when measured by the deterministic text measurer.
+                justification: |
+                  Decomposes Plexus-Scene-PainterAgnosticPrimitives; a title that wraps in the middle of a word looks
+                  like a defect, and measuring with the deterministic measurer keeps the model, routers and painters in
+                  agreement.
+                tests:
+                  - NodeGeometry_DefaultNodeSize_LongTitle_GrowsWidthToFitSnappedToTheGrid
                   - SceneBuilder_Build_LongTitleWithDefaultSize_DrawsTheTitleOnOneLine
+
+              - id: Plexus-Scene-NodeLayout-DeclaredSize
+                title: The declared size of a node type shall be used as its default size, even for a long title.
+                justification: |
+                  Decomposes Plexus-Scene-PainterAgnosticPrimitives; hosts that declare a size know best how their
+                  nodes must look.
+                tests:
+                  - NodeGeometry_DefaultNodeSize_DeclaredSize_WinsOverTheTitle
+
+              - id: Plexus-Scene-NodeLayout-DynamicPorts
+                title: >-
+                  Node layout shall be computed from the node's current ports rather than its type's declared ports.
+                justification: |
+                  Nodes of one type may have different ports; drawing must follow each node.
+                tests:
+                  - NodeLayout_Compute_DynamicPorts_LaysOutCurrentPorts
+
+              - id: Plexus-Scene-NodeLayout-DynamicPortExtent
+                title: >-
+                  A node's deterministic visual extent shall be computed from the node's current ports.
+                justification: |
+                  Decomposes Plexus-Scene-DynamicPortExtent; group frames enclose the visual extent, so it must cover
+                  the ports the node actually has.
+                tests:
+                  - NodeGeometry_VisualBoundsAndRoutingObstacles_ProviderPorts_UseNodePorts
+
+              - id: Plexus-Scene-NodeLayout-DynamicPortObstacles
+                title: >-
+                  A node's routing obstacles shall be computed from the node's current ports.
+                justification: |
+                  Decomposes Plexus-Scene-DynamicPortObstacles; wires of other nodes must not run across the labels of
+                  ports the node actually has.
+                tests:
+                  - NodeGeometry_VisualBoundsAndRoutingObstacles_ProviderPorts_UseNodePorts
+
+              - id: Plexus-Scene-NodeLayout-VisualExtent
+                title: >-
+                  A node's deterministic visual extent shall contain, for each port, the triangle and the full line
+                  height of the port label from the box edge out to the anchor.
+                justification: |
+                  Decomposes Plexus-Scene-NodeVisualExtent; group frames enclose the visual extent, and a label taller
+                  than its triangle would otherwise stick out of a frame.
+                tests:
+                  - NodeGeometry_VisualBounds_PortLabelLineHeight_IsContained
+                  - NodeGeometry_VisualBounds_LargePortLabelFont_ContainsLabels

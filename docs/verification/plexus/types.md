@@ -52,3 +52,30 @@ a type reflect its ports and size.
 
 - **Types_Availability_RemoveAndReRegister_ControlsNodeCreation**: after a type is removed nodes can no longer be
   created from it, and after it is registered again they can.
+
+#### Port provider (`Plexus-Types-PortProvider`)
+
+- **Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts**: two nodes of one type with a port provider have different
+  ports after configuring one of them, while the type's provider is unchanged.
+- **Types_PortProvider_InputsAndOutputs_ComputedPerNode**: a splitter whose input and output counts are properties
+  gives two nodes different inputs and different outputs.
+
+#### Declared defaults (`Plexus-Types-PortProviderDefaults`)
+
+- **Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts**: the type's declared inputs stay `in0`, `in1` after a node
+  was configured differently.
+
+#### Null provider result (`Plexus-Types-PortProviderNull`)
+
+- **Types_PortProvider_ReturnsNull_AddNodeFails**: adding a node whose provider returns nothing throws an
+  invalid-operation error naming the type and adds no node (error path).
+
+#### Descriptions (`Plexus-Types-Descriptions`, `Plexus-Types-PortDescriptions`, `Plexus-Types-PortTypeDisplayName`)
+
+- **Types_Descriptions_PortNodeAndPortType_AreExposed**: a port description, a node type description (as the node's
+  tooltip text) and a port type display name are returned as declared.
+
+#### Tooltip function (`Plexus-Types-ToolTipFunction`)
+
+- **Types_Descriptions_ToolTipFunction_FollowsNodeState**: a tooltip function built from a property and the payload
+  returns "Value = 0 (ok)" for a new node and "Value = 2.5 (stale)" after both were changed.

@@ -1,0 +1,154 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+using DemaConsulting.Plexus.Avalonia.PropertyGrid.Diagrams;
+using DemaConsulting.Plexus.Demo.Model;
+
+namespace DemaConsulting.Plexus.Demo.Gui.Inspectors;
+
+/// <summary>
+///     The demo's custom node inspectors: live previews for the oscillator, envelope and filter properties dialogs, and their
+///     thumbnail tooltips.
+/// </summary>
+/// <remarks>
+///     This is the pattern a host migrating custom inspectors follows: the library's
+///     <see cref="NodePropertiesDialog"/> keeps the staged grid, validation and one-undo-entry OK, and the host only
+///     supplies a preview factory. Each preview reads the staged values through <see cref="NodePreviewContext"/> (never
+///     the node, never writing), turns them into a <see cref="PlotData"/> with the model's math and redraws on
+///     <see cref="NodePreviewContext.Changed"/>, so it follows every edit, reset and cancel before OK. Use it from the UI
+///     thread.
+/// </remarks>
+internal static class AudioInspectors
+{
+    /// <summary>
+    ///     The height of the plot in a preview, in device-independent pixels.
+    /// </summary>
+    private const double PlotHeight = 260;
+
+    /// <summary>
+    ///     The size of the plot thumbnail in the oscillator, envelope and filter tooltips, in device-independent pixels.
+    /// </summary>
+    private static readonly Size ThumbnailSize = new(160, 60);
+
+    /// <summary>
+    ///     Gets the preview factory for a node's properties dialog.
+    /// </summary>
+    /// <param name="node">The node whose dialog is opened.</param>
+    /// <returns>The factory for an oscillator, an envelope or a filter; <see langword="null"/> for every other node (the plain dialog).</returns>
+    internal static Func<NodePreviewContext, Control>? GetPreview(Node node) => node.Type.Key switch
+    {
+        DemoNodeTypes.Oscillator => CreateOscillatorPreview,
+        DemoNodeTypes.Envelope => CreateEnvelopePreview,
+        DemoNodeTypes.Filter => CreateFilterPreview,
+        _ => null,
+    };
+
+    /// <summary>
+    ///     Creates the oscillator preview: two cycles of the signal at the staged waveform, frequency, amplitude, phase and
+    ///     DC offset.
+    /// </summary>
+    /// <param name="context">The dialog's preview context.</param>
+    /// <returns>The preview control.</returns>
+    internal static Control CreateOscillatorPreview(NodePreviewContext context) => CreatePreview(
+        context,
+        () => AudioPreview.Describe(OscillatorSettings.Read(context.GetPropertyValue)),
+        "Two cycles of the signal against time. The plot follows every setting as you edit; OK applies, Cancel discards.",
+        () => AudioPreview.Oscillator(OscillatorSettings.Read(context.GetPropertyValue)));
+
+    /// <summary>
+    ///     Creates the envelope preview: the ADSR curve of the staged times and sustain level.
+    /// </summary>
+    /// <param name="context">The dialog's preview context.</param>
+    /// <returns>The preview control.</returns>
+    internal static Control CreateEnvelopePreview(NodePreviewContext context) => CreatePreview(
+        context,
+        () => "ADSR envelope",
+        $"Attack, decay to the sustain level, an illustrative {AudioPreview.SustainHoldMs:0} ms sustain hold, then release.",
+        () => AudioPreview.Envelope(EnvelopeSettings.Read(context.GetPropertyValue)));
+
+    /// <summary>
+    ///     Creates the filter preview: the magnitude response of the staged type and cutoff.
+    /// </summary>
+    /// <param name="context">The dialog's preview context.</param>
+    /// <returns>The preview control.</returns>
+    internal static Control CreateFilterPreview(NodePreviewContext context) => CreatePreview(
+        context,
+        () =>
+        {
+            var settings = FilterSettings.Read(context.GetPropertyValue);
+            return $"{settings.Type} at {settings.Cutoff.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)} Hz";
+        },
+        "Magnitude response of a second-order filter from 20 Hz to 20 kHz; the dashed line marks the cutoff.",
+        () => AudioPreview.Filter(FilterSettings.Read(context.GetPropertyValue)));
+
+    /// <summary>
+    ///     Creates the hover tooltip of an oscillator, envelope or filter: a thumbnail plot of its current values above its
+    ///     name and a short summary such as <c>Sine, 440 Hz</c>, <c>A 10 ms · D 120 ms · S 70 % · R 300 ms</c> or
+    ///     <c>Low-pass, 900 Hz</c>.
+    /// </summary>
+    /// <remarks>
+    ///     The thumbnail is the compact form of the same plot the node's properties dialog previews, computed by the model's
+    ///     math (<see cref="AudioPreview"/>), so the tooltip and the dialog always agree.
+    /// </remarks>
+    /// <param name="node">The node.</param>
+    /// <returns>The tooltip content; <see langword="null"/> for every other node type (its text tooltip is kept).</returns>
+    internal static Control? CreateToolTip(Node node)
+    {
+        // Pick the plot and the summary of the node's current settings
+        (PlotData Plot, string Summary)? content = node.Type.Key switch
+        {
+            DemoNodeTypes.Oscillator => (AudioPreview.Oscillator(OscillatorSettings.FromNode(node)), AudioPreview.Describe(OscillatorSettings.FromNode(node))),
+            DemoNodeTypes.Envelope => (AudioPreview.Envelope(EnvelopeSettings.FromNode(node)), AudioPreview.Describe(EnvelopeSettings.FromNode(node))),
+            DemoNodeTypes.Filter => (AudioPreview.Filter(FilterSettings.FromNode(node)), AudioPreview.Describe(FilterSettings.FromNode(node))),
+            _ => null,
+        };
+        if (content is not { } shown)
+        {
+            return null;
+        }
+
+        // A compact thumbnail above the bold name and the one-line summary
+        var panel = new StackPanel { Spacing = 4 };
+        panel.Children.Add(new SignalPlot
+        {
+            IsCompact = true,
+            Width = ThumbnailSize.Width,
+            Height = ThumbnailSize.Height,
+            Data = shown.Plot,
+        });
+        panel.Children.Add(new TextBlock { Text = node.Name, FontWeight = FontWeight.Bold });
+        panel.Children.Add(new TextBlock { Text = shown.Summary });
+        return panel;
+    }
+
+    /// <summary>
+    ///     Builds a preview panel (a heading, the plot and a note) and keeps it in step with the staged values.
+    /// </summary>
+    /// <param name="context">The dialog's preview context.</param>
+    /// <param name="heading">Computes the heading from the staged values.</param>
+    /// <param name="note">The explanation under the plot.</param>
+    /// <param name="plot">Computes the plot from the staged values.</param>
+    /// <returns>The preview control.</returns>
+    private static StackPanel CreatePreview(NodePreviewContext context, Func<string> heading, string note, Func<PlotData> plot)
+    {
+        var title = new TextBlock { FontWeight = FontWeight.SemiBold, FontSize = 14 };
+        var chart = new SignalPlot { Height = PlotHeight }.WithId(AutomationIds.InspectorPlot);
+        var text = new TextBlock { Text = note, TextWrapping = TextWrapping.Wrap, Opacity = 0.8 };
+
+        // Redraw from the staged values now and after every edit, reset or cancel; the context stops when the dialog closes
+        void Redraw()
+        {
+            title.Text = heading();
+            chart.Data = plot();
+        }
+
+        context.Changed += (_, _) => Redraw();
+        Redraw();
+
+        var panel = new StackPanel { Spacing = 8 };
+        panel.Children.Add(title);
+        panel.Children.Add(chart);
+        panel.Children.Add(text);
+        return panel;
+    }
+}

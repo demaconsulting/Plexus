@@ -2,7 +2,8 @@
 # Software Unit requirements for PlexusAvaloniaPropertyGrid NodePropertiesDialog.
 #
 # Each requirement decomposes a system requirement into the behavior of the node properties dialog. Tests are the
-# headless tests in NodePropertiesDialogTests.cs.
+# headless tests in NodePropertiesDialogTests.cs and, for the live preview and its context,
+# NodePropertiesDialogPreviewTests.cs.
 
 sections:
   - title: PlexusAvaloniaPropertyGrid Requirements
@@ -11,30 +12,286 @@ sections:
         requirements:
           - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Show
             title: >-
-              The dialog shall be titled "<name> - Properties", show the node in a staged grid with the name row
-              first, and validate its arguments.
+              The dialog shall be titled "<name> - Properties" with the name of the node.
             justification: |
-              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; hosts open it with one call.
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; hosts open it with one call and the user sees which
+              node it belongs to.
             tests:
               - NodePropertiesDialog_ShowAsync_ShowsTheNodeInAStagedGrid
               - NodePropertiesDialog_Arguments_AreValidated
 
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-StagedContent
+            title: >-
+              The dialog shall show the name, the declared properties and the host data of the node in a grid that
+              edits through a staged session.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; staging keeps the node untouched until OK.
+            tests:
+              - NodePropertiesDialog_ShowAsync_ShowsTheNodeInAStagedGrid
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-NameFirst
+            title: >-
+              The dialog shall list the name row before every other row.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; the name identifies the node and is found first.
+            tests:
+              - NodePropertiesDialog_ShowAsync_ShowsTheNodeInAStagedGrid
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-NullArguments
+            title: >-
+              The dialog shall reject a missing owner or node with an argument-null exception.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; a mistaken call must surface at once.
+            tests:
+              - NodePropertiesDialog_Arguments_AreValidated
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-UnattachedNode
+            title: >-
+              The dialog shall reject a node that is not attached to a diagram with an argument exception, from every
+              entry point that shows or creates the dialog.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; a detached node has no undo history to commit to.
+            tests:
+              - NodePropertiesDialog_UnattachedNode_IsRejected
+
           - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Commit
             title: >-
-              OK shall apply the rename, the properties and the host data as one undo entry and complete with true;
-              Cancel shall change nothing and complete with false.
+              OK shall apply the rename, the properties and the host data as one undo entry.
             justification: |
               Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; the dialog is one undo step.
             tests:
               - NodePropertiesDialog_Ok_CommitsAsOneUndoEntry
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-CommitResult
+            title: >-
+              OK shall complete the awaited task with true.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; the host learns that the node changed.
+            tests:
+              - NodePropertiesDialog_Ok_CommitsAsOneUndoEntry
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Cancel
+            title: >-
+              Cancel shall change nothing and complete the awaited task with false.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; the user can abandon the edits.
+            tests:
               - NodePropertiesDialog_Cancel_ChangesNothing
 
           - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Validation
             title: >-
-              The dialog shall stay open and show the reason, without changing the node, while the name is invalid or
-              the rename is vetoed.
+              The dialog shall stay open, show the reason and change nothing while the name is invalid.
             justification: |
               Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; OK must not accept a refused name.
             tests:
               - NodePropertiesDialog_Ok_InvalidNameShowsTheReasonAndStaysOpen
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-RenameVeto
+            title: >-
+              The dialog shall stay open, show the reason on the name row and change nothing while the host vetoes
+              the rename.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-Dialog; a host veto must be explained, not swallowed.
+            tests:
               - NodePropertiesDialog_Ok_VetoedRenameShowsTheReasonOnTheNameRow
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Preview
+            title: >-
+              When a preview factory is given, the dialog shall show the factory's control in a panel with the
+              automation id PropertyGridDialog_Preview.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; the preview must be visible beside the
+              settings it explains and findable by UI automation.
+            tests:
+              - NodePropertiesDialog_Preview_IsShownBesideTheGridAndWidensTheDialog
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewPlacement
+            title: >-
+              The preview shall be placed to the right of the grid by default and above the grid when the top
+              placement is requested.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; wide visualizations such as a waveform fit
+              better above the grid.
+            tests:
+              - NodePropertiesDialog_Preview_IsShownBesideTheGridAndWidensTheDialog
+              - NodePropertiesDialog_Preview_TopPlacementIsAboveTheGrid
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewSize
+            title: >-
+              Without an explicit width and height the dialog shall be 480 by 640 device-independent pixels, 880 by
+              640 with a side preview (the preview is 400 wide) and 480 by 860 with a top preview (the preview is
+              220 high).
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; the preview must fit without shrinking the
+              grid, and the sizes must be measurable.
+            tests:
+              - NodePropertiesDialog_Preview_IsShownBesideTheGridAndWidensTheDialog
+              - NodePropertiesDialog_Preview_TopPlacementIsAboveTheGrid
+              - NodePropertiesDialog_Options_TitleAndSizeAreApplied
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewValues
+            title: >-
+              The preview context shall return, for any row path, the effective value: the pending edit when there is
+              one, otherwise the node's current value, and null for an unknown path.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewValues; the preview must show what OK would
+              apply.
+            tests:
+              - NodePropertiesDialog_Preview_SeesStagedValues
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewReadOnly
+            title: >-
+              Reading values through the preview context shall not change the node, its host data or its undo
+              history.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewValues; a visualization must never write to the
+              node.
+            tests:
+              - NodePropertiesDialog_Preview_SeesStagedValues
+              - NodePropertiesDialog_PreviewCancel_ChangesNothing
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewNotifications
+            title: >-
+              The preview context shall raise its change notification, once per change, when a pending edit is made
+              or reset and when the session is cancelled with the cancel method of the edit session.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewNotifications; the preview redraws live while
+              the user edits, and "cancelled" has one observable meaning: the session discards its pending edits.
+            tests:
+              - NodePropertiesDialog_Preview_IsNotifiedOnEditResetAndCancel
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCommitNotification
+            title: >-
+              The preview context shall raise its change notification once after the commit, when the node already
+              holds the committed values and before the dialog closes.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewNotifications; the preview must redraw with the
+              applied values.
+            tests:
+              - NodePropertiesDialog_PreviewOk_IsNotifiedAfterCommit
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewErrorNoNotification
+            title: >-
+              The preview context shall not raise its change notification for a validation error alone.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewNotifications; an error changes no value, so a
+              redraw would only flicker.
+            tests:
+              - NodePropertiesDialog_Preview_IsNotifiedOnEditResetAndCancel
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewDialogClose
+            title: >-
+              Closing the dialog with the Cancel button or the window's close button shall raise no change
+              notification of the preview context.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewNotifications; the dialog's Cancel button does
+              not cancel the session, and the context stops as soon as the close is confirmed.
+            tests:
+              - NodePropertiesDialog_PreviewCancelButton_RaisesNoNotification
+              - NodePropertiesDialog_PreviewWindowClose_RaisesNoNotification
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewDisposed
+            title: >-
+              A disposed preview context shall raise no change notification, and its reads shall keep working on the
+              last session.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewNotifications; a preview must never be redrawn
+              after its dialog or window closed.
+            tests:
+              - NodePreviewContext_FromSession_ReadsAndNotifies
+              - NodePropertiesDialog_PreviewCancel_ChangesNothing
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCommit
+            title: >-
+              With a preview, OK shall apply all edits as one undo entry and complete with true.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewCommit; a preview must not change the dialog's
+              commit semantics.
+            tests:
+              - NodePropertiesDialog_PreviewOk_CommitsOneUndoEntry
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewCancel
+            title: >-
+              With a preview, Cancel shall change nothing and complete with false.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreviewCommit; a preview must not change the dialog's
+              cancel semantics.
+            tests:
+              - NodePropertiesDialog_PreviewCancel_ChangesNothing
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewContext
+            title: >-
+              The preview context shall be constructible over a host's own property grid or edit session that shows a
+              node.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-PreviewContext; hosts that build their own inspector window
+              reuse the same context.
+            tests:
+              - NodePreviewContext_FromSession_ReadsAndNotifies
+              - NodePreviewContext_FromGrid_FollowsANewSession
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewContextValidation
+            title: >-
+              The preview context shall reject a null argument and content that is not a node.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-PreviewContext; mistakes surface at once.
+            tests:
+              - NodePreviewContext_Constructors_ValidateArguments
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewSessionReplaced
+            title: >-
+              The preview context over a grid shall raise its change notification when the grid replaces its session,
+              and read through the new session when that session edits a node.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-PreviewContext; a grid replaces its session when its content
+              or mode changes or when it returns to the visual tree, and the preview must follow.
+            tests:
+              - NodePreviewContext_FromGrid_FollowsANewSession
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewSessionNotNode
+            title: >-
+              While the grid's session does not edit a node, the preview context shall read nothing (every value is
+              null) and keep returning the last node shown, until the grid shows a node again.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-PreviewContext; a context must never read values of another
+              kind of object as if they belonged to the node.
+            tests:
+              - NodePreviewContext_GridShowsNonNodeObject_ReadsNothing
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-Options
+            title: >-
+              The dialog options shall apply the title, width and height when given, each dimension independently.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; hosts size and title their inspector.
+            tests:
+              - NodePropertiesDialog_Options_TitleAndSizeAreApplied
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-OptionsPlain
+            title: >-
+              Without a preview factory the options shall give the plain dialog.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; options that only set a title or size must not
+              add a preview panel.
+            tests:
+              - NodePropertiesDialog_Options_TitleAndSizeAreApplied
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-OptionsValidation
+            title: >-
+              The dialog shall reject a width or height that is not a positive finite number and a preview factory
+              that returns null.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; mistakes surface at once, before a window is
+              built.
+            tests:
+              - NodePropertiesDialog_Options_ArgumentsAreValidated
+
+          - id: PlexusAvaloniaPropertyGrid-NodePropertiesDialog-PreviewFailureRelease
+            title: >-
+              When the preview factory throws or returns null, or its control cannot be shown, the dialog creation
+              shall release the dialog's property source and session, so that nothing keeps listening to the node,
+              and shall propagate the failure.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-DialogPreview; a dialog that is never handed out cannot be
+              closed by the host, so a source left subscribed to the node would leak with every failed attempt.
+            tests:
+              - NodePropertiesDialog_Create_PreviewFailure_LeavesNoSubscriptionOnTheNode

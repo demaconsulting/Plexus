@@ -11,12 +11,6 @@ namespace DemaConsulting.Plexus;
 ///     Annotations can be members of a <see cref="Group"/>. In the Avalonia editor a selected annotation shows a resize
 ///     handle in its corner and double-clicking it (or pressing F2 with it selected) edits the text in place.
 ///     Not thread-safe.
-///     <para>
-///         Inherited from <see cref="DiagramElement"/> (the member tables of this page list only what <see cref="Annotation"/> declares): <see cref="DiagramElement.Id"/>,
-///         <see cref="DiagramElement.Page"/> (null while the annotation is removed), <see cref="DiagramElement.Parent"/> (the group it belongs to, or null),
-///         <see cref="DiagramElement.IsVisible"/>, <see cref="DiagramElement.GetBounds"/> (the same rectangle as <see cref="Bounds"/>), <see cref="DiagramElement.Remove"/>
-///         and the <see cref="DiagramElement.PropertyChanged"/> event.
-///     </para>
 /// </remarks>
 /// <example>
 ///     Add a note, edit it and recolor it.

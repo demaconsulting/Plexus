@@ -231,7 +231,10 @@ reviews:
       - "docs/verification/plexus/model/node.md"
       - "src/DemaConsulting.Plexus/Model/DiagramElement.cs"
       - "src/DemaConsulting.Plexus/Model/Node.cs"
+      - "src/DemaConsulting.Plexus/Model/Node.*.cs"
+      - "src/DemaConsulting.Plexus/Model/NodePortsCommand.cs"
       - "src/DemaConsulting.Plexus/Model/Port.cs"
+      - "test/DemaConsulting.Plexus.Tests/Model/NodePortsTests.cs"
       - "test/DemaConsulting.Plexus.Tests/PortPathTests.cs"
       - "test/DemaConsulting.Plexus.Tests/SharedPortNameTests.cs"
       - "test/DemaConsulting.Plexus.Tests/ElementConvenienceTests.cs"
@@ -1189,7 +1192,11 @@ reviews:
       - "docs/design/plexus-avalonia-property-grid/node-properties-dialog.md"
       - "docs/verification/plexus-avalonia-property-grid/node-properties-dialog.md"
       - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/NodePropertiesDialog.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/NodePropertiesDialogOptions.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/NodePreviewPlacement.cs"
+      - "src/DemaConsulting.Plexus.Avalonia.PropertyGrid/Diagrams/NodePreviewContext.cs"
       - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/NodePropertiesDialogTests.cs"
+      - "test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/NodePropertiesDialogPreviewTests.cs"
 
   # OTS-ApiMark Review (one per OTS item)
   - id: OTS-ApiMark

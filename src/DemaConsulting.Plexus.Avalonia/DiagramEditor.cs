@@ -32,17 +32,29 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///     </para>
 ///     <para>
 ///         The editor opens no dialogs or menus: hosts react to <see cref="NodeDoubleClicked"/>,
-///         <see cref="DiagramContextRequested"/>, <see cref="SelectionChanged"/>, <see cref="PasteFailed"/> and <see cref="ClipboardFailed"/>.
+///         <see cref="DiagramContextRequested"/>, <see cref="SelectionChanged"/>, <see cref="ToolTipRequested"/>, <see cref="PasteFailed"/> and <see cref="ClipboardFailed"/>.
 ///         For a properties dialog on double-click use <c>NodePropertiesDialog.ShowAsync(window, e.Node)</c> from the <c>DemaConsulting.Plexus.Avalonia.PropertyGrid</c> package.
 ///         The application must include a full Avalonia theme such as <c>&lt;FluentTheme /&gt;</c> in App.axaml.
-///         The editor derives from Avalonia's <c>Control</c> (a <c>Visual</c> and <c>InputElement</c>), so all of that is available too and is not repeated in the member tables of this page: for example
+///         The editor derives from Avalonia's <c>Control</c> (a <c>Visual</c> and <c>InputElement</c>), so the usual control members apply too; see Inherited Members: for example
 ///         <c>Bounds</c>, <c>IsVisible</c>, <c>IsEnabled</c>, <c>Width</c>, <c>Height</c>, <c>Focusable</c>, <c>Focus()</c>, <c>InvalidateVisual()</c> and <c>ContextMenu</c>.
 ///         It must be used on the UI thread, like the model it shows. Its AutomationId defaults to
 ///         <c>DiagramEditor</c>; give it an <c>x:Name</c> or <c>AutomationProperties.AutomationId</c> when a
 ///         window holds more than one. The editor shows exactly one page: bind a tab strip to <c>Diagram.Pages</c> and set <see cref="Page"/> from the selected tab
 ///         (see the complete application in the example below). While the editor is in the visual tree it follows the removal of the shown page, including undoing "Add page": it switches to the nearest remaining page
 ///         (the page now at the same index, or the last one) or to none when no page is left, and the selection is cleared. It never switches back when the page returns through undo or redo, and it does not
-///         jump when pages are added or reordered. <see cref="ZoomToFit"/> may be called before the first layout (for example in a window constructor): it is applied once the editor has a size.
+///         jump when pages are added or reordered. <see cref="ZoomToFit(double)"/>, <see cref="ZoomToFit(IEnumerable{DiagramElement}, double)"/> and <see cref="BringIntoView(DiagramElement)"/>
+///         may be called before the first layout (for example in a window constructor): they are applied once the editor has a size (the latest request wins).
+///     </para>
+///     <para>
+///         <b>Tooltips.</b> Hovering a node, a port or a wire shows a standard Avalonia tooltip after the usual delay: a port shows its label, the display name of
+///         its type and its <c>PortDefinition.Description</c>; a node shows its type's <c>NodeType.GetToolTip</c> text (live state or validation messages
+///         from <c>NodeType.ToolTip</c>, else <c>NodeType.Description</c>); a wire shows "source → target". Hosts override or suppress the text in
+///         <see cref="ToolTipRequested"/>, or turn tooltips off with <see cref="ShowToolTips"/>. Tooltips are hidden during drags, connection gestures, inline
+///         editing and context menus, and when the pointer leaves the element.
+///     </para>
+///     <para>
+///         <b>Navigation.</b> <see cref="BringIntoView(DiagramElement)"/> shows any element (switching <see cref="Page"/> when needed, and showing the collapsed
+///         group that hides it), and <see cref="ZoomToFit(IEnumerable{DiagramElement}, double)"/> fits a set of elements, for example the selection or search results.
 ///     </para>
 ///     <para>
 ///         Built-in gestures ("Ctrl" means Ctrl, or Cmd on macOS). A drag starts after the pointer moves about 3 pixels, so a plain click never creates an undo entry,
@@ -482,9 +494,14 @@ public sealed partial class DiagramEditor : Control
     private bool _isAttached;
 
     /// <summary>
-    ///     The margin of a <see cref="ZoomToFit"/> request that could not be applied yet (no size or no page), or null.
+    ///     The latest view request (<see cref="ZoomToFit(double)"/>, <see cref="ZoomToFit(IEnumerable{DiagramElement}, double)"/> or
+    ///     <see cref="BringIntoView(DiagramElement)"/>) that could not be applied yet (no size or no page), or null.
     /// </summary>
-    private double? _pendingFitMargin;
+    /// <remarks>
+    ///     The function applies the request and returns <see langword="true"/> once it was applied or became obsolete, so it can
+    ///     be dropped; <see langword="false"/> means it must wait for the next layout or page change.
+    /// </remarks>
+    private Func<bool>? _pendingView;
 
     /// <summary>
     ///     The page collection whose <c>CollectionChanged</c> event the editor currently listens to.
@@ -527,6 +544,10 @@ public sealed partial class DiagramEditor : Control
     /// <summary>
     ///     Gets or sets the theme to draw with; null (the default) uses the page's <see cref="Diagram.Theme"/>.
     /// </summary>
+    /// <remarks>
+    ///     An override changes the look only: port positions, port triangles, port hit areas and wire ends always
+    ///     follow the diagram's own theme, so wires stay attached; set port metrics on <see cref="Diagram.Theme"/>.
+    /// </remarks>
     public DiagramTheme? DiagramTheme
     {
         get => GetValue(DiagramThemeProperty);
@@ -639,24 +660,30 @@ public sealed partial class DiagramEditor : Control
     ///     when the editor has no size yet (before its first layout) or shows no page, the request is remembered and applied as soon as the editor gets a size and a page
     ///     (the latest request wins, and the page's content at that moment is fitted). A pending request is dropped once applied.
     /// </remarks>
-    /// <param name="margin">The empty space, in device-independent pixels, to keep around the content.</param>
+    /// <param name="margin">The empty space, in device-independent pixels, to keep around the content (default 30); finite and not negative.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown, before anything changes (a pending request stays as it was), when <paramref name="margin"/> is negative, NaN or infinite.</exception>
     public void ZoomToFit(double margin = 30)
     {
-        // Without a size or a page the request waits for the first layout (or the first page)
-        if (!TryZoomToFit(margin))
-        {
-            _pendingFitMargin = margin;
-        }
+        // Validate the margin before the request replaces a pending one
+        RequireValidMargin(margin);
+
+        // Without a size or a page the request waits for the first layout (or the first page); a newer request replaces it
+        _pendingView = () => TryZoomToFit(margin);
+        ApplyPendingView();
     }
 
     /// <summary>
-    ///     Applies a pending <see cref="ZoomToFit"/> request when the editor now has a page and a size.
+    ///     Applies the pending view request when it can be applied now, and forgets it once applied.
     /// </summary>
-    private void ApplyPendingFit()
+    /// <remarks>
+    ///     Called when the editor gets a size and when the page changes, and right after a request is made. The request is
+    ///     only forgotten when it is still the pending one, so a request that made a newer one while running keeps the newer.
+    /// </remarks>
+    private void ApplyPendingView()
     {
-        if (_pendingFitMargin is { } margin)
+        if (_pendingView is { } pending && pending() && ReferenceEquals(_pendingView, pending))
         {
-            TryZoomToFit(margin);
+            _pendingView = null;
         }
     }
 
@@ -672,21 +699,38 @@ public sealed partial class DiagramEditor : Control
             return false;
         }
 
-        _pendingFitMargin = null;
-        var content = ContentBounds(page);
-        if (content is not { } box)
+        if (ContentBounds(page) is { } box)
         {
-            return true;
+            FitBox(box, margin);
         }
 
+        return true;
+    }
+
+    /// <summary>
+    ///     Zooms (never above 1) and scrolls so a diagram rectangle fits the control with a margin, centered.
+    /// </summary>
+    /// <remarks>
+    ///     Shared by both <c>ZoomToFit</c> overloads. The caller has checked that the control is larger than twice the margin.
+    /// </remarks>
+    /// <param name="box">The rectangle to show, in diagram coordinates.</param>
+    /// <param name="margin">The empty space, in device-independent pixels, to keep around it.</param>
+    private void FitBox(PlexusRect box, double margin)
+    {
         // Pick the zoom that fits both axes, then center the content in the control
         var zoom = Math.Min((Bounds.Width - (2 * margin)) / Math.Max(box.Width, 1), (Bounds.Height - (2 * margin)) / Math.Max(box.Height, 1));
         Zoom = Math.Min(zoom, 1);
+        CenterOn(box);
+    }
+
+    /// <summary>
+    ///     Scrolls so the center of a diagram rectangle is at the center of the control, keeping the zoom.
+    /// </summary>
+    /// <param name="box">The rectangle to center, in diagram coordinates.</param>
+    private void CenterOn(PlexusRect box) =>
         Offset = new AvaloniaPoint(
             box.Center.X - (Bounds.Width / 2 / Zoom),
             box.Center.Y - (Bounds.Height / 2 / Zoom));
-        return true;
-    }
 
     /// <summary>
     ///     Determines what lies under a point of the control.
@@ -774,6 +818,7 @@ public sealed partial class DiagramEditor : Control
         base.OnDetachedFromVisualTree(e);
         CancelGesture();
         ClearGhost();
+        ResetToolTip();
         _isAttached = false;
         UpdateSubscription();
     }
@@ -804,8 +849,8 @@ public sealed partial class DiagramEditor : Control
             InvalidateInlineEditors();
             if (change.Property == BoundsProperty)
             {
-                // The first layout with a real size is when a ZoomToFit requested earlier can be honored
-                ApplyPendingFit();
+                // The first layout with a real size is when a view request made earlier can be honored
+                ApplyPendingView();
             }
         }
         else if (change.Property == IsReadOnlyProperty && IsReadOnly)
@@ -813,6 +858,11 @@ public sealed partial class DiagramEditor : Control
             // Entering read-only mode abandons any edit that is half done
             CancelGesture();
             CancelEdit();
+        }
+        else if (change.Property == ShowToolTipsProperty && !ShowToolTips)
+        {
+            // Turning tooltips off hides one that is showing
+            ResetToolTip();
         }
     }
 
@@ -988,10 +1038,11 @@ public sealed partial class DiagramEditor : Control
         CancelGesture();
         CancelEdit();
         _hover = null;
+        ResetToolTip();
         SetSelection([]);
         UpdateSubscription();
         InvalidateScene();
-        ApplyPendingFit();
+        ApplyPendingView();
     }
 
     /// <summary>
@@ -1070,6 +1121,12 @@ public sealed partial class DiagramEditor : Control
             {
                 CancelEdit();
             }
+        }
+
+        // A tooltip about an element or port that is gone must not stay up
+        if (e.Kind is DiagramChangeKind.ElementRemoved or DiagramChangeKind.PageRemoved or DiagramChangeKind.ElementChanged)
+        {
+            ResetToolTipIfStale();
         }
     }
 

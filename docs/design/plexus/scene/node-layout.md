@@ -14,12 +14,19 @@ of annotation text (`TextWrapper`).
   grown to fit the longer port column and the theme's default width grown to fit the title on one line: the title is
   measured with the header text style by the approximate measurer, widened by the 5% safety factor, the horizontal title
   margins of the standard node visual are added and the result is rounded up to a multiple of the grid size), required
-  height for a port column, port edge point (left edge for inputs, right
-  edge for outputs, at the row; given the column's port count, because centered rows depend on it), port label width
-  (estimated by the approximate measurer, widened by a 5% safety factor
-  and rounded up), port reach (triangle plus gaps plus label), port anchor (the outer end of triangle and label where wires
-  attach), the node's visual bounds, and the routing obstacles (the inflated node box plus one strip per labelled port
-  whose label reaches beyond the margin).
+  height for a port column, port edge point (left edge for inputs, right edge for outputs, at the row; given the
+  column's port count, because centered rows depend on it), port label width (estimated by the approximate measurer,
+  widened by a 5% safety factor and rounded up), port reach (triangle plus gaps plus label), port anchor (the outer end
+  of triangle and label where wires attach), the node's visual bounds (box, name, summary lines and, per port row, the
+  triangle height or the label's line height in `PortLabelTextStyle` - whichever is taller - centered on the row from
+  the box edge out to the anchor; 15 units for the classic theme versus a 10-unit triangle), and the routing obstacles
+  (the inflated node box plus one strip, one port row tall, per labelled port whose label reaches beyond the margin).
+  The visual bounds and the `RoutingObstacles(Rect, Node, DiagramTheme)` overload use the node's current ports (which a
+  `NodeType.PortProvider` may compute per node); the `RoutingObstacles(Rect, NodeType, DiagramTheme)` overload uses the
+  type's declared ports. The internal `PortColumnHeight(node, theme)` is the required height of the node's longer
+  current port column. The internal `ProviderNodeHeight(node, theme)` is the larger of that and the type's
+  `DefaultNodeSize` height: the height of a new node of a type with a port provider, and of a node whose recomputed
+  ports changed in number (so it grows or shrinks, never below the type's default height).
 - Port rows follow `DiagramTheme.PortAlignment`. With `Center` (the default) each column (all inputs, all outputs) is
   a stack centered vertically on the box: row `i` of `n` lies at `Top + Height/2 + (i - (n-1)/2) * PortPitch`, so an odd
   count puts the middle port on the box center and an even count straddles it on half-grid positions (nodes still
@@ -40,16 +47,21 @@ Invariant: a port's `Anchor` equals `Port.Anchor` of the model, whichever measur
 
 #### Key Methods
 
-`NodeLayout.Compute(node, theme, measurer)`: the title is the header band across the top of the box; the icon, only
-when the type has one, is a square of the theme's icon size shrunk to fit the body, centered below the header; the name
-is centered above the box; summary lines stack downward from below the box, each centered; ports are laid out inputs
-first, then outputs. For each port the edge point and anchor come from `NodeGeometry` (never from the measurer), the
-triangle sits outside the edge pointing right, the hit rectangle spans from just inside the edge out to the anchor (so it
-covers triangle and label), and the label is measured with the supplied measurer and placed beside the triangle,
-vertically centered on the row. Postcondition: `Bounds` contains the box, name, summary lines, port triangles and labels.
-Proxy ports of a collapsed group (`SceneComposer`) follow the same alignment: with `Center` each proxy column is centered
-on the collapsed box (which grows to at least the title-bar height plus one pitch per proxy row), with `Top` the rows
-start below the title bar as before.
+`NodeLayout.Compute(node, theme, measurer)`: the title is the header band across the top of the box; the icon, only when
+the type has one, is a square of the theme's icon size shrunk to fit the body, centered below the header; the name is
+centered above the box; summary lines stack downward from below the box, each centered; ports are laid out inputs first,
+then outputs. Port geometry - edge points, anchors, triangles, label gaps and hit areas - is computed with the node's
+own diagram theme (the internal `DiagramElement.Theme`, which is what the model uses for `Port.Anchor`), not with the
+`theme` argument; the argument supplies colors, fonts, text styles and the header, icon and text-gap metrics, so a
+display theme with other port metrics never moves ports away from the wire ends. For each port the edge point and anchor
+come from `NodeGeometry` (never from the measurer), the triangle sits outside the edge pointing right, the hit rectangle
+spans from just inside the edge out to the anchor (so it covers triangle and label), and the label is measured with the
+supplied measurer and placed beside the triangle, vertically centered on the row. Postcondition: `Bounds` contains the
+box, name, summary lines, port triangles and labels. Ports always come from the node itself (`Node.Ports`), so nodes of
+one type with different per-node ports lay out differently, and the layout follows a recomputation as soon as the scene
+is rebuilt. Proxy ports of a collapsed group (`SceneComposer`) follow the same alignment: with `Center` each proxy
+column is centered on the collapsed box (which grows to at least the title-bar height plus one pitch per proxy row),
+with `Top` the rows start below the title bar as before.
 
 `TextWrapper.Wrap(text, maxWidth, style, measurer)`: splits at line breaks, fills each line greedily with words that
 still measure within the width and splits a single word wider than a line by character, returning at least one line.

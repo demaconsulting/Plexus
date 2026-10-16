@@ -99,12 +99,24 @@ public sealed class NodeLayout
     ///     Computes the layout of a node.
     /// </summary>
     /// <remarks>
-    ///     Port anchors come from <see cref="NodeGeometry"/> and never from the measurer, so a layout
-    ///     computed with any measurer agrees with the model and the routers. Labels sit beside
-    ///     their triangles, centered on the port row, between the box and the anchor.
+    ///     <para>
+    ///         Port anchors come from <see cref="NodeGeometry"/> and never from the measurer, so a layout
+    ///         computed with any measurer agrees with the model and the routers. Labels sit beside
+    ///         their triangles, centered on the port row, between the box and the anchor.
+    ///     </para>
+    ///     <para>
+    ///         Port geometry - port rows, anchors, triangles, label gaps and hit areas - always uses the node's own
+    ///         diagram theme (<see cref="Diagram.Theme"/>, the classic theme for a node that is not on a page), the
+    ///         theme the model uses for <see cref="Plexus.Port.Anchor"/>, stored routes and obstacles. So a
+    ///         <paramref name="theme"/> that differs from it (a scene, render or editor override) changes the look but
+    ///         never where ports and wire ends are.
+    ///     </para>
     /// </remarks>
     /// <param name="node">The node to lay out.</param>
-    /// <param name="theme">The theme supplying metrics, fonts and detail sizes.</param>
+    /// <param name="theme">
+    ///     The theme supplying colors, fonts, text styles and the decoration metrics (header band, icon box, text gaps);
+    ///     port positions, triangles and hit areas always use the node's own diagram theme so they stay at the wire ends.
+    /// </param>
     /// <param name="measurer">The measurer used to size text.</param>
     /// <returns>The layout.</returns>
     /// <exception cref="ArgumentNullException">Thrown when an argument is null.</exception>
@@ -148,48 +160,49 @@ public sealed class NodeLayout
             y += size.Height;
         }
 
-        return new NodeLayout(node, box, title, icon, name, lines, ComputePorts(node, theme, measurer));
+        return new NodeLayout(node, box, title, icon, name, lines, ComputePorts(node, node.Theme, theme, measurer));
     }
 
     /// <summary>
     ///     Computes the layout of every port of a node.
     /// </summary>
     /// <param name="node">The node.</param>
-    /// <param name="theme">The theme.</param>
+    /// <param name="geometry">The node's own diagram theme, which fixes the port positions, triangles and hit areas.</param>
+    /// <param name="theme">The display theme, which supplies the label text style.</param>
     /// <param name="measurer">The text measurer.</param>
     /// <returns>The port layouts, inputs first.</returns>
-    private static List<PortLayout> ComputePorts(Node node, DiagramTheme theme, ITextMeasurer measurer)
+    private static List<PortLayout> ComputePorts(Node node, DiagramTheme geometry, DiagramTheme theme, ITextMeasurer measurer)
     {
         var ports = new List<PortLayout>(node.Ports.Count);
         foreach (var port in node.Ports)
         {
             var isInput = port.Direction == PortDirection.Input;
             var count = isInput ? node.Inputs.Count : node.Outputs.Count;
-            var edge = NodeGeometry.PortEdge(node.Bounds, port.Direction, port.Index, count, theme);
-            var anchor = NodeGeometry.PortAnchor(edge, port.Direction, port.Label, theme);
+            var edge = NodeGeometry.PortEdge(node.Bounds, port.Direction, port.Index, count, geometry);
+            var anchor = NodeGeometry.PortAnchor(edge, port.Direction, port.Label, geometry);
 
             // The triangle sits outside the box against the edge and points to the right (flow direction):
             // an input's tip touches the edge, an output's base starts at it
             var triangle = new Rect(
-                isInput ? edge.X - theme.PortTriangleLength : edge.X,
-                edge.Y - (theme.PortTriangleHeight / 2),
-                theme.PortTriangleLength,
-                theme.PortTriangleHeight);
+                isInput ? edge.X - geometry.PortTriangleLength : edge.X,
+                edge.Y - (geometry.PortTriangleHeight / 2),
+                geometry.PortTriangleLength,
+                geometry.PortTriangleHeight);
 
             // The port reacts from just inside the box edge out to its anchor, which covers triangle and label
             var outer = anchor.X;
-            var inner = isInput ? edge.X + theme.PortHitRadius : edge.X - theme.PortHitRadius;
+            var inner = isInput ? edge.X + geometry.PortHitRadius : edge.X - geometry.PortHitRadius;
             var hit = new Rect(
                 Math.Min(outer, inner),
-                edge.Y - theme.PortHitRadius,
+                edge.Y - geometry.PortHitRadius,
                 Math.Abs(outer - inner),
-                2 * theme.PortHitRadius);
+                2 * geometry.PortHitRadius);
 
             // The label sits beside the triangle, vertically centered on the port row: left of inputs
             // (right-aligned), right of outputs (left-aligned). Using the real measured width keeps the
             // label hugging the triangle; the wire end (the anchor) uses the deterministic estimate.
             var size = measurer.Measure(port.Label, theme.PortLabelTextStyle);
-            var labelX = isInput ? triangle.Left - theme.PortLabelGap - size.Width : triangle.Right + theme.PortLabelGap;
+            var labelX = isInput ? triangle.Left - geometry.PortLabelGap - size.Width : triangle.Right + geometry.PortLabelGap;
             var label = new LayoutText(port.Label, new Rect(labelX, edge.Y - (size.Height / 2), size.Width, size.Height));
             ports.Add(new PortLayout(port, anchor, triangle, hit, label));
         }

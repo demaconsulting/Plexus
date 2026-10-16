@@ -45,7 +45,11 @@ is `DiagramTheme`, else the editor's effective theme, else the classic theme. Bo
 A `NodePrototype` is the scene of one node of the type, built by the ordinary `SceneBuilder` on a scratch page of a
 private diagram that shares the registry: the node sits at the origin, is named after the type's display name, and has
 the default size and default property values a new node gets. It records the node box and the deterministic visual
-bounds of the node (`NodeGeometry.VisualBounds`: name label, box, ports, port labels and summary). A
+bounds of the node (`NodeGeometry.VisualBounds`: name label, box, ports, port labels and summary). The port geometry
+follows the scratch diagram's theme, because port positions always follow the node's own diagram theme (a palette or
+editor theme override changes only the look), while the name, summary and port label texts are measured with the theme
+the scene is drawn with (the internal two-theme overload `VisualBounds(node, geometryTheme, textTheme)`), so a theme
+override with larger fonts never clips or misplaces a label in the item or the drop ghost. A
 `NodePaletteItem` paints that scene with the shared `ScenePainter` (and so the shared icon cache) under a transform of
 the palette zoom. All items share one box column: an item is as wide as twice the largest horizontal reach
 (`NodePrototype.HorizontalReach`: from the box center to the edge of the visual extent, on either side) of any shown

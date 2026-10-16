@@ -114,6 +114,39 @@ public class PlexusRenderingTests
     }
 
     /// <summary>
+    ///     Proves that the image shows each node with its current ports, including ports a port provider computes from the node's properties.
+    /// </summary>
+    [Fact]
+    public void PlexusRendering_Render_DynamicPortNode_ShowsCurrentPorts()
+    {
+        // Arrange: a bus node whose inputs follow its Channels property, a static sink beside it, and where the third bus input is drawn at three channels
+        var (diagram, page) = RenderTestModel.CreatePage();
+        var bus = page.AddNode("t.Bus", 60, 30, "B");
+        var sink = page.AddNode("t.Sink", 300, 30, "S");
+        var portColor = RenderTestModel.Pixel(Color.Parse("#FF8C00"));
+        var edge = NodeGeometry.PortEdge(new Rect(60, 30, 90, NodeGeometry.RequiredHeight(3, diagram.Theme)), PortDirection.Input, 2, 3, diagram.Theme);
+        var (x, y) = ((int)(edge.X - 3), (int)edge.Y);
+        var options = new RenderOptions { Bounds = new Rect(0, 0, 450, 250), ShowGrid = false };
+        using var oneChannel = PlexusRenderer.Render(page, options);
+
+        // Act: grow to three channels, render, shrink to two channels, render
+        bus.Properties["Channels"] = 3;
+        using var threeChannels = PlexusRenderer.Render(page, options);
+        bus.Properties["Channels"] = 2;
+        using var twoChannels = PlexusRenderer.Render(page, options);
+
+        // Assert: the third port triangle exists exactly while the node has three ports; the static node's declared port is always drawn
+        var sinkEdge = NodeGeometry.PortEdge(sink.Bounds, PortDirection.Input, 0, 1, diagram.Theme);
+        var sinkPixel = ((int)(sinkEdge.X - 3), (int)sinkEdge.Y);
+        Assert.Multiple(
+            () => Assert.NotEqual(portColor, oneChannel[x, y]),
+            () => Assert.Equal(portColor, threeChannels[x, y]),
+            () => Assert.NotEqual(portColor, twoChannels[x, y]),
+            () => Assert.Equal(portColor, oneChannel[sinkPixel.Item1, sinkPixel.Item2]),
+            () => Assert.Equal(portColor, twoChannels[sinkPixel.Item1, sinkPixel.Item2]));
+    }
+
+    /// <summary>
     ///     Proves that the render area is controlled by bounds, padding and scale.
     /// </summary>
     [Fact]

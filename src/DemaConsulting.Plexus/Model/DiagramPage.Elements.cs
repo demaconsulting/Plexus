@@ -13,6 +13,10 @@ public sealed partial class DiagramPage
     /// </summary>
     /// <remarks>
     ///     When the type declares <see cref="NodeType.CreateData"/>, the new node starts with a fresh payload from it.
+    ///     When the type declares a <see cref="NodeType.PortProvider"/>, the new node gets the ports it returns for the
+    ///     default properties and payload, and its height grows when those ports need more room than the default size.
+    ///     A type without a provider keeps exactly the size <see cref="NodeGeometry.DefaultNodeSize"/> returns, so a declared
+    ///     <see cref="NodeType.DefaultSize"/> is authoritative.
     /// </remarks>
     /// <param name="typeKey">The key of a type registered in <see cref="Diagram.Types"/>.</param>
     /// <param name="x">The left edge of the node.</param>
@@ -20,8 +24,8 @@ public sealed partial class DiagramPage
     /// <param name="name">The node name; null generates a unique <c>{TypeKeyLastSegment}{n}</c> name (for example <c>Source1</c>).</param>
     /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new node.</returns>
-    /// <exception cref="ArgumentException">Thrown when the type key is unknown, the name is invalid or duplicated, or the id is in use.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the page is removed from its diagram.</exception>
+    /// <exception cref="ArgumentException">Thrown when the type key is unknown, the name is invalid or duplicated, the id is in use, or the type's <see cref="NodeType.PortProvider"/> builds an invalid <see cref="PortSet"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the page is removed from its diagram, or the type's <see cref="NodeType.PortProvider"/> returns null.</exception>
     public Node AddNode(string typeKey, double x, double y, string? name = null, string? id = null)
     {
         ArgumentNullException.ThrowIfNull(typeKey);
@@ -38,14 +42,18 @@ public sealed partial class DiagramPage
     /// </summary>
     /// <remarks>
     ///     When the type declares <see cref="NodeType.CreateData"/>, the new node starts with a fresh payload from it.
+    ///     When the type declares a <see cref="NodeType.PortProvider"/>, the new node gets the ports it returns for the
+    ///     default properties and payload, and its height grows when those ports need more room than the default size.
+    ///     A type without a provider keeps exactly the size <see cref="NodeGeometry.DefaultNodeSize"/> returns, so a declared
+    ///     <see cref="NodeType.DefaultSize"/> is authoritative.
     /// </remarks>
     /// <param name="type">A node type registered in <see cref="Diagram.Types"/>.</param>
     /// <param name="position">The top-left corner of the node.</param>
     /// <param name="name">The node name; null generates a unique <c>{TypeKeyLastSegment}{n}</c> name (for example <c>Source1</c>).</param>
     /// <param name="id">The element id; null generates one.</param>
     /// <returns>The new node.</returns>
-    /// <exception cref="ArgumentException">Thrown when the type is not registered, the name is invalid or duplicated, or the id is in use.</exception>
-    /// <exception cref="InvalidOperationException">Thrown when the page is removed from its diagram.</exception>
+    /// <exception cref="ArgumentException">Thrown when the type is not registered, the name is invalid or duplicated, the id is in use, or the type's <see cref="NodeType.PortProvider"/> builds an invalid <see cref="PortSet"/>.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the page is removed from its diagram, or the type's <see cref="NodeType.PortProvider"/> returns null.</exception>
     public Node AddNode(NodeType type, Point position, string? name = null, string? id = null)
     {
         ArgumentNullException.ThrowIfNull(type);
@@ -80,6 +88,15 @@ public sealed partial class DiagramPage
 
         // New nodes start with the type's default payload (restored nodes keep what was stored instead)
         node.InitializeData(type.CreateInitialData());
+
+        // A port provider decides the ports from the defaults and the node is made tall enough for them;
+        // a type without one keeps exactly its default size (a declared size is authoritative)
+        if (type.PortProvider is not null)
+        {
+            node.InitializePorts();
+            node.InitializeBounds(new Rect(position, new Size(size.Width, NodeGeometry.ProviderNodeHeight(node, Diagram.Theme))));
+        }
+
         Diagram.History.Execute(new ElementPresenceCommand("Add node", this, node, add: true));
         return node;
     }
@@ -112,7 +129,8 @@ public sealed partial class DiagramPage
     ///     <see cref="ConnectionRules.Default"/>) are:
     ///     <list type="bullet">
     ///         <item><description>one port must be an output and the other an input (direction);</description></item>
-    ///         <item><description>both ports must belong to nodes on this page;</description></item>
+    ///         <item><description>both ports must belong to nodes on this page, and still be ports of their nodes (a
+    ///         <see cref="NodeType.PortProvider"/> may have removed a port a host still holds);</description></item>
     ///         <item><description>the two ports must be on different nodes (a node cannot feed itself);</description></item>
     ///         <item><description>the same output may not already be wired to the same input (no duplicates);</description></item>
     ///         <item><description>an input accepts one wire unless its <see cref="PortDefinition.AllowsMultipleWires"/> is set.</description></item>
@@ -221,6 +239,12 @@ public sealed partial class DiagramPage
         if (a.Direction == b.Direction)
         {
             return ConnectionCheck.Denied("A wire must connect an output to an input.");
+        }
+
+        // A port that a port provider took off its node (and a host still holds) cannot be wired
+        if (!a.IsOnNode || !b.IsOnNode)
+        {
+            return ConnectionCheck.Denied($"The port '{(a.IsOnNode ? b : a)}' no longer exists on its node.");
         }
 
         var (source, target) = Order(a, b);
@@ -404,7 +428,7 @@ public sealed partial class DiagramPage
         }
 
         var theme = Diagram.Theme;
-        List<Rect> obstacles = [.. _nodes.Where(n => !n.IsHiddenByCollapse).SelectMany(n => NodeGeometry.RoutingObstacles(BoundsOf(n, overrides), n.Type, theme))];
+        List<Rect> obstacles = [.. _nodes.Where(n => !n.IsHiddenByCollapse).SelectMany(n => NodeGeometry.RoutingObstacles(BoundsOf(n, overrides), n, theme))];
         if (overrides is not null)
         {
             return obstacles;

@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.LogicalTree;
 using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Scene;
 using AvaloniaPoint = global::Avalonia.Point;
@@ -10,7 +11,7 @@ using Rect = DemaConsulting.Plexus.Geometry.Rect;
 namespace DemaConsulting.Plexus.Demo.Gui.Automation;
 
 /// <content>
-///     View commands: <c>view</c> and <c>geometry</c>.
+///     View commands: <c>view</c>, <c>geometry</c>, <c>bring-into-view</c>, <c>zoom-to</c> and <c>tooltip</c>.
 /// </content>
 /// <remarks>
 ///     <c>geometry</c> exists so an external driver can use REAL operating-system mouse input: it
@@ -48,6 +49,77 @@ internal sealed partial class AutomationDispatcher
             return new JsonObject { ["zoom"] = editor.Zoom, ["offsetX"] = editor.Offset.X, ["offsetY"] = editor.Offset.Y };
         });
         Add("geometry", Geometry);
+
+        // Navigation: show one element (switching pages, or showing the collapsed group that hides it), or fit several
+        Add("bring-into-view", request =>
+        {
+            var reference = AutomationJson.OptionalString(request, "element") ?? AutomationJson.OptionalString(request, "node")
+                ?? AutomationJson.OptionalString(request, "name")
+                ?? throw new ArgumentException("Give 'element', 'node' or 'name'.");
+            Session.Editor.BringIntoView(ResolveElement(reference));
+            return ViewResult();
+        });
+        Add("zoom-to", request =>
+        {
+            Session.Editor.ZoomToFit(ResolveElements(request), AutomationJson.OptionalNumber(request, "margin") ?? 30);
+            return ViewResult();
+        });
+
+        // The tooltip the editor would show, as the host's handlers left it
+        Add("tooltip", request =>
+        {
+            object? content;
+            if (AutomationJson.OptionalString(request, "port") is { } portReference)
+            {
+                var port = ResolvePort(portReference, preferOutput: false, AutomationJson.OptionalString(request, "direction"));
+                content = Session.Editor.GetToolTipContent(port.Node, port);
+            }
+            else
+            {
+                var reference = AutomationJson.OptionalString(request, "element") ?? AutomationJson.OptionalString(request, "node")
+                    ?? throw new ArgumentException("Give 'element', 'node' or 'port'.");
+                content = Session.Editor.GetToolTipContent(ResolveElement(reference));
+            }
+
+            return DescribeToolTip(content);
+        });
+    }
+
+    /// <summary>
+    ///     Describes tooltip content for the <c>tooltip</c> command: its text, and whether it shows a plot preview.
+    /// </summary>
+    /// <remarks>
+    ///     Most tooltips are text. An oscillator, envelope or filter tooltip is a control (a plot thumbnail above text), so its
+    ///     text is the texts of its text blocks, one per line, rather than the control's type name.
+    /// </remarks>
+    /// <param name="content">The tooltip content, or <see langword="null"/> for none.</param>
+    /// <returns><c>{text, preview}</c>: the text (null for no tooltip) and true when the content contains a plot.</returns>
+    internal static JsonObject DescribeToolTip(object? content)
+    {
+        if (content is not Control control)
+        {
+            return new JsonObject { ["text"] = content?.ToString(), ["preview"] = false };
+        }
+
+        var parts = control.GetSelfAndLogicalDescendants().ToList();
+        var text = string.Join("\n", parts.OfType<TextBlock>().Select(t => t.Text).Where(t => !string.IsNullOrEmpty(t)));
+        return new JsonObject { ["text"] = text, ["preview"] = parts.OfType<Inspectors.SignalPlot>().Any() };
+    }
+
+    /// <summary>
+    ///     Describes the editor's view after a navigation command: the shown page and the zoom and offset.
+    /// </summary>
+    /// <returns><c>{page, zoom, offsetX, offsetY}</c>, where <c>page</c> is the shown page's index.</returns>
+    private JsonObject ViewResult()
+    {
+        var editor = Session.Editor;
+        return new JsonObject
+        {
+            ["page"] = editor.Page is { } page ? Session.Diagram.Pages.IndexOf(page) : -1,
+            ["zoom"] = editor.Zoom,
+            ["offsetX"] = editor.Offset.X,
+            ["offsetY"] = editor.Offset.Y,
+        };
     }
 
     /// <summary>

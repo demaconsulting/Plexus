@@ -199,3 +199,15 @@ sections:
                   large vocabularies.
                 tests:
                   - NodePalette_Scenes_AreCachedUntilTypesOrThemeChange
+
+              - id: PlexusAvalonia-Editor-NodePalette-PrototypeTextBounds
+                title: >-
+                  The visual bounds of a node prototype shall contain the name, summary and port label texts that its
+                  scene draws, measured with the scene's theme, while the port geometry follows the theme of the
+                  prototype's own diagram.
+                justification: |
+                  Decomposes PlexusAvalonia-Editor-NodePalette; when the editor's theme override changes the text
+                  metrics, the palette items and the drop ghost, which are sized and placed from these bounds, would
+                  otherwise clip or misplace labels.
+                tests:
+                  - NodePrototype_Create_SceneThemeWithLargerFonts_BoundsContainTheDrawnTexts

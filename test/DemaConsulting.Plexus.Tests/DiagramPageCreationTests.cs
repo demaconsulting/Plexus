@@ -265,6 +265,114 @@ public class DiagramPageCreationTests
     }
 
     /// <summary>
+    ///     Validates that a declared size shorter than the ports need is kept when the type has no port provider.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_AddNode_DeclaredSizeWithoutProvider_KeepsDeclaredHeight()
+    {
+        // Arrange: a type whose declared 40 px height is shorter than its two inputs need
+        var types = TestModel.CreateTypes();
+        var type = new NodeType("acme.Short")
+        {
+            DefaultSize = new Size(100, 40),
+            Inputs = { new PortDefinition("a", "f32"), new PortDefinition("b", "f32") },
+        };
+        types.Add(type);
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+
+        // Act
+        var node = page.AddNode("acme.Short", 5, 6);
+
+        // Assert: the declared size is authoritative, as the palette ghost shows it
+        Assert.Equal(new Rect(5, 6, 100, 40), node.Bounds);
+        Assert.Equal(NodeGeometry.DefaultNodeSize(type, diagram.Theme), node.Bounds.Size);
+    }
+
+    /// <summary>
+    ///     Validates that a port provider building an invalid port set makes AddNode throw without adding anything.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_AddNode_ProviderBuildsInvalidPortSet_ThrowsAndAddsNothing()
+    {
+        // Arrange: a provider that returns two inputs with the same name
+        var types = TestModel.CreateTypes();
+        types.Add(new NodeType("acme.Dup")
+        {
+            PortProvider = _ => new PortSet([new PortDefinition("a", "f32"), new PortDefinition("a", "f32")], []),
+        });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var entriesBefore = diagram.History.UndoCount;
+
+        // Act / Assert: the error reaches the caller, and no node or history entry is left behind
+        Assert.Throws<ArgumentException>(() => page.AddNode("acme.Dup", 0, 0));
+        Assert.Empty(page.Nodes);
+        Assert.Equal(entriesBefore, diagram.History.UndoCount);
+    }
+
+    /// <summary>
+    ///     Validates that a port provider returning null makes AddNode throw an error naming the type, without adding anything.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_AddNode_ProviderReturnsNull_ThrowsAndAddsNothing()
+    {
+        // Arrange: a provider that returns no set at all
+        var types = TestModel.CreateTypes();
+        types.Add(new NodeType("acme.Null") { PortProvider = _ => null! });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var entriesBefore = diagram.History.UndoCount;
+
+        // Act
+        var ex = Assert.Throws<InvalidOperationException>(() => page.AddNode("acme.Null", 0, 0));
+
+        // Assert: the message names the type; no node or history entry is left behind
+        Assert.Contains("acme.Null", ex.Message, StringComparison.Ordinal);
+        Assert.Empty(page.Nodes);
+        Assert.Equal(entriesBefore, diagram.History.UndoCount);
+    }
+
+    /// <summary>
+    ///     Validates that a new node grows to fit the ports its type's port provider returns, even over a declared size.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_AddNode_ProviderNeedsMoreHeight_GrowsNewNode()
+    {
+        // Arrange: the router declares 120 x 60 but its default payload yields two outputs
+        var page = TestModel.CreateDynamicDiagram().Pages.Add("Main");
+
+        // Act
+        var router = page.AddNode("acme.Router", 5, 6);
+
+        // Assert: declared width, height of two port rows
+        Assert.Equal(new Rect(5, 6, 120, NodeGeometry.RequiredHeight(2, DiagramTheme.Classic)), router.Bounds);
+        Assert.Equal(["x", "y"], router.Outputs.Select(p => p.Name));
+    }
+
+    /// <summary>
+    ///     Validates that a port a port provider took off its node can no longer be connected.
+    /// </summary>
+    [Fact]
+    public void DiagramPage_CanConnect_PortRemovedByProvider_IsDenied()
+    {
+        // Arrange: hold a reference to in1, then remove it by lowering the channel count
+        var page = TestModel.CreateDynamicDiagram().Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0);
+        var bus = page.AddNode("acme.Bus", 300, 0);
+        var in1 = bus.Input("in1");
+        bus.Properties["Channels"] = 1;
+
+        // Act
+        var check = page.CanConnect(producer.Output("value"), in1);
+
+        // Assert: refused with a reason, and Connect throws
+        Assert.False(check.IsAllowed);
+        Assert.Contains("no longer exists", check.Reason, StringComparison.Ordinal);
+        Assert.Throws<InvalidOperationException>(() => page.Connect(producer.Output("value"), in1));
+    }
+
+    /// <summary>
     ///     Validates port lookup by name and the shape of the cached port objects.
     /// </summary>
     [Fact]

@@ -104,10 +104,21 @@ diagram.History.Execute("Change grid", () => gridSetting = 20, () => gridSetting
 ```
 
 The two delegates must be exact inverses of each other, and repeatable. For richer commands implement
-`IUndoableCommand` (`Description`, `Do` and `Undo`) and pass it to `Execute`.
+`IUndoableCommand` (`Description`, `Do` and `Undo`) and pass it to `Execute`. Each of `Do` and `Undo` must either
+complete or throw without having changed anything: when one command of a transaction fails during undo or redo, the
+history restores the other commands of that entry, which stays on its stack so the user can try again. If restoring
+fails as well, the exception is an `AggregateException` holding the original failure first and then every restore
+failure.
 
 ## Limits
 
 The history has a bounded capacity (`History.Capacity`; the oldest entries are dropped first), `Clear()` empties it and
 marks the document clean, and `UndoCount` and `RedoCount` report the depth. Changing the theme, the router or the
 connection rules is configuration and is not undoable; assigning a styler is not undoable either.
+
+Code that runs while an entry is undone or redone (a command's `Do` or `Undo`, and the change handlers it triggers)
+cannot change the history: `Execute`, `BeginTransaction`, `Transact`, `Clear`, `MarkClean`, setting `Capacity` and
+`Suspend` throw `InvalidOperationException` there and change nothing. Disposing a `Suspend` scope there is allowed; it
+takes effect right after the undo or redo has finished. The same guard covers the reverts of a transaction rollback, and
+every inverse of a rollback is attempted even when one throws (the failures are reported together, the original failure
+of a `Transact` first). `Suspend` also throws while a transaction is open.

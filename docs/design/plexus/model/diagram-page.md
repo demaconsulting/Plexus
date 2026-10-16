@@ -27,17 +27,27 @@ changes: element presence, group membership and layout. Duplicating elements is 
   positions of groups and old and new routes of wires, stored in first-seen order. Merging two commands for the same page
   keeps the first old and the last new value for every target, which makes a drag a single compact entry.
 - **Notifications**: the page raises a property change for its name; element additions and removals raise the diagram's
-  `Changed` event after the element is fully attached or detached.
+  `Changed` event after the element is fully attached or detached. The name change and the content lists (whose
+  `Insert` and `RemoveAt` raise their collection changes) are performed through the history's notification gate
+  (`InsertAt` and `RemoveFrom` are instance methods for that), so a list is already correct when its handlers run and a
+  throwing handler is reported after the change completed.
 
 #### Key Methods
 
 - **AddNode(type key or type, position, name, id)**: checks the page is attached, the type is the registered object and
   the position is finite; resolves the id (unique, generated as a dash-free GUID when null) and the name (trimmed and
   validated, or generated as the lowest unused `{key last segment}{n}`); sizes the node from the type's declared size or
-  the theme default grown to fit its ports; executes an element presence command "Add node".
+  the theme default grown to fit its ports; stores the type's default payload. Only for a type with a port provider does
+  it let the provider replace the declared ports (`Node.InitializePorts`) and set the height (never the width) to
+  `NodeGeometry.ProviderNodeHeight`: the `PortColumnHeight` of those ports, never less than the default height, even
+  over a declared size. A type without a provider keeps exactly
+  `NodeGeometry.DefaultNodeSize`, so a declared size is authoritative and the palette ghost matches the dropped node. A
+  provider that returns null (`InvalidOperationException`) or builds an invalid `PortSet` (`ArgumentException`) makes
+  AddNode throw before anything is recorded. Finally it executes an element presence command "Add node".
 - **AddAnnotation(text, bounds, id)**: validates text and bounds (finite, non-negative size) and executes "Add annotation".
 - **CanConnect(a, b)**: returns a decision without changing anything. Denials, in order: page detached, a port not on a
-  node of this page, equal directions, same node, an existing wire between the same ports. Then it calls the
+  node of this page, equal directions, a port that a port provider took off its node (`Port.IsOnNode` false; a host may
+  still hold it), same node, an existing wire between the same ports. Then it calls the
   diagram's connection rule with the output as source and the input as target and guarantees a reason for a denial
   without one. The default rule (`ConnectionRules.Default`) also refuses a second wire into an input whose definition
   does not allow fan-in; a host that assigns a rule without it decides fan-in itself.
@@ -85,7 +95,25 @@ changes: element presence, group membership and layout. Duplicating elements is 
   setters. **CommitLayout**: builds a layout command with the changed bounds and positions, plans the wire updates and
   executes it when not empty. **PlanWireUpdates**: wires with an unchanged route (untouched, or translated because both
   nodes moved by the same delta without resizing) form the traffic first; then every other wire with a changed end is
-  routed against the hypothetical new bounds and that traffic, in page order.
+  routed against the hypothetical new bounds and that traffic, in page order. An optional set of forced re-routes adds
+  wires whose end nodes keep their bounds but whose anchors moved (a port update); with no changed bounds the cached
+  obstacles of the current layout are used.
+- **PlanPortUpdate(plan, node)** (internal, `DiagramPage.PortUpdates.cs`): plans everything a recomputation of a node's
+  ports implies into the open plan of the triggering property or data change, in an order whose reverse restores the
+  model exactly: (1) asks for the change (`NodePortsCommand.TryCreate`; null means nothing to do) and records the
+  opening notification marker at the start of the plan (`CommandPlan.AddFirst`), (2) removes the wires of removed ports
+  in page order, (3) remembers the anchors of the node's remaining wires, (4) runs the port swap, (5) checks each
+  remaining wire on a retyped port with the connection rules, in page order (`Wires`), as a reconnect of itself (it
+  does not count against its own ports and is published as `WireBeingReconnected`) after the wires refused before it
+  were removed, and removes it when refused - so on an input that now accepts a single wire every earlier wire is
+  refused and the wire latest in page order survives, (6) when the number of inputs or outputs changed, sets the
+  node's height to `NodeGeometry.ProviderNodeHeight` (the height its longer port column needs, never less than the
+  type's default height - the sizing AddNode uses), keeping position and width, so it grows or shrinks; when both counts
+  are unchanged it leaves the bounds alone (a size the host set survives a retype or relabel); and re-routes, through
+  one layout command, every remaining wire of the node whose anchor moved, like after a resize, and (7) runs the
+  closing notification marker. Removed wires are therefore reported through `Diagram.Changed` before the node reports
+  `Ports`, and `Ports` (with the enclosing groups' `Bounds`) is reported once, when the model is settled; undo reports
+  it once after everything is restored (see Node Design).
 - **CreateGroup(members, title, id)**: ignores wires, requires members on this page that are ungrouped or share one
   parent, and as one multi-step operation adds the group, replaces the members in the parent by the new group, adds the
   members and records the collapsed position. **Ungroup / ReleaseGroup**: members take the frame's slot in the parent or
@@ -113,12 +141,15 @@ leaves the model unchanged.
 - History: executes presence, membership, layout and set-value commands and transactions.
 - Node, Wire, Annotation and Group: the element types created and changed here; they call back into the page for
   bounds, route, collapse and membership changes.
-- Geometry and Scene node geometry: positions, default node sizes, port anchors and routing obstacles.
+- Geometry and Scene node geometry: positions, default node sizes, port anchors, the port column height and routing
+  obstacles (computed from each node's current ports).
+- Node (`NodePortsCommand`, `InitializePorts`): the port change planned by `PlanPortUpdate`.
 - Routing: the router interface used to compute routes.
 - ConnectionRules: the decision type returned by `CanConnect`.
 
 #### Callers
 
 Host applications and the editor control call the public operations. Nodes, ports, wires and groups call the internal
-members for bounds, routes, ports and group changes; the diagram's move-to-page operation uses the presence and
+members for bounds, routes, ports and group changes (`Node.ExecuteAffectingPorts` calls `PlanPortUpdate`); the
+diagram's move-to-page operation uses the presence and
 membership commands; the Snapshot unit rebuilds pages through the public API.

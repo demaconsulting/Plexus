@@ -5,8 +5,7 @@ namespace DemaConsulting.Plexus.Scene;
 /// </summary>
 /// <remarks>
 ///     The stroke is centered on the rectangle's edge. A null fill or stroke means "not drawn".
-///     Inherited from <see cref="ScenePrimitive"/>: <see cref="ScenePrimitive.Bounds"/> (the rectangle drawn in, stroke included) and
-///     <see cref="ScenePrimitive.Element"/> (the owning model element, or null).
+///     <see cref="ScenePrimitive.Bounds"/> is the rectangle drawn in, stroke included.
 /// </remarks>
 public sealed class RectPrimitive : ScenePrimitive
 {

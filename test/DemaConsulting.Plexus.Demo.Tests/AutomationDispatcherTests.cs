@@ -100,7 +100,7 @@ public class AutomationDispatcherTests
             "list-nodes", "list-wires", "list-annotations", "list-groups",
             "add-node", "move-node", "set-property", "toggle-switch", "rename", "connect", "delete", "select", "clear-selection", "select-all",
             "copy", "cut", "paste", "duplicate", "undo", "redo", "group", "ungroup", "collapse", "move-to-page",
-            "geometry", "view", "save", "open", "new", "render",
+            "geometry", "view", "bring-into-view", "zoom-to", "tooltip", "save", "open", "new", "render",
         ];
 
         // Act / Assert
@@ -590,5 +590,101 @@ public class AutomationDispatcherTests
         Assert.NotEmpty(groups);
         Assert.NotNull(groups[0]!["title"]);
         Assert.Contains(annotations, a => a!["text"]!.GetValue<string>() == "Hello");
+    });
+
+    /// <summary>
+    ///     Validates that bring-into-view and zoom-to switch to the element's page and report the view.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task AutomationDispatcher_NavigationCommands_BringIntoViewAndZoomTo() => GuiTest.RunAsync(async host =>
+    {
+        // Arrange: the showcase; the logic page is the third one
+        host.Session.OpenSample("showcase");
+        host.Flush();
+
+        // Act
+        var shown = await host.OkAsync("""{"cmd":"bring-into-view","name":"AllLamp"}""");
+        await host.OkAsync("""{"cmd":"select-page","page":"Math"}""");
+        var fitted = await host.OkAsync("""{"cmd":"zoom-to","names":["SwitchA","AllLamp"],"margin":20}""");
+        var unknown = await host.ErrorAsync("""{"cmd":"bring-into-view","name":"Nobody"}""");
+
+        // Assert
+        Assert.Equal(2, shown["page"]!.GetValue<int>());
+        Assert.Equal(1.0, shown["zoom"]!.GetValue<double>());
+        Assert.Equal(2, fitted["page"]!.GetValue<int>());
+        Assert.Equal("Logic", host.Editor.Page!.Name);
+        Assert.Contains("Nobody", unknown, StringComparison.Ordinal);
+    });
+
+    /// <summary>
+    ///     Validates that the tooltip command returns node, port and wire tooltips, including live logic state.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task AutomationDispatcher_TooltipCommand_DescribesNodesPortsAndWires() => GuiTest.RunAsync(async host =>
+    {
+        // Arrange
+        host.Session.OpenSample("logic");
+        host.Flush();
+        var wire = host.Session.Diagram.Pages[0].Wires.First(w => w.Target.ToString() == "All.c");
+
+        // Act
+        var node = await host.OkAsync("""{"cmd":"tooltip","node":"SwitchA"}""");
+        var port = await host.OkAsync("""{"cmd":"tooltip","port":"All.c"}""");
+        var wireTip = await host.OkAsync($$"""{"cmd":"tooltip","element":"{{wire.Id}}"}""");
+
+        // Assert
+        Assert.Contains("Now: on", node["text"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("c (Boolean)\nGate input c.", port["text"]!.GetValue<string>());
+        Assert.Equal("SwitchC.out → All.c", wireTip["text"]!.GetValue<string>());
+    });
+
+    /// <summary>
+    ///     Validates that the tooltip command of the real window reports an oscillator's thumbnail tooltip as its text and a
+    ///     preview flag, and other tooltips as text without one.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task AutomationDispatcher_TooltipCommand_OscillatorReportsTextAndPreview() => GuiTest.RunAsync(async () =>
+    {
+        // Arrange: the real window, whose tooltip handler gives oscillators, envelopes and filters a plot thumbnail
+        using var host = new MainWindowHost(MainWindowHost.Options("--sample", "audio"));
+        var commands = new Gui.Automation.AutomationDispatcher(host.Session);
+
+        // Act
+        var osc = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","node":"Osc1"}""")).Json)!["result"]!;
+        var port = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","port":"Osc1.out"}""")).Json)!["result"]!;
+        var shape = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","node":"Shape"}""")).Json)!["result"]!;
+        var tone = JsonNode.Parse((await commands.ExecuteAsync("""{"cmd":"tooltip","node":"Tone"}""")).Json)!["result"]!;
+
+        // Assert: the oscillator, envelope and filter tooltips carry a plot; the port tooltip adds the port description
+        Assert.Equal("Osc1\nSaw, 220 Hz", osc["text"]!.GetValue<string>());
+        Assert.True(osc["preview"]!.GetValue<bool>());
+        Assert.Equal("out (Audio)\nThe generated wave.", port["text"]!.GetValue<string>());
+        Assert.False(port["preview"]!.GetValue<bool>());
+        Assert.Equal("Shape\nA 10 ms · D 120 ms · S 70 % · R 300 ms", shape["text"]!.GetValue<string>());
+        Assert.True(shape["preview"]!.GetValue<bool>());
+        Assert.Equal("Tone\nLow-pass, 900 Hz", tone["text"]!.GetValue<string>());
+        Assert.True(tone["preview"]!.GetValue<bool>());
+    });
+
+    /// <summary>
+    ///     Validates that setting a gate's Inputs property through automation changes the ports list-nodes reports.
+    /// </summary>
+    /// <returns>A task for xUnit to await.</returns>
+    [Fact]
+    public Task AutomationDispatcher_SetProperty_GateInputs_ChangesPorts() => GuiTest.RunAsync(async host =>
+    {
+        // Arrange
+        await host.OkAsync("""{"cmd":"add-node","type":"demo.logic.And","x":0,"y":0,"name":"G"}""");
+
+        // Act
+        await host.OkAsync("""{"cmd":"set-property","node":"G","name":"Inputs","value":4}""");
+        var nodes = (await host.OkAsync("""{"cmd":"list-nodes"}""")).AsArray();
+
+        // Assert
+        var ports = nodes[0]!["ports"]!.AsArray().Select(p => p!["name"]!.GetValue<string>());
+        Assert.Equal(["a", "b", "c", "d", "out"], ports);
     });
 }

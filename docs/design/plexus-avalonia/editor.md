@@ -30,10 +30,29 @@ the PlexusAvalonia system outside this subsystem.
 
 **Provided** (to the host application):
 
-- `DiagramEditor`: properties for the page, theme, zoom, offset, grid, snapping, read-only mode and clipboard;
-  commands for selection, delete, duplicate, undo, redo, copy, cut, paste, rename, annotation edit, zoom and hit
-  testing; the events `SelectionChanged`, `NodeDoubleClicked`, `DiagramContextRequested`, `PasteFailed` and
-  `ClipboardFailed`; the drag helpers `CreateNodeTypeDataTransfer`, `StartNodeTypeDragAsync` and `EnableNodeTypeDrag`.
+- `DiagramEditor`: properties for the page, theme, zoom, offset, grid, snapping, read-only mode, clipboard and
+  `ShowToolTips`; commands for selection, delete, duplicate, undo, redo, copy, cut, paste, rename, annotation edit, zoom
+  and hit testing; the events `SelectionChanged`, `NodeDoubleClicked`, `DiagramContextRequested`, `ToolTipRequested`
+  (with `DiagramToolTipRequestedEventArgs`), `PasteFailed` and `ClipboardFailed`; the drag helpers
+  `CreateNodeTypeDataTransfer`, `StartNodeTypeDragAsync` and `EnableNodeTypeDrag`.
+- Tooltips and navigation of `DiagramEditor`, with their constraints (all on the UI thread):
+  - `ShowToolTips` (default true): when false, hovering sets no tooltip and raises no `ToolTipRequested`, and a showing
+    tooltip is hidden.
+  - `ToolTipRequested`: raised once per element or port the pointer moves onto, with the default `Content`; a handler
+    replaces it or sets `Cancel`; canceled, null and empty content show nothing.
+  - `GetToolTipContent(element, port)`: the content the editor would show, usable for any element (also on another
+    page); it raises `ToolTipRequested` and ignores `ShowToolTips`; `ArgumentNullException` for a null element.
+  - `BringIntoView(element)`: any element on an attached page of the editor's diagram (of any diagram when no page is
+    shown), otherwise `ArgumentException` (null: `ArgumentNullException`) with the view unchanged; switches the page
+    (which clears the selection and cancels a gesture or inline edit), centers the element, zooms out only when it does
+    not fit with 30 device-independent pixels on each side, never zooms in; waits for the first layout.
+  - `ZoomToFit(margin)`: the whole page; the same margin rule as below (`ArgumentOutOfRangeException`, checked before
+    the request is stored).
+  - `ZoomToFit(elements, margin)`: margin in device-independent pixels per side (default 30), finite and not negative
+    (`ArgumentOutOfRangeException`, checked first); `ArgumentNullException` for a null sequence, `ArgumentException`
+    for a null entry, a detached element or an element of another diagram, in all cases with the view unchanged; zoom
+    is the fitting one but at most 1, within the zoom limits; an empty set changes nothing; elements on other pages
+    than the first element's are ignored; waits for the first layout, and the latest request wins.
 - `NodePalette`: properties `Types`, `Editor`, `DiagramTheme`, `Zoom`, `Filter`, `ShowFilter`, `GroupByCategory`,
   `UncategorizedHeader` and `SelectedNodeType`, the methods `Refresh`, `Activate`, `ScrollIntoView`, `Select` and the
   static `GetAutomationId`, and the event `NodeTypeActivated`. `DiagramEditor` also provides `AddNodeAtCenter`.
@@ -91,3 +110,25 @@ matching helper for the drag side. While a node type drag is over the editor it 
 ghost and the created node all come from one drawing pipeline and one position computation. `NodePalette` is the ready-made
 drag side: it draws every node type with the editor's scene builder and painter and starts the node type drag from its
 items.
+
+Tooltips are part of hover tracking: while no gesture, inline edit or context request is in progress and `ShowToolTips`
+is true, the element (and port) under the pointer gets a tooltip whose content the control builds and then offers to the
+host through `ToolTipRequested`; the content is set on the control's own `ToolTip.Tip`, so Avalonia's tooltip service
+shows it with the standard delay at the pointer. The default content is: for a port `"{Label} ({PortType.DisplayName,
+else the type key})"` followed by the port description on a new line; for a node `NodeType.GetToolTip(node)`; for a
+wire `"A.out → B.in"`; for an annotation or a group nothing, unless a handler supplies content. Canceled, null and empty
+content show nothing. An exception of a node type's tooltip function propagates to the caller of `GetToolTipContent` or
+the hover handling and is never swallowed. A press, a gesture, leaving the control and opening an inline editor clear
+the tooltip; after a press it stays away for the pressed element or port until the pointer moves to something else.
+
+Navigation requests (`BringIntoView`, `ZoomToFit` of a set of elements) are validated first (an element must be on an
+attached page of the editor's diagram, any diagram when no page is shown; the margin must be finite and not negative),
+so a refused request changes nothing; they then switch the shown page when needed and center or fit the elements; like
+the page-wide `ZoomToFit` they are remembered until the control has a size, and the latest request of any kind wins
+(an empty set is not a request). Elements hidden in a collapsed group are shown through the outermost collapsed group.
+
+Ports computed per node by a port provider need nothing special: a recomputation is a model change (wire removals and
+the node's `Ports` notification, all inside the undo entry of the change) that marks the scene stale and rebuilds it, so
+the connection preview, hit testing and drawing always use the node's current ports. A port that was removed is never
+hit again (until an undo restores it), a port that was added can be connected, and a tooltip shown for a removed port is
+reset.

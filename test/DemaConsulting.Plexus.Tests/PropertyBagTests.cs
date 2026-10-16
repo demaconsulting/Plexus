@@ -244,6 +244,28 @@ public class PropertyBagTests
     }
 
     /// <summary>
+    ///     Validates that a 64-bit integer that a double cannot hold exactly is rejected for a double property and
+    ///     leaves the value and the history unchanged, while an exactly representable one converts.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Set_Int64NotExactlyRepresentableAsDouble_ThrowsArgumentException()
+    {
+        // Arrange
+        var (diagram, node) = Create();
+        var entries = diagram.History.UndoCount;
+
+        // Act / Assert: 2^53 + 1 and long.MaxValue would be rounded by a double
+        Assert.Throws<ArgumentException>(() => node.Properties["Gain"] = (1L << 53) + 1);
+        Assert.Throws<ArgumentException>(() => node.Properties["Gain"] = long.MaxValue);
+        Assert.Equal(1.0, node.Properties["Gain"]);
+        Assert.Equal(entries, diagram.History.UndoCount);
+
+        // Act / Assert: 2^53 is held exactly and converts
+        node.Properties["Gain"] = 1L << 53;
+        Assert.Equal((double)(1L << 53), node.Properties["Gain"]);
+    }
+
+    /// <summary>
     ///     Validates that choice properties accept only their options.
     /// </summary>
     [Fact]
@@ -311,6 +333,35 @@ public class PropertyBagTests
 
         // Act / Assert
         Assert.Throws<InvalidCastException>(() => node.Properties.Get<int>("Big"));
+    }
+
+    /// <summary>
+    ///     Validates that a numeric read that would lose precision is reported as an invalid cast, while exact conversions succeed.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Get_LossyConversion_ThrowsInvalidCastException()
+    {
+        // Arrange: a fractional double, a long that a double cannot represent exactly, and exactly representable values
+        var (_, node) = Create();
+        node.Properties["Fraction"] = 1.5;
+        node.Properties["Tenth"] = 0.1;
+        node.Properties["Whole"] = 3.0;
+        node.Properties["Large"] = long.MaxValue;
+        node.Properties["Wide"] = (1L << 53) + 1;
+        node.Properties["Exact"] = 1L << 53;
+
+        // Act / Assert: no rounding, no truncation
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<int>("Fraction"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<long>("Fraction"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<double>("Large"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<double>("Wide"));
+        Assert.Throws<InvalidCastException>(() => node.Properties.Get<float>("Tenth"));
+
+        // Assert: conversions that preserve the value still work
+        Assert.Equal(3, node.Properties.Get<int>("Whole"));
+        Assert.Equal(1L << 53, node.Properties.Get<double>("Exact"));
+        Assert.Equal(1.5f, node.Properties.Get<float>("Fraction"));
+        Assert.Equal(long.MaxValue, node.Properties.Get<long>("Large"));
     }
 
     /// <summary>
@@ -494,5 +545,272 @@ public class PropertyBagTests
 
         // Act / Assert
         Assert.Throws<InvalidOperationException>(() => node.Properties["Gain"] = 3.0);
+    }
+
+    /// <summary>
+    ///     Validates that setting a property a port provider reads recomputes the ports in the same undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Set_ProviderProperty_RecomputesPortsInSameEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var bus = diagram.Pages.Add("Main").AddNode("acme.Bus", 0, 0);
+        var entries = diagram.History.UndoCount;
+
+        // Act
+        bus.Properties["Channels"] = 3;
+
+        // Assert: one entry; undoing it restores the value and the ports
+        Assert.Equal(3, bus.Inputs.Count);
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+        Assert.True(diagram.History.Undo());
+        Assert.Equal(2, bus.Properties.Get<int>("Channels"));
+        Assert.Equal(2, bus.Inputs.Count);
+    }
+
+    /// <summary>
+    ///     Validates that applying several provider properties at once is still one undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_TrySetAll_ProviderProperties_IsOneUndoEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0);
+        var bus = page.AddNode("acme.Bus", 300, 0);
+        page.Connect(producer.Output("value"), bus.Input("in1"));
+
+        // Act / Assert: exact round trip of both values, the ports and the removed wire
+        TestModel.AssertRoundTrip(diagram, () =>
+            Assert.True(bus.Properties.TrySetAll(new Dictionary<string, object?> { ["Channels"] = "1", ["Kind"] = "i32" }, out _)));
+        Assert.Equal(["in0"], bus.Inputs.Select(p => p.Name));
+        Assert.Equal("i32", bus.Inputs[0].TypeKey);
+        Assert.Empty(page.Wires);
+    }
+
+    /// <summary>
+    ///     Creates a diagram whose <c>acme.Pair</c> type has the input <c>keep</c> only while its properties A and B are equal,
+    ///     with a producer wired to that input.
+    /// </summary>
+    /// <param name="providerCalls">Counts the provider calls (the initial ports included).</param>
+    /// <returns>The diagram, the page, the pair node and the wire.</returns>
+    private static (Diagram Diagram, DiagramPage Page, Node Pair, Wire Wire) CreatePairDiagram(Action? providerCalls = null)
+    {
+        var types = TestModel.CreateTypes();
+        types.Add(new NodeType("acme.Pair")
+        {
+            Properties = { new PropertyDefinition("A", 0), new PropertyDefinition("B", 0) },
+            Inputs = { new PortDefinition("keep", "f32") },
+            PortProvider = node =>
+            {
+                providerCalls?.Invoke();
+                if (node.Properties.Get<int>("A") == 5)
+                {
+                    throw new InvalidOperationException("A must not be 5.");
+                }
+
+                return new PortSet(
+                    node.Properties.Get<int>("A") == node.Properties.Get<int>("B") ? [new PortDefinition("keep", "f32")] : [],
+                    [new PortDefinition("out", "f32")]);
+            },
+        });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0);
+        var pair = page.AddNode("acme.Pair", 300, 0);
+        var wire = page.Connect(producer.Output("value"), pair.Input("keep"));
+        return (diagram, page, pair, wire);
+    }
+
+    /// <summary>
+    ///     Validates that a batch edit recomputes the ports once for the final state, so a wire on a port that exists before
+    ///     and after the batch (but not for the intermediate values) survives, in one exact undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_TrySetAll_PortAbsentInIntermediateState_KeepsWireInOneEntry()
+    {
+        // Arrange: the provider is called once for the node's creation
+        var calls = 0;
+        var (diagram, page, pair, wire) = CreatePairDiagram(() => calls++);
+        var keep = pair.Input("keep");
+        calls = 0;
+
+        // Act / Assert: A is applied first (A != B), then B; one exact undo entry
+        TestModel.AssertRoundTrip(diagram, () =>
+            Assert.True(pair.Properties.TrySetAll(new Dictionary<string, object?> { ["A"] = 1, ["B"] = 1 }, out _)));
+
+        // Assert: the wire and the port object survived and the provider ran once for the batch
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Same(keep, pair.Input("keep"));
+        Assert.Same(keep, wire.Target);
+        Assert.Equal(1, pair.Properties.Get<int>("A"));
+        Assert.Equal(1, pair.Properties.Get<int>("B"));
+
+        // The batch above ran the provider once, then undo and redo (the round trip) do not call it
+        Assert.Equal(1, calls);
+    }
+
+    /// <summary>
+    ///     Validates that a host's own batch through the public <see cref="Node.DeferPortUpdates"/>, called outside any
+    ///     transaction, keeps the wire of a port the intermediate state lacks and records one exact undo entry.
+    /// </summary>
+    [Fact]
+    public void Node_DeferPortUpdates_OutsideTransaction_KeepsWireInOneEntry()
+    {
+        // Arrange
+        var calls = 0;
+        var (diagram, page, pair, wire) = CreatePairDiagram(() => calls++);
+        var keep = pair.Input("keep");
+        var entries = diagram.History.UndoCount;
+        calls = 0;
+
+        // Act: A alone (A != B) would drop the port "keep"; the deferral recomputes once for A = B = 1
+        TestModel.AssertRoundTrip(diagram, () => pair.DeferPortUpdates(() =>
+        {
+            pair.Properties["A"] = 1;
+            pair.Properties["B"] = 1;
+        }));
+
+        // Assert: one entry, the wire and port survived, and the provider ran once
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Same(keep, wire.Target);
+        Assert.Equal(1, calls);
+    }
+
+    /// <summary>
+    ///     Validates that an action that changes a provider property and then throws, caught inside an outer transaction, leaves
+    ///     no change behind, so the outer transaction cannot commit a property value whose ports were not recomputed.
+    /// </summary>
+    [Fact]
+    public void Node_DeferPortUpdates_ActionThrowsInsideOuterTransaction_RollsBackItsChanges()
+    {
+        // Arrange: A = B, so the pair has the input "keep" with a wire on it
+        var (diagram, page, pair, wire) = CreatePairDiagram();
+        var before = TestModel.Dump(diagram);
+
+        // Act: the outer transaction catches the failure of the deferred scope and then commits
+        diagram.History.Transact("Outer", () =>
+        {
+            var ex = Assert.Throws<InvalidOperationException>(() => pair.DeferPortUpdates(() =>
+            {
+                pair.Properties["A"] = 1;                    // would remove "keep" ...
+                throw new InvalidOperationException("Host failure.");
+            }));
+            Assert.Equal("Host failure.", ex.Message);
+        });
+
+        // Assert: the property change was rolled back with its scope, so the model is unchanged and consistent
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(0, pair.Properties.Get<int>("A"));
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Same(pair.Input("keep"), wire.Target);
+    }
+
+    /// <summary>
+    ///     Validates that a provider failure in the deferred recomputation also rolls the scope's changes back while recording
+    ///     is suspended (for example while a host loads a document).
+    /// </summary>
+    [Fact]
+    public void Node_DeferPortUpdates_ProviderFailsWhileSuspended_RollsBackItsChanges()
+    {
+        // Arrange
+        var (diagram, page, pair, wire) = CreatePairDiagram();
+        var before = TestModel.Dump(diagram);
+
+        // Act: A = 5 makes the provider throw when the scope recomputes the ports
+        using (diagram.History.Suspend())
+        {
+            var ex = Assert.Throws<InvalidOperationException>(() => pair.DeferPortUpdates(() =>
+            {
+                pair.Properties["B"] = 5;
+                pair.Properties["A"] = 5;
+            }));
+            Assert.Equal("A must not be 5.", ex.Message);
+        }
+
+        // Assert: both writes were reverted, so no value is left with stale ports
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(0, pair.Properties.Get<int>("A"));
+        Assert.Equal(0, pair.Properties.Get<int>("B"));
+        Assert.Same(wire, Assert.Single(page.Wires));
+    }
+
+    /// <summary>
+    ///     Validates that a provider failure during the deferred recomputation rolls the whole batch back and propagates.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_TrySetAll_ProviderFailsOnFinalState_RollsBackEverything()
+    {
+        // Arrange
+        var (diagram, page, pair, wire) = CreatePairDiagram();
+        var before = TestModel.Dump(diagram);
+        var entries = diagram.History.UndoCount;
+
+        // Act: the final state (A = 5) makes the provider throw
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            pair.Properties.TrySetAll(new Dictionary<string, object?> { ["B"] = 5, ["A"] = 5 }, out _));
+
+        // Assert: nothing changed and nothing was recorded; the next batch works
+        Assert.Equal("A must not be 5.", ex.Message);
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(entries, diagram.History.UndoCount);
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.True(pair.Properties.TrySetAll(new Dictionary<string, object?> { ["A"] = 2, ["B"] = 2 }, out _));
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Equal(entries + 1, diagram.History.UndoCount);
+    }
+
+    /// <summary>
+    ///     Validates that resetting a provider property restores the default ports.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Reset_ProviderProperty_RestoresDefaultPorts()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var bus = diagram.Pages.Add("Main").AddNode("acme.Bus", 0, 0);
+        bus.Properties["Channels"] = 5;
+
+        // Act
+        bus.Properties.Reset("Channels");
+
+        // Assert
+        Assert.Equal(["in0", "in1"], bus.Inputs.Select(p => p.Name));
+    }
+
+    /// <summary>
+    ///     Validates that adding an ad-hoc value a port provider reads recomputes the ports in the same undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Set_AdHocProviderValue_RecomputesPortsInSameEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var collector = diagram.Pages.Add("Main").AddNode("acme.Collector", 0, 0);
+
+        // Act / Assert: one exact undo entry covering the value and the ports
+        TestModel.AssertRoundTrip(diagram, () => collector.Properties["FanIn"] = true);
+        Assert.True(collector.Input("in").AllowsMultipleWires);
+        Assert.Null(collector.Properties.GetDefinition("FanIn"));
+    }
+
+    /// <summary>
+    ///     Validates that removing an ad-hoc value a port provider reads recomputes the ports in the same undo entry.
+    /// </summary>
+    [Fact]
+    public void PropertyBag_Reset_AdHocProviderValue_RecomputesPortsInSameEntry()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var collector = diagram.Pages.Add("Main").AddNode("acme.Collector", 0, 0);
+        collector.Properties["FanIn"] = true;
+
+        // Act / Assert: one exact undo entry covering the removal and the ports
+        TestModel.AssertRoundTrip(diagram, () => collector.Properties.Reset("FanIn"));
+        Assert.False(collector.Properties.ContainsKey("FanIn"));
+        Assert.False(collector.Input("in").AllowsMultipleWires);
     }
 }

@@ -89,7 +89,7 @@ sections:
               ApiMark's documentation-coverage check closes both gaps, and it runs at severity
               Error so that a gap fails the build instead of shipping. It is enabled for all four
               packages, including the core package, whose public delegate ConnectionValidator is
-              covered since ApiMark 0.5.8 no longer reports the compiler-synthesized delegate
+              covered because ApiMark does not report the compiler-synthesized delegate
               members as undocumented. The packages are asserted through the generated pages of
               members that were flagged during adoption and are now documented (the PropertyGrid
               package through the pages of its control constructor and public members, the core

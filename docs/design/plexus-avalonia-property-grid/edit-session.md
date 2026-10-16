@@ -39,7 +39,15 @@ an OK / Cancel dialog needs. A host-supplied commit scope wraps the writes, typi
   `PropertyCommitRefusedException` thrown by a scope names the refused property: the session records the message as that
   property's error, commits nothing (the commit is atomic: no edit is applied and, for the Plexus sources, no undo
   entry is
-  recorded), lists the refused property in `CommitResult.Failed` and reports the reason in `CommitResult.Error`.
+  recorded), lists the refused property in `CommitResult.Failed` and reports the reason in `CommitResult.Error`. The
+  session does not rely on the scope for that: before each write it snapshots what the item holds (a copy of the
+  elements for a collection edit) and, when the scope refuses or fails after the writes ran, writes the snapshots back,
+  newest first, skipping every item that already holds its snapshot (a scope that rolled back by itself needs no
+  restore, and no spurious write or undo entry results). Every attempted write is remembered, also one whose setter or
+  applier changed the target and then threw, so a refusal puts that partial write back too. A value that cannot be put
+  back, including a failed edit whose previous value could not be read before its write, is named in
+  `CommitResult.Error`. When the scope does not refuse, a failed edit is not restored: it stays pending
+  with its error and the other edits are still applied.
 - **`Commit`** — snapshots the pending edits and applies them in order inside the commit scope. Failed edits stay pending
   with their error; the others are removed and their collection editors end. If the scope throws or does not run the
   action, nothing counts as committed and the scope error is reported; `Failed` then lists the edits that failed by

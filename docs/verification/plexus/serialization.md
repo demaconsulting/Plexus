@@ -55,5 +55,21 @@ count equal their values before the attempt.
   (`Serialization_HostileClipboardLimits_AreRejectedWithoutExceptions`): oversize text, 500 nesting levels and 10,001
   elements are rejected with error messages and the page stays empty with unchanged history.
 
+- **Per-node ports on load, paste and duplicate** (`Plexus-Serialization-DynamicPorts`,
+  `Plexus-Serialization-DynamicPortsPaste`, `Plexus-Serialization-DynamicPortsDuplicate`;
+  `Serialization_DynamicPorts_RoundTripAndPaste_RecomputePortsBeforeWires`): a diagram with wires on computed ports
+  loads from JSON identical to the original, pastes into another diagram with both wires, and duplicates in place with
+  both wires.
+- **No stored ports** (`Plexus-Serialization-NoStoredPorts`; `Serialization_DynamicPorts_Save_StoresNoPortLists`): no
+  node entry of the saved JSON or of the copied clipboard text (eight entries) has a port, inputs or outputs member.
+- **Wire to a port that is not recomputed** (`Plexus-Serialization-DynamicPortUnknownPort`;
+  `Serialization_DynamicPorts_WireToPortNotRecomputed_IsRejected`): content wired to `Bus.in2`, read with a bus that
+  only has two inputs, makes the load throw a snapshot exception and the paste fail, both naming the missing input; the
+  target page stays empty (error path).
+- **Provider failure** (`Plexus-Serialization-DynamicPortProviderFailure`;
+  `Serialization_DynamicPorts_ProviderFails_ReportsImportError`): a provider throwing `NotSupportedException` makes the
+  load throw a snapshot exception and the paste fail, both with the provider's message; page and history unchanged
+  (error path).
+
 Boundary conditions covered: limits just exceeded (oversize text, element count, nesting), empty and minimal
 documents, equivalent but separate registries. Error paths: every rejection above.

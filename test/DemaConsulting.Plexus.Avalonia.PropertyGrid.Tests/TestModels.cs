@@ -376,3 +376,58 @@ public sealed class Refreshing : INotifyPropertyChanged
         }
     }
 }
+
+/// <summary>
+///     A converter whose capability probe (<see cref="TypeConverter.CanConvertFrom(ITypeDescriptorContext?, Type)"/>) throws.
+/// </summary>
+public sealed class ThrowingProbeConverter : TypeConverter
+{
+    /// <inheritdoc />
+    public override bool CanConvertFrom(ITypeDescriptorContext? context, Type sourceType) =>
+        throw new InvalidOperationException("The converter cannot be probed.");
+}
+
+/// <summary>
+///     A value type whose converter throws while it is asked what it converts from.
+/// </summary>
+[TypeConverter(typeof(ThrowingProbeConverter))]
+public sealed class FaultyConverterValue;
+
+/// <summary>
+///     An object with a property whose converter fails the capability probe.
+/// </summary>
+public sealed class ProbeHost
+{
+    /// <summary>Gets or sets the value with the failing converter.</summary>
+    public FaultyConverterValue Value { get; set; } = new();
+}
+
+/// <summary>
+///     A change-notifying object whose property that refreshes everything is hidden.
+/// </summary>
+public sealed class HiddenRefreshing : INotifyPropertyChanged
+{
+    /// <summary>
+    ///     The mode.
+    /// </summary>
+    private int _mode;
+
+    /// <inheritdoc />
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>Gets or sets the hidden mode that changes what is shown.</summary>
+    [Browsable(false)]
+    [RefreshProperties(RefreshProperties.All)]
+    public int Mode
+    {
+        get => _mode;
+        set
+        {
+            _mode = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Mode)));
+        }
+    }
+
+    /// <summary>Gets or sets a shown value.</summary>
+    public int Shown { get; set; }
+}

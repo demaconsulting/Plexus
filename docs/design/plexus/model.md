@@ -32,7 +32,10 @@ page that holds it, the group that contains it, a bounds query and a property-ch
   owning page or diagram so that the change is undoable and announced.
 - **Dependencies of the subsystem**: Types (node types and registry), Properties (node property bags), History (undo
   history and commands), Geometry, ConnectionRules (host connection decision), Routing (wire router) and Scene (theme and
-  node geometry used for default sizes and port anchors).
+  node geometry used for default sizes and port anchors). Two of these refer back to the Model by design: the
+  connection-rule contract receives Model ports, and node-type callbacks (port provider, tooltip, summary formatting,
+  payload factory) receive a Model node. The Model owns the rule slot and calls both; neither side changes the model
+  from such a call.
 
 ### Design
 
@@ -50,6 +53,14 @@ page that holds it, the group that contains it, a bounds query and a property-ch
 - **Consistent notifications.** Attach and detach complete before any notification is raised, so observers never see
   a half-attached element or page. One diagram-level event serves painters and controls; the observable collections
   serve data binding.
+- **Handler failures cannot break a change.** Every notification the model raises during an undoable change (the
+  diagram's `Changed` and `NodeRenamed`, element, page and property-bag `PropertyChanged`, and the page and page-list
+  collection changes, whose lists are changed inside the same call) goes through the history's notification gate. A
+  throwing handler does not interrupt the change: the remaining notifications are raised, the change completes and is
+  recorded (or moved by undo and redo), and the first handler exception is rethrown afterwards. Multi-step operations
+  (`Diagram.Perform`, a port-recomputing property change) bracket themselves as one history operation for this. Inside
+  `UndoHistory.Transact` the rethrown exception rolls the transaction back; when the change itself fails, its own
+  exception wins. Settings changes are not history operations, so their handler exceptions propagate immediately.
 - **Settings are configuration, not content.** Theme, router, connection rule and name uniqueness raise a settings
   change but are not undoable, so undo never reverts host configuration.
 - **Wires follow nodes.** Wires are not moved directly: when nodes move, a wire whose two ends moved alike has its
@@ -61,3 +72,19 @@ page that holds it, the group that contains it, a bounds query and a property-ch
 - **Identity.** Elements have unique ids (generated GUID text unless supplied); nodes also have names, unique by default
   across all pages. The diagram keeps an index of attached elements for lookup by id.
 - **Threading.** The model is not thread-safe; all access must come from the owning thread.
+
+**Per-node ports.** For a node whose type declares a port provider, the Node unit recomputes the ports after every
+property or payload change (`Node.ExecuteAffectingPorts`, called by the Property Bag and by the `Data` setter) and the
+DiagramPage unit plans the consequences in the same `CommandPlan`: wires of removed ports are removed, the ports are
+swapped by name (`NodePortsCommand`), wires of retyped ports are checked again with the connection rules, the node is
+resized to fit when the number of its ports changed (growing or shrinking, never below its type's default height) and
+the wires whose anchors moved are re-routed (`DiagramPage.PlanPortUpdate`). The whole change is one undo
+entry, and hosts observe it through the usual element notifications: wire removals first, then the node's `Ports`
+change, raised exactly once per change, undo and redo when the model is settled (after every wire removal or re-add,
+the new bounds and every re-route; followed by a `Bounds` change of each enclosing group). The wires of retyped ports
+are checked in page order, each as a reconnect of itself after the earlier refused wires were removed, so on an input
+that now accepts a single wire the wire latest in page order survives. A provider failure (an exception, a null result,
+an invalid `PortSet`, or a connection rule that throws during the re-check) rolls back every applied step, the
+triggering change included, records nothing, raises no `Ports` notification and propagates; an empty `PortSet` is a
+valid result that leaves the node without ports in that direction. A port taken off its node is refused by connection
+checks. See Node Design and DiagramPage Design.

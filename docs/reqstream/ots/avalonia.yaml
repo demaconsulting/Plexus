@@ -67,3 +67,15 @@ sections:
             tests:
               - DiagramEditor_Defaults_NewEditor_HasDocumentedValues
               - DiagramEditor_ZoomToFit_FarApartNodes_BringsBothIntoView
+
+          - id: Plexus-OTS-Avalonia-ToolTips
+            title: >-
+              Avalonia's tooltip service shall show the tooltip content set on a control, update or close it when the
+              content changes or is cleared, and allow a control to reopen it.
+            justification: |
+              The editor shows its hover tooltips through Avalonia's standard tooltip service, so the delay, placement
+              and look match every other control of the host application.
+            tags: [ots]
+            tests:
+              - DiagramEditor_ToolTip_OpenThenMoveToAnotherElement_ShowsNewContent
+              - DiagramEditor_ToolTip_PointerLeaves_ClearsTip

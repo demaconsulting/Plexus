@@ -37,6 +37,17 @@ visual. The unit covers the files `NodeType`, `NodeTypeRegistry`, `PortDefinitio
 Invariants: keys are unique within each registry; a registered node type has no duplicate input names, no duplicate
 output names and no duplicate property names; a registered node type's lists never change afterwards.
 
+Per-node ports and descriptions:
+
+- `NodeType.PortProvider` (`Func<Node, PortSet>?`, init-only): computes each node's ports from its properties and payload;
+  null keeps the declared `Inputs` and `Outputs` for every node. The declared lists stay the type's defaults (palettes,
+  drop previews and `NodeGeometry.RoutingObstacles(Rect, NodeType, DiagramTheme)` use them).
+- `PortSet` (sealed, immutable): the copied `Inputs` and `Outputs` declaration lists a provider returns, exposed as
+  read-only wrappers. Invariant: no null entry and no repeated name within one direction (the name is the port's
+  identity when ports are recomputed). Either list, or both, may be empty: the node then has no ports in that direction.
+- `NodeType.Description` (`string?`) and `NodeType.ToolTip` (`Func<Node, string?>?`): text for editor tooltips;
+  `PortDefinition.Description` (`string?`); `PortType.DisplayName` (defaults to the key when null or empty).
+
 #### Key Methods
 
 - **NodeTypeRegistry.Add(type)**: precondition is a non-null type whose key is not registered. It then calls
@@ -54,6 +65,17 @@ output names and no duplicate property names; a registered node type's lists nev
 - **PortTypeRegistry.Add(type)**, **Get(key)**, **TryGet**, **Contains**: `Add` rejects a duplicate key; `Get` returns
   the registered type or a neutral gray type with the requested key without registering it.
 
+- `NodeType.GetToolTip(node)`: returns `ToolTip(node)` unchanged when a function is declared - including null or an
+  empty string, which mean "no tooltip" (the `Description` is not used as a fallback) - and `Description` otherwise
+  (null when none). The function is called with the node on every request, so the text follows the node's current
+  properties and payload. The editor uses it as a node's default tooltip.
+- `NodeType.ResolvePorts(node)` (internal): calls the provider and returns its `PortSet`; used by `Node.InitializePorts`
+  and `NodePortsCommand.TryCreate` (see Node Design).
+- `PortSet(inputs, outputs)`: copies both sequences into arrays, validates them and exposes them through
+  `Array.AsReadOnly`, so a caller cannot change them by casting.
+- `PortDefinition.IsEquivalentTo(other)` (internal): ordinal comparison of name, type key, label, fan-in flag and
+  description; equivalent definitions in every row mean a recomputation changed nothing.
+
 #### Error Handling
 
 Declaration mistakes are programming errors by the host and are reported by exceptions at the point of declaration:
@@ -63,12 +85,23 @@ message names the key or member); `ArgumentNullException` for null arguments; `K
 and the neutral port type fallback provide non-throwing alternatives. The registry does no logging and catches
 nothing.
 
+- `PortSet` throws `ArgumentNullException` for a null sequence and `ArgumentException` for a null entry or a repeated
+  name within a direction. `ResolvePorts` throws `InvalidOperationException` (naming the type and node) when the
+  provider returns null; an empty `PortSet` is not an error. Exceptions thrown by the host's provider propagate
+  unchanged to the caller of the triggering change (see Node Design and PlexusClipboard Design for how they are
+  handled).
+- `GetToolTip` throws `ArgumentNullException` for a null node; an exception thrown by the host's tooltip function
+  propagates unchanged (the library never swallows it).
+
 #### Dependencies
 
 Depends on Geometry (`Color` for port types, `Size` for the default size), on `PropertyDefinition` from the Properties
-subsystem for the property list and summary formatting, on `Node` for the summary function signature, on the Scene
-interface `INodeVisual` for the optional custom visual, and on `IconSource` (see IconSource Design) for the icon.
-There are no external dependencies.
+subsystem for the property list and summary formatting, on `Node` (Model) for the signatures of the summary, port
+provider and tooltip callbacks, on the Scene interface `INodeVisual` for the optional custom visual, and on
+`IconSource` (see IconSource Design) for the icon. The references to Model and Scene are intentional mutual references:
+the Model creates nodes from types and calls the callbacks (which must not change the model), and Scene owns the
+visual contract and reads the types for layout; this unit only stores the callbacks and the visual. There are no
+external dependencies.
 
 #### Callers
 

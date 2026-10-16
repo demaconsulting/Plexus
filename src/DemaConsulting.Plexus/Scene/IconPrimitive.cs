@@ -14,9 +14,6 @@ namespace DemaConsulting.Plexus.Scene;
 ///         as coverage. <see cref="Opacity"/> then scales the whole result. Both painters follow
 ///         exactly these rules, so a tinted icon looks the same in the PNG and in the editor.
 ///     </para>
-///     <para>
-///         Inherited from <see cref="ScenePrimitive"/>: <see cref="ScenePrimitive.Bounds"/> and <see cref="ScenePrimitive.Element"/> (the owning model element, or null).
-///     </para>
 /// </remarks>
 public sealed class IconPrimitive : ScenePrimitive
 {

@@ -53,10 +53,6 @@ of the `api/` documentation folder. Its version is captured by VersionMark as `a
 
 ### Known Limitations
 
-- ApiMark does not show the `virtual`, `override` or `abstract` modifier in a signature, so the protected extension
-  points of `StandardNodeVisual` are described as virtual in the type's prose.
-- Generated pages do not list inherited members, so the types derived from `DiagramElement` (`Node`, `Wire`, `Group`,
-  `Annotation`) list the inherited members in their remarks.
 - Cross-package links are not verified and resolve only where the core package of the same version sits beside the
   package, as in the NuGet package cache; in a build from source (version `0.0.0`) they point at a folder that does
   not exist.

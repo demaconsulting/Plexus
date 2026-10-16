@@ -231,3 +231,191 @@ sections:
             tests:
               - Model_ChangeNotification_EditsUndoAndRedo_RaiseChangedForEveryChange
               - Model_ChangeNotification_ObservableCollections_ReportAddMoveRemove
+
+          - id: Plexus-Model-DynamicPorts
+            title: >-
+              The Model subsystem shall recompute the ports of a node whose type has a port provider after every
+              change of the node's properties or payload.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; the model owns the nodes and their ports, so it must keep each
+              node's ports in step with its configuration.
+            children:
+              - Plexus-Model-Node-DynamicPorts
+              - Plexus-Model-Node-DynamicPortRecompute
+              - Plexus-Model-Node-StaticPorts
+              - Plexus-Model-Node-EmptyPortSet
+            tests:
+              - Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry
+
+          - id: Plexus-Model-DynamicPortIdentity
+            title: >-
+              The Model subsystem shall keep a recomputed port whose name remains within its direction as the same
+              port, and create a new port for a new name.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortIdentity; wires and hosts hold ports by reference, so a remaining
+              port must stay the same object.
+            children:
+              - Plexus-Model-Node-DynamicPortIdentity
+              - Plexus-Model-Node-DynamicPortNewNames
+            tests:
+              - Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry
+
+          - id: Plexus-Model-DynamicPortWireRemoval
+            title: >-
+              The Model subsystem shall remove the wires of ports that a recomputation removes.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortWireRemoval; no wire may end at a port its node no longer has.
+            children:
+              - Plexus-Model-Node-DynamicPortWires
+              - Plexus-Model-Node-DeferPortUpdates
+              - Plexus-Model-Node-DeferPortUpdatesRollback
+            tests:
+              - Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry
+
+          - id: Plexus-Model-DynamicPortRuleRevalidation
+            title: >-
+              The Model subsystem shall remove, after a recomputation changed the type or fan-in of a kept port, only
+              the wires of that port that the connection rules now refuse.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortRuleRevalidation; the host's connection rules must hold for every
+              wire, while wires the rules still allow must be kept.
+            children:
+              - Plexus-Model-Node-DynamicPortRevalidation
+              - Plexus-Model-Node-DynamicPortRevalidationOrder
+            tests:
+              - Model_DynamicPorts_RetypedPort_RemovesOnlyRefusedWires
+
+          - id: Plexus-Model-DynamicPortResize
+            title: >-
+              The Model subsystem shall fit a node's height to its ports when a recomputation changes their number,
+              keep the node's size otherwise, and re-route the wires whose ends moved.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortResize; ports must stay inside the node box and wires attached to
+              them, while a size the user chose survives edits that do not need more room.
+            children:
+              - Plexus-Model-Node-DynamicPortSize
+              - Plexus-Model-Node-DynamicPortReroute
+              - Plexus-Model-Node-DynamicPortGroupFrame
+              - Plexus-Model-Node-DynamicPortKeepsSize
+            tests:
+              - Model_DynamicPorts_PortCountChange_FitsHeightAndReroutes
+
+          - id: Plexus-Model-DynamicPortUndo
+            title: >-
+              The Model subsystem shall record a property or payload change and everything its port recomputation
+              changes as one undo entry.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortUndo; users undo what they did, not its internal steps.
+            children:
+              - Plexus-Model-Node-DynamicPortUndo
+              - Plexus-Model-Node-UnchangedPorts
+            tests:
+              - Model_DynamicPorts_PropertyAndDataChanges_RecomputePortsInOneUndoEntry
+
+          - id: Plexus-Model-DynamicPortProviderFailure
+            title: >-
+              The Model subsystem shall roll back a property or payload change whose port recomputation fails and
+              record nothing.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortFailure; a failing provider must never leave a half-applied edit.
+            children:
+              - Plexus-Model-Node-ProviderFailure
+              - Plexus-Model-Node-ProviderNull
+            tests:
+              - Model_DynamicPorts_ProviderFails_RollsBackAndRecordsNothing
+
+          - id: Plexus-Model-DynamicPortNotification
+            title: >-
+              The Model subsystem shall report a node's recomputed ports once per change, undo and redo, after the
+              wires, bounds and routes affected by the recomputation are settled.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortUndo; observers that rebuild their view of a node when its ports
+              change must see a consistent model.
+            children:
+              - Plexus-Model-Node-DynamicPortNotification
+              - Plexus-Model-Node-DynamicPortUndoNotification
+            tests:
+              - Model_DynamicPorts_Notifications_ReportPortsChangeAfterModelSettles
+
+          - id: Plexus-Model-DynamicPortDetached
+            title: >-
+              The Model subsystem shall refuse to connect a port that a recomputation removed, even when a host still
+              holds it.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortWireRemoval; a wire to a removed port would point at a port the node
+              no longer shows.
+            children:
+              - Plexus-Model-DiagramPage-DetachedPorts
+            tests:
+              - Model_DynamicPorts_RemovedPortHeldByHost_CannotBeConnected
+
+          - id: Plexus-Model-DynamicPortAddNode
+            title: >-
+              The Model subsystem shall give a newly added node of a type with a port provider the provider's ports and
+              a height that fits them.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; a new node must be ready to wire with every port inside its box.
+            children:
+              - Plexus-Model-DiagramPage-AddNodePorts
+              - Plexus-Model-DiagramPage-AddNodeHeight
+              - Plexus-Model-DiagramPage-AddNodeProviderFailure
+            tests:
+              - Model_DynamicPorts_AddNode_UsesProviderPortsAndFitsHeight
+
+          - id: Plexus-Model-HandlerFailureKeepsChange
+            title: >-
+              The Model subsystem shall complete and record as one entry a change during which a change handler
+              throws.
+            justification: |
+              Decomposes Plexus-Core-HandlerFailureKeepsChange; the model and its history must stay consistent even
+              when host code observing them fails.
+            children:
+              - Plexus-Model-Diagram-HandlerFailureKeepsChange
+            tests:
+              - Model_HandlerFailure_EditsUndoRedoAndTransactions_KeepModelAndHistoryConsistent
+
+          - id: Plexus-Model-HandlerFailureReported
+            title: >-
+              The Model subsystem shall rethrow the first change-handler exception of a change after the change is
+              complete, and let the change's own exception win when the change itself fails.
+            justification: |
+              Decomposes Plexus-Core-HandlerFailureReported; hosts must learn about failing handlers and about failed
+              edits, in that priority.
+            children:
+              - Plexus-Model-Diagram-HandlerFailureReported
+              - Plexus-Model-Diagram-HandlerFailureOperationFails
+            tests:
+              - Model_HandlerFailure_EditsUndoRedoAndTransactions_KeepModelAndHistoryConsistent
+
+          - id: Plexus-Model-HandlerFailureUndoRedo
+            title: >-
+              The Model subsystem shall complete an undo or redo and move its entry when a change handler throws.
+            justification: |
+              Decomposes Plexus-Core-HandlerFailureUndoRedo; undo and redo must keep the stacks matching the model.
+            children:
+              - Plexus-Model-Diagram-HandlerFailureUndoRedo
+            tests:
+              - Model_HandlerFailure_EditsUndoRedoAndTransactions_KeepModelAndHistoryConsistent
+
+          - id: Plexus-Model-HandlerFailureTransaction
+            title: >-
+              The Model subsystem shall roll back a whole transaction when a change handler throws during one of its
+              edits.
+            justification: |
+              Decomposes Plexus-Core-HandlerFailureKeepsChange; a transaction must never commit half of its edits.
+            children:
+              - Plexus-Model-Diagram-HandlerFailureTransaction
+            tests:
+              - Model_HandlerFailure_EditsUndoRedoAndTransactions_KeepModelAndHistoryConsistent
+
+          - id: Plexus-Model-GroupObstacles
+            title: >-
+              The Model shall give the router the frames of the visible groups that contain neither end node of a
+              wire as obstacles when it computes the wire's stored route.
+            justification: |
+              Decomposes Plexus-Core-GroupObstacles; stored routes are computed by the page, which knows the group
+              structure and which groups the wire belongs to.
+            children:
+              - Plexus-Model-DiagramPage-GroupObstacles
+            tests:
+              - Model_Groups_UnrelatedGroupFrame_IsAnObstacleForStoredRoutes

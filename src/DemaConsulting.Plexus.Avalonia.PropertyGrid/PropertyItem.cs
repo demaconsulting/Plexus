@@ -32,7 +32,7 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         Deriving: most hosts use <see cref="CustomPropertyItem"/> instead of deriving. A derived class must implement the four abstract members
 ///         <see cref="Name"/>, <see cref="PropertyType"/>, <see cref="GetValue"/> and <see cref="SetValue"/> (the constructor is protected and takes the parent item for nested
 ///         items). Every other metadata member is virtual with a neutral default and can be overridden: <see cref="DisplayName"/>, <see cref="Category"/>,
-///         <see cref="CategoryOrder"/>, <see cref="Description"/>, <see cref="IsReadOnly"/>, <see cref="IsBrowsable"/>, <see cref="IsPasswordText"/>,
+///         <see cref="CategoryOrder"/>, <see cref="Order"/>, <see cref="Description"/>, <see cref="IsReadOnly"/>, <see cref="IsBrowsable"/>, <see cref="IsPasswordText"/>,
 ///         <see cref="IsParenthesized"/>, <see cref="RefreshMode"/>, <see cref="EditorKey"/>, <see cref="EditorType"/>, <see cref="HasDefault"/>,
 ///         <see cref="IsDefaultValueKnown"/>, <see cref="DefaultValue"/>, <see cref="IsChanged"/>, <see cref="CanReset"/>, <see cref="Converter"/> and <see cref="Reset"/>.
 ///         <c>GetValidationAttributes</c> is the one protected virtual member: return the validation attributes that apply to the item.
@@ -104,6 +104,17 @@ public abstract partial class PropertyItem
     ///     put a category such as "General" first. The default is 0 (alphabetical order only).
     /// </summary>
     public virtual int CategoryOrder => 0;
+
+    /// <summary>
+    ///     Gets the rank of the item within its category when a grid sorts by category: items are shown by ascending rank
+    ///     (after parenthesized names) and, within the same rank, alphabetically by <see cref="DisplayName"/>. The default
+    ///     is 0 (alphabetical order only).
+    /// </summary>
+    /// <remarks>
+    ///     Lets a source present related properties in a meaningful sequence rather than alphabetically. The alphabetical
+    ///     view (<see cref="PropertySortMode.Alphabetical"/>) ignores it.
+    /// </remarks>
+    public virtual int Order => 0;
 
     /// <summary>
     ///     Gets the description shown for the property (empty when there is none).

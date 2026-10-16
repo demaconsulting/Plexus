@@ -28,7 +28,7 @@ when the package loads.
   through `TypeDescriptor`), `CustomPropertySource` with `CustomPropertyItem` (host-supplied items without reflection),
   `CompositePropertySource` (merge), `PropertySourceFactory` (pick a source for an object, with registrable
   adapters), `IPropertyCommitScope` (a source that brackets the commits of its session) and `PropertyOrdering`
-  (categorized and alphabetical order and grouping, with a category rank).
+  (categorized and alphabetical order and grouping, with a category rank and an item rank within a category).
 - **EditSession** (unit, public) — `PropertyEditSession` applies edits live or staged until commit, with per-property
   errors and a host commit scope (and the commit scope of its source, outermost);
   `PropertyCommitRefusedException` lets a scope refuse a commit because of one property; `CollectionEditor` edits
@@ -47,7 +47,53 @@ when the package loads.
   sources that show a Plexus node (name, declared properties, host data on a working copy), annotation or group, each
   commit being one undo entry of the diagram; plus the registration with `PropertySourceFactory`.
 - **NodePropertiesDialog** (unit, public) — a one-call modal dialog for a node: a `PropertyGridDialog` over a
-  `NodePropertySource`.
+  `NodePropertySource`, with optional `NodePropertiesDialogOptions` that add a live preview next to the grid (a custom
+  node inspector) through a read-only `NodePreviewContext`, which hosts can also create over their own grid or session.
+
+Display order. A category lists its items by rank. The rank travels from the declaration to the screen through one
+chain: `PropertyDefinition.Order` (core package, any `Int32`, lower first) is copied by `NodePropertySource` into
+`CustomPropertyOptions.Order`, which the node's `ElementPropertyItem` (a `CustomPropertyItem`) exposes as
+`PropertyItem.Order`; `PropertyOrdering` sorts a category's items by parenthesized name first, then `PropertyItem.Order`
+ascending, then display name (case-insensitive, culture-invariant), so equal ranks are alphabetical. The alphabetical
+view ignores the rank. An item that does not set a rank ranks 0, so reflected objects keep the familiar alphabetical
+order. The rank never changes the declaration order in the node type or the order of `Node.Properties`.
+
+Preview flow of the node properties dialog (the notification path from an edit to a redraw, and what closes it):
+
+```mermaid
+sequenceDiagram
+    participant Host
+    participant Dialog as NodePropertiesDialog
+    participant PD as PropertyGridDialog
+    participant Grid as PropertyGrid
+    participant Session as PropertyEditSession
+    participant Context as NodePreviewContext
+    participant Preview as Host preview control
+    Host->>Dialog: ShowAsync(owner, node, options)
+    Dialog->>PD: create (staged grid over the node)
+    Dialog->>Context: new NodePreviewContext(grid)
+    Dialog->>Preview: factory(context)
+    Dialog->>PD: SetPreview(control, dock, size)
+    Preview->>Context: subscribe to Changed, read GetPropertyValue
+    Grid->>Session: staged edit, reset or Cancel()
+    Session-->>Context: Changed (once per change)
+    Context-->>Preview: Changed
+    Preview->>Context: GetPropertyValue(name)
+    Context->>Session: FindItem + GetValue (pending edit, else node value)
+    alt OK
+        PD->>Session: Commit() (one undo entry)
+        Session-->>Context: Changed (once, node already updated)
+        PD->>PD: Close(true)
+    else Cancel button or window close
+        PD->>PD: Close(false) (the session is not cancelled)
+    end
+    PD-->>Dialog: CloseConfirmed (internal)
+    Dialog->>Context: Dispose (no notification afterwards)
+```
+
+A host that builds its own window creates the same `NodePreviewContext` over its own staged `PropertyGrid` or
+`PropertyEditSession`, subscribes to `Changed` and disposes the context when the window closes; if the grid later shows
+an object that is not a node the context reads nothing until the grid shows a node again.
 
 Collaboration for one edit:
 
@@ -85,13 +131,19 @@ sequenceDiagram
 | `PropertyGrid` control             | In / Out  | Object or source in; session    | UI thread only               |
 | Editor factory                     | In        | Creates the editor control      | Writes through the context   |
 | `CollectionEditorDialog` / view    | In / Out  | Session, collection item; list  | UI thread only               |
-| `PropertyGridDialog.ShowAsync`     | In / Out  | Owner, object, title, scope     | UI thread only               |
+| `PropertyGridDialog.ShowAsync`     | In / Out  | Owner, object, title, scope     | Not null; UI thread only     |
 | `NodePropertySource(Node)`         | In / Out  | Node; rows, commits, changes    | Node attached; UI thread     |
-| `NodePropertiesDialog.ShowAsync`   | In / Out  | Owner, node; true on OK         | UI thread only               |
+| `PropertyDefinition.Order` mapping | In        | Rank of a declared property     | Categorized view only        |
+| `NodePropertiesDialog.ShowAsync`   | In / Out  | Owner, node; true on OK         | Node attached; UI thread     |
+| `NodePropertiesDialogOptions`      | In        | Preview, placement, title, size | Size positive and finite     |
+| `NodePreviewContext`               | Out       | Staged values; change events    | Read-only; UI thread only    |
 | `IPropertyCommitScope.RunCommit`   | Out       | Source hook around each commit  | Runs the action exactly once |
 
 Errors from user code (accessors, converters, validation attributes) are reported as `PropertyResult` values, never as
-exceptions. Argument errors (null arguments) are reported as `ArgumentNullException` or `ArgumentException`.
+exceptions. Argument errors (null arguments) are reported as `ArgumentNullException` or `ArgumentException`. The node
+properties dialog is 480 by 640 device-independent pixels, 880 by 640 with a side preview and 480 by 860 with a top
+preview (`Width` and `Height` override each dimension); the preview context is silent after it is disposed, which the
+dialog does as soon as its close is confirmed. Equal display orders are listed alphabetically.
 
 ## Dependencies
 

@@ -20,7 +20,8 @@ the Plexus core system and the CanvasNet OTS item:
 - **CanvasTextMeasurer** (unit, public) — implements the core text-measurement interface with CanvasNet fonts, so
   that layout computed by the scene builder matches the pixels the painter draws. The internal font lookup used by
   both the measurer and the painter belongs to this unit.
-- **IconCache** (unit, internal) — rasterizes node icons from SVG once per pixel size and shares the result.
+- **IconCache** (unit, internal) — rasterizes node icons from SVG once per pixel size and shares the result; a shared
+  instance holds at most 512 rasterizations and is emptied when it is full.
 
 Collaboration for one render:
 
@@ -37,7 +38,7 @@ sequenceDiagram
     SB->>TM: Measure(text, style)
     SB-->>R: scene (primitives, bounds)
     R->>P: Paint(grid, scene primitives)
-    P->>IC: Get(icon, width, height)
+    P->>IC: Shared.Get(icon, width, height)
     R-->>Caller: PNG bytes
 ```
 
@@ -46,14 +47,25 @@ sequenceDiagram
 | Interface                     | Direction | Format                            | Constraints                          |
 |-------------------------------|-----------|-----------------------------------|--------------------------------------|
 | `PlexusRenderer.RenderPng`    | Out       | PNG file contents (byte array)    | Opaque backgrounds have no alpha     |
-| `PlexusRenderer.SavePng`      | Out       | PNG file at a caller path         | Replaces a file; path not empty      |
+| `PlexusRenderer.SavePng`      | Out       | PNG file at a caller path         | Replaces a file; folder must exist   |
 | `PlexusRenderer.Render`       | Out       | CanvasNet surface, straight alpha | Caller owns and disposes it          |
-| `RenderOptions`               | In        | Immutable options object          | Scale and padding must be usable     |
+| `RenderOptions`               | In        | Immutable options object          | Usable values; selection copied      |
 | `CanvasTextMeasurer`          | Out       | Core `ITextMeasurer`              | Thread-safe                          |
 | `DiagramPage`, `DiagramTheme` | In        | Core model types                  | DiagramPage not modified by a render |
 
-Errors are reported as `ArgumentNullException` and `ArgumentException`; no other exception types are part of the
-contract.
+`RenderOptions.Theme` changes the look only: the geometry of ports, port triangles and wire ends always follows the
+diagram's own theme, so wires stay attached to their ports; port metrics are set on the diagram's theme.
+
+Exception policy (the library translates no exception):
+
+- Argument problems (a null page, an unusable scale, padding, bounds or path, an image beyond the maximum size) are
+  reported as `ArgumentNullException` or `ArgumentException`, before any surface is allocated.
+- `SavePng` renders the PNG completely before it opens the file, then writes it; file-system exceptions of the write
+  (`IOException` including `DirectoryNotFoundException` and `PathTooLongException`, `UnauthorizedAccessException`,
+  `NotSupportedException`, `SecurityException`) propagate unchanged, so a failed save never leaves a truncated file
+  behind for an invalid argument or a rendering failure.
+- Exceptions raised by CanvasNet while painting or encoding propagate unchanged after the surface has been disposed.
+- Icon rasterization failures are contained: the icon is skipped and the rest of the page is rendered.
 
 ## Dependencies
 
@@ -76,12 +88,13 @@ whole render).
 1. The caller supplies a page and optional render options.
 2. `PlexusRenderer` validates the options and chooses the theme (the options' theme or the diagram's).
 3. The core scene builder, given a `CanvasTextMeasurer`, produces the scene primitives and their bounds, without a
-   grid.
+   grid. Each node is drawn with its current ports, including ports a port provider computed for it, because the scene
+   is built from the model as it is.
 4. The renderer takes the requested bounds, or the scene bounds inflated by the padding, as the image area. The
    area's origin is floored to a whole unit so integer diagram coordinates land on pixel edges, and the pixel size is
    the area size times the scale, rounded up.
 5. The renderer creates a surface, fills it with the background, paints the grid (if enabled) and then the scene
-   primitives in z-order through `ScenePainter`, which obtains rasterized icons from `IconCache`.
+   primitives in z-order through `ScenePainter`, which obtains rasterized icons from the shared `IconCache`.
 6. `RenderPng` and `SavePng` encode the surface as PNG (RGB for opaque backgrounds, RGBA otherwise); `Render`
    returns the surface itself.
 

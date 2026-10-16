@@ -31,7 +31,7 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///         once for all pending edits; live mode calls it once per edit. A failed edit inside a commit does not stop the
 ///         others; it stays pending with <see cref="PendingEdit.Error"/>, and <see cref="CommitResult.Succeeded"/> is
 ///         <see langword="false"/>. If the scope itself throws or never runs the action, no edit counts as
-///         committed. A source that implements <see cref="IPropertyCommitScope"/> brackets the commit as well, outside
+///         committed and the writes that already ran are restored. A source that implements <see cref="IPropertyCommitScope"/> brackets the commit as well, outside
 ///         the host's scope; throwing a <see cref="PropertyCommitRefusedException"/> from a scope marks that property's row,
 ///         lists it in <see cref="CommitResult.Failed"/> and makes the whole commit atomic: nothing is applied and nothing is recorded in the undo history.
 ///     </para>
@@ -493,6 +493,10 @@ public sealed class PropertyEditSession
     ///         When the commit scope refuses the commit because of one property (it throws a <see cref="PropertyCommitRefusedException"/>, as the
     ///         Plexus node source does for a <c>NodeRenaming</c> veto or a value its property definition rejects) the whole commit is atomic:
     ///         nothing is applied, no undo entry is recorded, <see cref="CommitResult.Applied"/> is 0 and every edit stays pending.
+    ///         The session enforces this itself: it remembers what the target held before each write and, when the scope refuses
+    ///         (or fails) after the writes ran, writes the remembered values back, newest first, so a scope that applies
+    ///         its action and then throws still leaves the target unchanged; a value that cannot be put back is named in
+    ///         <see cref="CommitResult.Error"/>. A scope that rolls back by itself (an undo transaction) needs no restore.
     ///         <see cref="CommitResult.Failed"/> then lists the refused property (with <see cref="PendingEdit.Path"/> and <see cref="PendingEdit.Error"/>
     ///         holding the message) and <see cref="CommitResult.Error"/> repeats the message; the grid marks the row. Any other failure of the
     ///         scope has no row: <see cref="CommitResult.Error"/> is set and <see cref="CommitResult.Failed"/> lists only edits that failed by themselves.
@@ -511,20 +515,37 @@ public sealed class PropertyEditSession
         var batch = _pending.ToList();
         var applied = new List<PendingEdit>();
         var failed = new List<PendingEdit>();
+        var before = new List<(PendingEdit Edit, EditSnapshot? Snapshot)>();
         var scopeError = RunScoped(
             () =>
             {
                 foreach (var edit in batch)
                 {
+                    var snapshot = TakeSnapshot(edit);
                     var result = Apply(edit);
                     edit.Error = result.Error;
-                    (result.Succeeded ? applied : failed).Add(edit);
+                    if (result.Succeeded)
+                    {
+                        applied.Add(edit);
+                        before.Add((edit, snapshot));
+                    }
+                    else
+                    {
+                        failed.Add(edit);
+
+                        // A setter or applier may have changed the target before it threw, so a scope refusal must undo it too;
+                        // without a snapshot it cannot be undone, and the refusal then names it as not restored
+                        before.Add((edit, snapshot));
+                    }
                 }
             },
             out var refusedPath);
 
         if (scopeError is not null)
         {
+            // The scope refused or failed after (some of) the writes ran: put the target back, so "nothing applied" is true
+            scopeError = RestoreWrites(before, scopeError);
+
             // Nothing was committed; name the refused row (when the refusal named one) next to the edits that failed on their own
             if (refusedPath is not null && !failed.Any(e => e.Path == refusedPath) && FindRefused(batch, refusedPath) is { } refused)
             {
@@ -555,6 +576,96 @@ public sealed class PropertyEditSession
 
         Raise(PropertySessionChangeKind.Committed, null, applied.Any(e => e.Item.RefreshMode == System.ComponentModel.RefreshProperties.All));
         return new CommitResult(applied.Count, failed, null);
+    }
+
+    /// <summary>
+    ///     What an item held before an edit was written, so a failed commit can put it back.
+    /// </summary>
+    /// <param name="Value">The value (for a collection, the instance).</param>
+    /// <param name="Elements">A copy of the elements of a collection, or <see langword="null"/> for other values.</param>
+    private sealed record EditSnapshot(object? Value, List<object?>? Elements);
+
+    /// <summary>
+    ///     Records what the target holds for an edit before the edit is written.
+    /// </summary>
+    /// <param name="edit">The edit.</param>
+    /// <returns>The snapshot, or <see langword="null"/> when the current value cannot be read.</returns>
+    private static EditSnapshot? TakeSnapshot(PendingEdit edit)
+    {
+        try
+        {
+            var value = edit.Item.GetValue();
+            return edit.Kind == PendingEditKind.Collection && value is System.Collections.IEnumerable elements and not string
+                ? new EditSnapshot(value, [.. elements.Cast<object?>()])
+                : new EditSnapshot(value, null);
+        }
+        catch (Exception ex) when (!PropertyErrors.IsFatal(ex))
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Puts the target back to what it held before the writes of a commit that the commit scope then refused or failed,
+    ///     newest write first, so the commit is atomic whatever the scope did.
+    /// </summary>
+    /// <remarks>
+    ///     A scope that rolled the writes back itself (for example an undo transaction) leaves nothing to restore, and a
+    ///     value that already equals its snapshot is not written again, so no spurious change or undo entry results.
+    /// </remarks>
+    /// <param name="written">The edits that were written or attempted (also those whose write failed part way), in order, with what the target held before each.</param>
+    /// <param name="scopeError">The message of the scope failure.</param>
+    /// <returns>The message, extended by the properties that could not be restored.</returns>
+    private static string RestoreWrites(List<(PendingEdit Edit, EditSnapshot? Snapshot)> written, string scopeError)
+    {
+        var unrestored = new List<string>();
+        for (var i = written.Count - 1; i >= 0; i--)
+        {
+            var (edit, snapshot) = written[i];
+            var result = snapshot is null ? PropertyResult.Failure("its previous value is unknown") : PropertyErrors.Run(() => Restore(edit, snapshot));
+            if (!result.Succeeded)
+            {
+                unrestored.Add($"'{edit.Item.DisplayName}'");
+            }
+        }
+
+        return unrestored.Count == 0
+            ? scopeError
+            : $"{scopeError} The previous value of {string.Join(", ", unrestored)} could not be restored.";
+    }
+
+    /// <summary>
+    ///     Restores one item when it no longer holds its snapshot.
+    /// </summary>
+    /// <param name="edit">The written edit.</param>
+    /// <param name="snapshot">What the target held before.</param>
+    /// <exception cref="InvalidOperationException">The target could not be written back.</exception>
+    private static void Restore(PendingEdit edit, EditSnapshot snapshot)
+    {
+        var item = edit.Item;
+        var current = item.GetValue();
+        if (snapshot.Elements is { } elements)
+        {
+            var now = current is System.Collections.IEnumerable sequence and not string ? sequence.Cast<object?>().ToList() : null;
+            if (now is not null && now.SequenceEqual(elements))
+            {
+                return;
+            }
+
+            CollectionApplier.Apply(item, elements);
+            return;
+        }
+
+        if (Equals(current, snapshot.Value))
+        {
+            return;
+        }
+
+        var result = item.TrySetValue(snapshot.Value);
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(result.Error);
+        }
     }
 
     /// <summary>

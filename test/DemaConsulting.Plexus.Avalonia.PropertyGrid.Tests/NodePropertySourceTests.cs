@@ -113,6 +113,49 @@ public class NodePropertySourceTests
     }
 
     /// <summary>
+    ///     Rows of declared properties carry their definition's order, so a category lists them in that order.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder()
+    {
+        // Arrange
+        var (_, node) = NodeFixture.CreateOrdered();
+        using var source = new NodePropertySource(node);
+
+        // Act
+        var groups = PropertyOrdering.Group(source.GetItems(), PropertySortMode.Categorized);
+
+        // Assert: General keeps the name row first, then the ranked rows; Envelope reads A-D-S-R
+        Assert.Equal(["General", "Envelope"], groups.Select(g => g.Category));
+        Assert.Equal(["Name", "Gate", "Mode"], groups[0].Items.Select(i => i.Name));
+        Assert.Equal(["Attack", "Decay", "Sustain", "Release"], groups[1].Items.Select(i => i.Name));
+        Assert.Equal(3, Item(source, "Sustain").Order);
+        Assert.Equal(0, Item(source, "Name").Order);
+    }
+
+    /// <summary>
+    ///     Rows whose definitions declare the same display order are listed alphabetically by display name, ignoring case and
+    ///     the current culture; a negative order lists first.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_GetItems_EqualOrder_ListsAlphabetically()
+    {
+        // Arrange: ties declared out of order with mixed case
+        var (_, node) = NodeFixture.CreateTied();
+        using var source = new NodePropertySource(node);
+        IReadOnlyList<PropertyGroup> groups = [];
+
+        // Act: under Turkish culture a culture-sensitive comparison would list "Idle" before "ice"
+        TestHelpers.WithCulture("tr-TR", () => groups = PropertyOrdering.Group(source.GetItems(), PropertySortMode.Categorized));
+
+        // Assert
+        Assert.Equal(["General", "Tied"], groups.Select(g => g.Category));
+        Assert.Equal(["Early", "alpha", "Hue", "ice", "Idle", "Zeta"], groups[1].Items.Select(i => i.Name));
+        Assert.Equal(-5, Item(source, "Early").Order);
+        Assert.Equal(7, Item(source, "Zeta").Order);
+    }
+
+    /// <summary>
     ///     A node that is not attached to a diagram cannot be shown.
     /// </summary>
     [Fact]
@@ -212,6 +255,55 @@ public class NodePropertySourceTests
         Assert.Equal("Sine", node.Properties["Waveform"]);
         Assert.Same(original, node.Data);
         Assert.Equal(before, diagram.History.UndoCount);
+    }
+
+    /// <summary>
+    ///     A staged commit recomputes the ports once, for the final properties and data together, so a wire on a port that
+    ///     exists before and after the commit (but not for the intermediate states) survives, in one undo entry.
+    /// </summary>
+    [Fact]
+    public void NodePropertySource_StagedCommit_ProviderPortAbsentInIntermediateState_KeepsWire()
+    {
+        // Arrange: the input "keep" exists only while the property Gain equals the data's Level
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("test.Source") { Outputs = { new PortDefinition("value", "f32") } });
+        types.Add(new NodeType("test.Paired")
+        {
+            Properties = { new PropertyDefinition("Gain", 3) },
+            DataType = typeof(ToneSettings),
+            CreateData = () => new ToneSettings(),
+            Inputs = { new PortDefinition("keep", "f32") },
+            PortProvider = node => new PortSet(
+                node.Properties.Get<int>("Gain") == (node.Data as ToneSettings)?.Level ? [new PortDefinition("keep", "f32")] : [],
+                []),
+        });
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var source = page.AddNode("test.Source", 0, 0);
+        var node = page.AddNode("test.Paired", 300, 0);
+        var wire = page.Connect(source.Output("value"), node.Input("keep"));
+        var before = diagram.History.UndoCount;
+        using var nodeSource = new NodePropertySource(node);
+        var session = new PropertyEditSession(nodeSource, PropertyEditMode.Staged);
+
+        // Act: the property is applied before the data, so Gain 4 meets Level 3 on the way to Gain 4 and Level 4
+        session.SetText(Item(nodeSource, "Gain"), "4");
+        session.SetText(Item(nodeSource, "Level"), "4");
+        var result = session.Commit();
+
+        // Assert
+        Assert.True(result.Succeeded);
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Equal(4, node.Properties["Gain"]);
+        Assert.Equal(4, ((ToneSettings)node.Data!).Level);
+        Assert.Equal(before + 1, diagram.History.UndoCount);
+
+        diagram.History.Undo();
+        Assert.Same(wire, Assert.Single(page.Wires));
+        Assert.Equal(3, node.Properties["Gain"]);
+        Assert.Equal(3, ((ToneSettings)node.Data).Level);
+        diagram.History.Redo();
+        Assert.Same(wire, Assert.Single(page.Wires));
     }
 
     /// <summary>

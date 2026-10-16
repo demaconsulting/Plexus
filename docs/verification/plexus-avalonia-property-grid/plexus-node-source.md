@@ -33,6 +33,15 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
 - **NodePropertySource_GetItems_ListsHostDataProperties** / **NodePropertySource_GetItems_NodeWithoutDataHasNoDataRows**:
   data rows with their annotations (hidden ones left out), and none for a node without data.
 - **NodePropertySource_Constructor_DetachedNode_Throws**: a detached node and a null node are refused (error paths).
+- **NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder**
+  (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder`): properties declared out of alphabetical order with
+  `PropertyDefinition.Order` are listed in that order (Attack, Decay, Sustain, Release under Envelope; the name row and
+  then the ranked uncategorized rows under General), and each row carries its definition's order.
+- **NodePropertySource_GetItems_EqualOrder_ListsAlphabetically**
+  (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder`): properties declared Zeta, Idle, alpha, ice and Hue
+  with the same order are listed alphabetically ignoring case (alpha, Hue, ice, Idle, Zeta), also while the current
+  culture is Turkish (where a culture-sensitive comparison would list Idle before ice), after a property with a negative
+  order (boundary).
 - **NodePropertySource_SetText_ValidatesWithThePropertyDefinition** /
   **NodePropertySource_SetText_NameIsValidatedWhileTyping**: "abc" is refused as "'abc' is not a number.", "880 Hz" is
   accepted, an empty and a duplicate name are refused with the rename messages (error paths).
@@ -42,6 +51,9 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
   cancel leaves node, data and history alone; a commit that only renames keeps the data object.
 - **NodePropertySource_StagedCommit_CollectionEditsPersistAndUndo**: a collection edited through a collection editor
   persists on commit and undoes.
+- **NodePropertySource_StagedCommit_ProviderPortAbsentInIntermediateState_KeepsWire**: a node whose port provider reads
+  a property and the data keeps the wire of a port that exists before and after a commit of both, in one undo entry
+  with exact undo and redo.
 - **NodePropertySource_StagedCommit_RenameVetoedRefusesTheCommitAndMarksTheNameRow**: a vetoed rename refuses the commit
   with the reason on the name row, nothing changes and the edits stay pending (error path).
 - **NodePropertySource_LiveEdits_EachEditIsItsOwnUndoEntry**: four live edits are four entries and a data edit

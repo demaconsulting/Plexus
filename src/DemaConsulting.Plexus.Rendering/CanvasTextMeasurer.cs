@@ -49,7 +49,11 @@ public sealed class CanvasTextMeasurer : ITextMeasurer
     /// <summary>
     ///     Measures a single line of text.
     /// </summary>
-    /// <param name="text">The text; may be empty.</param>
+    /// <remarks>
+    ///     An empty string is valid and measures zero width (the height follows the style). A font size that is zero,
+    ///     negative, NaN or infinite measures as <see cref="Size.Empty"/>.
+    /// </remarks>
+    /// <param name="text">The text; may be empty but not null.</param>
     /// <param name="style">The style the text is drawn with. Must not be null.</param>
     /// <returns>The width and height of the text in diagram units.</returns>
     /// <exception cref="ArgumentNullException">Thrown when <paramref name="text"/> or <paramref name="style"/> is null.</exception>

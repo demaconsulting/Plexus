@@ -154,4 +154,59 @@ public class DuplicateTests
         Assert.Throws<ArgumentOutOfRangeException>(() => page.Duplicate([node], 1, double.PositiveInfinity));
         Assert.Throws<ArgumentOutOfRangeException>(() => page.Duplicate([node], 2e9, 1));
     }
+
+    /// <summary>
+    ///     Validates that duplicating nodes whose ports come from a provider keeps their ports and the wire between them.
+    /// </summary>
+    [Fact]
+    public void PlexusClipboard_Duplicate_DynamicPortNode_KeepsPortsAndWires()
+    {
+        // Arrange
+        var diagram = SerializationFixtures.CreateDynamicPortDiagram();
+        var page = diagram.Pages[0];
+        var router = diagram.FindNode("R")!;
+        var consumer = diagram.FindNode("C")!;
+
+        // Act / Assert: one exact entry
+        IReadOnlyList<DiagramElement> copies = [];
+        TestModel.AssertRoundTrip(diagram, () => copies = page.Duplicate([router, consumer], 0, 450));
+
+        // Assert: the copied router has three outputs and its copied wire leaves from z
+        var copiedRouter = copies.OfType<Node>().Single(n => n.Type.Key == "acme.Router");
+        Assert.Equal(["x", "y", "z"], copiedRouter.Outputs.Select(p => p.Name));
+        Assert.Same(copiedRouter.Output("z"), copies.OfType<Wire>().Single().Source);
+    }
+
+    /// <summary>
+    ///     Validates that a port provider failing for a copy makes the duplicate throw an invalid-operation exception
+    ///     and leaves the page and history unchanged.
+    /// </summary>
+    [Fact]
+    public void PlexusClipboard_Duplicate_ProviderThrows_ThrowsAndChangesNothing()
+    {
+        // Arrange: a bus whose provider starts failing after the original was built and wired
+        var failing = false;
+        var types = SerializationFixtures.CreateDynamicTypesWithBusProvider(node => failing
+            ? throw new HostFailureException("bus offline")
+            : new PortSet(
+                Enumerable.Range(0, node.Properties.Get<int>("Channels")).Select(i => new PortDefinition($"in{i}", "f32")),
+                [new PortDefinition("out", "f32")]));
+        var diagram = new Diagram(types);
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
+        page.Connect("P.value", "Bus.in1");
+        var before = TestModel.Dump(diagram);
+        var undoBefore = diagram.History.UndoCount;
+        failing = true;
+
+        // Act
+        var ex = Assert.Throws<InvalidOperationException>(() => page.Duplicate([producer, bus], 0, 300));
+
+        // Assert
+        Assert.StartsWith("The elements could not be duplicated", ex.Message, StringComparison.Ordinal);
+        Assert.Contains("bus offline", ex.Message, StringComparison.Ordinal);
+        Assert.Equal(before, TestModel.Dump(diagram));
+        Assert.Equal(undoBefore, diagram.History.UndoCount);
+    }
 }

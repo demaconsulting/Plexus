@@ -9,10 +9,22 @@ file or clipboard I/O: those belong to the host or to the PlexusRendering and Pl
 
 ## Architecture
 
-The system consists of two units directly under it and seven subsystems. Geometry, History and Properties are the
-lowest layers, Types and ConnectionRules build on them, the Model builds on all of these plus Routing and the theme and
-node geometry of Scene, and Serialization and the scene builder read the model through its public operations; each
-subsystem design lists its exact dependencies.
+The system consists of two units directly under it and seven subsystems, all in one assembly. The layers below state
+ownership and the normal direction of use: Geometry, History and Properties are the lowest layers, Types and
+ConnectionRules build on them, the Model builds on all of these plus Routing and the theme and node geometry of Scene,
+and Serialization and the scene builder read the model through its public operations; each subsystem design lists its
+exact dependencies.
+
+Three mutual references are intentional and bounded, because the public contracts that hosts implement name types of
+both sides:
+
+- *ConnectionRules and Model.* The `ConnectionValidator` contract receives Model `Port` objects. The Model owns the
+  rule slot (`Diagram.ConnectionRules`) and calls it; ConnectionRules only reads the ports it is given and never
+  changes the model.
+- *Types and Model.* Node-type callbacks (`PortProvider`, `ToolTip`, summary formatting, `CreateData`) receive a Model
+  `Node`; the Model creates nodes from types and calls the callbacks. The callbacks must not change the model.
+- *Types and Scene.* A node type can carry a Scene `INodeVisual` (`NodeType.Visual`). Scene owns that contract and the
+  standard visual and reads the types for layout; Types only stores the reference.
 
 | Item            | Kind      | Responsibility                                                                   |
 |-----------------|-----------|----------------------------------------------------------------------------------|
@@ -37,7 +49,9 @@ model through its public operations (snapshot capture and import, clipboard past
 **Principles shared by all subsystems.**
 
 - *Everything through the history.* The model changes state only inside history commands. This yields uniform undo
-  and redo, uniform notifications, and prevents partial changes after a failed operation.
+  and redo, uniform notifications, and prevents partial changes after a failed operation. The history also shields
+  itself from host code that observes the model: a change handler that throws does not interrupt a change, which is
+  completed and recorded before the handler's exception is rethrown.
 - *Validate before mutating.* Public operations check arguments, state and rules first; clipboard and snapshot
   imports build detached elements and attach them only after the whole input has been validated.
 - *One geometry.* The theme carries every metric; node geometry, routers, the scene and hit testing derive from it, so
@@ -56,11 +70,34 @@ The interfaces of the library are its public .NET API. Hosts interact with the s
 - **Model operations** (`Diagram`, `DiagramPage` and the elements): in and out; method and property calls, with exceptions
   for invalid arguments; single-threaded, and every mutation is undoable.
 - **Change notification** (`Diagram.Changed`, observable collections): out; .NET events carrying the kind of change,
-  the page and the element; raised on the calling thread after the change has been applied.
+  the page and the element; raised on the calling thread after the change has been applied. During an undoable change
+  (edit, undo, redo, rollback) a handler exception does not interrupt the change: the change is completed and recorded
+  (or its entry moved), and the first handler exception is then rethrown to the caller; inside
+  `UndoHistory.Transact` it rolls the transaction back. When the change itself fails, its own exception wins. During a
+  settings change (not undoable) a handler exception propagates immediately.
 - **Undo history** (`UndoHistory`): in and out; `Undo`, `Redo`, transactions, `Suspend`, `MarkClean` and state
   properties; bounded capacity (default 1000 entries).
 - **Host extension points** (`ConnectionValidator`, `IWireRouter`, `ITextMeasurer`, `INodeVisual`,
-  `INodeDataSerializer`): in; host-implemented callbacks that the library calls synchronously.
+  `INodeDataSerializer`, `NodeType.PortProvider`, `NodeType.ToolTip`): in; host-implemented callbacks that the library
+  calls synchronously.
+- **Port provider** (`NodeType.PortProvider: Func<Node, PortSet>`): in; receives the node (its `Type`, `Properties`
+  and `Data`) and returns a non-null `PortSet` (an empty set, or an empty direction, is valid). Called synchronously on
+  the calling thread when a node is added (after `CreateData`), after every change of the node's properties or payload,
+  and when a node is loaded, pasted or duplicated (after its properties and payload, before its wires); never on undo
+  or redo, which replay the recorded result. It must be fast, deterministic and free of side effects. A failure (an
+  exception, a null result, an invalid set, or a connection rule that throws while wires are re-checked) leaves the
+  target unchanged: an edit is rolled back and the exception propagates, an add adds nothing, a load throws
+  `SnapshotException`, a paste returns a failed `PasteResult`, and a duplicate throws `InvalidOperationException`. See
+  the Types and Model designs.
+- **Descriptions** (`NodeType.Description`, `NodeType.ToolTip`, `NodeType.GetToolTip`, `PortDefinition.Description`,
+  `PortType.DisplayName`): out; text for tooltips. `GetToolTip` returns the tooltip function's result unchanged when a
+  function is declared (null or empty meaning no tooltip; the description is then not used) and the description
+  otherwise; the function is called on every request with the node, and an exception it throws propagates unchanged.
+- **Property display order** (`PropertyDefinition.Order`): in; an `int` hint per declared property (default 0, any
+  value including negative, not validated). Contract for editors: in a categorized view a category lists its
+  properties by ascending order, equal values by display name (case-insensitive, culture-invariant); an alphabetical
+  view ignores it. It never changes the order of `NodeType.Properties`, the enumeration of a node's property bag, node
+  summaries or saved documents. See the Properties design.
 - **Scene** (`SceneBuilder.Build`, `DiagramScene`): out; an immutable list of scene primitives with bounds, layouts and
   `HitResult` values; rebuilt by the caller after the model changes.
 - **Snapshot** (`Diagram.ToJson`, `Diagram.FromJson`): out and in; versioned JSON text; restoring requires the same
@@ -92,7 +129,11 @@ the host application from the library's one exposure to untrusted data and from 
   snapshot: nesting depth). Content is fully validated before any model change, and failures are reported as an error
   result (clipboard) or `SnapshotException` (snapshot) with the model untouched.
 - **Atomic mutation.** Multi-step edits are composite history entries: a failing step reverts the earlier steps, so a
-  failure never leaves a partially applied edit.
+  failure never leaves a partially applied edit. The revert attempts every step even when one of them cannot be
+  reverted, and then reports the original error together with every revert failure. Grouped entries replay
+  failure-atomically: when a command of a transaction fails during undo or redo, the other commands of the entry are
+  restored and the entry stays on its stack. A host change handler that throws never leaves a change applied but
+  unrecorded.
 - **Rule enforcement at the boundary.** Connection rules and node-type availability are enforced inside the model, so
   no front end can introduce an invalid wire or a node of an unknown type.
 
@@ -102,14 +143,18 @@ the host application from the library's one exposure to untrusted data and from 
 2. **Editing.** Host code or an editor control calls a model operation. The operation validates its input, then
    executes an undoable command on the diagram's history. The command changes the model, re-routes affected wires
    through the router, updates indexes and raises `Diagram.Changed` and collection events. Undo and redo replay the same
-   commands in the reverse or forward direction and raise the same events.
+   commands in the reverse or forward direction and raise the same events. A property or payload change of a node whose
+   type has a port provider also recomputes the node's ports, removes the wires the change invalidates and resizes the
+   node when the number of its ports changed, inside the same command; the node reports its `Ports` change once, after
+   the removed wires, its new bounds and the re-routed wires are in place (on undo, after everything is restored).
 3. **Presentation.** On a change, a painter asks `SceneBuilder.Build` for a `DiagramScene` of a page. The builder
    computes node layouts (theme and text measurer), drawing order, culling, wires (from their routes), selection and
    hover state, and the hit targets. The painter draws the primitives; an editor control uses `HitTest` to translate
    pointer positions into model elements and then calls model operations (back to step 2).
 4. **Persistence and exchange.** `Diagram.ToJson` captures the model as a snapshot document; `Diagram.FromJson`
-   validates the document against the node types and rebuilds the diagram with history suspended, leaving an empty,
-   clean history. `PlexusClipboard.Copy` captures a selection (expanding groups, keeping internal wires) as envelope
+   validates the document against the node types and rebuilds the diagram with history suspended (each node's ports are
+   recomputed from its restored properties and payload before its wires are resolved), leaving an empty, clean history.
+   `PlexusClipboard.Copy` captures a selection (expanding groups, keeping internal wires) as envelope
    text; `Paste` validates the text, builds detached elements with fresh ids and unique names, and attaches them as one
    undoable step. `DiagramPage.Duplicate` uses the same clone path within a page.
 
@@ -168,6 +213,26 @@ designs.
   transient and the stored routes are untouched, so expanding the group restores the layout exactly and collapse
   remains an ordinary undoable edit. Expanded frames enclose the full visual extent of their members (names,
   summaries and port labels), so a frame never clips what it contains.
+- **Ports may vary per node; the port name is the identity.** A node type may compute each node's ports from the
+  node's properties and payload (`NodeType.PortProvider`). Ports are derived state: they are recomputed inside the undo
+  entry of the change that caused them and are never saved, so a document stays the single source of truth and undo is
+  exact. Within a direction the port name identifies a port: a surviving name keeps its `Port` object and wires, a
+  vanished name takes its wires along, and a kept port whose type changed keeps only the wires the connection rules
+  still allow. Hosts therefore use stable port names (renumbering channels re-attaches wires by name). When the number
+  of ports changes, a node takes the height its ports need but never less than its type's default height (the size a
+  new node gets), so it grows and shrinks with its ports; a recomputation that keeps the counts leaves the size alone,
+  and stored bounds are kept on load so a restore is exact. Removed wires are reported through the existing
+  `Diagram.Changed` notifications rather than a dedicated event, before the node reports its `Ports` change once the
+  model is settled. Wires of a retyped port are re-checked in page order, each as a reconnect of itself, so on an input
+  that now accepts one wire the wire latest in page order survives. A null provider result is a failure, while an empty
+  `PortSet` is a valid configuration without ports.
+- **Handler exceptions are deferred, not swallowed.** Hosts attach handlers to many notifications; letting a throwing
+  handler interrupt a change left the model changed but the history without the entry, so every later undo was wrong.
+  The history therefore completes and records the change and rethrows the first handler exception afterwards, the
+  behavior closest to a .NET multicast event that keeps the document consistent.
+- **Descriptions live with the declarations.** Tooltip text for ports, port types and node types (including a function
+  of the node for live state or validation messages) is declared on the types, so every editor shows the same text and
+  the core still draws none of it.
 - **Hit testing and queries use a simple spatial index.** The scale target is hundreds of nodes and wires; a uniform
   grid index and visible-region culling meet it with little code and no allocation churn (see the Scene subsystem
   design for the comparison with a tree).

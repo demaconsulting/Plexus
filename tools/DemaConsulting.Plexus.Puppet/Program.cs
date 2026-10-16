@@ -51,6 +51,10 @@ internal static class Program
         ["drag-at"] = Commands.DragAt,
         ["drag-element"] = Commands.DragElement,
         ["wheel"] = Commands.Wheel,
+        ["hover-node"] = Commands.HoverNode,
+        ["hover-port"] = Commands.HoverPort,
+        ["hover-wire"] = Commands.HoverWire,
+        ["hover-at"] = Commands.HoverAt,
     };
 
     /// <summary>
@@ -123,6 +127,8 @@ internal static class Program
                     right-click-node <n> | click-node <n> [--shift|--ctrl] | click-toggle <group> | drag-connect <N.port> <N.port>
                     drag-palette <type> <x> <y> | click-at <x> <y> | drag-at <x1> <y1> <x2> <y2> | wheel <notches> [--ctrl] [--at x,y]
                     (diagram coordinates unless stated) | drag-element <automationId> <dx> <dy> (physical screen pixels)
+        HOVER       hover-node <n> | hover-port <N.port[@in|@out]> | hover-wire (<wire id> | <N.port> <N.port>) | hover-at <x> <y>
+                    each with [--wait <ms> (default 700)] [--shot <path.png> (screen copy while the tooltip shows)]
 
         Exit codes: 0 ok, 1 not found, 2 timeout, 3 not running, 4 launch failed, 5 usage, 6 disabled, 7 no focus,
                     8 no effect, 9 read-only, 10 dialog open, 11 obscured (input refused), 12 pipe command rejected, 99 error.

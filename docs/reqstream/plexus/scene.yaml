@@ -26,6 +26,8 @@ sections:
               - Plexus-Scene-NodeLayout-NodeText
               - Plexus-Scene-NodeLayout-Icon
               - Plexus-Scene-NodeLayout-DefaultWidth
+              - Plexus-Scene-NodeLayout-DefaultWidthTitle
+              - Plexus-Scene-NodeLayout-DeclaredSize
               - Plexus-Scene-NodeLayout-Bounds
               - Plexus-Scene-NodeLayout-TextWrapping
             tests:
@@ -177,6 +179,9 @@ sections:
               built for the earlier arrangement need a switch; all consumers must read the same rule from the theme.
             children:
               - Plexus-Scene-NodeLayout-CenteredPorts
+              - Plexus-Scene-NodeLayout-CenteredPortRows
+              - Plexus-Scene-NodeLayout-CenteredPortHeight
+              - Plexus-Scene-NodeLayout-CenteredPortStraightWires
               - Plexus-Scene-NodeLayout-TopPorts
               - Plexus-Scene-NodeLayout-ProxyPortAlignment
               - Plexus-Scene-DiagramTheme-PortAlignment
@@ -185,9 +190,9 @@ sections:
 
           - id: Plexus-Scene-Theming
             title: >-
-              The scene shall take all colors, fonts and metrics from a theme (the diagram's theme unless the build
-              options name another), with a classic default look that hosts can customize without modifying the
-              shared default.
+              The scene shall take its colors, fonts and drawing metrics from a theme (the diagram's theme unless the
+              build options name another), with a classic default look that hosts can customize without modifying
+              the shared default.
             justification: |
               Hosts need to match their application style, and the model, routers and painters must read the same
               metrics so that boxes, anchors and obstacles agree.
@@ -308,3 +313,94 @@ sections:
               - Plexus-Scene-TextMeasurement-NullArguments
             tests:
               - Scene_NullArguments_AreRejected
+
+          - id: Plexus-Scene-DynamicPorts
+            title: >-
+              The scene shall draw each node's current ports, including ports computed by a port provider.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; what is drawn must be the ports the node actually has.
+            children:
+              - Plexus-Scene-NodeLayout-DynamicPorts
+            tests:
+              - Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort
+
+          - id: Plexus-Scene-DynamicPortHitTest
+            title: >-
+              Hit testing of a scene shall find each node's current ports, including ports computed by a port
+              provider.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; a user must be able to point at and connect a port that a
+              configuration change added.
+            children:
+              - Plexus-Scene-NodeLayout-DynamicPorts
+            tests:
+              - Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort
+
+          - id: Plexus-Scene-DynamicPortExtent
+            title: >-
+              A node's deterministic visual extent shall cover its current ports.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; group frames enclose the visual extent, so they must grow with
+              the ports a node gains.
+            children:
+              - Plexus-Scene-NodeLayout-DynamicPortExtent
+            tests:
+              - Scene_DynamicPorts_ExtentAndObstacles_FollowCurrentPorts
+
+          - id: Plexus-Scene-DynamicPortObstacles
+            title: >-
+              A node's routing obstacles shall follow its current ports.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; wires must avoid the labels of the ports a node actually has.
+            children:
+              - Plexus-Scene-NodeLayout-DynamicPortObstacles
+            tests:
+              - Scene_DynamicPorts_ExtentAndObstacles_FollowCurrentPorts
+
+          - id: Plexus-Scene-GeometryTheme
+            title: >-
+              Ports, port triangles and port hit areas shall follow the diagram's own theme also when the build
+              options name another theme, so that drawn wires stay attached to their ports.
+            justification: |
+              Decomposes Plexus-Core-SceneCustomization; a per-scene theme changes the look, while wire ends are
+              computed by the model with the diagram's theme; ports drawn elsewhere would look detached and would not
+              be hit where the wire ends.
+            children:
+              - Plexus-Scene-NodeLayout-GeometryTheme
+            tests:
+              - Scene_ThemeOverride_PortsStayAtWireEnds
+
+          - id: Plexus-Scene-NodeVisualExtent
+            title: >-
+              The scene's deterministic visual extent of a node shall contain everything drawn for the node, port
+              labels included.
+            justification: |
+              Decomposes Plexus-Core-Scene; group frames and culling use the visual extent, so a port label outside
+              it would cross a frame edge or be clipped.
+            children:
+              - Plexus-Scene-NodeLayout-VisualExtent
+            tests:
+              - Scene_NodeVisualExtent_ContainsEveryDrawnPortLabel
+
+          - id: Plexus-Scene-GroupObstacles
+            title: >-
+              The display route of a wire attached to a collapsed group shall avoid the frame of every visible group
+              that contains neither end node of the wire.
+            justification: |
+              Decomposes Plexus-Core-GroupObstacles; display routes are computed by the scene, and must follow the
+              same rule as the routes the page stores.
+            children:
+              - Plexus-Scene-SceneBuilder-GroupObstacles
+            tests:
+              - Scene_GroupObstacles_CollapsedGroupWire_AvoidsUnrelatedFrameUnlessSwitchedOff
+
+          - id: Plexus-Scene-GroupObstaclesOption
+            title: >-
+              The theme shall switch group frames as routing obstacles on (the default) or off.
+            justification: |
+              Decomposes Plexus-Core-GroupObstaclesOption; some hosts prefer the shortest wires over avoiding group
+              frames.
+            children:
+              - Plexus-Scene-DiagramTheme-GroupsAreObstacles
+            tests:
+              - Scene_GroupObstacles_CollapsedGroupWire_AvoidsUnrelatedFrameUnlessSwitchedOff

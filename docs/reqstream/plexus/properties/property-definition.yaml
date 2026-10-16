@@ -56,6 +56,16 @@ sections:
                 tests:
                   - PropertyDefinition_Choices_Invalid_Throws
 
+              - id: Plexus-Properties-PropertyDefinition-ChoiceNullEntry
+                title: >-
+                  PropertyDefinition shall reject a choice list that contains a null entry with an argument exception
+                  naming the property.
+                justification: |
+                  Decomposes Plexus-Properties-DeclarationValidation; a null choice could never be selected, stored
+                  or shown, so the declaration must fail when it is written.
+                tests:
+                  - PropertyDefinition_Choices_NullEntry_Throws
+
               - id: Plexus-Properties-PropertyDefinition-Presentation
                 title: >-
                   PropertyDefinition shall default the display name to the property name and carry optional
@@ -66,6 +76,19 @@ sections:
                 tests:
                   - PropertyDefinition_Presentation_Defaults_AreEmpty
                   - PropertyDefinition_Presentation_ExplicitHints_AreStored
+
+              - id: Plexus-Properties-PropertyDefinition-DisplayOrder
+                title: >-
+                  PropertyDefinition shall carry an integer display-order hint that defaults to 0 and accepts any
+                  32-bit integer value, including negative values.
+                justification: |
+                  Decomposes Plexus-Properties-DisplayOrder; a categorized editor lists the properties of a category
+                  by ascending display order, and hosts may use any values (for example negative ones to move a
+                  property ahead of the defaults).
+                tests:
+                  - PropertyDefinition_Presentation_Defaults_AreEmpty
+                  - PropertyDefinition_Presentation_ExplicitHints_AreStored
+                  - PropertyDefinition_Order_NegativeAndExtremeValues_AreStored
 
               - id: Plexus-Properties-PropertyDefinition-Formatting
                 title: >-

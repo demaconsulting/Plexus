@@ -14,19 +14,24 @@ page is drawn, at which pixel size, with which theme and background, and orchest
 
 `PlexusRenderer` is a static class without state. `RenderOptions` is an immutable (init-only) options class:
 
-| Property     | Type                          | Default             | Invariant                      |
-|--------------|-------------------------------|---------------------|--------------------------------|
-| `Scale`      | `double`                      | 1                   | Finite and greater than zero   |
-| `Padding`    | `double`                      | 15                  | Finite, not negative           |
-| `Background` | `Color?`                      | null (theme canvas) | None                           |
-| `ShowGrid`   | `bool`                        | true                | None                           |
-| `Bounds`     | `Rect?`                       | null (fit content)  | Non-empty and finite if given  |
-| `Theme`      | `DiagramTheme?`               | null (diagram's)    | None                           |
-| `Selection`  | `IEnumerable<DiagramElement>` | empty               | Elements drawn as selected     |
+| Property     | Type                          | Default             | Invariant                       |
+|--------------|-------------------------------|---------------------|---------------------------------|
+| `Scale`      | `double`                      | 1                   | Finite and greater than zero    |
+| `Padding`    | `double`                      | 15                  | Finite, not negative            |
+| `Background` | `Color?`                      | null (theme canvas) | None                            |
+| `ShowGrid`   | `bool`                        | true                | None                            |
+| `Bounds`     | `Rect?`                       | null (fit content)  | Non-empty and finite if given   |
+| `Theme`      | `DiagramTheme?`               | null (diagram's)    | None; changes the look only     |
+| `Selection`  | `IEnumerable<DiagramElement>` | empty               | Copied at creation; not null    |
 
-`Padding` is ignored when `Bounds` is given.
+`Padding` is ignored when `Bounds` is given. `Theme` changes the look only: the geometry of ports, port triangles and
+wire ends always follows the diagram's own theme, so wires stay attached to their ports.
 
-Because the options are immutable, one instance can be shared between renders and threads.
+The `Selection` accessor copies the sequence it is given into a private read-only array when the options are created
+(a null value throws `ArgumentNullException`), so later changes to the caller's collection do not affect the options.
+Because every member is a value or a copy, the options are immutable, and one instance can be shared between renders
+and threads. The elements in the selection are the live model elements; an element removed from the page afterwards
+is simply no longer drawn highlighted.
 
 ### Key Methods
 
@@ -40,19 +45,30 @@ Because the options are immutable, one instance can be shared between renders an
     surface (at least 1 x 1); clear it with the background; paint the grid primitive when enabled and the theme's grid
     size is positive; paint the scene primitives with a `ScenePainter`.
   - Post-conditions: the surface is fully opaque unless a translucent background was requested; if painting fails the
-    surface is disposed before the exception propagates.
+    surface is disposed before the exception propagates. Because the scene is built from the model as it is, each node
+    is drawn with its current ports, including ports a port provider computed for it. Expanded groups are drawn as a
+    frame with a title bar; collapsed groups as one box, and their members are not drawn.
 - **`RenderPng(page, options)`** — renders a surface and encodes it as PNG, as RGB when the background is opaque and
   as RGBA otherwise. Returns the file contents.
-- **`SavePng(page, path, options)`** — validates the path, then writes the `RenderPng` bytes to the file, replacing an
-  existing file.
+- **`SavePng(page, path, options)`** — validates the path, renders the PNG completely (`RenderPng`), and only then
+  opens the file and writes the bytes, replacing an existing file. An invalid argument or a rendering failure therefore
+  never creates, truncates or replaces a file.
 
 ### Error Handling
+
+The library translates no exception (see the exception policy of the system design).
 
 - A null page throws `ArgumentNullException`.
 - A scale that is not finite or not greater than zero, padding that is negative or not finite, bounds that are empty or
   not finite, an image whose pixel size exceeds the CanvasNet maximum surface dimension, and an empty or whitespace
   path throw `ArgumentException`. Checks happen before any surface is allocated.
-- Failures while painting propagate to the caller after the partly painted surface has been disposed.
+- A null selection given to `RenderOptions` throws `ArgumentNullException` when the options are created.
+- File-system failures of `SavePng` (a missing folder, a path that is too long, access denied, an unsupported path)
+  propagate unchanged as `IOException` (including `DirectoryNotFoundException` and `PathTooLongException`),
+  `UnauthorizedAccessException`, `NotSupportedException` or `SecurityException`; the PNG was rendered before the file
+  was opened.
+- Failures raised by CanvasNet while painting or encoding propagate to the caller unchanged, after the partly painted
+  surface has been disposed.
 - Icon failures never reach this unit: `IconCache` and `ScenePainter` contain them.
 
 ### Dependencies

@@ -43,7 +43,7 @@ namespace DemaConsulting.Plexus.Avalonia;
 ///         <see cref="NodeTypeRegistry"/>, its port types are unknown and ports are drawn neutral grey;
 ///         pass the registry for the exact port colors. A registry that changes after it was given
 ///         (types added or removed) is picked up by <see cref="Refresh"/>. It must be used on the UI thread. The palette derives from Avalonia's <c>Control</c>,
-///         so the members every control has (<c>Bounds</c>, <c>IsVisible</c>, <c>Width</c>, <c>Focus()</c>, ...) are available but not repeated in the member tables of this page.
+///         so the usual control members (<c>Bounds</c>, <c>IsVisible</c>, <c>Width</c>, <c>Focus()</c>, ...) apply; see Inherited Members.
 ///     </para>
 /// </remarks>
 /// <example>
@@ -307,6 +307,10 @@ public sealed partial class NodePalette : Control
     /// <summary>
     ///     Gets or sets the theme the items are drawn with; null (the default) uses the followed <see cref="Editor"/>'s theme, or <see cref="Scene.DiagramTheme.Classic"/> when there is no editor.
     /// </summary>
+    /// <remarks>
+    ///     The theme changes the look of the items only: port positions and port triangles follow the diagram theme the
+    ///     prototypes are sized with, as on the canvas.
+    /// </remarks>
     public DiagramTheme? DiagramTheme
     {
         get => GetValue(DiagramThemeProperty);

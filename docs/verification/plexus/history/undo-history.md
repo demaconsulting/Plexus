@@ -73,6 +73,9 @@ prove the load scenario end to end; it is not used as requirement evidence.
 - **UndoHistory_Suspend_DirtyHistory_StaysDirtyAndClearsStacks**: a dirty history stays dirty with empty stacks.
 - **UndoHistory_Suspend_Nested_OnlyOutermostScopeClearsHistory**: only the outermost scope drops the entries and
   restores the dirty state.
+- **UndoHistory_Suspend_WhileTransactionOpen_ThrowsAndChangesNothing** (`Plexus-History-UndoHistory-SuspendInTransaction`):
+  `Suspend` throws `InvalidOperationException` while a transaction (also a nested one) is open and nothing changes; the
+  transaction still commits its entry and suspending works again afterwards (error path).
 
 ##### Dirty tracking (`Plexus-History-UndoHistory-DirtyTracking`)
 
@@ -103,3 +106,60 @@ prove the load scenario end to end; it is not used as requirement evidence.
 - **UndoHistory_TransactOfT_ReturnsResultAndRollsBackOnFailure**, **UndoHistory_Transact_Nested_FlattensIntoOuterEntry**
   and **UndoHistory_Transact_EmptyAndNullArguments** (`UndoHistoryTransactTests.cs`): the function overload, nesting
   with a caught inner failure, an empty action and null arguments.
+
+##### Aborting a multi-step operation (`Plexus-History-UndoHistory-PlanAbort`)
+
+- **CommandPlan_Abort_RevertsEveryStepNewestFirstAndClears**: three applied steps are reverted in the order c, b, a and
+  the plan is empty afterwards.
+- **CommandPlan_Abort_InverseThrows_RevertsRemainingStepsAndReportsAllFailures**: when the middle step cannot be
+  reverted the other two are still reverted; an `AggregateException` carries the original error first and the revert
+  failure second, and the plan is empty (error path).
+- **CommandPlan_Abort_RevertCallsHistoryMutators_AreRejectedAndGuardIsReleased**
+  (`Plexus-History-UndoHistory-PlanAbortReplayGuard`): a revert that calls `Execute`, `BeginTransaction`, `Clear`,
+  `MarkClean` and `Suspend` gets an `InvalidOperationException` from each, the history is unchanged, and a later
+  `Execute` works again (error path).
+
+##### Rollback with failing inverses
+
+Requirements: `Plexus-History-UndoHistory-RollbackFailureCompletes`, `Plexus-History-UndoHistory-RollbackFailureReported`
+and `Plexus-History-UndoHistory-RollbackReplayGuard`.
+
+- **UndoHistory_Transaction_RollbackInverseThrows_RevertsEveryCommandAndCompletes**: of three commands the middle
+  inverse throws; the rollback still reverts the other two, rethrows the failure itself, the transaction is complete,
+  and disposing it records nothing (error path).
+- **UndoHistory_Transaction_RollbackSeveralInversesThrow_ReportsAllFailures**: two failing inverses are reported in one
+  `AggregateException`, newest command first, and the inverse in between still ran (error path).
+- **UndoHistory_Transaction_InnerRollbackInverseThrows_OuterCommitsOnlyItsOwnCommands**: after a failing inner rollback
+  the outer transaction commits only its own command (error path).
+- **UndoHistory_Transact_InverseThrowsDuringRollback_ReportsOriginalAndInverseFailure**: when `Transact` rolls back
+  after a failure and an inverse also fails, the `AggregateException` holds the original failure first and then the
+  inverse failure; no entry is recorded (error path).
+- **UndoHistory_Transaction_RollbackInverseCallsHistoryMutators_AreRejectedAndGuardIsReleased**: an inverse that calls
+  `Execute`, `BeginTransaction`, `Clear`, `MarkClean`, sets `Capacity` or calls `Suspend` gets an
+  `InvalidOperationException` from each; nothing survives the rollback and a later `Execute` works again.
+
+##### History changes during replay
+
+Requirements: `Plexus-History-UndoHistory-ClearDuringReplay`, `Plexus-History-UndoHistory-StateChangeDuringReplay` and
+`Plexus-History-UndoHistory-SuspendEndDuringReplay`.
+
+- **UndoHistory_Clear_FromUndoCallback_ThrowsAndKeepsStacks** and **UndoHistory_Clear_FromRedoCallback_ThrowsAndKeepsStacks**:
+  `Clear` called from an undo (respectively redo) action throws `InvalidOperationException`; the undo or redo still moves
+  its entry normally and the earlier entry stays undoable (error path).
+- **UndoHistory_MarkCleanCapacityAndSuspend_FromUndoCallback_AreRejected**: `MarkClean`, setting `Capacity` and
+  `Suspend` from an undo action each throw `InvalidOperationException`; capacity, suspension and the dirty flag are those
+  of a plain undo (error path).
+- **UndoHistory_SuspendScopeDisposedFromUndoCallback_TakesEffectAfterUndo**: disposing the outermost suspension from an
+  undo action does not throw; the stacks are unchanged inside the action and cleared right after the undo.
+
+##### Failure-atomic grouped replay (`Plexus-History-UndoHistory-ReplayAtomic`, `Plexus-History-UndoHistory-ReplayCompensationFailure`)
+
+A transaction of three commands adding 1, 10 and 100 to a counter, whose middle command can be told to fail:
+
+- **UndoHistory_Redo_MiddleCommandFails_RestoresStateAndKeepsEntry**: a failing redo re-reverts the first command
+  (counter 0), keeps the entry on the redo stack, and the retry gives 111 (error path).
+- **UndoHistory_Undo_MiddleCommandFails_RestoresStateAndKeepsEntry**: a failing undo re-applies the last command
+  (counter 111), keeps the entry on the undo stack, and the retry gives 0 (error path).
+- **UndoHistory_Undo_MiddleCommandAndCompensationFail_ReportsAllFailures**: when re-applying the last command fails as
+  well, an `AggregateException` carries the middle command's failure first and the compensation failure second, and the
+  entry stays on the undo stack (error path).

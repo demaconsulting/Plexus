@@ -31,13 +31,17 @@ The snapshot holds the pages, nodes, wires with their routes, annotations, group
 node types that declare a `DataType`. It is versioned (`DiagramSnapshot.FormatVersion`) and uses only safe value types.
 What it does not hold is *configuration*: the theme, router, connection rules and stylers are the host's, so they are
 not in the file and a loaded diagram gets them from the `DiagramOptions` you pass (see *Configuration*). The undo history
-is not saved either: a loaded diagram starts clean with an empty history.
+is not saved either: a loaded diagram starts clean with an empty history. Neither are port lists: a wire stores the
+names of its ports, and loading, pasting and duplicating recompute every node's ports from its stored properties and
+data (with the type's `PortProvider`, if it has one) before the wires are connected (see *Ports That Vary per Node*).
 
 Failures are reported with ordinary exceptions that a host catches around its Open command:
 
 - `System.Text.Json.JsonException`: the text is not valid snapshot JSON.
 - `SnapshotException`: a valid document that cannot be restored, for example one that uses an unknown node type (the
-  message names it).
+  message names it), has a wire to a port its node does not have (also a port its type's port provider no longer
+  produces), whose port provider fails, or that has a node without a node type key (a paste of such content fails
+  with a message instead).
 - `IOException` and `UnauthorizedAccessException`: the file could not be read (raised by your `File` call).
 
 Load completely before replacing anything, so that a bad file leaves the open document untouched. The demo's `Open`

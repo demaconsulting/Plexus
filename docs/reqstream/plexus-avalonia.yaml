@@ -311,3 +311,127 @@ sections:
           - Plexus-OTS-Avalonia-Headless
         tests:
           - PlexusAvalonia_Headless_HostedEditor_LaysOutAndRendersFrame
+
+      - id: PlexusAvalonia-ToolTips
+        title: >-
+          The editor shall show a tooltip for the node, port or wire under a resting pointer.
+        justification: |
+          Users need to know what a block or port does and what state it is in without opening dialogs.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ToolTips
+          - Plexus-OTS-Avalonia-ToolTips
+        tests:
+          - PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides
+
+      - id: PlexusAvalonia-ToolTipDefaults
+        title: >-
+          The tooltip of a port shall read "label (type)" with the port type's display name (its key when the type is
+          not registered) followed by the port's description on a new line, that of a node shall be its node type's
+          tooltip text, that of a wire shall name its source and target ports, for example "A.out → B.in", and
+          annotations and groups shall have none unless the host supplies content.
+        justification: |
+          Decomposes PlexusAvalonia-ToolTips into the default content a user sees; the texts are what users and hosts
+          rely on when they do not customize anything.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ToolTipDefaults
+        tests:
+          - PlexusAvalonia_ToolTips_DefaultContent_NodePortAndWire
+
+      - id: PlexusAvalonia-ToolTipHostContent
+        title: >-
+          The host shall be able to replace the tooltip content of any node, port, wire, annotation or group.
+        justification: |
+          Hosts need to add their own information, such as validation messages or live values, to what the editor
+          shows.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ToolTipHostContent
+        tests:
+          - PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides
+
+      - id: PlexusAvalonia-ToolTipHostCancel
+        title: >-
+          The host shall be able to suppress the tooltip of an element or port, by canceling it or by leaving null or
+          empty content.
+        justification: |
+          Hosts must be able to show nothing for elements whose default text would mislead or clutter.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ToolTipHostCancel
+        tests:
+          - PlexusAvalonia_ToolTips_HostCancelOrDisable_ShowNoTip
+
+      - id: PlexusAvalonia-ToolTipDisable
+        title: >-
+          The host shall be able to turn tooltips off, after which hovering shows none and asks the host for none.
+        justification: |
+          A host that manages tooltips itself must be able to switch the editor's off completely.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ToolTipDisable
+        tests:
+          - PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides
+          - PlexusAvalonia_ToolTips_HostCancelOrDisable_ShowNoTip
+
+      - id: PlexusAvalonia-ToolTipHiding
+        title: >-
+          A tooltip shall be hidden while the user drags, connects or edits inline, when a mouse button is pressed
+          and when the pointer leaves the editor.
+        justification: |
+          A tooltip that lingers over a drag or an edit box gets in the user's way.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ToolTipHiding
+        tests:
+          - PlexusAvalonia_ToolTips_PressAndPointerExit_HideTip
+
+      - id: PlexusAvalonia-ElementNavigation
+        title: >-
+          The editor shall let a host bring any element of the diagram into view, switching to its page.
+        justification: |
+          Find commands, validation lists and search results must take the user to the element they name, also on
+          another page or inside a collapsed group.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-ElementNavigation
+          - PlexusAvalonia-Editor-NavigationDeferred
+          - PlexusAvalonia-Editor-NavigationInvalid
+        tests:
+          - PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements
+
+      - id: PlexusAvalonia-FitElements
+        title: >-
+          The editor shall let a host fit a set of elements into the view.
+        justification: |
+          Zoom to selection and showing search results need the same fit the whole page gets.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-FitElements
+        tests:
+          - PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements
+
+      - id: PlexusAvalonia-DynamicPorts
+        title: >-
+          The editor shall show and hit test the current ports of each node, including ports that change when the
+          node's configuration changes.
+        justification: |
+          A user who reconfigures a node expects to see its new ports at once and to find a removed port gone, also
+          after undo.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-DynamicPortRemoved
+        tests:
+          - PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes
+
+      - id: PlexusAvalonia-DynamicPortConnect
+        title: >-
+          The user shall be able to connect a wire to a port that a configuration change added.
+        justification: |
+          A port the user cannot wire is of no use; a new port must take part in the editing gestures like any other.
+        tags: [system]
+        children:
+          - PlexusAvalonia-Editor-DynamicPorts
+        tests:
+          - PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes

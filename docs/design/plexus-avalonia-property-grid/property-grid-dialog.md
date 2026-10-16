@@ -14,21 +14,36 @@ commits the edits (inside the host's commit scope, so the dialog is one undo ste
 
 - A window holding a `PropertyGrid` (`EditMode` staged, `CommitScope` from the call, `SelectedObject` the target), a
   status line and the OK and Cancel buttons (OK is the default button and Cancel the cancel button).
+- A root dock panel: the footer (status and buttons) docked at the bottom, an optional preview border (see
+  `SetPreview`) docked before the grid, and the grid filling the rest.
 - The title: the given title, else the `DisplayName` annotation of the object's type, else its type name, followed by
   " - Properties".
 
 ### Key Methods
 
 - **`ShowAsync`** — creates the dialog and shows it modally; the task completes with true after a successful OK and false
-  after Cancel.
+  after Cancel. A null owner or target is rejected before any window is created.
 - **`Accept` (OK)** — refuses while the session has errors: it selects the first row with an error and shows the
   reason in the status line. Otherwise it commits; when the commit reports a failure the dialog stays open with the
   reason and the failed edits stay pending with their errors. On success it closes with true.
+- **`CloseConfirmed`** (internal event) and **`OnClosing`** — the window's closing override raises `CloseConfirmed`
+  once, after the base class has run the `Closing` handlers, when no handler cancelled the close; this is the moment
+  just before the window and its grid are torn down, for OK, the Cancel button and the window's close button alike.
+  Nothing is raised when a handler vetoes the close. The Plexus adapter layer uses it to dispose its preview context,
+  so a closing dialog raises no preview notification. It uses only Avalonia types.
 - **`GetDefaultTitle`** — the default title.
+- **`SetPreview(control, dock, size)`** (internal) — shows a control next to the grid: it wraps it in a border with the
+  automation id `PropertyGridDialog_Preview`, the automation name "Preview" (exposed to UI Automation as a content
+  group) and a themed separator line, docks it at the given side (the size is its width for left or right and its height
+  for top or bottom) and inserts it before the grid; a second call replaces the first preview. It uses only Avalonia types
+  so the generic layer stays free of Plexus types.
 
 ### Error Handling
 
-Invalid input and failed commits are shown, never thrown; a null owner or target raises `ArgumentNullException`.
+Invalid input and failed commits are shown, never thrown; a null owner or target raises `ArgumentNullException`, from
+`ShowAsync` before a window is created and from the constructor. The internal `SetPreview` raises `ArgumentNullException`
+for a null preview and `ArgumentOutOfRangeException` for a size that is not a positive finite number, before it changes
+the dialog.
 
 ### Dependencies
 
@@ -36,4 +51,4 @@ The PropertyGridControl unit (the grid) and the EditSession unit (commit and err
 
 ### Callers
 
-Host applications.
+Host applications; the NodePropertiesDialog unit (which also calls `SetPreview` for its live preview).

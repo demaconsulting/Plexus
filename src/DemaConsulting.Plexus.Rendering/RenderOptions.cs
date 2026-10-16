@@ -8,8 +8,8 @@ namespace DemaConsulting.Plexus.Rendering;
 ///     <c>new RenderOptions()</c> (or passing null) renders the whole page at 1:1.
 /// </summary>
 /// <remarks>
-///     Options are immutable after construction so one instance can be shared between
-///     renders and threads.
+///     Options are immutable after construction (the selection is copied when it is given) so one instance can be
+///     shared between renders and threads.
 /// </remarks>
 /// <example>
 ///     <code>
@@ -29,6 +29,11 @@ namespace DemaConsulting.Plexus.Rendering;
 /// </example>
 public sealed class RenderOptions
 {
+    /// <summary>
+    ///     The selection copied when the options were created.
+    /// </summary>
+    private readonly IReadOnlyList<DiagramElement> _selection = [];
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="RenderOptions"/> class with the default options: 1:1 scale, a grid, and the diagram's own theme and background.
     /// </summary>
@@ -68,10 +73,24 @@ public sealed class RenderOptions
     /// <summary>
     ///     Gets or initializes the theme to draw with; null (the default) uses the diagram's own theme.
     /// </summary>
+    /// <remarks>
+    ///     The theme changes the look only: port positions, port triangles and wire ends always follow the diagram's own
+    ///     theme, so wires stay attached to their ports; set port metrics on <see cref="Diagram.Theme"/>.
+    /// </remarks>
     public DiagramTheme? Theme { get; init; }
 
     /// <summary>
     ///     Gets or initializes the elements drawn highlighted as selected. Defaults to none.
     /// </summary>
-    public IEnumerable<DiagramElement> Selection { get; init; } = [];
+    /// <remarks>
+    ///     The sequence is copied when the options are created: later changes to the caller's collection do not
+    ///     affect the options. The elements themselves are not copied; an element that is removed from the page
+    ///     afterwards is simply no longer drawn highlighted.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException">Thrown when the value assigned is null.</exception>
+    public IEnumerable<DiagramElement> Selection
+    {
+        get => _selection;
+        init => _selection = value is null ? throw new ArgumentNullException(nameof(value)) : Array.AsReadOnly([.. value]);
+    }
 }

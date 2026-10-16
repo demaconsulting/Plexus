@@ -8,6 +8,34 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests;
 public class PropertySourceTests
 {
     /// <summary>
+    ///     A source over one string value whose commit scope records the steps it performs.
+    /// </summary>
+    /// <param name="log">Where the steps are recorded.</param>
+    private sealed class ScopedSource(List<string> log) : IPropertySource, IPropertyCommitScope
+    {
+        /// <summary>The underlying items.</summary>
+        private readonly CustomPropertySource _inner = new([new CustomPropertyItem("Title", typeof(string), () => "old")]);
+
+        /// <inheritdoc />
+        public event EventHandler<PropertySourceChangedEventArgs>? Changed
+        {
+            add => _inner.Changed += value;
+            remove => _inner.Changed -= value;
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<PropertyItem> GetItems() => _inner.GetItems();
+
+        /// <inheritdoc />
+        public void RunCommit(Action apply)
+        {
+            log.Add("source-before");
+            apply();
+            log.Add("source-after");
+        }
+    }
+
+    /// <summary>
     ///     Non-browsable properties are omitted by default and included, flagged, on request.
     /// </summary>
     [Fact]
@@ -118,17 +146,88 @@ public class PropertySourceTests
     }
 
     /// <summary>
-    ///     A change of a property annotated <c>RefreshProperties.All</c> rebuilds the item list.
+    ///     A change of an observable property annotated <c>RefreshProperties.All</c> rebuilds the item list and raises an
+    ///     all-items notification; an explicit refresh does the same.
     /// </summary>
     [Fact]
     public void ReflectionPropertySource_RefreshAllProperty_RebuildsItems()
     {
-        using var source = TestHelpers.PersonSource(out _);
-        var before = TestHelpers.Item(source, "Name");
+        // Arrange
+        var target = new Refreshing();
+        using var source = new ReflectionPropertySource(target);
+        var before = TestHelpers.Item(source, "Other");
+        var notifications = new List<PropertySourceChangedEventArgs>();
+        source.Changed += (_, e) => notifications.Add(e);
 
+        // Act: the change notification of the refresh-all property
+        target.Mode = 7;
+        var afterChange = TestHelpers.Item(source, "Other");
+
+        // Assert
+        Assert.NotSame(before, afterChange);
+        Assert.Equal(7, TestHelpers.Item(source, "Mode").GetValue());
+        var notification = Assert.Single(notifications);
+        Assert.True(notification.IsAll);
+
+        // Act: an explicit refresh
         source.Refresh();
 
-        Assert.NotSame(before, TestHelpers.Item(source, "Name"));
+        // Assert
+        Assert.NotSame(afterChange, TestHelpers.Item(source, "Other"));
+        Assert.Equal(2, notifications.Count);
+        Assert.True(notifications[1].IsAll);
+    }
+
+    /// <summary>
+    ///     A notification of a shown property annotated <c>RefreshProperties.All</c> makes the source rebuild its items
+    ///     and report a change of everything; an ordinary property only reports its own name.
+    /// </summary>
+    [Fact]
+    public void ReflectionPropertySource_ShownRefreshAllPropertyChanged_RebuildsItems()
+    {
+        // Arrange
+        var target = new Refreshing();
+        using var source = new ReflectionPropertySource(target);
+        var before = TestHelpers.Item(source, "Other");
+        var notifications = new List<PropertySourceChangedEventArgs>();
+        source.Changed += (_, e) => notifications.Add(e);
+
+        // Act
+        target.Other = 1;
+        var afterOrdinary = TestHelpers.Item(source, "Other");
+        target.Mode = 2;
+        var afterRefreshAll = TestHelpers.Item(source, "Other");
+
+        // Assert: the ordinary change keeps the items, the refresh-all change replaces them and reports everything
+        Assert.Same(before, afterOrdinary);
+        Assert.NotSame(before, afterRefreshAll);
+        Assert.Equal(2, notifications.Count);
+        Assert.Equal("Other", notifications[0].PropertyName);
+        Assert.True(notifications[1].IsAll);
+    }
+
+    /// <summary>
+    ///     A notification of a hidden property annotated <c>RefreshProperties.All</c> also rebuilds the items, although that
+    ///     property has no item.
+    /// </summary>
+    [Fact]
+    public void ReflectionPropertySource_HiddenRefreshAllPropertyChanged_RebuildsItems()
+    {
+        // Arrange
+        var target = new HiddenRefreshing();
+        using var source = new ReflectionPropertySource(target);
+        var before = TestHelpers.Item(source, "Shown");
+        var notifications = new List<PropertySourceChangedEventArgs>();
+        source.Changed += (_, e) => notifications.Add(e);
+
+        // Act
+        target.Mode = 1;
+
+        // Assert
+        Assert.DoesNotContain(source.GetItems(), i => i.Name == "Mode");
+        Assert.NotSame(before, TestHelpers.Item(source, "Shown"));
+        Assert.Single(notifications);
+        Assert.True(notifications[0].IsAll);
     }
 
     /// <summary>
@@ -368,6 +467,99 @@ public class PropertySourceTests
         Assert.Null(single.Category);
         Assert.Equal(["a", "b", "c"], single.Items.Select(i => i.Name));
         Assert.Empty(PropertyOrdering.Group([], PropertySortMode.Categorized));
+    }
+
+    /// <summary>
+    ///     Categorized ordering puts parenthesized names first, then sorts a category's items by their rank, ties alphabetically.
+    /// </summary>
+    [Fact]
+    public void PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel()
+    {
+        // Arrange: ranks out of alphabetical order, a tie, a parenthesized item with a high rank and a default-rank item
+        var items = new[]
+        {
+            new CustomPropertyItem("Release", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 4 }),
+            new CustomPropertyItem("Attack", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 1 }),
+            new CustomPropertyItem("Sustain", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 2 }),
+            new CustomPropertyItem("Decay", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 2 }),
+            new CustomPropertyItem("Zero", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope" }),
+            new CustomPropertyItem("(Name)", typeof(int), () => 1, null, new CustomPropertyOptions { Category = "Envelope", Order = 9, IsParenthesized = true }),
+        };
+
+        // Act
+        var ordered = PropertyOrdering.Order(items, PropertySortMode.Categorized);
+
+        // Assert: parenthesized first, then ascending rank (0 before 1), equal ranks alphabetical
+        Assert.Equal(["(Name)", "Zero", "Attack", "Decay", "Sustain", "Release"], ordered.Select(i => i.Name));
+        Assert.Equal(4, items[0].Order);
+    }
+
+    /// <summary>
+    ///     Alphabetical ordering ignores item ranks.
+    /// </summary>
+    [Fact]
+    public void PropertyOrdering_Order_AlphabeticalIgnoresItemOrder()
+    {
+        // Arrange
+        var items = new[]
+        {
+            new CustomPropertyItem("Attack", typeof(int), () => 1, null, new CustomPropertyOptions { Order = 3 }),
+            new CustomPropertyItem("Decay", typeof(int), () => 1, null, new CustomPropertyOptions { Order = 2 }),
+            new CustomPropertyItem("Release", typeof(int), () => 1, null, new CustomPropertyOptions { Order = 1 }),
+        };
+
+        // Act
+        var ordered = PropertyOrdering.Order(items, PropertySortMode.Alphabetical);
+
+        // Assert
+        Assert.Equal(["Attack", "Decay", "Release"], ordered.Select(i => i.Name));
+    }
+
+    /// <summary>
+    ///     A category with a lower rank is shown first; within a rank the order is alphabetical, and a category ranks as its lowest item.
+    /// </summary>
+    [Fact]
+    public void PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically()
+    {
+        // Arrange
+        PropertyItem Make(string name, string category, int order) =>
+            new CustomPropertyItem(name, typeof(string), () => string.Empty, null, new CustomPropertyOptions { Category = category, CategoryOrder = order });
+        var items = new[]
+        {
+            Make("A", "Alpha", 0),
+            Make("B", "Zulu", -1),
+            Make("C", "Mike", 0),
+            Make("D", "Zulu", 5),
+        };
+
+        // Act
+        var groups = PropertyOrdering.Group(items, PropertySortMode.Categorized);
+
+        // Assert
+        Assert.Equal(["Zulu", "Alpha", "Mike"], groups.Select(g => g.Category));
+        Assert.Equal(["B", "D"], groups[0].Items.Select(i => i.Name));
+        Assert.Equal(0, new CustomPropertyOptions().CategoryOrder);
+    }
+
+    /// <summary>
+    ///     A composite chains the scopes of its sources, the first source outermost, and runs the action once.
+    /// </summary>
+    [Fact]
+    public void CompositePropertySource_RunCommit_ChainsTheSourceScopes()
+    {
+        // Arrange
+        var log = new List<string>();
+        var first = new ScopedSource(log);
+        var second = new ScopedSource(log);
+        var plain = new CustomPropertySource();
+        using var composite = new CompositePropertySource(first, plain, second);
+
+        // Act
+        composite.RunCommit(() => log.Add("apply"));
+
+        // Assert
+        Assert.Equal(["source-before", "source-before", "apply", "source-after", "source-after"], log);
+        Assert.Throws<ArgumentNullException>(() => composite.RunCommit(null!));
     }
 }
 

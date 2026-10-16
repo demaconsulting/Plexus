@@ -368,6 +368,60 @@ public class PropertyModelTests
     }
 
     /// <summary>
+    ///     A collection whose enumeration throws (at once or after the first element) is shown as empty instead of throwing.
+    /// </summary>
+    [Fact]
+    public void PropertyItem_GetCollectionValues_ThrowingEnumerator_ReturnsEmpty()
+    {
+        // Arrange
+        using var source = new ReflectionPropertySource(new ThrowingCollectionHost());
+        var immediate = TestHelpers.Item(source, "Immediate");
+        var partial = TestHelpers.Item(source, "Partial");
+
+        // Act
+        var immediateValues = immediate.GetCollectionValues();
+        var partialValues = partial.GetCollectionValues();
+
+        // Assert: both read as empty and the dependent members stay consistent
+        Assert.True(immediate.IsCollection);
+        Assert.Empty(immediateValues);
+        Assert.Empty(partialValues);
+        Assert.Empty(partial.GetCollectionItems());
+        Assert.Equal("(Collection)", partial.GetText());
+    }
+
+    /// <summary>
+    ///     A property that only has a <c>Reset&lt;Name&gt;</c> method can be reset through the item and the session, yet it
+    ///     has no known default and is never reported as changed; a property without any reset support cannot be reset.
+    /// </summary>
+    [Fact]
+    public void PropertyItem_Reset_ResetMethodOnlyProperty_CanBeResetAndIsNeverChanged()
+    {
+        // Arrange
+        using var source = new ReflectionPropertySource(new ResetOnlyHost { Gain = 7, Plain = 4 });
+        var host = (ResetOnlyHost)source.Target;
+        var gain = TestHelpers.Item(source, "Gain");
+        var plain = TestHelpers.Item(source, "Plain");
+
+        // Assert: before the reset
+        Assert.False(gain.HasDefault);
+        Assert.False(gain.IsDefaultValueKnown);
+        Assert.False(gain.IsChanged);
+        Assert.True(gain.CanReset);
+        Assert.False(plain.CanReset);
+
+        // Act
+        var result = new PropertyEditSession(source).Reset(gain);
+
+        // Assert: after the reset
+        Assert.True(result.Succeeded);
+        Assert.Equal(1, host.Gain);
+        Assert.False(gain.IsChanged);
+        Assert.False(new PropertyEditSession(source).Reset(plain).Succeeded);
+        Assert.Equal(4, host.Plain);
+    }
+
+    /// <summary>
     ///     A null value, a wrongly typed value, a failed validation annotation and a throwing setter are errors, not exceptions.
     /// </summary>
     [Fact]
@@ -436,6 +490,26 @@ public class PropertyModelTests
         Assert.False(failure.Succeeded);
         Assert.Equal("bad", failure.Error);
     }
+
+    /// <summary>
+    ///     A converter that throws while it is asked whether it converts from text makes the property not editable as
+    ///     text, without throwing; a normal converter still reports its capability.
+    /// </summary>
+    [Fact]
+    public void PropertyItem_SupportsTextEditing_ConverterThrows_ReportsNotSupported()
+    {
+        // Arrange
+        using var source = new ReflectionPropertySource(new ProbeHost());
+        using var person = TestHelpers.PersonSource(out _);
+        var probed = TestHelpers.Item(source, "Value");
+
+        // Act
+        var supported = probed.SupportsTextEditing;
+
+        // Assert
+        Assert.False(supported);
+        Assert.True(TestHelpers.Item(person, "Name").SupportsTextEditing);
+    }
 }
 
 /// <summary>
@@ -445,4 +519,78 @@ public sealed class ReadOnlySizeHolder
 {
     /// <summary>Gets the size.</summary>
     public Dimensions Size { get; } = new() { Width = 1, Height = 2 };
+}
+
+/// <summary>
+///     A collection whose enumeration throws, optionally after the first element.
+/// </summary>
+/// <param name="failAfterFirst"><see langword="true"/> to yield one element before the failure.</param>
+public sealed class ThrowingCollection(bool failAfterFirst) : ICollection<int>
+{
+    /// <inheritdoc />
+    public int Count => 1;
+
+    /// <inheritdoc />
+    public bool IsReadOnly => true;
+
+    /// <inheritdoc />
+    public IEnumerator<int> GetEnumerator()
+    {
+        if (failAfterFirst)
+        {
+            yield return 1;
+        }
+
+        throw new InvalidOperationException("The collection cannot be enumerated.");
+    }
+
+    /// <inheritdoc />
+    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+
+    /// <inheritdoc />
+    public void Add(int item) => throw new NotSupportedException();
+
+    /// <inheritdoc />
+    public void Clear() => throw new NotSupportedException();
+
+    /// <inheritdoc />
+    public bool Contains(int item) => false;
+
+    /// <inheritdoc />
+    public void CopyTo(int[] array, int arrayIndex) => throw new NotSupportedException();
+
+    /// <inheritdoc />
+    public bool Remove(int item) => throw new NotSupportedException();
+}
+
+/// <summary>
+///     Holds collections that cannot be enumerated.
+/// </summary>
+public sealed class ThrowingCollectionHost
+{
+    /// <summary>Gets a collection that throws as soon as it is enumerated.</summary>
+    public ThrowingCollection Immediate { get; } = new(false);
+
+    /// <summary>Gets a collection that throws after its first element.</summary>
+    public ThrowingCollection Partial { get; } = new(true);
+}
+
+/// <summary>
+///     Holds a property with only a reset method (no default value attribute and no default rule) and one without any
+///     reset support.
+/// </summary>
+public sealed class ResetOnlyHost
+{
+    /// <summary>Gets or sets the gain, which only has a reset method.</summary>
+    public int Gain { get; set; }
+
+    /// <summary>Gets or sets a plain property.</summary>
+    public int Plain { get; set; }
+
+#pragma warning disable S1144 // Found by the component model through reflection (the WinForms reset convention)
+    /// <summary>
+    ///     Restores the gain.
+    /// </summary>
+    private void ResetGain() => Gain = 1;
+#pragma warning restore S1144
 }

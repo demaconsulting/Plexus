@@ -171,6 +171,7 @@ sections:
               - PlexusAvalonia-Editor-DiagramEditor-ViewCommands
               - PlexusAvalonia-Editor-NodePalette-Drag
               - PlexusAvalonia-Editor-NodePalette-SceneCache
+              - PlexusAvalonia-Editor-NodePalette-PrototypeTextBounds
               - PlexusAvalonia-Editor-DiagramEditor-DropGhost
             tests:
               - Editor_NodePalette_DragItemOverEditor_ShowsGhostAndDropsNodeWhereGhostWas
@@ -201,3 +202,149 @@ sections:
               - PlexusAvalonia-Editor-DiagramEditor-Duplicate
             tests:
               - Editor_Keyboard_Shortcuts_RunCommandsUnlessInlineEditorIsOpen
+
+          - id: PlexusAvalonia-Editor-ToolTips
+            title: >-
+              The editor shall give the hovered node, port or wire a tooltip.
+            justification: |
+              Decomposes PlexusAvalonia-ToolTips; the editor knows what the pointer is over.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipDisplay
+            tests:
+              - Editor_ToolTips_HoverNodePortAndWire_ShowDefaultOrHostContent
+
+          - id: PlexusAvalonia-Editor-ToolTipDefaults
+            title: >-
+              The editor shall build the default tooltip of a port from its label, its type's display name and its
+              description, that of a node from its node type, and that of a wire from its source and target, and give
+              annotations and groups none.
+            justification: |
+              Decomposes PlexusAvalonia-ToolTipDefaults; the editor resolves the diagram's port types and node types.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipContent
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipNodeContent
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipWireContent
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipOtherContent
+            tests:
+              - Editor_ToolTips_HoverNodePortAndWire_ShowDefaultOrHostContent
+
+          - id: PlexusAvalonia-Editor-ToolTipHostContent
+            title: >-
+              The editor shall raise an event with the default tooltip content that lets the host replace it.
+            justification: |
+              Decomposes PlexusAvalonia-ToolTipHostContent; the editor owns the moment the tooltip is requested.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipRequested
+            tests:
+              - Editor_ToolTips_HoverNodePortAndWire_ShowDefaultOrHostContent
+
+          - id: PlexusAvalonia-Editor-ToolTipHostCancel
+            title: >-
+              The editor shall show no tooltip for an element or port whose request the host canceled or left with
+              null or empty content.
+            justification: |
+              Decomposes PlexusAvalonia-ToolTipHostCancel; the editor decides what it sets on its own control.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipRequested
+            tests:
+              - Editor_ToolTips_HostCancels_ShowsNoTip
+
+          - id: PlexusAvalonia-Editor-ToolTipDisable
+            title: >-
+              While tooltips are turned off the editor shall set no tooltip and raise no tooltip request when the
+              pointer hovers.
+            justification: |
+              Decomposes PlexusAvalonia-ToolTipDisable; the editor reacts to the pointer and to its own setting.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ShowToolTips
+            tests:
+              - Editor_ToolTips_Disabled_ShowsNoTipAndRaisesNoEvent
+
+          - id: PlexusAvalonia-Editor-ToolTipHiding
+            title: >-
+              The editor shall clear the tooltip when a mouse button is pressed, while a drag, connection or inline
+              edit is under way, and when the pointer leaves.
+            justification: |
+              Decomposes PlexusAvalonia-ToolTipHiding; the editor knows when a gesture or inline edit runs.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipClear
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipPressSuppression
+              - PlexusAvalonia-Editor-DiagramEditor-ToolTipGestureHiding
+            tests:
+              - Editor_ToolTips_PressExitAndInlineEdit_HideTip
+
+          - id: PlexusAvalonia-Editor-ElementNavigation
+            title: >-
+              The editor shall bring an element into view, switching to its page and showing the collapsed group that
+              hides it.
+            justification: |
+              Decomposes PlexusAvalonia-ElementNavigation; the view state (page, zoom, offset) is the editor's.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-BringIntoView
+              - PlexusAvalonia-Editor-DiagramEditor-BringIntoViewPage
+              - PlexusAvalonia-Editor-DiagramEditor-BringIntoViewCollapsed
+            tests:
+              - Editor_ElementNavigation_BringIntoViewAndFitElements_ShowElementsAcrossPages
+
+          - id: PlexusAvalonia-Editor-FitElements
+            title: >-
+              The editor shall fit a set of elements into the view.
+            justification: |
+              Decomposes PlexusAvalonia-FitElements; zoom to selection and search results need the editor's view
+              state.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElements
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElementsCollapsed
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElementsPages
+            tests:
+              - Editor_ElementNavigation_BringIntoViewAndFitElements_ShowElementsAcrossPages
+
+          - id: PlexusAvalonia-Editor-NavigationDeferred
+            title: >-
+              A navigation request made before the editor has its first layout shall wait and be applied once the
+              editor has a size, and the latest request shall win.
+            justification: |
+              Decomposes PlexusAvalonia-ElementNavigation; hosts call navigation from window constructors, before any
+              size exists.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-BringIntoViewDeferred
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElementsDeferred
+              - PlexusAvalonia-Editor-DiagramEditor-ViewRequestOrder
+            tests:
+              - Editor_ElementNavigation_BeforeFirstLayout_AppliesLatestRequest
+
+          - id: PlexusAvalonia-Editor-NavigationInvalid
+            title: >-
+              An empty set, a null or detached element, an element of another diagram and an invalid margin shall
+              leave the page, zoom, offset and selection unchanged.
+            justification: |
+              Decomposes PlexusAvalonia-ElementNavigation; a refused request must never leave the view half changed.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-BringIntoViewInvalid
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElementsInvalid
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitMarginInvalid
+              - PlexusAvalonia-Editor-DiagramEditor-ZoomToFitElementsEmpty
+            tests:
+              - Editor_ElementNavigation_InvalidOrEmptyRequests_LeaveViewUnchanged
+
+          - id: PlexusAvalonia-Editor-DynamicPorts
+            title: >-
+              The editor shall connect a dragged wire to a port that a configuration change added.
+            justification: |
+              Decomposes PlexusAvalonia-DynamicPortConnect; the editor must follow the model's port changes like any
+              other change.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-DynamicPorts
+            tests:
+              - Editor_DynamicPorts_PropertyChange_SceneHitTestAndConnectFollow
+
+          - id: PlexusAvalonia-Editor-DynamicPortRemoved
+            title: >-
+              The editor shall no longer hit a port that a configuration change removed, and shall hit it again after
+              the change is undone.
+            justification: |
+              Decomposes PlexusAvalonia-DynamicPorts; gestures must act on the ports the node has now.
+            children:
+              - PlexusAvalonia-Editor-DiagramEditor-DynamicPortRemoved
+            tests:
+              - Editor_DynamicPorts_RemovedPort_IsNotHit

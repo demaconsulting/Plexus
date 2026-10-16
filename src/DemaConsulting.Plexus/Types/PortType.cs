@@ -19,7 +19,7 @@ namespace DemaConsulting.Plexus;
 ///
 ///     var types = new NodeTypeRegistry();
 ///     types.PortTypes.Add(new PortType("number", Color.Parse("#FF8C00")));   // keys are yours to choose
-///     types.PortTypes.Add(new PortType("bool", Color.FromRgb(0x2E, 0xBF, 0x5B)));
+///     types.PortTypes.Add(new PortType("bool", Color.FromRgb(0x2E, 0xBF, 0x5B)) { DisplayName = "Boolean" });   // shown in port tooltips
 ///     types.Add(new NodeType("logic.Compare")
 ///     {
 ///         Inputs = { new PortDefinition("a", "number"), new PortDefinition("b", "number") },
@@ -32,6 +32,11 @@ namespace DemaConsulting.Plexus;
 /// </example>
 public sealed class PortType
 {
+    /// <summary>
+    ///     Optional explicit display name; null or empty means <see cref="Key"/>.
+    /// </summary>
+    private string? _displayName;
+
     /// <summary>
     ///     Initializes a new instance of the <see cref="PortType"/> class.
     /// </summary>
@@ -54,4 +59,17 @@ public sealed class PortType
     ///     Gets the color ports of this type are drawn with.
     /// </summary>
     public Color Color { get; }
+
+    /// <summary>
+    ///     Gets or initializes the human-readable name of the type, for example "Boolean" for the key <c>"bool"</c>; defaults to <see cref="Key"/>.
+    /// </summary>
+    /// <remarks>
+    ///     A presentation hint, like <see cref="NodeType.DisplayName"/>: editors show it in port tooltips. A null or empty
+    ///     value falls back to <see cref="Key"/>.
+    /// </remarks>
+    public string DisplayName
+    {
+        get => string.IsNullOrEmpty(_displayName) ? Key : _displayName;
+        init => _displayName = value;
+    }
 }

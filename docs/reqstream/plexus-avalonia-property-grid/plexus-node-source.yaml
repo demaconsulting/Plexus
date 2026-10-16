@@ -26,6 +26,18 @@ sections:
               - NodePropertySource_GetItems_NodeWithoutDataHasNoDataRows
               - NodePropertySource_Constructor_DetachedNode_Throws
 
+          - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder
+            title: >-
+              The node source shall list the rows of declared properties within their category by ascending display
+              order of their definitions (a negative order first), with equal orders alphabetical by display name,
+              ignoring case and culture.
+            justification: |
+              Decomposes PlexusAvaloniaPropertyGrid-Plexus-NodePropertyOrder; a node type that declares an order (an
+              envelope's attack, decay, sustain and release) must be shown in that order, not alphabetically.
+            tests:
+              - NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder
+              - NodePropertySource_GetItems_EqualOrder_ListsAlphabetically
+
           - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Validation
             title: >-
               The node source shall validate typed values with the property definitions (invariant culture, units
@@ -50,6 +62,7 @@ sections:
               - NodePropertySource_StagedCancel_ChangesNothing
               - NodePropertySource_StagedCommit_UneditedDataIsNotReplaced
               - NodePropertySource_StagedCommit_CollectionEditsPersistAndUndo
+              - NodePropertySource_StagedCommit_ProviderPortAbsentInIntermediateState_KeepsWire
 
           - id: PlexusAvaloniaPropertyGrid-PlexusNodeSource-Refusal
             title: >-

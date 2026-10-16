@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Automation;
+using Avalonia.Automation.Peers;
 using Avalonia.Controls;
 using Avalonia.Layout;
 
@@ -25,8 +26,12 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     <para>
 ///         The dialog's grid uses the shared <see cref="PropertyGrid.DefaultEditors"/>, so custom editors registered there at start-up work in
 ///         every dialog. To give one dialog its own editors, construct it, assign <c>dialog.Grid.EditorRegistry</c> and show it yourself.
-///         The dialog derives from Avalonia's <c>Window</c>: <c>Show()</c>, <c>ShowDialog()</c>, <c>Close()</c>, <c>Title</c>, <c>Width</c> and the rest of the window API are available but are not
-///         repeated in the member tables of this page.
+///         The dialog derives from Avalonia's <c>Window</c>, so the window API (<c>Show()</c>, <c>ShowDialog()</c>, <c>Close()</c>, <c>Title</c>, <c>Width</c>, ...) applies; see Inherited Members.
+///     </para>
+///     <para>
+///         The dialog's controls carry automation ids: <c>PropertyGridDialog</c> (the window), <c>PropertyGridDialog_OK</c>,
+///         <c>PropertyGridDialog_Cancel</c>, <c>PropertyGridDialog_Status</c> and, when a preview panel is shown next to the
+///         grid (the live preview of <c>Diagrams.NodePropertiesDialog</c>), <c>PropertyGridDialog_Preview</c>.
 ///     </para>
 /// </remarks>
 /// <example>
@@ -61,6 +66,17 @@ public sealed class PropertyGridDialog : Window
     ///     The text that shows why OK was refused.
     /// </summary>
     private readonly TextBlock _status = new();
+
+    /// <summary>
+    ///     The root layout: the footer docked at the bottom, an optional preview (see <see cref="SetPreview"/>) and the grid
+    ///     filling the rest.
+    /// </summary>
+    private readonly DockPanel _root;
+
+    /// <summary>
+    ///     The border that hosts the preview, or <see langword="null"/> when the dialog has none.
+    /// </summary>
+    private Border? _preview;
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="PropertyGridDialog"/> class.
@@ -108,17 +124,40 @@ public sealed class PropertyGridDialog : Window
         footer.Children.Add(buttons);
         footer.Children.Add(_status);
 
-        var root = new DockPanel();
+        _root = new DockPanel();
         DockPanel.SetDock(footer, Dock.Bottom);
-        root.Children.Add(footer);
-        root.Children.Add(Grid);
-        Content = root;
+        _root.Children.Add(footer);
+        _root.Children.Add(Grid);
+        Content = _root;
     }
+
+    /// <summary>
+    ///     Occurs when the close of the dialog is confirmed (OK, Cancel or the window's close button), before the grid leaves
+    ///     the window. It is not raised when a handler of <c>Closing</c> cancels the close.
+    /// </summary>
+    /// <remarks>
+    ///     Internal: the Plexus adapter layer uses it to dispose its preview context before the grid's session is replaced by
+    ///     the window's teardown, so the preview is never notified by a dialog that is closing.
+    /// </remarks>
+    internal event EventHandler? CloseConfirmed;
 
     /// <summary>
     ///     Gets the grid that shows and edits the object.
     /// </summary>
     public PropertyGrid Grid { get; }
+
+    /// <summary>
+    ///     Handles the dialog closing (OK, Cancel or the window's close button); when no handler cancels the close, the dialog's preview, if any, is released before the grid leaves the window.
+    /// </summary>
+    /// <param name="e">The closing event data.</param>
+    protected override void OnClosing(WindowClosingEventArgs e)
+    {
+        base.OnClosing(e);
+        if (!e.Cancel)
+        {
+            CloseConfirmed?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>
     ///     Shows the dialog modally.
@@ -131,10 +170,12 @@ public sealed class PropertyGridDialog : Window
     ///     A task that completes with <see langword="true"/> when the user pressed OK and the edits were committed, and
     ///     <see langword="false"/> when the user cancelled (the edits are discarded).
     /// </returns>
-    /// <exception cref="ArgumentNullException"><paramref name="owner"/> or <paramref name="target"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="owner"/> or <paramref name="target"/> is <see langword="null"/>
+    ///     (checked before a window is created).</exception>
     public static Task<bool> ShowAsync(Window owner, object target, string? title = null, Action<Action>? commitScope = null)
     {
         ArgumentNullException.ThrowIfNull(owner);
+        ArgumentNullException.ThrowIfNull(target);
         return new PropertyGridDialog(target, title, commitScope).ShowDialog<bool>(owner);
     }
 
@@ -151,6 +192,82 @@ public sealed class PropertyGridDialog : Window
             ? attribute.DisplayName
             : target.GetType().Name;
         return name + " - Properties";
+    }
+
+    /// <summary>
+    ///     Shows a preview panel next to the grid (the hook behind the node properties dialog's live preview).
+    /// </summary>
+    /// <remarks>
+    ///     The preview is wrapped in a border with the automation id <c>PropertyGridDialog_Preview</c> (and the automation
+    ///     name <c>Preview</c>, exposed to UI Automation as a content group) and a themed separator line, and docked before the grid so the grid still fills the rest of
+    ///     the dialog. It is internal because the generic dialog has no notion of what a preview shows; the Plexus adapter
+    ///     layer supplies one. It uses only Avalonia types so the generic layer stays free of Plexus types. Calling it again
+    ///     replaces the previous preview. Use it from the UI thread.
+    /// </remarks>
+    /// <param name="preview">The preview control.</param>
+    /// <param name="dock">
+    ///     Where the preview goes: <see cref="Dock.Right"/> or <see cref="Dock.Left"/> (side by side, <paramref name="size"/>
+    ///     is the width) or <see cref="Dock.Top"/> or <see cref="Dock.Bottom"/> (stacked, <paramref name="size"/> is the
+    ///     height).
+    /// </param>
+    /// <param name="size">The width or height of the preview, in device-independent pixels; positive.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="preview"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="size"/> is not a positive finite number.</exception>
+    internal void SetPreview(Control preview, Dock dock, double size)
+    {
+        ArgumentNullException.ThrowIfNull(preview);
+        if (!double.IsFinite(size) || size <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(size), size, "The preview size must be a positive finite number.");
+        }
+
+        // Remove a previous preview so the dialog never shows two
+        if (_preview is { } previous)
+        {
+            previous.Child = null;
+            _root.Children.Remove(previous);
+        }
+
+        // Wrap the preview in a themed border whose separator line faces the grid
+        var horizontal = dock is Dock.Left or Dock.Right;
+        var border = new Border
+        {
+            Child = preview,
+            Margin = new Thickness(8, 8, 8, 0),
+            Padding = dock switch
+            {
+                Dock.Right => new Thickness(8, 0, 0, 0),
+                Dock.Left => new Thickness(0, 0, 8, 0),
+                Dock.Top => new Thickness(0, 0, 0, 8),
+                _ => new Thickness(0, 8, 0, 0),
+            },
+            BorderThickness = dock switch
+            {
+                Dock.Right => new Thickness(1, 0, 0, 0),
+                Dock.Left => new Thickness(0, 0, 1, 0),
+                Dock.Top => new Thickness(0, 0, 0, 1),
+                _ => new Thickness(0, 1, 0, 0),
+            },
+        };
+        if (horizontal)
+        {
+            border.Width = size;
+        }
+        else
+        {
+            border.Height = size;
+        }
+
+        GridTheme.BindBrush(border, Border.BorderBrushProperty, GridTheme.LineKey);
+        AutomationProperties.SetAutomationId(border, "PropertyGridDialog_Preview");
+        AutomationProperties.SetName(border, "Preview");
+        AutomationProperties.SetAccessibilityView(border, AccessibilityView.Content);
+        AutomationProperties.SetControlTypeOverride(border, AutomationControlType.Group);
+        DockPanel.SetDock(border, dock);
+
+        // Dock it before the grid: the last child of the root fills the remaining space
+        _root.Children.Insert(_root.Children.IndexOf(Grid), border);
+        _preview = border;
     }
 
     /// <summary>

@@ -22,14 +22,18 @@ indexer that also accepts assignments.
   of the canonical portable kinds; enumeration yields declared properties in declaration order followed by ad-hoc
   values in insertion order; the property count equals the number of declared plus ad-hoc values.
 - **Notification name**: changes are reported with the property name and with the indexer name used by the
-  property-changed convention.
+  property-changed convention. While the node is on a page both notifications are raised through the diagram history's
+  notification gate, so a throwing handler cannot interrupt an undoable change; its exception is rethrown after the
+  change was recorded (see Diagram Design).
 
 #### Key Methods
 
 - **Constructor (internal)**: copies the default value of each declared property of the node type.
 - **Indexer get / TryGetValue / ContainsKey / Get&lt;T&gt;**: read by name. Get&lt;T&gt; returns the value when it is
   already of the requested type, otherwise converts between the numeric kinds (int, long, double) and primitive
-  targets; a value that does not fit or a non-numeric mismatch fails.
+  targets only when the converted value represents exactly the stored one (the converted value is converted back and
+  must equal the stored value); a value that does not fit, loses precision (1.5 as int, a large long as double) or is a
+  non-numeric mismatch fails.
 - **Indexer set (Set)**: precondition: the node is attached to a page, the name is not empty and the value is not null.
   The value is coerced to the declaration (declared names) or normalized (ad-hoc names). When the name exists and the
   canonical value differs from the current value, a set-value command is executed through the diagram history; when the
@@ -45,17 +49,25 @@ indexer that also accepts assignments.
   diagram's element-changed event.
 - **Merging**: the set-value command identifies its target by the bag and the name, so repeated assignments of one
   property inside a transaction collapse into one entry that remembers the first old and the last new value.
+- **Port recomputation**: every command (set, reset, ad-hoc add and remove) is run through the node's
+  `ExecuteAffectingPorts` instead of the history directly. For a type with a `NodeType.PortProvider` the node's ports
+  are recomputed after the value is stored and recorded in the same entry (see Node Design and DiagramPage Design); for
+  other types, and when the ports do not change, the command alone is recorded as before, so merging is unaffected.
+  Inside `TrySetAll` the commands are executed with the node's port recomputation deferred (`Node.DeferPortUpdates`), so
+  the provider runs once, for the final state of the batch, and not after each value; a batch edit is still one entry,
+  and a provider failure rolls the batch back and propagates.
 
 `TrySetAll(changes, out errors)`: resolves every entry first (a string for a property that is not a string property is
 read with `PropertyDefinition.TryParse`; other values are coerced like an assignment; undeclared names are normalized as
 ad-hoc values; null and empty names are errors), collects a message per rejected name and returns false without touching
-the bag when any entry failed; otherwise it applies all entries inside `History.Transact("Edit properties", ...)`, so
-the result is one undo entry (none when nothing changes).
+the bag when any entry failed; otherwise it applies all entries inside `History.Transact("Edit properties", ...)` with
+the port recomputation deferred, so the result is one undo entry (none when nothing changes) and the ports are
+recomputed once, for the final values.
 
 #### Error Handling
 
 - Reading a missing name raises a key-not-found error; an impossible typed conversion raises an invalid-cast error
-  (including numeric overflow).
+  (including numeric overflow and a conversion that would lose precision).
 - A null name raises an argument-null error; an empty name on write raises an argument error; a null value raises an
   argument-null error; a value that is not legal for the declaration raises the argument error produced by the shared
   value rules. In all these cases the bag and the history are unchanged because validation happens before any command is

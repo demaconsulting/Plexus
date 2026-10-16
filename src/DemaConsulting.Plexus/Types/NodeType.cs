@@ -9,6 +9,16 @@ namespace DemaConsulting.Plexus;
 ///     nodes derive their ports from them. A frozen type is immutable, so the same instance may be shared
 ///     by several registries (and therefore diagrams). Not thread-safe.
 ///     <para>
+///         <b>Ports.</b> By default every node of the type has the declared <see cref="Inputs"/> and <see cref="Outputs"/>.
+///         A type whose ports depend on each node's configuration declares a <see cref="PortProvider"/> instead; the
+///         declared lists then remain the defaults (see <see cref="PortProvider"/> for how ports are recomputed and how
+///         wires are kept by port name).
+///     </para>
+///     <para>
+///         <b>Descriptions.</b> <see cref="Description"/>, <see cref="ToolTip"/> and <see cref="PortDefinition.Description"/>
+///         carry the text editors show in tooltips; the library itself never draws them.
+///     </para>
+///     <para>
 ///         <b>Node size.</b> Unless you set <see cref="DefaultSize"/>, a new node gets the theme's default width (a minimum) and a height that fits the
 ///         longer port column; the width grows until the title fits the header on one line, so long titles do not wrap by default. Set
 ///         <see cref="DefaultSize"/> to fix the box: a title wider than a declared width then wraps onto further lines (or shrinks)
@@ -147,11 +157,19 @@ public sealed partial class NodeType
     /// <summary>
     ///     Gets the input port declarations in top-to-bottom order; frozen after registration.
     /// </summary>
+    /// <remarks>
+    ///     Every node of the type has these inputs unless the type declares a <see cref="PortProvider"/>; then they are the
+    ///     defaults (what a new node has) and each node's actual inputs are in <see cref="Node.Inputs"/>.
+    /// </remarks>
     public IList<PortDefinition> Inputs => InputList;
 
     /// <summary>
     ///     Gets the output port declarations in top-to-bottom order; frozen after registration.
     /// </summary>
+    /// <remarks>
+    ///     Every node of the type has these outputs unless the type declares a <see cref="PortProvider"/>; then they are the
+    ///     defaults (what a new node has) and each node's actual outputs are in <see cref="Node.Outputs"/>.
+    /// </remarks>
     public IList<PortDefinition> Outputs => OutputList;
 
     /// <summary>
@@ -165,6 +183,9 @@ public sealed partial class NodeType
     /// <remarks>
     ///     Existing nodes are not affected when it changes. A declared size is authoritative:
     ///     a title wider than it wraps onto further lines (or shrinks) instead of widening the box. See <see cref="Scene.NodeGeometry.DefaultNodeSize"/>.
+    ///     The one exception is a type with a <see cref="PortProvider"/>: <see cref="DiagramPage.AddNode(NodeType, Point, string?, string?)"/>
+    ///     grows a new node taller (never wider) when the ports the provider computes for it need more room, and a later change in
+    ///     the number of its ports resizes the height again (never below this size's height).
     /// </remarks>
     public Size? DefaultSize { get; init; }
 

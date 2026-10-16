@@ -32,6 +32,20 @@ internal static class GuiTest
     public static Task Run(Action body) => Session.Dispatch(body, CancellationToken.None);
 
     /// <summary>
+    ///     Runs an asynchronous body on the UI thread (for bodies that build their own window, such as a
+    ///     <c>MainWindowHost</c>).
+    /// </summary>
+    /// <param name="body">The test body.</param>
+    /// <returns>A task that completes when the body has finished; return it from the test.</returns>
+    public static Task RunAsync(Func<Task> body) => Session.Dispatch(
+        async () =>
+        {
+            await body().ConfigureAwait(true);
+            return 0;
+        },
+        CancellationToken.None);
+
+    /// <summary>
     ///     Runs an asynchronous body on the UI thread with a fresh <see cref="GuiHost"/>.
     /// </summary>
     /// <param name="body">The test body; the host is disposed afterwards.</param>

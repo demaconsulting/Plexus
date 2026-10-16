@@ -2,8 +2,10 @@
 # Software Subsystem requirements for Plexus Routing.
 #
 # Subsystem requirements decompose the Plexus system requirements (which link down to these IDs as children) into
-# the responsibilities of the Routing subsystem; each links downward to the unit requirements that realize it and to
-# subsystem-level tests in RoutingTests.
+# the responsibilities of the Routing subsystem; each links downward to the Routing unit requirements that realize it
+# (OrthogonalRouter, SimpleRouter and their helpers) and to subsystem-level tests, all of which are in RoutingTests.cs.
+# Group frames supplied as obstacles by the Model and the Scene are required by Plexus-Model-GroupObstacles and
+# Plexus-Scene-GroupObstacles.
 
 sections:
   - title: Plexus Requirements
@@ -112,22 +114,16 @@ sections:
 
           - id: Plexus-Routing-GroupObstacles
             title: >-
-              Wires shall be routed around the frame of every visible group (an expanded group's whole frame
-              including its title bar, a collapsed group's box, each with the routing clearance) unless one of the
-              wire's two end nodes lies inside that group at any depth, in which case that group is not an
-              obstacle for the wire; the behavior shall be switchable through the theme and apply to the routes
-              the page stores and to the display routes of wires attached to collapsed groups.
+              Routing shall route a new wire around the frame of a group lying between its ports that contains neither
+              of its end nodes, with the routing clearance.
             justification: |
-              A wire that merely passes through the frame of a group it has nothing to do with looks as if it
-              belonged to the group; wires of the group's own members must still be able to leave and enter the
-              group. Routes are only computed on creation, endpoint moves and re-routing, so moving a group does
-              not re-route unrelated wires until the host re-routes them.
+              Decomposes Plexus-Core-GroupObstacles; a wire that merely passes through the frame of a group it has
+              nothing to do with looks as if it belonged to the group. The router avoids every box it is given; the
+              Model and the Scene decide which group frames are given.
             children:
-              - Plexus-Model-DiagramPage-GroupObstacles
-              - Plexus-Scene-DiagramTheme-GroupsAreObstacles
-              - Plexus-Scene-SceneBuilder-GroupObstacles
+              - Plexus-Routing-OrthogonalRouter-AvoidObstacles
             tests:
-              - DiagramPage_Connect_GroupBetweenPorts_RoutesAroundGroupFrame
+              - Routing_GroupFrameBetweenPorts_IsRoutedAround
 
           - id: Plexus-Routing-NetSeparation
             title: >-
@@ -143,8 +139,7 @@ sections:
               - Plexus-Routing-OrthogonalRouter-NetSeparation
               - Plexus-Routing-OrthogonalRouter-SameNetTrunk
             tests:
-              - DiagramPage_Connect_TwoNetsToAdjacentInputs_DoNotRunAlongEachOther
-              - DiagramPage_RerouteAll_TwoNets_KeepsNetsApartAndIsRepeatable
+              - Routing_TwoNets_UseSeparateTracksAfterConnectAndReroute
               - DiagramPage_ConnectWireByWire_MatchesRerouteAll
 
           - id: Plexus-Routing-RouteCleaning
@@ -156,7 +151,7 @@ sections:
             children:
               - Plexus-Routing-OrthogonalRouter-RouteCleaning
             tests:
-              - Wire_SetRoute_CollinearAndZeroLengthBends_AreNormalized
+              - Routing_StoredRoutes_AreNormalized
 
           - id: Plexus-Routing-RouteEditing
             title: >-
@@ -168,4 +163,4 @@ sections:
             children:
               - Plexus-Routing-OrthogonalRouter-RouteEditing
             tests:
-              - Wire_AddJog_StraightSegment_AddsBumpAsOneUndoEntry
+              - Routing_RouteEditing_KeepsRoutesOrthogonalWithFixedPorts

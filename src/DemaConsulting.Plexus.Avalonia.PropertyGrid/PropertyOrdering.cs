@@ -4,8 +4,10 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     Orders and groups property items the way the WinForms property grid does.
 /// </summary>
 /// <remarks>
-///     Within a group, items whose name is parenthesized (<see cref="PropertyItem.IsParenthesized"/>) come first, then
-///     the others, each alphabetical by <see cref="PropertyItem.DisplayName"/>. Categories are ordered by their
+///     Within a category, items whose name is parenthesized (<see cref="PropertyItem.IsParenthesized"/>) come first, then
+///     the others, each ordered by their <see cref="PropertyItem.Order"/> rank (lower first) and then alphabetically by
+///     <see cref="PropertyItem.DisplayName"/>; every item ranks 0 unless its source says otherwise, so the default order is
+///     alphabetical. The alphabetical view ignores <see cref="PropertyItem.Order"/>. Categories are ordered by their
 ///     <see cref="PropertyItem.CategoryOrder"/> rank (the lowest of their items) and then alphabetically. Comparison is
 ///     culture-invariant and
 ///     ignores case, so the order does not depend on the user's culture. The sort is stable: items that compare equal
@@ -39,7 +41,7 @@ public static class PropertyOrdering
     /// <param name="items">The items.</param>
     /// <param name="mode">The sort mode.</param>
     /// <returns>
-    ///     The items in display order: for <see cref="PropertySortMode.Categorized"/> by category then label, for
+    ///     The items in display order: for <see cref="PropertySortMode.Categorized"/> by category, then item rank, then label, for
     ///     <see cref="PropertySortMode.Alphabetical"/> by label.
     /// </returns>
     /// <exception cref="ArgumentNullException"><paramref name="items"/> is <see langword="null"/>.</exception>
@@ -52,7 +54,7 @@ public static class PropertyOrdering
         // A category ranks as its lowest item, so every item of a category sorts together
         var ranks = list.GroupBy(i => i.Category, comparer).ToDictionary(g => g.Key, g => g.Min(i => i.CategoryOrder), comparer);
         var ordered = mode == PropertySortMode.Categorized
-            ? list.OrderBy(i => ranks[i.Category]).ThenBy(i => i.Category, comparer).ThenBy(i => i.IsParenthesized ? 0 : 1).ThenBy(i => i.DisplayName, comparer)
+            ? list.OrderBy(i => ranks[i.Category]).ThenBy(i => i.Category, comparer).ThenBy(i => i.IsParenthesized ? 0 : 1).ThenBy(i => i.Order).ThenBy(i => i.DisplayName, comparer)
             : list.OrderBy(i => i.IsParenthesized ? 0 : 1).ThenBy(i => i.DisplayName, comparer);
         return ordered.ToList();
     }

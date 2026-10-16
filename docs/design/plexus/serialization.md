@@ -55,7 +55,8 @@ and converted to messages.
 `typeKey`, `name`, `bounds` (`x`, `y`, `width`, `height`), `properties` and an optional `data`. A property is
 `{ "kind": "double", "value": 1.5 }` with short kind names (`bool`, `int`, `long`, `double`, `string`, `choice`,
 `color`); storing the kind makes round trips exact (an `int` stays an `int`) and lets loaders detect a mismatch with
-the definition. Colors are `"#AARRGGBB"` with always eight digits. Node `data` is embedded raw JSON, not an escaped
+the definition. Colors are written as `"#AARRGGBB"` with always eight digits (alpha first, also when opaque); readers
+accept six digits (opaque) and eight digits (alpha first). Node `data` is embedded raw JSON, not an escaped
 string, so documents stay readable. A wire has source and target node ids and port names and its stored `route` of
 bend points; a group has `memberIds`, `isCollapsed` and `collapsedPosition` (expanded bounds are computed, not stored).
 Names are camelCase and null members are omitted. Reading ignores unknown members, so newer minor additions do not break
@@ -92,3 +93,18 @@ because a snapshot of this diagram must reproduce it exactly.
 **Loading a diagram.** `FromSnapshot` checks the version, reports every missing node type at once before building
 anything, then loads each page with history suspended and finally clears the history, so a freshly loaded diagram has an
 empty, clean history. Wires are restored with their stored routes.
+
+**Per-node ports.** Snapshots, trees, JSON and clipboard content never contain port lists: wires name their ports. The
+importer builds each node in the order properties, payload, ports (recomputed with the type's port provider), and only
+then, once every node exists, groups and wires, so wires on computed ports resolve; stored bounds are kept. A provider
+failure of any kind except running out of memory (an exception of any type, a null result, an invalid port set) or a
+wire to a port that is not recomputed fails the load (`SnapshotException`), the paste (failed `PasteResult`) or the
+duplicate (`InvalidOperationException`) like any other invalid content, with the target unchanged. See PlexusClipboard
+Design and Snapshot Design.
+
+**Invalid node entries.** A node whose `typeKey` is missing, empty or white space is invalid content: it is checked
+before the missing-type check, never reported as a missing type and never skipped by `UnknownNodeTypeHandling.Skip`;
+paste returns a failed result ("A node has no node type key."), load throws `SnapshotException` with that message, and
+duplicate cannot produce it. A payload that the node type cannot read - a null result or any exception of the host
+serializer or System.Text.Json except `OutOfMemoryException` - is unreadable: load throws `SnapshotException`, paste
+inserts the node without data and reports a warning.

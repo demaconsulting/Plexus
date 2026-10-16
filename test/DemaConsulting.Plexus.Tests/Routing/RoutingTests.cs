@@ -196,14 +196,16 @@ public class RoutingTests
     }
 
     /// <summary>
-    ///     Validates that a host-supplied router is asked to route new wires and receives the port anchors, the stub length and the node boxes as obstacles.
+    ///     Validates that a host-supplied router is asked to route new wires and receives the port anchors, the stub length,
+    ///     the grid size and the node boxes as obstacles.
     /// </summary>
     [Fact]
     public void Routing_HostRouter_ReceivesRequestForNewWires()
     {
-        // Arrange
+        // Arrange: a grid size other than the request's default, so passing it on is observable
         var router = new RecordingRouter([new Point(111, 222)]);
         var diagram = TestModel.CreateDiagram();
+        diagram.Theme = DiagramTheme.Classic with { GridSize = 20 };
         diagram.Router = router;
         var page = diagram.Pages.Add("Main");
         var producer = page.AddNode("acme.Producer", 0, 0, "P");
@@ -215,8 +217,9 @@ public class RoutingTests
         // Assert: the wire carries exactly what the host router returned
         Assert.Equal(new[] { new Point(111, 222) }, wire.Route);
 
-        // The request describes the wire's ends, the theme's stub length and the node boxes
+        // The request describes the wire's ends, the theme's stub length and grid size, and the node boxes
         var request = Assert.Single(router.Requests);
+        Assert.Equal(20.0, request.GridSize);
         Assert.Equal(producer.Port("value").Anchor, request.Start);
         Assert.Equal(consumer.Port("in").Anchor, request.End);
         Assert.Equal(PortSide.Right, request.StartDirection);
@@ -357,6 +360,154 @@ public class RoutingTests
         // Assert: every wire was created and each is orthogonal
         Assert.Equal(((columns - 1) * rows) + ((columns - 1) * (rows - 1)), wires.Count);
         Assert.All(wires, wire => Assert.True(RouteAssertions.IsOrthogonal(wire.GetPoints())));
+    }
+
+    /// <summary>
+    ///     Validates that a new wire is routed around the frame of a group between its ports that contains neither end node.
+    /// </summary>
+    [Fact]
+    public void Routing_GroupFrameBetweenPorts_IsRoutedAround()
+    {
+        // Arrange: a producer and a consumer on one row, and a group framing nodes above and below that row between them
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var consumer = page.AddNode("acme.Consumer", 800, 0, "C");
+        var group = page.CreateGroup(
+            [page.AddNode("acme.Gain", 350, -250, "Above"), page.AddNode("acme.Gain", 350, 250, "Below")],
+            "G");
+        var frame = group.Bounds.Inflate(diagram.Theme.ObstacleMargin);
+
+        // Act
+        var wire = page.Connect(producer.Port("value"), consumer.Port("in"));
+        var points = wire.GetPoints();
+
+        // Assert: the wire detours orthogonally and never enters the frame with its clearance
+        Assert.NotEmpty(wire.Route);
+        Assert.True(RouteAssertions.IsOrthogonal(points));
+        Assert.False(RouteAssertions.CrossesAny(points, [frame]));
+    }
+
+    /// <summary>
+    ///     Validates that wires of two nets feeding adjacent inputs use separate tracks when connected and after the page
+    ///     is re-routed, while two wires of one net may share their trunk.
+    /// </summary>
+    [Fact]
+    public void Routing_TwoNets_UseSeparateTracksAfterConnectAndReroute()
+    {
+        // Arrange: two producers feeding two inputs of one mixer, and the first producer also feeding a consumer
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var p1 = page.AddNode("acme.Producer", 0, 0, "P1");
+        var p2 = page.AddNode("acme.Producer", 0, 300, "P2");
+        var mixer = page.AddNode("acme.Mixer", 450, 120, "M");
+        var consumer = page.AddNode("acme.Consumer", 450, 420, "C");
+
+        // Act: connect, then re-route the whole page
+        var first = page.Connect(p1.Port("value"), mixer.Port("a"));
+        var second = page.Connect(p2.Port("value"), mixer.Port("b"));
+        var branch = page.Connect(p1.Port("value"), consumer.Port("in"));
+        var connectedOverlap = SharedLength(first.GetPoints(), second.GetPoints());
+        page.RerouteAll();
+
+        // Assert: the two nets never run on top of each other; the branch of the first net may share its trunk
+        Assert.True(connectedOverlap < 1e-6);
+        Assert.True(SharedLength(first.GetPoints(), second.GetPoints()) < 1e-6);
+        Assert.True(SharedLength(second.GetPoints(), branch.GetPoints()) < 1e-6);
+        Assert.All(page.Wires, w => Assert.True(RouteAssertions.IsOrthogonal(w.GetPoints())));
+    }
+
+    /// <summary>
+    ///     Validates that every stored route is normalized: collinear bends merge and zero-length segments disappear,
+    ///     without changing the drawn shape.
+    /// </summary>
+    [Fact]
+    public void Routing_StoredRoutes_AreNormalized()
+    {
+        // Arrange: two ports on different rows
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var consumer = page.AddNode("acme.Consumer", 600, 300, "C");
+        var a = producer.Port("value").Anchor;
+        var z = consumer.Port("in").Anchor;
+        Point[] padded = [new(a.X + 15, a.Y), new(a.X + 30, a.Y), new(a.X + 30, z.Y), new(a.X + 30, z.Y), z];
+
+        // Act: the same padded route given on connect and set later
+        var connected = page.Connect(producer.Port("value"), consumer.Port("in"), padded);
+        var direct = RouteCleaner.Clean(a, padded, z);
+        connected.SetRoute([new(a.X + 60, a.Y), new(a.X + 60, a.Y), new(a.X + 60, z.Y)]);
+
+        // Assert: the routing normalization and the stored routes agree, and the shape is unchanged
+        Assert.Equal([new Point(a.X + 30, a.Y), new Point(a.X + 30, z.Y)], direct);
+        Assert.Equal([new Point(a.X + 60, a.Y), new Point(a.X + 60, z.Y)], connected.Route);
+        Assert.True(RouteAssertions.IsOrthogonal(connected.GetPoints()));
+    }
+
+    /// <summary>
+    ///     Validates that moving a segment, moving a bend and adding a jog keep a route orthogonal and its ends at the ports.
+    /// </summary>
+    [Fact]
+    public void Routing_RouteEditing_KeepsRoutesOrthogonalWithFixedPorts()
+    {
+        // Arrange: a routed wire between two ports on different rows
+        var diagram = TestModel.CreateDiagram();
+        var page = diagram.Pages.Add("Main");
+        var producer = page.AddNode("acme.Producer", 0, 0, "P");
+        var consumer = page.AddNode("acme.Consumer", 600, 300, "C");
+        var a = producer.Port("value").Anchor;
+        var z = consumer.Port("in").Anchor;
+        var stub = diagram.Theme.WireStubLength;
+        IReadOnlyList<Point> route = [new(a.X + 150, a.Y), new(a.X + 150, z.Y)];
+
+        // Act: the three editing operations on that route
+        var segmentMoved = RouteEditor.MoveSegment(a, route, z, 1, a.X + 100, stub);
+        var bendMoved = RouteEditor.MoveBend(a, route, z, 0, new Point(a.X + 200, a.Y + 40), stub);
+        var jogged = RouteEditor.InsertJog(a, route, z, 1, new Point(a.X + 150, (a.Y + z.Y) / 2), 30);
+
+        // Assert: every result is orthogonal from the source anchor to the target anchor
+        foreach (var edited in new[] { segmentMoved, bendMoved, jogged })
+        {
+            Assert.NotNull(edited);
+            var polyline = new List<Point> { a };
+            polyline.AddRange(edited);
+            polyline.Add(z);
+            Assert.True(RouteAssertions.IsOrthogonal(polyline));
+            Assert.Equal(a, polyline[0]);
+            Assert.Equal(z, polyline[^1]);
+        }
+
+        Assert.Equal([new Point(a.X + 100, a.Y), new Point(a.X + 100, z.Y)], segmentMoved);
+    }
+
+    /// <summary>
+    ///     Measures how much of two polylines runs on top of each other.
+    /// </summary>
+    /// <param name="a">The first polyline.</param>
+    /// <param name="b">The second polyline.</param>
+    /// <returns>The total collinear overlap length.</returns>
+    private static double SharedLength(IReadOnlyList<Point> a, IReadOnlyList<Point> b)
+    {
+        const double epsilon = 1e-6;
+        var total = 0.0;
+        for (var i = 0; i + 1 < a.Count; i++)
+        {
+            for (var j = 0; j + 1 < b.Count; j++)
+            {
+                var vertical = Math.Abs(a[i].X - a[i + 1].X) < epsilon && Math.Abs(b[j].X - b[j + 1].X) < epsilon && Math.Abs(a[i].X - b[j].X) < epsilon;
+                var horizontal = Math.Abs(a[i].Y - a[i + 1].Y) < epsilon && Math.Abs(b[j].Y - b[j + 1].Y) < epsilon && Math.Abs(a[i].Y - b[j].Y) < epsilon;
+                if (vertical)
+                {
+                    total += Math.Max(0, Math.Min(Math.Max(a[i].Y, a[i + 1].Y), Math.Max(b[j].Y, b[j + 1].Y)) - Math.Max(Math.Min(a[i].Y, a[i + 1].Y), Math.Min(b[j].Y, b[j + 1].Y)));
+                }
+                else if (horizontal)
+                {
+                    total += Math.Max(0, Math.Min(Math.Max(a[i].X, a[i + 1].X), Math.Max(b[j].X, b[j + 1].X)) - Math.Max(Math.Min(a[i].X, a[i + 1].X), Math.Min(b[j].X, b[j + 1].X)));
+                }
+            }
+        }
+
+        return total;
     }
 
     /// <summary>

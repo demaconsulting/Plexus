@@ -122,6 +122,9 @@ public sealed partial class DiagramEditor
         FinishEditOnOutsideInput();
         var point = e.GetCurrentPoint(this);
         _pointerPosition = point.Position;
+
+        // Any press (drag, connection, double-click, context request) hides the tooltip of what it landed on
+        SuppressToolTip(HitTest(point.Position));
         switch (point.Properties.PointerUpdateKind)
         {
             case PointerUpdateKind.MiddleButtonPressed:
@@ -210,12 +213,14 @@ public sealed partial class DiagramEditor
     }
 
     /// <summary>
-    ///     Clears the hover highlight when the pointer leaves the editor (unless a gesture is still running). Protected override of the Avalonia hook.
+    ///     Clears the hover highlight (unless a gesture is still running) and hides the tooltip when the pointer leaves the editor. Protected override of the Avalonia hook.
     /// </summary>
     /// <param name="e">The event data supplied by Avalonia.</param>
     protected override void OnPointerExited(PointerEventArgs e)
     {
         base.OnPointerExited(e);
+        ResetToolTip();
+        _toolTipSuppressed = null;
         if (_gesture is null)
         {
             _pointerPosition = null;
@@ -293,6 +298,7 @@ public sealed partial class DiagramEditor
     {
         _gesture = gesture;
         _gesturePointer = e.Pointer;
+        ResetToolTip();
         e.Pointer.Capture(this);
         SetCursor(gesture.Cursor);
         e.Handled = true;
@@ -482,7 +488,7 @@ public sealed partial class DiagramEditor
     }
 
     /// <summary>
-    ///     Updates the hover highlight and the cursor for a pointer that is not dragging.
+    ///     Updates the hover highlight, the tooltip and the cursor for a pointer that is not dragging.
     /// </summary>
     /// <param name="screen">The pointer position relative to the control.</param>
     private void UpdateHover(AvaloniaPoint screen)
@@ -490,11 +496,13 @@ public sealed partial class DiagramEditor
         if (_spaceDown)
         {
             SetCursor(StandardCursorType.Hand);
+            ResetToolTip();
             return;
         }
 
         var hit = HitTest(screen);
         SetHover(hit.Element);
+        UpdateToolTip(hit);
 
         // Hint at what a press would do: ports connect, handles resize, wire handles and segments reshape
         var cursor = hit.Kind switch

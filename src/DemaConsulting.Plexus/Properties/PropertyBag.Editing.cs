@@ -21,6 +21,12 @@ public sealed partial class PropertyBag
     ///         To change host data (<see cref="Node.Data"/>) in the same undo entry, wrap both in <see cref="UndoHistory.Transact(string, Action)"/>
     ///         and assign the data inside it.
     ///     </para>
+    ///     <para>
+    ///         When the node's type declares a <see cref="NodeType.PortProvider"/>, the ports are recomputed once, after all
+    ///         values are applied, for the final state, still inside the single undo entry; a port that exists before and after the batch keeps
+    ///         its wires even when an intermediate combination of the values would not have it. If the provider throws, every change is rolled
+    ///         back and the exception propagates.
+    ///     </para>
     /// </remarks>
     /// <example>
     ///     <code>
@@ -65,13 +71,15 @@ public sealed partial class PropertyBag
             return false;
         }
 
-        page.Diagram.History.Transact("Edit properties", () =>
+        // The ports are recomputed once for the final state, not after each value: an intermediate state must not remove
+        // ports (and their wires) that the final state has
+        page.Diagram.History.Transact("Edit properties", () => _owner.DeferPortUpdates(() =>
         {
             foreach (var (name, value) in accepted)
             {
                 Set(name, value);
             }
-        });
+        }));
         return true;
     }
 

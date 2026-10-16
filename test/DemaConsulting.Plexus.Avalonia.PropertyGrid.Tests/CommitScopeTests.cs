@@ -1,8 +1,7 @@
 namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests;
 
 /// <summary>
-///     Tests of <see cref="IPropertyCommitScope"/> (a source that brackets commits), <see cref="PropertyCommitRefusedException"/>
-///     and the category rank used to order categories.
+///     Tests of <see cref="IPropertyCommitScope"/> (a source that brackets commits) and <see cref="PropertyCommitRefusedException"/>.
 /// </summary>
 public class CommitScopeTests
 {
@@ -184,6 +183,198 @@ public class CommitScopeTests
     }
 
     /// <summary>
+    ///     A source whose commit scope runs the writes and only then refuses, like a scope that validates after applying.
+    /// </summary>
+    /// <param name="inner">The source that supplies the items.</param>
+    /// <param name="refusedPath">The path to refuse.</param>
+    private sealed class ApplyThenRefuseSource(IPropertySource inner, string refusedPath) : IPropertySource, IPropertyCommitScope
+    {
+        /// <inheritdoc />
+        public event EventHandler<PropertySourceChangedEventArgs>? Changed
+        {
+            add => inner.Changed += value;
+            remove => inner.Changed -= value;
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<PropertyItem> GetItems() => inner.GetItems();
+
+        /// <inheritdoc />
+        public void RunCommit(Action apply)
+        {
+            apply();
+            throw new PropertyCommitRefusedException(refusedPath, "Refused: " + refusedPath);
+        }
+    }
+
+    /// <summary>
+    ///     A scope that writes and then refuses must not leave any write behind: values, a collection and a reset are restored.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterWrites_RestoresTheTargetAndKeepsEdits()
+    {
+        // Arrange: three staged edits (two values and a collection) on a plain target, and a scope that applies then refuses
+        using var inner = TestHelpers.PersonSource(out var person);
+        person.Name = "Ann";
+        person.Age = 30;
+        person.Notes.Add("old");
+        var source = new ApplyThenRefuseSource(inner, "Name");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(TestHelpers.Item(source, "Name"), "Zed");
+        session.SetText(TestHelpers.Item(source, "Age"), "9");
+        var editor = session.BeginCollectionEdit(TestHelpers.Item(source, "Notes"));
+        editor.Add("new");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: the documented atomic contract - nothing applied, target untouched, every edit still pending
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.Applied);
+        Assert.Equal("Name", Assert.Single(result.Failed).Path);
+        Assert.Equal("Refused: Name", result.Error);
+        Assert.Equal("Ann", person.Name);
+        Assert.Equal(30, person.Age);
+        Assert.Equal(["old"], person.Notes);
+        Assert.Equal(3, session.GetPendingEdits().Count);
+        Assert.True(session.HasChanges);
+    }
+
+    /// <summary>
+    ///     An edit whose setter changes the target and then throws is restored too when a later edit makes the scope refuse.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterPartialFailedWrite_RestoresTheTarget()
+    {
+        // Arrange: the first setter writes its field and then throws; the scope refuses the second edit after the writes ran
+        var partial = "old";
+        var other = "b";
+        var first = new CustomPropertyItem("First", typeof(string), () => partial, v =>
+        {
+            partial = (string)v!;
+            if (partial == "half-written")
+            {
+                throw new InvalidOperationException("rejected after the write");
+            }
+        });
+        var second = new CustomPropertyItem("Second", typeof(string), () => other, v => other = (string)v!);
+        var source = new ApplyThenRefuseSource(new CustomPropertySource([first, second]), "Second");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(first, "half-written");
+        session.SetText(second, "changed");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: nothing applied, the partial write of the failed edit is undone with the rest, both edits still pending
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.Applied);
+        Assert.Equal("Refused: Second", result.Error);
+        Assert.Equal("old", partial);
+        Assert.Equal("b", other);
+        Assert.Equal(2, session.GetPendingEdits().Count);
+        Assert.True(session.HasChanges);
+    }
+
+    /// <summary>
+    ///     A failed edit whose previous value could not be read is still accounted for when a later edit makes the scope
+    ///     refuse: the other writes are restored and the refusal names the property that could not be put back.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterFailedWriteWithoutSnapshot_NamesItAsNotRestored()
+    {
+        // Arrange: during the commit the first value cannot be read (no snapshot), and its setter writes and then throws
+        var partial = "old";
+        var other = "b";
+        var readFails = false;
+        var first = new CustomPropertyItem(
+            "First",
+            typeof(string),
+            () => readFails ? throw new InvalidOperationException("unreadable") : partial,
+            v =>
+            {
+                partial = (string)v!;
+                throw new InvalidOperationException("rejected after the write");
+            });
+        var second = new CustomPropertyItem("Second", typeof(string), () => other, v => other = (string)v!);
+        var source = new ApplyThenRefuseSource(new CustomPropertySource([first, second]), "Second");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(first, "half-written");
+        session.SetText(second, "changed");
+        readFails = true;
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: nothing applied, the restorable write is undone and the one that cannot be put back is reported instead of hidden
+        Assert.False(result.Succeeded);
+        Assert.Equal(0, result.Applied);
+        Assert.Equal("Refused: Second The previous value of 'First' could not be restored.", result.Error);
+        Assert.Equal("b", other);
+        Assert.Equal(2, session.GetPendingEdits().Count);
+    }
+
+    /// <summary>
+    ///     A scope that already rolled the writes back by itself leaves nothing to restore: no extra write happens.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterScopeRolledBack_WritesNothingAgain()
+    {
+        // Arrange: a scope that applies, undoes its own write and then refuses
+        var log = new List<string>();
+        var source = new ScopedSource(log);
+        source.Behavior = apply =>
+        {
+            apply();
+            source.Value = "old";
+            log.Add("rolled-back");
+            throw new PropertyCommitRefusedException("Title", "Not allowed here.");
+        };
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(source.GetItems()[0], "new");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert: one write only (the original), no restore write, value unchanged
+        Assert.False(result.Succeeded);
+        Assert.Equal("old", source.Value);
+        Assert.Equal(1, log.Count(entry => entry == "write"));
+        Assert.True(session.HasChanges);
+    }
+
+    /// <summary>
+    ///     A value that cannot be put back after a refusal is named in the commit error.
+    /// </summary>
+    [Fact]
+    public void PropertyEditSession_Commit_RefusalAfterWrites_ReportsAValueThatCouldNotBeRestored()
+    {
+        // Arrange: a setter that accepts the first write only
+        var writes = 0;
+        var value = "old";
+        var item = new CustomPropertyItem("Title", typeof(string), () => value, v =>
+        {
+            if (++writes > 1)
+            {
+                throw new InvalidOperationException("locked");
+            }
+
+            value = (string)v!;
+        });
+        var source = new ApplyThenRefuseSource(new CustomPropertySource([item]), "Title");
+        var session = new PropertyEditSession(source, PropertyEditMode.Staged);
+        session.SetText(item, "new");
+
+        // Act
+        var result = session.Commit();
+
+        // Assert
+        Assert.False(result.Succeeded);
+        Assert.Equal("Refused: Title The previous value of 'Title' could not be restored.", result.Error);
+        Assert.Equal(0, result.Applied);
+    }
+
+    /// <summary>
     ///     A setter that rejects every value the way framework code does, with an argument exception that names its parameter.
     /// </summary>
     /// <param name="value">The value.</param>
@@ -262,53 +453,6 @@ public class CommitScopeTests
         // Assert
         Assert.False(result.Succeeded);
         Assert.Equal("The commit scope did not apply the changes.", result.Error);
-    }
-
-    /// <summary>
-    ///     A composite chains the scopes of its sources, the first source outermost, and runs the action once.
-    /// </summary>
-    [Fact]
-    public void CompositePropertySource_RunCommit_ChainsTheSourceScopes()
-    {
-        // Arrange
-        var log = new List<string>();
-        var first = new ScopedSource(log);
-        var second = new ScopedSource(log);
-        var plain = new CustomPropertySource();
-        using var composite = new CompositePropertySource(first, plain, second);
-
-        // Act
-        composite.RunCommit(() => log.Add("apply"));
-
-        // Assert
-        Assert.Equal(["source-before", "source-before", "apply", "source-after", "source-after"], log);
-        Assert.Throws<ArgumentNullException>(() => composite.RunCommit(null!));
-    }
-
-    /// <summary>
-    ///     A category with a lower rank is shown first; within a rank the order is alphabetical, and a category ranks as its lowest item.
-    /// </summary>
-    [Fact]
-    public void PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically()
-    {
-        // Arrange
-        PropertyItem Make(string name, string category, int order) =>
-            new CustomPropertyItem(name, typeof(string), () => string.Empty, null, new CustomPropertyOptions { Category = category, CategoryOrder = order });
-        var items = new[]
-        {
-            Make("A", "Alpha", 0),
-            Make("B", "Zulu", -1),
-            Make("C", "Mike", 0),
-            Make("D", "Zulu", 5),
-        };
-
-        // Act
-        var groups = PropertyOrdering.Group(items, PropertySortMode.Categorized);
-
-        // Assert
-        Assert.Equal(["Zulu", "Alpha", "Mike"], groups.Select(g => g.Category));
-        Assert.Equal(["B", "D"], groups[0].Items.Select(i => i.Name));
-        Assert.Equal(0, new CustomPropertyOptions().CategoryOrder);
     }
 
     /// <summary>

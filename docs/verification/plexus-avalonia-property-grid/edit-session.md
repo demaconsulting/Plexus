@@ -100,6 +100,22 @@ Source commit scope and refusals (`CommitScopeTests.cs`; a test source records t
   (`PlexusAvaloniaPropertyGrid-EditSession-CommitFailures`): a refusal naming a row that was not edited is listed in
   `CommitResult.Failed` with its path and message, and the edit that was made stays pending
   (`PropertyEditSession_Commit_RefusedExceptionMarksTheNamedProperty` checks the same list, `Applied` 0 and the item).
+- **PropertyEditSession_Commit_RefusalAfterWrites_RestoresTheTargetAndKeepsEdits**
+  (`PlexusAvaloniaPropertyGrid-EditSession-CommitRestore`): two value edits and a collection edit are written, then the
+  scope refuses; the name, the age and the list are back to their old values, `Applied` is 0, `Failed` lists the refused
+  row and all three edits are still pending (error path).
+- **PropertyEditSession_Commit_RefusalAfterPartialFailedWrite_RestoresTheTarget**
+  (`PlexusAvaloniaPropertyGrid-EditSession-CommitRestoreFailedWrite`): the setter of the first edit writes its field and
+  then throws, and the scope refuses the second edit after the writes ran; both fields are back to their old values,
+  `Applied` is 0 and both edits are still pending (error path).
+- **PropertyEditSession_Commit_RefusalAfterFailedWriteWithoutSnapshot_NamesItAsNotRestored**
+  (`PlexusAvaloniaPropertyGrid-EditSession-CommitRestoreUnreadable`): during the commit the first value cannot be read,
+  and its setter writes and then throws; the scope refuses the second edit, which is restored, and the commit error
+  names the first property as not restored; `Applied` is 0 and both edits are still pending (error path).
+- **PropertyEditSession_Commit_RefusalAfterScopeRolledBack_WritesNothingAgain**: a scope that rolled its write back
+  itself before refusing causes no second write (the setter log shows one write).
+- **PropertyEditSession_Commit_RefusalAfterWrites_ReportsAValueThatCouldNotBeRestored**: when the setter rejects the
+  restoring write, `CommitResult.Error` names the property (error path).
 - **PropertyEditSession_SetText_ArgumentExceptionMessage_HasNoParameterSuffix**: an argument exception from a setter or
   a
   converter produces a message without " (Parameter 'value')" (error path).

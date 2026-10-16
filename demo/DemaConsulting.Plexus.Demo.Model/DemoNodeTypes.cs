@@ -94,13 +94,13 @@ public static partial class DemoNodeTypes
     /// <returns>A new registry; each call returns an independent instance.</returns>
     public static NodeTypeRegistry CreateRegistry()
     {
-        // Port types give wires and triangles their color
+        // Port types give wires and triangles their color, and port tooltips their type name
         var types = new NodeTypeRegistry();
-        types.PortTypes.Add(new PortType(Number, Color.Parse("#FF8C00")));
-        types.PortTypes.Add(new PortType(Bool, Color.Parse("#2EBF5B")));
-        types.PortTypes.Add(new PortType(Fluid, Color.Parse("#1E90FF")));
-        types.PortTypes.Add(new PortType(Audio, Color.Parse("#B05CFF")));
-        types.PortTypes.Add(new PortType(Flow, Color.Parse("#F2D13D")));
+        types.PortTypes.Add(new PortType(Number, Color.Parse("#FF8C00")) { DisplayName = "Number" });
+        types.PortTypes.Add(new PortType(Bool, Color.Parse("#2EBF5B")) { DisplayName = "Boolean" });
+        types.PortTypes.Add(new PortType(Fluid, Color.Parse("#1E90FF")) { DisplayName = "Fluid" });
+        types.PortTypes.Add(new PortType(Audio, Color.Parse("#B05CFF")) { DisplayName = "Audio" });
+        types.PortTypes.Add(new PortType(Flow, Color.Parse("#F2D13D")) { DisplayName = "Control flow" });
 
         // Node types follow, in the order a palette would list them
         AddMathTypes(types);
@@ -155,6 +155,9 @@ public static partial class DemoNodeTypes
     /// <param name="dataType">The type of the host data payload, or null when nodes carry none.</param>
     /// <param name="size">The default node size, or null for the demo's shared size.</param>
     /// <param name="createData">Creates the initial host data of every new node, or null when nodes start without data.</param>
+    /// <param name="portProvider">Computes each node's ports from its properties, or null when every node has the declared ports.</param>
+    /// <param name="description">What the node type does, shown in tooltips and palettes, or null.</param>
+    /// <param name="toolTip">Produces a node's live tooltip text, or null to show the description.</param>
     /// <returns>The node type.</returns>
     private static NodeType Define(
         string key,
@@ -168,7 +171,10 @@ public static partial class DemoNodeTypes
         INodeVisual? visual = null,
         Type? dataType = null,
         Size? size = null,
-        Func<object>? createData = null)
+        Func<object>? createData = null,
+        Func<Node, PortSet>? portProvider = null,
+        string? description = null,
+        Func<Node, string?>? toolTip = null)
     {
         var type = new NodeType(key)
         {
@@ -183,6 +189,11 @@ public static partial class DemoNodeTypes
             // the factory gives every new node (added, dropped or pasted) its own payload object
             DataType = dataType,
             CreateData = createData,
+
+            // Optional per-node ports and the text the editor shows when the pointer rests on a node
+            PortProvider = portProvider,
+            Description = description,
+            ToolTip = toolTip,
         };
 
         // Ports and properties are added after construction because the type is immutable once registered
@@ -213,9 +224,10 @@ public static partial class DemoNodeTypes
     /// <param name="category">The category a properties editor groups the property under, or null.</param>
     /// <param name="description">The help text of the property, or null.</param>
     /// <param name="editorHint">The key of the custom editor a properties editor should use (for example <c>slider</c>), or null.</param>
+    /// <param name="order">The position of the property within its category in a properties editor (lower first); 0 keeps alphabetical order.</param>
     /// <returns>The property definition.</returns>
-    private static PropertyDefinition Summarized(string name, object value, string? unit = null, string? category = null, string? description = null, string? editorHint = null) =>
-        new(name, value) { Unit = unit, ShowInSummary = true, Category = category, Description = description, EditorHint = editorHint };
+    private static PropertyDefinition Summarized(string name, object value, string? unit = null, string? category = null, string? description = null, string? editorHint = null, int order = 0) =>
+        new(name, value) { Unit = unit, ShowInSummary = true, Category = category, Description = description, EditorHint = editorHint, Order = order };
 
     /// <summary>
     ///     Creates a choice property that is shown in the node summary.
@@ -225,7 +237,35 @@ public static partial class DemoNodeTypes
     /// <param name="choices">The allowed values.</param>
     /// <param name="category">The category a properties editor groups the property under, or null.</param>
     /// <param name="description">The help text of the property, or null.</param>
+    /// <param name="order">The position of the property within its category in a properties editor (lower first); 0 keeps alphabetical order.</param>
     /// <returns>The property definition.</returns>
-    private static PropertyDefinition Choice(string name, string value, IReadOnlyList<string> choices, string? category = null, string? description = null) =>
-        new(name, value) { Choices = choices, ShowInSummary = true, Category = category, Description = description };
+    private static PropertyDefinition Choice(string name, string value, IReadOnlyList<string> choices, string? category = null, string? description = null, int order = 0) =>
+        new(name, value) { Choices = choices, ShowInSummary = true, Category = category, Description = description, Order = order };
+
+    /// <summary>
+    ///     Formats a node's current property value with its unit for a tooltip, for example <c>12 L/min</c>.
+    /// </summary>
+    /// <remarks>
+    ///     Uses the definition's own formatting (invariant culture), so a tooltip shows a value the way the node summary does.
+    ///     A value missing from the bag (a property declared after the node was stored) shows the default.
+    /// </remarks>
+    /// <param name="node">The node.</param>
+    /// <param name="name">The name of a property its type declares.</param>
+    /// <returns>The formatted value, followed by a space and the unit when the property has one.</returns>
+    private static string Value(Node node, string name)
+    {
+        var definition = node.Type.Properties.First(p => p.Name == name);
+        var value = node.Properties.TryGetValue(name, out var current) ? current : definition.DefaultValue;
+        var text = definition.FormatValue(value);
+        return string.IsNullOrEmpty(definition.Unit) ? text : $"{text} {definition.Unit}";
+    }
+
+    /// <summary>
+    ///     Makes a live tooltip: the type's description on the first line and a summary of the node's current values below it.
+    /// </summary>
+    /// <param name="description">The node type's description.</param>
+    /// <param name="summary">Builds the one-line summary of a node's current values.</param>
+    /// <returns>The tooltip function for <see cref="NodeType.ToolTip"/>.</returns>
+    private static Func<Node, string?> Live(string description, Func<Node, string> summary) =>
+        node => $"{description}\n{summary(node)}";
 }

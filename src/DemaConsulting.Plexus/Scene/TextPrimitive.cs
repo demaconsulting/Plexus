@@ -7,7 +7,6 @@ namespace DemaConsulting.Plexus.Scene;
 ///     The text is aligned horizontally according to <see cref="Style"/> and centered vertically
 ///     in <see cref="Rect"/>. Painters do not wrap or clip; the scene builder has already
 ///     broken long text into one primitive per line.
-///     Inherited from <see cref="ScenePrimitive"/>: <see cref="ScenePrimitive.Bounds"/> and <see cref="ScenePrimitive.Element"/> (the owning model element, or null).
 /// </remarks>
 public sealed class TextPrimitive : ScenePrimitive
 {

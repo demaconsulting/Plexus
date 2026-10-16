@@ -87,3 +87,88 @@ sections:
               - Plexus-Types-NodeTypeRegistry-Removal
             tests:
               - Types_Availability_RemoveAndReRegister_ControlsNodeCreation
+
+          - id: Plexus-Types-PortProvider
+            title: >-
+              The Types subsystem shall let a node type declare a port provider that computes each node's input and
+              output ports.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; the node type is where hosts describe nodes, so it is also where
+              the rule that derives a node's ports from its configuration is declared.
+            children:
+              - Plexus-Types-NodeTypeRegistry-PortProvider
+              - Plexus-Types-NodeTypeRegistry-PortProviderEmpty
+              - Plexus-Types-NodeTypeRegistry-PortSet
+              - Plexus-Types-NodeTypeRegistry-PortSetReadOnly
+              - Plexus-Types-NodeTypeRegistry-PortSetValidation
+            tests:
+              - Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts
+              - Types_PortProvider_InputsAndOutputs_ComputedPerNode
+
+          - id: Plexus-Types-PortProviderDefaults
+            title: >-
+              The Types subsystem shall keep a node type's declared ports as its defaults when it has a port provider.
+            justification: |
+              Decomposes Plexus-Core-DynamicPorts; palettes, previews and drag sizes use the declared ports before a
+              node exists.
+            children:
+              - Plexus-Types-NodeTypeRegistry-PortProviderDefaults
+            tests:
+              - Types_PortProvider_DeclaredOnType_SuppliesPerNodePorts
+
+          - id: Plexus-Types-PortProviderNull
+            title: >-
+              The Types subsystem shall make node creation fail, naming the node type, when a port provider returns no
+              port set.
+            justification: |
+              Decomposes Plexus-Core-DynamicPortFailure; a provider that returns nothing is a host bug that must be
+              reported where it happens.
+            children:
+              - Plexus-Types-NodeTypeRegistry-PortProviderNull
+            tests:
+              - Types_PortProvider_ReturnsNull_AddNodeFails
+
+          - id: Plexus-Types-Descriptions
+            title: >-
+              The Types subsystem shall let a host give a node type an optional description.
+            justification: |
+              Decomposes Plexus-Core-ElementDescriptions; descriptive text is part of the declarations hosts already
+              make, so editors can show it without host code per element.
+            children:
+              - Plexus-Types-NodeTypeRegistry-Descriptions
+            tests:
+              - Types_Descriptions_PortNodeAndPortType_AreExposed
+
+          - id: Plexus-Types-PortDescriptions
+            title: >-
+              The Types subsystem shall let a host give a port declaration an optional description that is exposed on
+              the port.
+            justification: |
+              Decomposes Plexus-Core-PortDescriptions; users need to know what each port of a block means.
+            children:
+              - Plexus-Types-NodeTypeRegistry-PortDescription
+            tests:
+              - Types_Descriptions_PortNodeAndPortType_AreExposed
+
+          - id: Plexus-Types-PortTypeDisplayName
+            title: >-
+              The Types subsystem shall let a host give a port type a display name that defaults to its key.
+            justification: |
+              Decomposes Plexus-Core-PortTypeNames; tooltips show readable type names instead of keys.
+            children:
+              - Plexus-Types-NodeTypeRegistry-PortTypeDisplayName
+            tests:
+              - Types_Descriptions_PortNodeAndPortType_AreExposed
+
+          - id: Plexus-Types-ToolTipFunction
+            title: >-
+              The Types subsystem shall let a node type declare a tooltip function that yields a node's tooltip text
+              from the node's current properties and payload.
+            justification: |
+              Decomposes Plexus-Core-LiveToolTips; hosts show live values and validation messages where the user
+              points.
+            children:
+              - Plexus-Types-NodeTypeRegistry-ToolTipPrecedence
+              - Plexus-Types-NodeTypeRegistry-ToolTipFailure
+            tests:
+              - Types_Descriptions_ToolTipFunction_FollowsNodeState

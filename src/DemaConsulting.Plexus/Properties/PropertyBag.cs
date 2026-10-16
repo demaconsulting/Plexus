@@ -15,6 +15,9 @@ namespace DemaConsulting.Plexus;
 ///     Compatible numeric types convert, so assigning an <see cref="int"/> to a double property works.
 ///     Every assignment is undoable and a no-op assignment records nothing. Enumeration lists declared
 ///     properties first (in declaration order) and then ad-hoc values (in insertion order).
+///     When the node's type declares a <see cref="NodeType.PortProvider"/>, every change (assignment, <see cref="Reset"/>,
+///     <see cref="TrySetAll"/>, ad-hoc values) also recomputes the node's ports inside the same undo entry; see
+///     <see cref="NodeType.PortProvider"/> for how wires are kept or removed.
 ///     Not thread-safe.
 /// </remarks>
 /// <example>
@@ -89,7 +92,8 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     /// </summary>
     /// <remarks>
     ///     Raised twice per change: once with the property's name and once with <c>"Item[]"</c>, the name data-binding uses for
-    ///     indexer changes, so a binding to <c>Properties[Gain]</c> refreshes. The sender is the bag.
+    ///     indexer changes, so a binding to <c>Properties[Gain]</c> refreshes. The sender is the bag. A handler that throws does
+    ///     not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
     /// </remarks>
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -144,13 +148,21 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
             return typed;
         }
 
-        // Allow numeric widening/narrowing between the primitive kinds, e.g. an int property read as double
+        // Allow numeric widening/narrowing between the primitive kinds, e.g. an int property read as double, but only
+        // when the converted value represents exactly the stored one (1.5 is not an int, long.MaxValue is not a double)
         var target = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
         if (value is int or long or double && target.IsPrimitive && target != typeof(bool) && target != typeof(char))
         {
             try
             {
-                return (T)Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+                var converted = Convert.ChangeType(value, target, CultureInfo.InvariantCulture);
+                var roundTrip = Convert.ChangeType(converted, value.GetType(), CultureInfo.InvariantCulture);
+                if (!value.Equals(roundTrip))
+                {
+                    throw new InvalidCastException($"Property '{name}' value {value} cannot be read as {target.Name} without losing precision.");
+                }
+
+                return (T)converted;
             }
             catch (OverflowException ex)
             {
@@ -202,7 +214,7 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     public void Reset(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        var page = _owner.RequirePage();
+        _owner.RequirePage();
         if (!_values.TryGetValue(name, out var current))
         {
             throw new KeyNotFoundException($"The node has no property named '{name}'.");
@@ -214,13 +226,13 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
             // Resetting an already-default value must not create a history entry
             if (!Equals(current, definition.DefaultValue))
             {
-                ExecuteSet(page, name, current, definition.DefaultValue);
+                ExecuteSet(name, current, definition.DefaultValue);
             }
 
             return;
         }
 
-        RemoveAdHoc(page, name, current);
+        RemoveAdHoc(name, current);
     }
 
     /// <summary>
@@ -258,7 +270,7 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     {
         ArgumentException.ThrowIfNullOrEmpty(name);
         ArgumentNullException.ThrowIfNull(value);
-        var page = _owner.RequirePage();
+        _owner.RequirePage();
 
         // Declared properties coerce to their kind; ad-hoc ones only need to be an allowed kind
         var definition = GetDefinition(name);
@@ -271,24 +283,23 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
         {
             if (!Equals(current, canonical))
             {
-                ExecuteSet(page, name, current, canonical);
+                ExecuteSet(name, current, canonical);
             }
 
             return;
         }
 
-        AddAdHoc(page, name, canonical);
+        AddAdHoc(name, canonical);
     }
 
     /// <summary>
-    ///     Records an undoable change of an existing value.
+    ///     Records an undoable change of an existing value, recomputing the node's ports in the same entry when its type has a port provider.
     /// </summary>
-    /// <param name="page">The node's page.</param>
     /// <param name="name">The property name.</param>
     /// <param name="oldValue">The current value.</param>
     /// <param name="newValue">The new canonical value.</param>
-    private void ExecuteSet(DiagramPage page, string name, object oldValue, object newValue) =>
-        page.Diagram.History.Execute(new SetValueCommand<object>(
+    private void ExecuteSet(string name, object oldValue, object newValue) =>
+        _owner.ExecuteAffectingPorts(new SetValueCommand<object>(
             $"Set {name}",
             this,
             name,
@@ -297,13 +308,12 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
             v => ApplyValue(name, v)));
 
     /// <summary>
-    ///     Records the undoable creation of an ad-hoc value.
+    ///     Records the undoable creation of an ad-hoc value, recomputing the node's ports in the same entry when its type has a port provider.
     /// </summary>
-    /// <param name="page">The node's page.</param>
     /// <param name="name">The new property name.</param>
     /// <param name="value">The canonical value.</param>
-    private void AddAdHoc(DiagramPage page, string name, object value) =>
-        page.Diagram.History.Execute(
+    private void AddAdHoc(string name, object value) =>
+        _owner.ExecuteAffectingPorts(new DelegateCommand(
             $"Add {name}",
             () =>
             {
@@ -316,18 +326,17 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
                 _values.Remove(name);
                 _adHocOrder.Remove(name);
                 RaiseChanged(name);
-            });
+            }));
 
     /// <summary>
-    ///     Records the undoable removal of an ad-hoc value, remembering its position.
+    ///     Records the undoable removal of an ad-hoc value, remembering its position and recomputing the node's ports in the same entry when its type has a port provider.
     /// </summary>
-    /// <param name="page">The node's page.</param>
     /// <param name="name">The property name.</param>
     /// <param name="value">The current value.</param>
-    private void RemoveAdHoc(DiagramPage page, string name, object value)
+    private void RemoveAdHoc(string name, object value)
     {
         var index = _adHocOrder.IndexOf(name);
-        page.Diagram.History.Execute(
+        _owner.ExecuteAffectingPorts(new DelegateCommand(
             $"Reset {name}",
             () =>
             {
@@ -340,7 +349,7 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
                 _values[name] = value;
                 _adHocOrder.Insert(index, name);
                 RaiseChanged(name);
-            });
+            }));
     }
 
     /// <summary>
@@ -360,8 +369,30 @@ public sealed partial class PropertyBag : IReadOnlyDictionary<string, object>, I
     /// <param name="name">The changed property name.</param>
     private void RaiseChanged(string name)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(IndexerName));
+        if (PropertyChanged is { } handler)
+        {
+            // During an undoable change a throwing handler is reported after the change completed (see UndoHistory)
+            Raise(handler, new PropertyChangedEventArgs(name));
+            Raise(handler, new PropertyChangedEventArgs(IndexerName));
+        }
+
         _owner.NotifyChanged(nameof(Node.Properties));
+    }
+
+    /// <summary>
+    ///     Raises one property-changed notification, through the diagram's history while the node is on a page.
+    /// </summary>
+    /// <param name="handler">The subscribed handlers.</param>
+    /// <param name="args">The notification.</param>
+    private void Raise(PropertyChangedEventHandler handler, PropertyChangedEventArgs args)
+    {
+        if (_owner.Page?.Diagram.History is { } history)
+        {
+            history.Notify((Handler: handler, Sender: this, Args: args), static s => s.Handler(s.Sender, s.Args));
+        }
+        else
+        {
+            handler(this, args);
+        }
     }
 }

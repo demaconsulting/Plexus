@@ -28,6 +28,7 @@ public abstract class DiagramElement : INotifyPropertyChanged
     ///     The event is raised for changes made through the API and for changes made by undo and redo, on the
     ///     thread that owns the diagram. <see cref="System.ComponentModel.PropertyChangedEventArgs.PropertyName"/>
     ///     names the property. Use <see cref="Diagram.Changed"/> instead to observe the whole diagram with one handler.
+    ///     A handler that throws does not interrupt the change; see <see cref="Diagram.Changed"/> for how its exception is reported.
     /// </remarks>
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -120,7 +121,20 @@ public abstract class DiagramElement : INotifyPropertyChanged
     internal void NotifyChanged(string propertyName)
     {
         Page?.OnElementChanging(this);
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        if (PropertyChanged is { } handler)
+        {
+            var args = new PropertyChangedEventArgs(propertyName);
+            if (Page is { } page)
+            {
+                // During an undoable change a throwing handler is reported after the change completed (see UndoHistory)
+                page.Diagram.History.Notify((Handler: handler, Sender: this, Args: args), static s => s.Handler(s.Sender, s.Args));
+            }
+            else
+            {
+                handler(this, args);
+            }
+        }
+
         Page?.Diagram.RaiseChanged(DiagramChangeKind.ElementChanged, Page, this, propertyName);
     }
 }

@@ -66,9 +66,10 @@ Editor.DiagramTheme = DiagramTheme.Classic with { CanvasBackground = Color.Parse
 byte[] printable = PlexusRenderer.RenderPng(page, new RenderOptions { Theme = DiagramTheme.Classic });
 ```
 
-The editor's `DiagramTheme` property and `RenderOptions.Theme` replace the diagram's theme for painting. Keep such an
-override to colors and fonts: metrics such as the port pitch also decide where wires are routed, and the router uses the
-diagram's own theme.
+The editor's `DiagramTheme` property, `RenderOptions.Theme` and `SceneOptions.Theme` replace the diagram's theme for
+painting: colors, fonts and decorations. Port positions, port triangles, port hit areas and wire ends always follow the
+diagram's own theme, so wires stay attached to their ports whatever the override says; port metrics such as the port
+pitch, triangle size or label gap only take effect when set on `Diagram.Theme`.
 
 ### Port Alignment
 

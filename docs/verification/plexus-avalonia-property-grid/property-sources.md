@@ -1,7 +1,7 @@
 ## PropertySources Unit Verification Design
 
 Scope: Supplies property items: reflection over any object through the component model, host-supplied items, merging of
-sources, source selection by factory and category ordering.
+sources, source selection by factory and category and item ordering.
 
 ### Verification Approach
 
@@ -33,8 +33,17 @@ arguments rejected.
   (error path).
 - **ReflectionPropertySource_NotifyPropertyChanged_RaisesChanged**: change notifications are forwarded with the property
   name or null, and stop after dispose.
-- **ReflectionPropertySource_RefreshAllProperty_RebuildsItems**: a change of a refresh-all property rebuilds the items
-  and a normal property does not.
+- **ReflectionPropertySource_RefreshAllProperty_RebuildsItems**: a change of an observable property annotated
+  `RefreshProperties.All` replaces the items and raises an all-items notification, and an explicit refresh of the source
+  does the same.
+- **ReflectionPropertySource_ShownRefreshAllPropertyChanged_RebuildsItems**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-HiddenRefreshAll`): the change notification of a shown refresh-all
+  property replaces the items and reports a change of everything, while an ordinary property keeps the items and
+  reports its own name.
+- **ReflectionPropertySource_HiddenRefreshAllPropertyChanged_RebuildsItems**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-HiddenRefreshAll`): the change notification of a hidden (non-browsable)
+  refresh-all property, which has no item, also replaces the items of a source that omits it and reports a change of
+  everything.
 - **CustomPropertySource_AddRemoveNotify_RaiseChanges**: add, remove, refresh and value notifications raise changes and
   hidden items are not listed.
 - **CustomPropertyItem_Options_AreExposed**: metadata, default and reset, read-only state and argument validation
@@ -53,7 +62,16 @@ arguments rejected.
   (error path).
 - **PropertyOrdering_Group_ProducesCategoryGroupsOrOneFlatGroup**: groups ignore case, a flat group has no category, empty
   input gives no groups.
-- **PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically** (`CommitScopeTests.cs`): a category with a lower
+- **PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-CategoryOrder`): a category with a lower
   `CategoryOrder` is first, a category ranks as its lowest item, equal ranks are alphabetical.
-- **CompositePropertySource_RunCommit_ChainsTheSourceScopes** (`CommitScopeTests.cs`): the scopes of the sources that
-  have one are chained, the first outermost, and the action runs once; a null action is rejected (error path).
+- **PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel** (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`):
+  within a category a parenthesized item comes first whatever its rank, then the items by ascending `Order` (the
+  default 0 before 1), equal ranks alphabetical.
+- **PropertyOrdering_Order_AlphabeticalIgnoresItemOrder**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrderAlphabetical`): the
+  alphabetical view sorts by label even when the ranks say otherwise.
+- **CompositePropertySource_RunCommit_ChainsTheSourceScopes** (`PlexusAvaloniaPropertyGrid-PropertySources-CommitScope`):
+  the scopes of the sources that
+  have one are chained, the first outermost, and the action runs once; a null action is rejected (error path). The test
+  uses its own recording source in `PropertySourceTests.cs`.

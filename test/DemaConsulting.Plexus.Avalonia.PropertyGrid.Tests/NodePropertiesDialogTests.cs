@@ -208,6 +208,28 @@ public class NodePropertiesDialogTests
     }
 
     /// <summary>
+    ///     A node that is not attached to a diagram is rejected with an argument exception by every entry point.
+    /// </summary>
+    /// <returns>A task that completes when the body has run.</returns>
+    [Fact]
+    public Task NodePropertiesDialog_UnattachedNode_IsRejected() => UiTest.Run(() =>
+    {
+        // Arrange: a node that was removed from its page
+        var (_, node) = NodeFixture.Create();
+        node.Remove();
+        var owner = GridHarness.Host(new TextBlock { Text = "owner" });
+        var options = new NodePropertiesDialogOptions { Title = "Inspector" };
+
+        // Act / Assert: the same error for the plain and the optioned overloads of ShowAsync and Create
+        Assert.Throws<ArgumentException>(() => NodePropertiesDialog.Create(node));
+        Assert.Throws<ArgumentException>(() => NodePropertiesDialog.Create(node, options));
+        Assert.Throws<ArgumentException>(() => { _ = NodePropertiesDialog.ShowAsync(owner, node); });
+        Assert.Throws<ArgumentException>(() => { _ = NodePropertiesDialog.ShowAsync(owner, node, options); });
+        Assert.Empty(owner.OwnedWindows);
+        owner.Close();
+    });
+
+    /// <summary>
     ///     A live grid given a node makes each edit one undo entry and follows undo.
     /// </summary>
     /// <returns>A task that completes when the body has run.</returns>

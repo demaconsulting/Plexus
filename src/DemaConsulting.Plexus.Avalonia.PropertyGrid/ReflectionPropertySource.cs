@@ -25,7 +25,9 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid;
 ///     <para>
 ///         If the target implements <see cref="INotifyPropertyChanged"/> the source raises <see cref="Changed"/> for
 ///         each change notification; a change of a property annotated <c>[RefreshProperties(RefreshProperties.All)]</c>
-///         also rebuilds the item list (see <see cref="Refresh"/>). Dispose the source to detach from the target.
+///         (whether or not that property is shown, so a hidden property can drive the visible ones) and a notification
+///         without a property name also rebuild the item list (see <see cref="Refresh"/>). Dispose the source to detach from
+///         the target.
 ///     </para>
 /// </remarks>
 /// <example>
@@ -158,8 +160,11 @@ public sealed class ReflectionPropertySource : IPropertySource, IDisposable
     /// <param name="e">The notification.</param>
     private void OnTargetPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var item = string.IsNullOrEmpty(e.PropertyName) ? null : _items.FirstOrDefault(i => i.Name == e.PropertyName);
-        if (string.IsNullOrEmpty(e.PropertyName) || item is { RefreshMode: RefreshProperties.All })
+        // Decide with the target's complete descriptor set, so a hidden property annotated to refresh everything counts
+        // although it has no item
+        var descriptor = string.IsNullOrEmpty(e.PropertyName) ? null : TypeDescriptor.GetProperties(_target)[e.PropertyName];
+        var refreshAll = descriptor?.Attributes.OfType<RefreshPropertiesAttribute>().FirstOrDefault()?.RefreshProperties == RefreshProperties.All;
+        if (string.IsNullOrEmpty(e.PropertyName) || refreshAll)
         {
             Refresh();
             return;

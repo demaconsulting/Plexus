@@ -14,7 +14,8 @@ its way. It consists of the `IWireRouter` contract (with `RouteRequest` and `Por
 The subsystem is pure computation. It reads no model state, holds no state between calls and performs no I/O, so
 routing is deterministic, reproducible in tests and in headless rendering, and thread-safe. The page model (Model
 subsystem) owns the decision of when to route; the Scene subsystem owns the obstacle geometry
-(`NodeGeometry.RoutingObstacles`) and calls the router for transient display routes of collapsed groups.
+(`NodeGeometry.RoutingObstacles`, from each node's current ports) and calls the router for transient display routes of
+collapsed groups.
 
 Boundaries: the subsystem does not decide which wires exist, does not move nodes and does not store routes. Stored
 wire routes belong to the model and are restored by the Serialization subsystem without consulting any router.
@@ -93,8 +94,10 @@ new route to the traffic of the next, so a wire never avoids the stale route of 
 the result of re-routing a page is repeatable. Penalties only add cost, so the search stays optimal for the combined
 cost and its estimate stays admissible.
 
-**Groups as obstacles.** Group frames are not part of the router's own logic: the page (and the scene builder, for
-display routes of collapsed groups) simply adds them to `RouteRequest.Obstacles`, so routers need no group knowledge.
+**Groups as obstacles.** Group frames are not part of the router's own logic: Routing only avoids the boxes it is
+given. The Model (the page, for stored routes) and the Scene (the scene builder, for display routes of collapsed
+groups) decide which group frames to supply and add them to `RouteRequest.Obstacles`, so routers need no group
+knowledge; each of those subsystems carries its own requirement for that responsibility.
 Per wire the frame of every visible group (an expanded group's bounds including the title bar, a collapsed group's box,
 each inflated by the obstacle margin) is added unless one of the wire's two end nodes lies inside that group at any
 depth; a group hidden inside a collapsed group is not drawn and not offered. The option

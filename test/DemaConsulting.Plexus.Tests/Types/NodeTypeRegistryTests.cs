@@ -224,4 +224,227 @@ public class NodeTypeRegistryTests
         Assert.Equal(0, registry.Count);
         Assert.Throws<ArgumentException>(() => registry.Get(string.Empty));
     }
+
+    /// <summary>
+    ///     Validates that a port set rejects null sequences, null entries and duplicate names within a direction.
+    /// </summary>
+    [Fact]
+    public void PortSet_Constructor_DuplicateOrNull_Throws()
+    {
+        // Arrange
+        var a = new PortDefinition("a", "f32");
+
+        // Act / Assert: invalid sets throw; the same name on both sides is fine
+        Assert.Throws<ArgumentNullException>(() => new PortSet(null!, []));
+        Assert.Throws<ArgumentNullException>(() => new PortSet([], null!));
+        Assert.Throws<ArgumentException>(() => new PortSet([a, null!], []));
+        Assert.Throws<ArgumentException>(() => new PortSet([a, new PortDefinition("a", "i32")], []));
+        var set = new PortSet([a], [new PortDefinition("a", "f32")]);
+        Assert.Same(a, Assert.Single(set.Inputs));
+        Assert.Single(set.Outputs);
+    }
+
+    /// <summary>
+    ///     Validates that a port set copies its input sequences.
+    /// </summary>
+    [Fact]
+    public void PortSet_Constructor_CopiesSequences()
+    {
+        // Arrange
+        var inputs = new List<PortDefinition> { new("a", "f32") };
+
+        // Act
+        var set = new PortSet(inputs, []);
+        inputs.Add(new PortDefinition("b", "f32"));
+
+        // Assert
+        Assert.Single(set.Inputs);
+    }
+
+    /// <summary>
+    ///     Validates that a port set's lists cannot be changed by casting them to a writable list.
+    /// </summary>
+    [Fact]
+    public void PortSet_InputsAndOutputs_CastToList_AreReadOnly()
+    {
+        // Arrange
+        var set = new PortSet([new PortDefinition("a", "f32")], [new PortDefinition("o", "f32")]);
+
+        // Act / Assert: writes through a cast are refused and the declarations are unchanged
+        Assert.Throws<NotSupportedException>(() => ((IList<PortDefinition>)set.Inputs)[0] = new PortDefinition("x", "f32"));
+        Assert.Throws<NotSupportedException>(() => ((IList<PortDefinition>)set.Outputs)[0] = new PortDefinition("x", "f32"));
+        Assert.Equal("a", set.Inputs[0].Name);
+        Assert.Equal("o", set.Outputs[0].Name);
+    }
+
+    /// <summary>
+    ///     Validates that a node's tooltip text comes from the tooltip function first, then the description.
+    /// </summary>
+    [Fact]
+    public void NodeType_GetToolTip_FunctionWinsOverDescription()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        var described = new NodeType("t.Described") { Description = "Adds numbers." };
+        var live = new NodeType("t.Live") { Description = "unused", ToolTip = n => $"live {n.Name}" };
+        var plain = new NodeType("t.Plain");
+        types.Add(described);
+        types.Add(live);
+        types.Add(plain);
+        var page = new Diagram(types).Pages.Add("Main");
+
+        // Act / Assert
+        Assert.Equal("Adds numbers.", described.GetToolTip(page.AddNode("t.Described", 0, 0)));
+        Assert.Equal("live Live1", live.GetToolTip(page.AddNode("t.Live", 0, 0)));
+        Assert.Null(plain.GetToolTip(page.AddNode("t.Plain", 0, 0)));
+        Assert.Throws<ArgumentNullException>(() => plain.GetToolTip(null!));
+    }
+
+    /// <summary>
+    ///     Validates that a port definition's description is exposed on the port.
+    /// </summary>
+    [Fact]
+    public void PortDefinition_Description_IsExposedOnPort()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("t.Doc")
+        {
+            Inputs = { new PortDefinition("x", "f32") { Description = "The x value." } },
+            Outputs = { new PortDefinition("y", "f32") },
+        });
+
+        // Act
+        var node = new Diagram(types).Pages.Add("P").AddNode("t.Doc", 0, 0);
+
+        // Assert
+        Assert.Equal("The x value.", node.Input("x").Description);
+        Assert.Null(node.Output("y").Description);
+    }
+
+    /// <summary>
+    ///     Validates that a port type's display name defaults to its key.
+    /// </summary>
+    [Fact]
+    public void PortType_DisplayName_DefaultsToKey()
+    {
+        // Arrange / Act
+        var plain = new PortType("f32", Color.Red);
+        var named = new PortType("bool", Color.Red) { DisplayName = "Boolean" };
+        var empty = new PortType("i32", Color.Red) { DisplayName = string.Empty };
+
+        // Assert
+        Assert.Equal("f32", plain.DisplayName);
+        Assert.Equal("Boolean", named.DisplayName);
+        Assert.Equal("i32", empty.DisplayName);
+    }
+
+    /// <summary>
+    ///     Validates that a declared port provider is exposed, supplies a new node's ports, and leaves the declared default ports unchanged.
+    /// </summary>
+    [Fact]
+    public void NodeType_PortProvider_Declared_SuppliesPortsAndKeepsDefaults()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        PortSet Provider(Node node) => new([new PortDefinition("x", "f32"), new PortDefinition("y", "f32")], []);
+        var type = new NodeType("t.Dynamic") { Inputs = { new PortDefinition("x", "f32") }, PortProvider = Provider };
+        types.Add(type);
+
+        // Act
+        var node = new Diagram(types).Pages.Add("P").AddNode("t.Dynamic", 0, 0);
+
+        // Assert
+        Assert.NotNull(type.PortProvider);
+        Assert.Equal(["x", "y"], node.Inputs.Select(p => p.Name));
+        Assert.Equal(["x"], type.Inputs.Select(p => p.Name));
+        Assert.Null(new NodeType("t.Static").PortProvider);
+    }
+
+    /// <summary>
+    ///     Validates that a port provider that returns no ports makes adding a node fail with the type named.
+    /// </summary>
+    [Fact]
+    public void NodeType_PortProvider_ReturnsNull_ThrowsInvalidOperation()
+    {
+        // Arrange
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("t.Broken") { PortProvider = _ => null! });
+        var page = new Diagram(types).Pages.Add("P");
+
+        // Act
+        var ex = Assert.Throws<InvalidOperationException>(() => page.AddNode("t.Broken", 0, 0));
+
+        // Assert: nothing was added
+        Assert.Contains("t.Broken", ex.Message, StringComparison.Ordinal);
+        Assert.Empty(page.Nodes);
+    }
+
+    /// <summary>
+    ///     Validates that an empty port set is a valid provider result that gives a node without ports.
+    /// </summary>
+    [Fact]
+    public void NodeType_PortProvider_EmptyPortSet_AddsNodeWithoutPorts()
+    {
+        // Arrange: declared defaults, but a provider that returns nothing in either direction
+        var types = new NodeTypeRegistry();
+        types.Add(new NodeType("t.Empty")
+        {
+            Inputs = { new PortDefinition("x", "f32") },
+            Outputs = { new PortDefinition("y", "f32") },
+            PortProvider = _ => new PortSet([], []),
+        });
+        var page = new Diagram(types).Pages.Add("P");
+
+        // Act
+        var node = page.AddNode("t.Empty", 0, 0);
+
+        // Assert: the node was added without ports
+        Assert.Same(node, Assert.Single(page.Nodes));
+        Assert.Empty(node.Inputs);
+        Assert.Empty(node.Outputs);
+    }
+
+    /// <summary>
+    ///     Validates that a tooltip function returning null or an empty string means no tooltip, not the description.
+    /// </summary>
+    [Fact]
+    public void NodeType_GetToolTip_FunctionReturnsNullOrEmpty_DoesNotUseDescription()
+    {
+        // Arrange: two types with a description and a tooltip function that yields nothing
+        var types = new NodeTypeRegistry();
+        var nullTip = new NodeType("t.NullTip") { Description = "described", ToolTip = _ => null };
+        var emptyTip = new NodeType("t.EmptyTip") { Description = "described", ToolTip = _ => string.Empty };
+        types.Add(nullTip);
+        types.Add(emptyTip);
+        var page = new Diagram(types).Pages.Add("P");
+
+        // Act
+        var fromNull = nullTip.GetToolTip(page.AddNode("t.NullTip", 0, 0));
+        var fromEmpty = emptyTip.GetToolTip(page.AddNode("t.EmptyTip", 0, 0));
+
+        // Assert: the function's result is returned unchanged
+        Assert.Null(fromNull);
+        Assert.Equal(string.Empty, fromEmpty);
+    }
+
+    /// <summary>
+    ///     Validates that an exception thrown by the tooltip function reaches the caller unchanged.
+    /// </summary>
+    [Fact]
+    public void NodeType_GetToolTip_FunctionThrows_PropagatesException()
+    {
+        // Arrange
+        var failure = new InvalidOperationException("tooltip failed");
+        var types = new NodeTypeRegistry();
+        var type = new NodeType("t.Failing") { Description = "described", ToolTip = _ => throw failure };
+        types.Add(type);
+        var node = new Diagram(types).Pages.Add("P").AddNode("t.Failing", 0, 0);
+
+        // Act
+        var thrown = Assert.Throws<InvalidOperationException>(() => type.GetToolTip(node));
+
+        // Assert: the same exception instance, not wrapped
+        Assert.Same(failure, thrown);
+    }
 }

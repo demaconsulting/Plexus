@@ -403,4 +403,153 @@ public class SceneTests
         // Assert
         Assert.Equal(1000, hits);
     }
+
+    /// <summary>
+    ///     Validates that the scene and hit testing show a port added by a port provider after a property change.
+    /// </summary>
+    [Fact]
+    public void Scene_DynamicPorts_PropertyChange_SceneAndHitTestShowNewPort()
+    {
+        // Arrange
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var bus = page.AddNode("acme.Bus", 60, 60, "B");
+
+        // Act: a third channel appears
+        bus.Properties["Channels"] = 3;
+        var scene = SceneBuilder.Build(page);
+        var in2 = bus.Input("in2");
+        var hit = scene.HitTest(NodeGeometry.PortEdge(bus.Bounds, PortDirection.Input, in2.Index, bus.Inputs.Count, diagram.Theme) - new Point(3, 0));
+
+        // Assert: the new port is hit at its row
+        Assert.Equal(HitKind.Port, hit.Kind);
+        Assert.Same(in2, hit.Port);
+    }
+
+    /// <summary>
+    ///     Validates that a node's visual extent and routing obstacles follow its current ports when a port provider adds
+    ///     ports.
+    /// </summary>
+    [Fact]
+    public void Scene_DynamicPorts_ExtentAndObstacles_FollowCurrentPorts()
+    {
+        // Arrange: a bus with two channels
+        var diagram = TestModel.CreateDynamicDiagram();
+        var page = diagram.Pages.Add("Main");
+        var bus = page.AddNode("acme.Bus", 60, 60, "B");
+        var extentBefore = NodeGeometry.VisualBounds(bus, diagram.Theme);
+        var obstaclesBefore = NodeGeometry.RoutingObstacles(bus.Bounds, bus, diagram.Theme);
+
+        // Act: eight channels
+        bus.Properties["Channels"] = 8;
+        var extent = NodeGeometry.VisualBounds(bus, diagram.Theme);
+        var obstacles = NodeGeometry.RoutingObstacles(bus.Bounds, bus, diagram.Theme);
+        var scene = SceneBuilder.Build(page, new SceneOptions { ShowGrid = false });
+
+        // Assert: both grew and cover every current port row, as does the drawn layout
+        Assert.True(extent.Height > extentBefore.Height);
+        Assert.True(obstacles.Max(o => o.Bottom) > obstaclesBefore.Max(o => o.Bottom));
+        Assert.True(scene.TryGetNodeLayout(bus, out var layout));
+        Assert.Equal(9, layout.Ports.Count);
+        Assert.All(bus.Ports, port =>
+        {
+            Assert.InRange(port.Anchor.Y, extent.Top, extent.Bottom);
+            Assert.Contains(obstacles, o => port.Anchor.Y >= o.Top && port.Anchor.Y <= o.Bottom);
+        });
+    }
+
+    /// <summary>
+    ///     Validates that a scene theme with other port metrics changes nothing about where ports and wire ends are:
+    ///     the drawn wire ends at the drawn port anchors and the ports are hit there.
+    /// </summary>
+    [Fact]
+    public void Scene_ThemeOverride_PortsStayAtWireEnds()
+    {
+        // Arrange: two connected nodes in a classic diagram, drawn with a theme whose port metrics differ
+        var (_, page) = SceneTestModel.CreatePage();
+        var a = page.AddNode("acme.Producer", 0, 60, "A");
+        var b = page.AddNode("acme.Mixer", 400, 100, "B");
+        var wire = page.Connect(a.Port("value"), b.Port("b"));
+        var display = DiagramTheme.Classic with { PortPitch = 40, PortLabelGap = 25, PortTriangleLength = 16, PortTriangleHeight = 16 };
+
+        // Act
+        var scene = SceneBuilder.Build(page, new SceneOptions { Theme = display, ShowGrid = false });
+
+        // Assert: wire ends equal the drawn anchors, which equal the model anchors, and the ports are hit there
+        Assert.True(scene.TryGetWirePoints(wire, out var points));
+        Assert.True(scene.TryGetNodeLayout(a, out var source));
+        Assert.True(scene.TryGetNodeLayout(b, out var target));
+        var start = source.Ports.Single(p => p.Port == wire.Source);
+        var end = target.Ports.Single(p => p.Port == wire.Target);
+        Assert.Equal(start.Anchor, points[0]);
+        Assert.Equal(end.Anchor, points[^1]);
+        Assert.Equal(wire.Source.Anchor, start.Anchor);
+        Assert.Equal(wire.Target.Anchor, end.Anchor);
+        Assert.Same(wire.Source, scene.HitTest(start.HitBounds.Center).Port);
+        Assert.Same(wire.Target, scene.HitTest(end.HitBounds.Center).Port);
+        Assert.Equal(end.Anchor.Y, end.Triangle.Center.Y, 9);
+    }
+
+    /// <summary>
+    ///     Validates that the deterministic visual extent of each node contains every port label the scene draws for it.
+    /// </summary>
+    [Fact]
+    public void Scene_NodeVisualExtent_ContainsEveryDrawnPortLabel()
+    {
+        // Arrange: a mixer squeezed so short that its port rows stick out of the box, and a producer
+        var (diagram, page) = SceneTestModel.CreatePage();
+        var mixer = page.AddNode("acme.Mixer", 300, 60, "M");
+        mixer.Bounds = mixer.Bounds with { Height = 20 };
+        page.AddNode("acme.Producer", 0, 60, "P");
+
+        // Act
+        var scene = SceneBuilder.Build(page, new SceneOptions { ShowGrid = false });
+
+        // Assert
+        Assert.All(page.Nodes, node =>
+        {
+            var extent = NodeGeometry.VisualBounds(node, diagram.Theme);
+            Assert.True(scene.TryGetNodeLayout(node, out var layout));
+            Assert.All(layout.Ports, port =>
+            {
+                var label = port.Label.Bounds;
+                Assert.True(
+                    label.Top >= extent.Top - 1e-9 && label.Bottom <= extent.Bottom + 1e-9
+                        && label.Left >= extent.Left - 1e-9 && label.Right <= extent.Right + 1e-9,
+                    $"{port.Port} label {label} outside {extent}");
+            });
+        });
+    }
+
+    /// <summary>
+    ///     Validates that the display route of a wire attached to a collapsed group avoids the frame of an unrelated
+    ///     group, unless the theme switches group frames off as obstacles.
+    /// </summary>
+    [Fact]
+    public void Scene_GroupObstacles_CollapsedGroupWire_AvoidsUnrelatedFrameUnlessSwitchedOff()
+    {
+        foreach (var obstacles in new[] { true, false })
+        {
+            // Arrange: producer (inside a collapsed group) and consumer on one row, an unrelated group frame between them
+            var diagram = TestModel.CreateDiagram();
+            diagram.Theme = DiagramTheme.Classic with { GroupsAreObstacles = obstacles };
+            var page = diagram.Pages.Add("Main");
+            var producer = page.AddNode("acme.Producer", 0, 0, "P");
+            var consumer = page.AddNode("acme.Consumer", 800, 0, "C");
+            var group = page.CreateGroup(
+                [page.AddNode("acme.Gain", 350, -250, "Above"), page.AddNode("acme.Gain", 350, 250, "Below")],
+                "G");
+            var wire = page.Connect(producer.Port("value"), consumer.Port("in"));
+            page.CreateGroup([producer], "Pad").IsCollapsed = true;
+            var frame = group.Bounds.Inflate(diagram.Theme.ObstacleMargin);
+
+            // Act
+            var scene = SceneBuilder.Build(page, new SceneOptions { ShowGrid = false });
+
+            // Assert
+            Assert.True(scene.TryGetWirePoints(wire, out var points));
+            Assert.True(RouteAssertions.IsOrthogonal(points));
+            Assert.Equal(!obstacles, RouteAssertions.CrossesAny(points, [obstacles ? frame : group.Bounds]));
+        }
+    }
 }

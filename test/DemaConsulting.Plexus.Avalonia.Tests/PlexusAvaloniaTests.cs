@@ -718,6 +718,199 @@ public class PlexusAvaloniaTests
     });
 
     /// <summary>
+    ///     Validates that hovering shows node, port and wire tooltips, that hosts can override them, and that they can be turned off.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_HoverElements_ShowDescriptionsAndHostOverrides() => UiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var bus = host.Page.AddNode("test.Bus", 300, 100, "B");
+        host.Editor.ToolTipRequested += (_, e) =>
+        {
+            if (e.Port is { } port)
+            {
+                e.Content = $"{e.Content} on {port.Node.Name}";
+            }
+        };
+        host.Flush();
+
+        // Act: hover the node, then one of its ports, then turn tooltips off
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var nodeTip = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(host.FindHit(HitKind.Port, bus));
+        host.Flush();
+        var portTip = ToolTip.GetTip(host.Editor) as string;
+        host.Editor.ShowToolTips = false;
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal("Merges channels.", nodeTip),
+            () => Assert.EndsWith(" on B", portTip, StringComparison.Ordinal),
+            () => Assert.Null(ToolTip.GetTip(host.Editor)));
+    });
+
+    /// <summary>
+    ///     Validates that the default tooltips describe a node, a port (label, type and description) and a wire (source to target).
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_DefaultContent_NodePortAndWire() => UiTest.Run(() =>
+    {
+        // Arrange: a described bus fed by a source
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300, "S");
+        var bus = host.Page.AddNode("test.Bus", 400, 60, "B");
+        var wire = host.Page.Connect(source.Port("value"), bus.Input("in0"));
+        host.Flush();
+
+        // Act: hover the node body, a port and the wire
+        var tips = new List<object?>();
+        foreach (var at in new[] { host.CenterOf(bus), host.FindHit(HitKind.Port, bus), host.FindHit(HitKind.Wire, wire) })
+        {
+            host.Window.MouseMove(at);
+            host.Flush();
+            tips.Add(ToolTip.GetTip(host.Editor));
+        }
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal("Merges channels.", tips[0]),
+            () => Assert.Equal(host.Editor.GetToolTipContent(bus, host.Editor.HitTest(host.FindHit(HitKind.Port, bus)).Port), tips[1]),
+            () => Assert.Matches(@"^in\d \(f32\)\nChannel \d$", tips[1] as string),
+            () => Assert.Equal("S.value → B.in0", tips[2]));
+    });
+
+    /// <summary>
+    ///     Validates that a host that cancels a tooltip, or turns tooltips off, makes hovering show nothing.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_HostCancelOrDisable_ShowNoTip() => UiTest.Run(() =>
+    {
+        // Arrange: a handler that cancels node tooltips only
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var bus = host.Page.AddNode("test.Bus", 300, 100, "B");
+        var requests = 0;
+        host.Editor.ToolTipRequested += (_, e) =>
+        {
+            requests++;
+            e.Cancel = e.Port is null;
+        };
+        host.Flush();
+
+        // Act: hover the node (canceled) and a port (shown), then turn tooltips off and hover both again
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var canceled = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(host.FindHit(HitKind.Port, bus));
+        host.Flush();
+        var shown = ToolTip.GetTip(host.Editor);
+        host.Editor.ShowToolTips = false;
+        var requestsWhenOff = requests;
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Window.MouseMove(host.FindHit(HitKind.Port, bus));
+        host.Flush();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Null(canceled),
+            () => Assert.NotNull(shown),
+            () => Assert.Null(ToolTip.GetTip(host.Editor)),
+            () => Assert.Equal(requestsWhenOff, requests));
+    });
+
+    /// <summary>
+    ///     Validates that pressing a button and moving the pointer out of the editor hide the tooltip.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ToolTips_PressAndPointerExit_HideTip() => UiTest.Run(() =>
+    {
+        // Arrange: a bus with a shown tooltip
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var bus = host.Page.AddNode("test.Bus", 300, 100, "B");
+        host.Flush();
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var shown = ToolTip.GetTip(host.Editor);
+
+        // Act: press and drag the node, then hover it again, then leave the editor
+        host.Drag(host.CenterOf(bus), host.CenterOf(bus) + new Point(40, 0));
+        var afterPress = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(new Point(700, 550));
+        host.Flush();
+        host.Window.MouseMove(host.CenterOf(bus));
+        host.Flush();
+        var shownAgain = ToolTip.GetTip(host.Editor);
+        host.Window.MouseMove(new Point(-50, -50));
+        host.Flush();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.NotNull(shown),
+            () => Assert.Null(afterPress),
+            () => Assert.NotNull(shownAgain),
+            () => Assert.Null(ToolTip.GetTip(host.Editor)));
+    });
+
+    /// <summary>
+    ///     Validates that a host can navigate to an element on another page and fit a set of elements.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements() => UiTest.Run(host =>
+    {
+        // Arrange: a "find node" on another page, and the selection to fit on the first
+        var second = host.Diagram.Pages.Add("Second");
+        second.AddNode("test.Sink", 3000, 2500, "Target");
+        var a = host.AddSource(0, 0);
+        var b = host.AddSink(2000, 1500);
+        var view = new Rect(host.Editor.Bounds.Size);
+
+        // Act: find by name and show it, then go back and fit the two nodes
+        var found = host.Diagram.FindNode("Target")!;
+        host.Editor.BringIntoView(found);
+        var foundVisible = view.Contains(host.Editor.GetElementScreenBounds(found));
+        var shownPage = host.Editor.Page;
+        host.Editor.ZoomToFit([a, b]);
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Same(second, shownPage),
+            () => Assert.True(foundVisible),
+            () => Assert.Same(host.Page, host.Editor.Page),
+            () => Assert.True(view.Contains(host.Editor.GetElementScreenBounds(a))),
+            () => Assert.True(view.Contains(host.Editor.GetElementScreenBounds(b))));
+    });
+
+    /// <summary>
+    ///     Validates that the editor reflects ports a port provider recomputes, connects to them and undoes the change in one step.
+    /// </summary>
+    [Fact]
+    public Task PlexusAvalonia_DynamicPorts_PropertyChange_EditorConnectsAndUndoes() => UiTest.Run(() =>
+    {
+        // Arrange
+        using var host = new EditorHost(configureTypes: EditorHost.AddBus);
+        var source = host.AddSource(60, 300);
+        var bus = host.Page.AddNode("test.Bus", 400, 60);
+        bus.Properties["Channels"] = 3;
+        host.Flush();
+
+        // Act: connect to the new port, then lower the channel count, then undo
+        host.Drag(host.PortOf(source), host.Editor.GetPortScreenPosition(bus.Input("in2")));
+        var connected = host.Page.Wires.Count;
+        bus.Properties["Channels"] = 2;
+        host.Flush();
+        var afterRemoval = host.Page.Wires.Count;
+        host.Editor.Undo();
+        host.Flush();
+
+        // Assert
+        Assert.Multiple(
+            () => Assert.Equal(1, connected),
+            () => Assert.Equal(0, afterRemoval),
+            () => Assert.Same(bus.Input("in2"), Assert.Single(host.Page.Wires).Target),
+            () => Assert.True(host.CurrentScene.TryGetNodeLayout(bus, out var layout) && layout.Ports.Count == 4));
+    });
+    /// <summary>
     ///     A clipboard whose every operation fails like a locked desktop session.
     /// </summary>
     private sealed class LockedClipboard : IDiagramClipboard
