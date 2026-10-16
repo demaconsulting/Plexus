@@ -210,6 +210,17 @@ jobs:
           --configuration Release
           --property:PackageVersion=${{ inputs.version }}
 
+      # actions/upload-artifact roots its archive at the common ancestor of the matched
+      # paths, so uploading from each project's bin/Release would nest the packages under
+      # 'src/<project>/bin/Release/'. Stage all packages in one flat folder instead.
+      - name: Stage packages
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path packages | Out-Null
+          Get-ChildItem src -Recurse -Include *.nupkg,*.snupkg |
+            Where-Object { $_.FullName -match '[\\/]bin[\\/]Release[\\/][^\\/]+$' } |
+            Copy-Item -Destination packages
+
       - name: Assert NuGet Packages with FileAssert
         run: >
           dotnet fileassert
@@ -230,9 +241,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: packages-${{ matrix.os }}
-          path: |
-            src/DemaConsulting.Plexus/bin/Release/*.nupkg
-            src/DemaConsulting.Plexus/bin/Release/*.snupkg
+          path: packages/
 
   # Runs CodeQL security and quality analysis, gathering results to include
   # in the code quality report.
