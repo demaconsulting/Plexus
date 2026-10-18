@@ -117,7 +117,7 @@ public class TextMeasurementTests
     public void ApproximateTextMeasurer_AsTextMeasurer_MeasuresWithoutPainterOrFonts()
     {
         // Arrange: a font family that cannot be installed anywhere
-        ITextMeasurer measurer = new ApproximateTextMeasurer();
+        var measurer = new ApproximateTextMeasurer();
         var style = new TextStyle("No Such Font Family", 12, Color.Black);
 
         // Act

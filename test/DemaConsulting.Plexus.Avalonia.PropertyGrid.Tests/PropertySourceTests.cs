@@ -226,8 +226,8 @@ public class PropertySourceTests
         // Assert
         Assert.DoesNotContain(source.GetItems(), i => i.Name == "Mode");
         Assert.NotSame(before, TestHelpers.Item(source, "Shown"));
-        Assert.Single(notifications);
-        Assert.True(notifications[0].IsAll);
+        var item = Assert.Single(notifications);
+        Assert.True(item.IsAll);
     }
 
     /// <summary>

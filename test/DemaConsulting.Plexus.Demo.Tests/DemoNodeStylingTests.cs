@@ -51,7 +51,7 @@ public class DemoNodeStylingTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var path = Path.Combine(temp.Create(), "logic.json");
+        var path = Path.Join(temp.Create(), "logic.json");
         DemoDocument.Save(DemoSamples.Logic(), path);
         var bare = new Diagram(DemoNodeTypes.CreateRegistry());
 

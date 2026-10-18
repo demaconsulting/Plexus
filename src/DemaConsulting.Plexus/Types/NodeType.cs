@@ -92,9 +92,9 @@ public sealed partial class NodeType
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         Key = key;
-        InputList = new FreezableList<PortDefinition>();
-        OutputList = new FreezableList<PortDefinition>();
-        PropertyList = new FreezableList<PropertyDefinition>();
+        InputList = [];
+        OutputList = [];
+        PropertyList = [];
     }
 
     /// <summary>

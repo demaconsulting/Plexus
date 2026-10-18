@@ -212,8 +212,8 @@ public class NodeLayoutTests
         var longWord = TextWrapper.Wrap("abcdefghijk", 50, style, measurer);
 
         // Assert
-        Assert.Equal(new[] { "ab cd", "ef", "gh" }, words);
-        Assert.Equal(new[] { "abcde", "fghij", "k" }, longWord);
+        Assert.Equal(["ab cd", "ef", "gh"], words);
+        Assert.Equal(["abcde", "fghij", "k"], longWord);
     }
 
     /// <summary>

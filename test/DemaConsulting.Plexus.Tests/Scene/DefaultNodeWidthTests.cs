@@ -111,8 +111,7 @@ public class DefaultNodeWidthTests
         // Assert: the minimum wins when larger; without a grid the width is the unrounded requirement
         Assert.Equal(300, wideSize.Width);
         Assert.True(noGridSize.Width > 90);
-        var types = new NodeTypeRegistry();
-        types.Add(type);
+        var types = new NodeTypeRegistry { type };
         var node = new Diagram(types).Pages.Add("P").AddNode("acme.Thermometer", 0, 0);
         Assert.Equal(NodeGeometry.DefaultNodeSize(type, DiagramTheme.Classic).Width, node.Bounds.Width);
     }
@@ -124,8 +123,7 @@ public class DefaultNodeWidthTests
     public void SceneBuilder_Build_LongTitleWithDefaultSize_DrawsTheTitleOnOneLine()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Thermometer") { Title = "THERMOMETER" });
+        var types = new NodeTypeRegistry { new NodeType("acme.Thermometer") { Title = "THERMOMETER" } };
         var page = new Diagram(types).Pages.Add("P");
         var node = page.AddNode("acme.Thermometer", 0, 0);
 

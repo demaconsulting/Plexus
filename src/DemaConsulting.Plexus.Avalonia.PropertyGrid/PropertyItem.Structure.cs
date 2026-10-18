@@ -83,23 +83,38 @@ public abstract partial class PropertyItem
             return _childItems!;
         }
 
+        var children = CreateChildren(value);
+        _childItems = children;
+        _childItemsValue = value;
+        return children;
+    }
+
+    /// <summary>
+    ///     Creates the child items of a value from its converter's properties.
+    /// </summary>
+    /// <param name="value">The current value.</param>
+    /// <returns>The new children.</returns>
+    private List<PropertyItem> CreateChildren(object value)
+    {
         var converter = GetEffectiveConverter(value);
         var context = new PropertyContext(this);
         var children = new List<PropertyItem>();
-        if (converter.GetPropertiesSupported(context))
+        if (!converter.GetPropertiesSupported(context))
         {
-            var properties = converter.GetProperties(context, value, [BrowsableAttribute.Yes]);
-            if (properties is not null)
-            {
-                foreach (PropertyDescriptor descriptor in properties)
-                {
-                    children.Add(new ReflectionPropertyItem(descriptor, () => TryGetValue(out var owner).Succeeded ? owner : null, this));
-                }
-            }
+            return children;
         }
 
-        _childItems = children;
-        _childItemsValue = value;
+        var properties = converter.GetProperties(context, value, [BrowsableAttribute.Yes]);
+        if (properties is null)
+        {
+            return children;
+        }
+
+        foreach (PropertyDescriptor descriptor in properties)
+        {
+            children.Add(new ReflectionPropertyItem(descriptor, () => TryGetValue(out var owner).Succeeded ? owner : null, this));
+        }
+
         return children;
     }
 

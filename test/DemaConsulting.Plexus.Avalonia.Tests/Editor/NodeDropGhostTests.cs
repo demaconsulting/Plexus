@@ -151,7 +151,7 @@ public class NodeDropGhostTests
         var during = host.Window.CaptureRenderedFrame()!;
         var duringPixel = PixelAt(during, sample);
         Directory.CreateDirectory(PicturePath);
-        during.Save(Path.Combine(PicturePath, "ghost-over-editor.png"), PngBitmapEncoderOptions.Default);
+        during.Save(Path.Join(PicturePath, "ghost-over-editor.png"), PngBitmapEncoderOptions.Default);
         host.DragEvent(RawDragEventType.DragLeave, "test.Gain", at);
         var afterPixel = PixelAt(host.Window.CaptureRenderedFrame()!, sample);
 
@@ -168,7 +168,7 @@ public class NodeDropGhostTests
     /// <summary>
     ///     Gets the folder where the tests save their pictures for inspection.
     /// </summary>
-    private static string PicturePath => Path.Combine(Path.GetTempPath(), "plexus-palette");
+    private static string PicturePath => Path.Join(Path.GetTempPath(), "plexus-palette");
 
     /// <summary>
     ///     Reads one pixel of a captured frame.

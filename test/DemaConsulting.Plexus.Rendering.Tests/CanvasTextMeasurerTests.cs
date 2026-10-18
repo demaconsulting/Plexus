@@ -13,6 +13,11 @@ public class CanvasTextMeasurerTests
     private static readonly TextStyle Regular = new("Segoe UI", 12, DemaConsulting.Plexus.Geometry.Color.Black);
 
     /// <summary>
+    ///     Strings of different widths whose heights must all match.
+    /// </summary>
+    private static readonly string[] SampleTexts = ["a", "Hello", "WWWWWWWW", "line with spaces"];
+
+    /// <summary>
     ///     Validates that longer text is wider and has a sensible, size-proportional height.
     /// </summary>
     [Fact]
@@ -76,7 +81,7 @@ public class CanvasTextMeasurerTests
         var measurer = new CanvasTextMeasurer();
 
         // Act
-        var heights = new[] { "a", "Hello", "WWWWWWWW", "line with spaces" }.Select(text => measurer.Measure(text, Regular).Height).ToList();
+        var heights = SampleTexts.Select(text => measurer.Measure(text, Regular).Height).ToList();
 
         // Assert
         Assert.All(heights, height => Assert.Equal(heights[0], height));

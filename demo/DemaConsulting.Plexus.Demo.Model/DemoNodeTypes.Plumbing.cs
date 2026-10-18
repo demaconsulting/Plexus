@@ -6,6 +6,11 @@ namespace DemaConsulting.Plexus.Demo.Model;
 public static partial class DemoNodeTypes
 {
     /// <summary>
+    ///     The name of the fluid property.
+    /// </summary>
+    private const string FluidProperty = "Fluid";
+
+    /// <summary>
     ///     The key of the pump node type.
     /// </summary>
     public const string Pump = "demo.plumbing.Pump";
@@ -46,12 +51,12 @@ public static partial class DemoNodeTypes
             [new("in", Fluid) { Description = "Fluid drawn in." }],
             [new("out", Fluid) { Description = "Fluid pumped out." }],
             [
-                Choice("Fluid", "Water", FluidChoices, description: "What the pump carries."),
+                Choice(FluidProperty, "Water", FluidChoices, description: "What the pump carries."),
                 Summarized("Rate", 12.0, "L/min", "Performance", "How much fluid the pump moves."),
                 Summarized("Head", 20.0, "m", "Performance", "How high the pump can lift the fluid."),
             ],
             description: pump,
-            toolTip: Live(pump, node => $"{Value(node, "Fluid")} · {Value(node, "Rate")} · {Value(node, "Head")}")));
+            toolTip: Live(pump, node => $"{Value(node, FluidProperty)} · {Value(node, "Rate")} · {Value(node, "Head")}")));
         const string valve = "Lets fluid through, as much as its opening allows.";
         types.Add(Define(Valve, "VALVE", "Valve", PlumbingCategory, "Valve",
             [new("in", Fluid) { Description = "Fluid arriving at the valve." }],
@@ -64,12 +69,12 @@ public static partial class DemoNodeTypes
             [new("in", Fluid) { Description = "Fluid filling the tank." }],
             [new("out", Fluid) { Description = "Fluid drawn from the tank." }, new("overflow", Fluid) { Description = "Fluid that no longer fits." }],
             [
-                Choice("Fluid", "Water", FluidChoices, description: "What the tank holds."),
+                Choice(FluidProperty, "Water", FluidChoices, description: "What the tank holds."),
                 Summarized("Capacity", 500, "L", description: "How much the tank holds when full."),
                 Summarized("Level", 50, "%", description: "How full the tank is."),
             ],
             description: tank,
-            toolTip: Live(tank, node => $"{Value(node, "Fluid")} · {Value(node, "Level")} of {Value(node, "Capacity")}")));
+            toolTip: Live(tank, node => $"{Value(node, FluidProperty)} · {Value(node, "Level")} of {Value(node, "Capacity")}")));
         const string junction = "Splits one flow into two.";
         types.Add(Define(Junction, "JUNCTION", "Junction", PlumbingCategory, "Junction",
             [new("in", Fluid) { Description = "The flow to split." }],

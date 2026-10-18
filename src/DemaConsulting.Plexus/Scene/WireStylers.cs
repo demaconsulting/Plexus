@@ -167,12 +167,9 @@ public static class WireStylers
         return wire =>
         {
             WireStyle? result = null;
-            foreach (var styler in copy)
+            foreach (var style in copy.Select(styler => styler(wire)).OfType<WireStyle>())
             {
-                if (styler(wire) is { } style)
-                {
-                    result = result is null ? style : result.WithOverrides(style);
-                }
+                result = result is null ? style : result.WithOverrides(style);
             }
 
             return result;

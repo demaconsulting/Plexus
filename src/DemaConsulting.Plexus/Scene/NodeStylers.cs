@@ -158,12 +158,9 @@ public static class NodeStylers
         return node =>
         {
             NodeStyle? result = null;
-            foreach (var styler in copy)
+            foreach (var style in copy.Select(styler => styler(node)).OfType<NodeStyle>())
             {
-                if (styler(node) is { } style)
-                {
-                    result = result is null ? style : result.WithOverrides(style);
-                }
+                result = result is null ? style : result.WithOverrides(style);
             }
 
             return result;

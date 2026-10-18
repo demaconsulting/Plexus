@@ -112,7 +112,7 @@ public partial class PropertyGrid
     /// </summary>
     private void BuildLayout()
     {
-        _root.RowDefinitions = new RowDefinitions { new(GridLength.Auto), new(1, GridUnitType.Star) { }, new(GridLength.Auto), new(DescriptionHeight, GridUnitType.Pixel) };
+        _root.RowDefinitions = [new(GridLength.Auto), new(1, GridUnitType.Star), new(GridLength.Auto), new(DescriptionHeight, GridUnitType.Pixel)];
         _root.RowDefinitions[1].MinHeight = 40;
         _root.RowDefinitions[3].MinHeight = 28;
         GridTheme.BindBrush(_root, Panel.BackgroundProperty, GridTheme.BackgroundKey);

@@ -66,7 +66,7 @@ internal sealed class DemoSession
         TypeSet = typeSet;
         _diagram = CreateBlankDiagram();
         Attach(_diagram);
-        Editor.Page = _diagram.Pages.FirstOrDefault();
+        Editor.Page = _diagram.Pages.Count > 0 ? _diagram.Pages[0] : null;
 
         // Paste failures are reported once, here, whether the paste came from a key, a menu or the automation endpoint
         Editor.PasteFailed += (_, e) => SetMessage(e.Result.Message);
@@ -383,7 +383,7 @@ internal sealed class DemoSession
         _diagram = diagram;
         FilePath = path;
         Attach(diagram);
-        Editor.Page = diagram.Pages.FirstOrDefault();
+        Editor.Page = diagram.Pages.Count > 0 ? diagram.Pages[0] : null;
         DiagramReplaced?.Invoke(this, EventArgs.Empty);
         RaiseStateChanged();
     }

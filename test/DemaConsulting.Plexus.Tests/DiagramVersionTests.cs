@@ -233,8 +233,8 @@ public class DiagramVersionTests
         var wires = new List<Wire>();
         for (var i = 0; i < count; i++)
         {
-            var producer = page.AddNode("acme.Producer", 30, 30 + (i * 200), $"P{i}");
-            var consumer = page.AddNode("acme.Consumer", 400, 30 + (i * 200), $"C{i}");
+            var producer = page.AddNode("acme.Producer", 30, 30 + (i * 200.0), $"P{i}");
+            var consumer = page.AddNode("acme.Consumer", 400, 30 + (i * 200.0), $"C{i}");
             wires.Add(page.Connect(producer.Port("value"), consumer.Port("in")));
         }
 

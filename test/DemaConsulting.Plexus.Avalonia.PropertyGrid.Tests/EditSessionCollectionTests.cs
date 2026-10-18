@@ -8,6 +8,11 @@ namespace DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests;
 public class EditSessionCollectionTests
 {
     /// <summary>
+    ///     The replacement array used when a whole value is set over an open collection edit.
+    /// </summary>
+    private static readonly int[] ReplacementScores = [7, 8];
+
+    /// <summary>
     ///     A staged edit of a get-only list leaves the target alone, shows the working copy, and commit refills the same list.
     /// </summary>
     [Fact]
@@ -285,7 +290,7 @@ public class EditSessionCollectionTests
         var editor = session.BeginCollectionEdit(scores);
         editor.Add(1);
 
-        session.SetValue(scores, new[] { 7, 8 });
+        session.SetValue(scores, ReplacementScores);
 
         Assert.False(editor.IsActive);
         Assert.Equal(PendingEditKind.Value, Assert.Single(session.GetPendingEdits()).Kind);

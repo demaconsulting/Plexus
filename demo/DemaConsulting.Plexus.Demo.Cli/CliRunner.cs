@@ -116,7 +116,7 @@ internal static class CliRunner
         var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var page in pages)
         {
-            var path = Path.Combine(directory, UniqueFileName(page.Name, diagram.Pages.IndexOf(page), used));
+            var path = Path.Join(directory, UniqueFileName(page.Name, diagram.Pages.IndexOf(page), used));
             PlexusRenderer.SavePng(page, path, renderOptions);
             output.WriteLine($"Wrote {path}");
         }

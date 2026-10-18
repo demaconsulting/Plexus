@@ -48,7 +48,7 @@ public class DiagramClipboardTests
         var item = new DataTransferItem();
         item.Set(PlexusFormat, "tagged-json");
         item.SetText("plain words");
-        var transfer = new DataTransfer();
+        using var transfer = new DataTransfer();
         transfer.Add(item);
         await system.SetDataAsync(transfer);
 
@@ -70,7 +70,7 @@ public class DiagramClipboardTests
         await system.ClearAsync();
         var item = new DataTransferItem();
         item.SetText("copied elsewhere");
-        var transfer = new DataTransfer();
+        using var transfer = new DataTransfer();
         transfer.Add(item);
         await system.SetDataAsync(transfer);
 

@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
+    <!-- The LibraryImport source generator emits the P/Invoke marshalling stubs, which use unsafe code -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
     <OutputType>Exe</OutputType>
     <AssemblyName>plexus-puppet</AssemblyName>
     <RootNamespace>DemaConsulting.Plexus.Puppet</RootNamespace>

@@ -218,8 +218,7 @@ public class ClipboardTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Single(result.Elements);
-        Assert.IsType<Node>(result.Elements[0]);
+        Assert.IsType<Node>(Assert.Single(result.Elements));
         Assert.Single(page.Wires);
     }
 
@@ -397,13 +396,17 @@ public class ClipboardTests
     public void PlexusClipboard_Paste_ChoiceNotInTargetOptions_UsesDefaultAndWarns()
     {
         // Arrange
-        var source = new NodeTypeRegistry();
-        source.Add(new NodeType("acme.Widget") { Properties = { new PropertyDefinition("Mode", "A") { Choices = ["A", "B"] } } });
+        var source = new NodeTypeRegistry
+        {
+            new NodeType("acme.Widget") { Properties = { new PropertyDefinition("Mode", "A") { Choices = ["A", "B"] } } },
+        };
         var sourceDiagram = new Diagram(source);
         var node = sourceDiagram.Pages.Add("P").AddNode("acme.Widget", 0, 0);
         node.Properties["Mode"] = "B";
-        var target = new NodeTypeRegistry();
-        target.Add(new NodeType("acme.Widget") { Properties = { new PropertyDefinition("Mode", "A") { Choices = ["A", "C"] } } });
+        var target = new NodeTypeRegistry
+        {
+            new NodeType("acme.Widget") { Properties = { new PropertyDefinition("Mode", "A") { Choices = ["A", "C"] } } },
+        };
         var page = new Diagram(target).Pages.Add("P");
 
         // Act
@@ -603,8 +606,10 @@ public class ClipboardTests
     /// <returns>The registry.</returns>
     private static NodeTypeRegistry WidgetTypes(object levelDefault)
     {
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Widget") { Properties = { new PropertyDefinition("Level", levelDefault) } });
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("acme.Widget") { Properties = { new PropertyDefinition("Level", levelDefault) } },
+        };
         return types;
     }
 

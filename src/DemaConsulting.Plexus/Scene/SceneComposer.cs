@@ -251,9 +251,8 @@ internal sealed partial class SceneComposer
     {
         var dots = new List<(Point, WireDraw, double)>();
         var nets = FindNets(wires);
-        foreach (var net in wires.GroupBy(w => nets[w]))
+        foreach (var members in wires.GroupBy(w => nets[w]).Select(net => net.ToList()))
         {
-            var members = net.ToList();
             if (members.Count < 2)
             {
                 continue;

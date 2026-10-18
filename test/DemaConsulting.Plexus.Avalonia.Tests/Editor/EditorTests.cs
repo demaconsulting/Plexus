@@ -118,7 +118,7 @@ public class EditorTests
         void StartDrag()
         {
             // Each press lands a little elsewhere on the body so that none counts as a double-click
-            var start = new Point(center.X - 20 + (presses++ * 10), center.Y);
+            var start = new Point(center.X - 20 + (presses++ * 10.0), center.Y);
             host.BeginDrag(start);
             host.MoveTo(far);
             Assert.NotEqual(new PlexusPoint(150, 150), node.Position);

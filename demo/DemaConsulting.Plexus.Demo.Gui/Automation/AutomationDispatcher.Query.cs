@@ -8,6 +8,11 @@ namespace DemaConsulting.Plexus.Demo.Gui.Automation;
 internal sealed partial class AutomationDispatcher
 {
     /// <summary>
+    ///     The result key that reports visibility.
+    /// </summary>
+    private const string VisibleKey = "visible";
+
+    /// <summary>
     ///     Registers the read-only commands.
     /// </summary>
     private void RegisterQueryCommands()
@@ -90,7 +95,7 @@ internal sealed partial class AutomationDispatcher
             ["bounds"] = AutomationJson.FromRect(node.Bounds),
             ["properties"] = properties,
             ["data"] = node.Data is { } data ? System.Text.Json.JsonSerializer.SerializeToNode(data, data.GetType()) : null,
-            ["visible"] = node.IsVisible,
+            [VisibleKey] = node.IsVisible,
             ["page"] = Session.Diagram.Pages.IndexOf(node.Page!),
             ["ports"] = AutomationJson.ToArray(node.Ports, p => new JsonObject
             {
@@ -112,7 +117,7 @@ internal sealed partial class AutomationDispatcher
         ["source"] = $"{wire.Source.Node.Name}.{wire.Source.Name}",
         ["target"] = $"{wire.Target.Node.Name}.{wire.Target.Name}",
         ["route"] = AutomationJson.ToArray(wire.Route, AutomationJson.FromPoint),
-        ["visible"] = wire.IsVisible,
+        [VisibleKey] = wire.IsVisible,
     };
 
     /// <summary>
@@ -125,7 +130,7 @@ internal sealed partial class AutomationDispatcher
         ["id"] = annotation.Id,
         ["text"] = annotation.Text,
         ["bounds"] = AutomationJson.FromRect(annotation.Bounds),
-        ["visible"] = annotation.IsVisible,
+        [VisibleKey] = annotation.IsVisible,
     };
 
     /// <summary>
@@ -140,6 +145,6 @@ internal sealed partial class AutomationDispatcher
         ["collapsed"] = group.IsCollapsed,
         ["bounds"] = AutomationJson.FromRect(group.Bounds),
         ["members"] = AutomationJson.ToArray(group.Members, m => m.Id),
-        ["visible"] = group.IsVisible,
+        [VisibleKey] = group.IsVisible,
     };
 }

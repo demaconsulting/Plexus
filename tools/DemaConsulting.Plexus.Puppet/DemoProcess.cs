@@ -128,12 +128,12 @@ internal static class DemoProcess
         var aliases = new List<string>();
         try
         {
-            foreach (var path in Directory.EnumerateFiles(@"\\.\pipe\", PipeNames.Prefix + "*"))
+            var found = Directory.EnumerateFiles(@"\\.\pipe\", PipeNames.Prefix + "*")
+                .Select(path => PipeNames.AliasOf(Path.GetFileName(path)))
+                .OfType<string>();
+            foreach (var alias in found)
             {
-                if (PipeNames.AliasOf(Path.GetFileName(path)) is { } alias)
-                {
-                    aliases.Add(alias);
-                }
+                aliases.Add(alias);
             }
         }
         catch (IOException)
@@ -235,12 +235,12 @@ internal static class DemoProcess
         {
             foreach (var configuration in new[] { "Release", "Debug" })
             {
-                yield return Path.Combine(root, "demo", "DemaConsulting.Plexus.Demo.Gui", "bin", configuration, "net10.0", ExeFileName);
+                yield return Path.Join(root, "demo", "DemaConsulting.Plexus.Demo.Gui", "bin", configuration, "net10.0", ExeFileName);
             }
         }
 
         // Built together into one artifacts folder, the demo sits beside the Puppet
-        yield return Path.Combine(AppContext.BaseDirectory, ExeFileName);
+        yield return Path.Join(AppContext.BaseDirectory, ExeFileName);
     }
 
     /// <summary>
@@ -252,7 +252,7 @@ internal static class DemoProcess
     {
         for (var dir = new DirectoryInfo(start); dir is not null; dir = dir.Parent)
         {
-            if (File.Exists(Path.Combine(dir.FullName, SolutionFileName)))
+            if (File.Exists(Path.Join(dir.FullName, SolutionFileName)))
             {
                 roots.Add(dir.FullName);
                 return;

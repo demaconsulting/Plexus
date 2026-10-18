@@ -232,7 +232,7 @@ internal sealed class PropertyRowView : GridRowView
         Height = GridTheme.RowHeight;
         BorderThickness = new Thickness(0, 0, 0, 1);
         GridTheme.BindBrush(this, BorderBrushProperty, GridTheme.LineKey);
-        _layout = new Grid { ColumnDefinitions = new ColumnDefinitions { new(owner.NameColumnWidth, GridUnitType.Pixel), new(1, GridUnitType.Pixel), new(1, GridUnitType.Star) } };
+        _layout = new Grid { ColumnDefinitions = [new(owner.NameColumnWidth, GridUnitType.Pixel), new(1, GridUnitType.Pixel), new(1, GridUnitType.Star)] };
 
         _chevron = CreateChevron(false);
         _expander = new Border { Width = GridTheme.ExpanderWidth, Background = Brushes.Transparent, Child = _chevron, IsVisible = false };

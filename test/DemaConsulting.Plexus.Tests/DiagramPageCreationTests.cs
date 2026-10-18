@@ -406,8 +406,10 @@ public class DiagramPageCreationTests
     public void PortDefinition_Label_CustomLabelIsExposedOnPort()
     {
         // Arrange: a type with a labeled port
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("t.Labeled") { Inputs = { new PortDefinition("x", "f32") { Label = "X input" } } });
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("t.Labeled") { Inputs = { new PortDefinition("x", "f32") { Label = "X input" } } },
+        };
         var node = new Diagram(types).Pages.Add("P").AddNode("t.Labeled", 0, 0);
 
         // Assert

@@ -265,18 +265,20 @@ public class NodePropertySourceTests
     public void NodePropertySource_StagedCommit_ProviderPortAbsentInIntermediateState_KeepsWire()
     {
         // Arrange: the input "keep" exists only while the property Gain equals the data's Level
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("test.Source") { Outputs = { new PortDefinition("value", "f32") } });
-        types.Add(new NodeType("test.Paired")
+        var types = new NodeTypeRegistry
         {
-            Properties = { new PropertyDefinition("Gain", 3) },
-            DataType = typeof(ToneSettings),
-            CreateData = () => new ToneSettings(),
-            Inputs = { new PortDefinition("keep", "f32") },
-            PortProvider = node => new PortSet(
-                node.Properties.Get<int>("Gain") == (node.Data as ToneSettings)?.Level ? [new PortDefinition("keep", "f32")] : [],
-                []),
-        });
+            new NodeType("test.Source") { Outputs = { new PortDefinition("value", "f32") } },
+            new NodeType("test.Paired")
+            {
+                Properties = { new PropertyDefinition("Gain", 3) },
+                DataType = typeof(ToneSettings),
+                CreateData = () => new ToneSettings(),
+                Inputs = { new PortDefinition("keep", "f32") },
+                PortProvider = node => new PortSet(
+                    node.Properties.Get<int>("Gain") == (node.Data as ToneSettings)?.Level ? [new PortDefinition("keep", "f32")] : [],
+                    []),
+            },
+        };
         var diagram = new Diagram(types);
         var page = diagram.Pages.Add("Main");
         var source = page.AddNode("test.Source", 0, 0);
@@ -599,12 +601,14 @@ public class NodePropertySourceTests
     public void NodePropertySource_Paths_PropertyNamedNameDoesNotTouchTheNodeName()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("test.Named")
+        var types = new NodeTypeRegistry
         {
-            Properties = { new PropertyDefinition("Name", "declared") },
-            DataType = typeof(NamedData),
-        });
+            new NodeType("test.Named")
+            {
+                Properties = { new PropertyDefinition("Name", "declared") },
+                DataType = typeof(NamedData),
+            },
+        };
         var diagram = new Diagram(types);
         var node = diagram.Pages.Add("Main").AddNode("test.Named", 0, 0, "Node1");
         node.Data = new NamedData();

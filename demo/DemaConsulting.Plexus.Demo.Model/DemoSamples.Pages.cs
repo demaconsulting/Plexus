@@ -8,6 +8,21 @@ namespace DemaConsulting.Plexus.Demo.Model;
 public static partial class DemoSamples
 {
     /// <summary>
+    ///     The name of the level property.
+    /// </summary>
+    private const string LevelProperty = "Level";
+
+    /// <summary>
+    ///     The path of the first switch's output port.
+    /// </summary>
+    private const string SwitchAOut = "SwitchA.out";
+
+    /// <summary>
+    ///     The path of the second switch's output port.
+    /// </summary>
+    private const string SwitchBOut = "SwitchB.out";
+
+    /// <summary>
     ///     The horizontal distance between node columns, a whole number of grid cells (15 units).
     /// </summary>
     private const double ColumnPitch = 240;
@@ -44,12 +59,12 @@ public static partial class DemoSamples
     private static void AddPlumbingPage(DiagramPage page)
     {
         page.AddAnnotation("Water is pumped through a valve and a flow meter, then split\nbetween a reservoir and a drain. The meter reports to a scope.", new Rect(15, 15, 450, 48));
-        AddNode(page, DemoNodeTypes.Tank, "Supply", 45, 90, ("Level", 80));
+        AddNode(page, DemoNodeTypes.Tank, "Supply", 45, 90, (LevelProperty, 80));
         AddNode(page, DemoNodeTypes.Pump, "Feed", 45 + ColumnPitch, 90);
         AddNode(page, DemoNodeTypes.Valve, "Throttle", 45 + (2 * ColumnPitch), 90, ("Open", 60));
         AddNode(page, DemoNodeTypes.FlowMeter, "Meter", 45 + (3 * ColumnPitch), 90);
         AddNode(page, DemoNodeTypes.Junction, "Split", 45 + (4 * ColumnPitch), 90);
-        AddNode(page, DemoNodeTypes.Tank, "Reservoir", 45 + (5 * ColumnPitch), 90, ("Capacity", 1000), ("Level", 10));
+        AddNode(page, DemoNodeTypes.Tank, "Reservoir", 45 + (5 * ColumnPitch), 90, ("Capacity", 1000), (LevelProperty, 10));
         AddNode(page, DemoNodeTypes.Drain, "Sewer", 45 + (5 * ColumnPitch), 300);
         AddNode(page, DemoNodeTypes.Scope, "FlowDisplay", 45 + (3 * ColumnPitch), 300);
 
@@ -66,8 +81,8 @@ public static partial class DemoSamples
         page.AddAnnotation("Pipe colors follow the fluid: water blue, oil brown, steam dashed gray.", new Rect(15, 420, 480, 30));
         AddNode(page, DemoNodeTypes.Pump, "OilPump", 45, 495, ("Fluid", "Oil"));
         AddNode(page, DemoNodeTypes.Valve, "OilValve", 45 + ColumnPitch, 495);
-        AddNode(page, DemoNodeTypes.Tank, "OilTank", 45 + (2 * ColumnPitch), 495, ("Fluid", "Oil"), ("Level", 30));
-        AddNode(page, DemoNodeTypes.Tank, "Boiler", 45 + (3 * ColumnPitch), 495, ("Fluid", "Steam"), ("Level", 65));
+        AddNode(page, DemoNodeTypes.Tank, "OilTank", 45 + (2 * ColumnPitch), 495, ("Fluid", "Oil"), (LevelProperty, 30));
+        AddNode(page, DemoNodeTypes.Tank, "Boiler", 45 + (3 * ColumnPitch), 495, ("Fluid", "Steam"), (LevelProperty, 65));
         AddNode(page, DemoNodeTypes.Valve, "SteamValve", 45 + (4 * ColumnPitch), 495);
         AddNode(page, DemoNodeTypes.Drain, "Condenser", 45 + (5 * ColumnPitch), 495);
         page.Connect("OilPump.out", "OilValve.in");
@@ -95,12 +110,12 @@ public static partial class DemoSamples
         AddNode(page, DemoNodeTypes.Lamp, "CarryLamp", 45 + (3 * ColumnPitch), 225, ("Color", "Red"));
         AddNode(page, DemoNodeTypes.Lamp, "NeitherLamp", 45 + (3 * ColumnPitch), 375);
 
-        page.Connect("SwitchA.out", "Sum.a");
-        page.Connect("SwitchB.out", "Sum.b");
-        page.Connect("SwitchA.out", "Carry.a");
-        page.Connect("SwitchB.out", "Carry.b");
-        page.Connect("SwitchA.out", "Either.a");
-        page.Connect("SwitchB.out", "Either.b");
+        page.Connect(SwitchAOut, "Sum.a");
+        page.Connect(SwitchBOut, "Sum.b");
+        page.Connect(SwitchAOut, "Carry.a");
+        page.Connect(SwitchBOut, "Carry.b");
+        page.Connect(SwitchAOut, "Either.a");
+        page.Connect(SwitchBOut, "Either.b");
         page.Connect("Sum.out", "SumLamp.in");
         page.Connect("Carry.out", "CarryLamp.in");
         page.Connect("Either.out", "Neither.in");
@@ -114,8 +129,8 @@ public static partial class DemoSamples
         AddNode(page, DemoNodeTypes.Switch, "SwitchC", 45, 555);
         AddNode(page, DemoNodeTypes.And, "All", 45 + ColumnPitch, 562.5, (DemoNodeTypes.GateInputsProperty, 3));
         AddNode(page, DemoNodeTypes.Lamp, "AllLamp", 45 + (3 * ColumnPitch), 555);
-        page.Connect("SwitchA.out", "All.a");
-        page.Connect("SwitchB.out", "All.b");
+        page.Connect(SwitchAOut, "All.a");
+        page.Connect(SwitchBOut, "All.b");
         page.Connect("SwitchC.out", "All.c");
         page.Connect("All.out", "AllLamp.in");
     }

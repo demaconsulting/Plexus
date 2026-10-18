@@ -113,6 +113,7 @@ internal sealed class MoveGesture : EditorGesture
         var total = new PlexusPoint(targetX - _origin.X, targetY - _origin.Y);
 
         // Apply only the difference so the model sees small, mergeable steps
+        // Exact comparison on purpose: a step of exactly zero means nothing moved, any other value is a real move
         var step = total - _applied;
         if (step.X != 0 || step.Y != 0)
         {

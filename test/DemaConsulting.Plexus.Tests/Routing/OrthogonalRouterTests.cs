@@ -264,7 +264,7 @@ public class OrthogonalRouterTests
         var obstacles = new List<Rect>(nodeCount);
         for (var i = 0; i < nodeCount; i++)
         {
-            obstacles.Add(new Rect(i % columns * 150, i / columns * 150, 90, 90).Inflate(15));
+            obstacles.Add(new Rect(i % columns * 150.0, Math.Floor((double)i / columns) * 150.0, 90, 90).Inflate(15));
         }
 
         var router = new OrthogonalRouter();
@@ -280,8 +280,8 @@ public class OrthogonalRouterTests
 
             requests.Add(new RouteRequest
             {
-                Start = new Point((from % columns * 150) + 90, (from / columns * 150) + 45),
-                End = new Point(to % columns * 150, (to / columns * 150) + 45),
+                Start = new Point((from % columns * 150.0) + 90, (Math.Floor((double)from / columns) * 150.0) + 45),
+                End = new Point(to % columns * 150.0, (Math.Floor((double)to / columns) * 150.0) + 45),
                 Obstacles = obstacles,
             });
         }

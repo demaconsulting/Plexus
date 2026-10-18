@@ -46,22 +46,24 @@ internal static class NodeFixture
     /// <returns>The diagram and the oscillator node.</returns>
     internal static (Diagram Diagram, Node Node) Create()
     {
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType(OscillatorKey)
+        var types = new NodeTypeRegistry
         {
-            Properties =
+            new NodeType(OscillatorKey)
             {
-                new PropertyDefinition("Frequency", 440.0) { Unit = "Hz", Category = "Signal", Description = "The pitch." },
-                new PropertyDefinition("Waveform", "Sine") { Choices = ["Sine", "Square", "Saw"], Category = "Signal" },
-                new PropertyDefinition("Enabled", true),
-                new PropertyDefinition("Tint", Color.Orange) { Category = "Look" },
-                new PropertyDefinition("Label", string.Empty),
-                new PropertyDefinition("Serial", "A-1") { IsReadOnly = true },
-                new PropertyDefinition("Gain", 1) { EditorHint = "slider" },
+                Properties =
+                {
+                    new PropertyDefinition("Frequency", 440.0) { Unit = "Hz", Category = "Signal", Description = "The pitch." },
+                    new PropertyDefinition("Waveform", "Sine") { Choices = ["Sine", "Square", "Saw"], Category = "Signal" },
+                    new PropertyDefinition("Enabled", true),
+                    new PropertyDefinition("Tint", Color.Orange) { Category = "Look" },
+                    new PropertyDefinition("Label", string.Empty),
+                    new PropertyDefinition("Serial", "A-1") { IsReadOnly = true },
+                    new PropertyDefinition("Gain", 1) { EditorHint = "slider" },
+                },
+                DataType = typeof(ToneSettings),
             },
-            DataType = typeof(ToneSettings),
-        });
-        types.Add(new NodeType(PlainKey) { Properties = { new PropertyDefinition("Mode", "Fast") { Choices = ["Fast", "Slow"] } } });
+            new NodeType(PlainKey) { Properties = { new PropertyDefinition("Mode", "Fast") { Choices = ["Fast", "Slow"] } } },
+        };
 
         var diagram = new Diagram(types);
         var page = diagram.Pages.Add("Main");
@@ -84,19 +86,21 @@ internal static class NodeFixture
     /// <returns>The diagram and the envelope node.</returns>
     internal static (Diagram Diagram, Node Node) CreateOrdered()
     {
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType(EnvelopeKey)
+        var types = new NodeTypeRegistry
         {
-            Properties =
+            new NodeType(EnvelopeKey)
             {
-                new PropertyDefinition("Release", 300.0) { Unit = "ms", Category = "Envelope", Order = 4 },
-                new PropertyDefinition("Sustain", 70.0) { Unit = "%", Category = "Envelope", Order = 3 },
-                new PropertyDefinition("Attack", 10.0) { Unit = "ms", Category = "Envelope", Order = 1 },
-                new PropertyDefinition("Decay", 120.0) { Unit = "ms", Category = "Envelope", Order = 2 },
-                new PropertyDefinition("Mode", "Linear") { Order = 2 },
-                new PropertyDefinition("Gate", true) { Order = 1 },
+                Properties =
+                {
+                    new PropertyDefinition("Release", 300.0) { Unit = "ms", Category = "Envelope", Order = 4 },
+                    new PropertyDefinition("Sustain", 70.0) { Unit = "%", Category = "Envelope", Order = 3 },
+                    new PropertyDefinition("Attack", 10.0) { Unit = "ms", Category = "Envelope", Order = 1 },
+                    new PropertyDefinition("Decay", 120.0) { Unit = "ms", Category = "Envelope", Order = 2 },
+                    new PropertyDefinition("Mode", "Linear") { Order = 2 },
+                    new PropertyDefinition("Gate", true) { Order = 1 },
+                },
             },
-        });
+        };
 
         var diagram = new Diagram(types);
         var node = diagram.Pages.Add("Main").AddNode(EnvelopeKey, 0, 0, name: "Env");
@@ -116,19 +120,21 @@ internal static class NodeFixture
     /// <returns>The diagram and the tied node.</returns>
     internal static (Diagram Diagram, Node Node) CreateTied()
     {
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType(TiedKey)
+        var types = new NodeTypeRegistry
         {
-            Properties =
+            new NodeType(TiedKey)
             {
-                new PropertyDefinition("Zeta", 1) { Category = "Tied", Order = 7 },
-                new PropertyDefinition("Idle", 1) { Category = "Tied", Order = 7 },
-                new PropertyDefinition("alpha", 1) { Category = "Tied", Order = 7 },
-                new PropertyDefinition("Early", 1) { Category = "Tied", Order = -5 },
-                new PropertyDefinition("ice", 1) { Category = "Tied", Order = 7 },
-                new PropertyDefinition("Hue", 1) { Category = "Tied", Order = 7 },
+                Properties =
+                {
+                    new PropertyDefinition("Zeta", 1) { Category = "Tied", Order = 7 },
+                    new PropertyDefinition("Idle", 1) { Category = "Tied", Order = 7 },
+                    new PropertyDefinition("alpha", 1) { Category = "Tied", Order = 7 },
+                    new PropertyDefinition("Early", 1) { Category = "Tied", Order = -5 },
+                    new PropertyDefinition("ice", 1) { Category = "Tied", Order = 7 },
+                    new PropertyDefinition("Hue", 1) { Category = "Tied", Order = 7 },
+                },
             },
-        });
+        };
 
         var diagram = new Diagram(types);
         var node = diagram.Pages.Add("Main").AddNode(TiedKey, 0, 0, name: "Tie");

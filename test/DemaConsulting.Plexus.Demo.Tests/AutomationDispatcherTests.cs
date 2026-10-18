@@ -223,9 +223,9 @@ public class AutomationDispatcherTests
         var malformed = await host.ErrorAsync("""{"cmd":"connect","from":"Src","to":"Plot.signal"}""");
 
         // Assert
-        Assert.Single(wires);
-        Assert.Equal("Src.value", wires[0]!["source"]!.GetValue<string>());
-        Assert.Equal("Plot.signal", wires[0]!["target"]!.GetValue<string>());
+        var wire = Assert.Single(wires);
+        Assert.Equal("Src.value", wire!["source"]!.GetValue<string>());
+        Assert.Equal("Plot.signal", wire["target"]!.GetValue<string>());
         Assert.True(undone["performed"]!.GetValue<bool>());
         Assert.Empty(afterUndo);
         Assert.Single(afterRedo);
@@ -497,7 +497,7 @@ public class AutomationDispatcherTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var path = System.IO.Path.Combine(temp.Create(), "doc.json");
+        var path = System.IO.Path.Join(temp.Create(), "doc.json");
         await host.OkAsync("""{"cmd":"add-node","type":"demo.audio.Mixer","x":30,"y":30,"name":"Mix"}""");
         var noFile = await host.ErrorAsync("""{"cmd":"save"}""");
 
@@ -530,7 +530,7 @@ public class AutomationDispatcherTests
         {
             // Arrange
             using var temp = new TempDirectory();
-            var path = System.IO.Path.Combine(temp.Create(), "full.json");
+            var path = System.IO.Path.Join(temp.Create(), "full.json");
             DemoDocument.Save(DemoSamples.Audio(), path);
             await host.OkAsync("""{"cmd":"add-node","type":"demo.math.Scope","x":0,"y":0,"name":"Keep"}""");
 
@@ -552,7 +552,7 @@ public class AutomationDispatcherTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var path = System.IO.Path.Combine(temp.Path, "sub", "page.png");
+        var path = System.IO.Path.Join(temp.Path, "sub", "page.png");
         await host.OkAsync("""{"cmd":"add-node","type":"demo.audio.Mixer","x":30,"y":30}""");
 
         // Act

@@ -71,11 +71,11 @@ public class NodeStylePixelTests
         // Act: capture the editor, and render the same area with the PNG painter
         var frame = host.Window.CaptureRenderedFrame()!;
         Directory.CreateDirectory(PicturePath);
-        frame.Save(Path.Combine(PicturePath, $"editor-z{zoom:0.##}{(faded ? "-faded" : string.Empty)}.png"), PngBitmapEncoderOptions.Default);
+        frame.Save(Path.Join(PicturePath, $"editor-z{zoom:0.##}{(faded ? "-faded" : string.Empty)}.png"), PngBitmapEncoderOptions.Default);
         var picture = PictureReader.Read(frame);
         var area = box.Inflate(24);
         using var png = PlexusRenderer.Render(host.Page, new RenderOptions { Bounds = area, Scale = zoom, ShowGrid = false });
-        File.WriteAllBytes(Path.Combine(PicturePath, $"png-z{zoom:0.##}{(faded ? "-faded" : string.Empty)}.png"), PlexusRenderer.RenderPng(host.Page, new RenderOptions { Bounds = area, Scale = zoom, ShowGrid = false }));
+        File.WriteAllBytes(Path.Join(PicturePath, $"png-z{zoom:0.##}{(faded ? "-faded" : string.Empty)}.png"), PlexusRenderer.RenderPng(host.Page, new RenderOptions { Bounds = area, Scale = zoom, ShowGrid = false }));
         var origin = host.ToWindow(host.Editor.DiagramToScreen(new Point(area.Left, area.Top)));
 
         // Assert
@@ -123,7 +123,7 @@ public class NodeStylePixelTests
     /// <summary>
     ///     Gets the folder where the tests save their pictures for inspection.
     /// </summary>
-    private static string PicturePath => Path.Combine(Path.GetTempPath(), "plexus-node-style");
+    private static string PicturePath => Path.Join(Path.GetTempPath(), "plexus-node-style");
 
     /// <summary>
     ///     Gets the fill of a node's box in a scene.

@@ -37,19 +37,14 @@ internal static class ElementImporter
     /// <returns>The distinct missing keys in first-seen order.</returns>
     public static List<string> FindMissingTypes(IEnumerable<NodeSnapshot?> nodes, NodeTypeRegistry types)
     {
-        var missing = new List<string>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var node in nodes)
-        {
-            // A blank key is invalid content, not a missing type; the builder reports it separately
-            var key = node?.TypeKey;
-            if (!string.IsNullOrWhiteSpace(key) && !types.Contains(key) && seen.Add(key))
-            {
-                missing.Add(key);
-            }
-        }
 
-        return missing;
+        // A blank key is invalid content, not a missing type; the builder reports it separately
+        return nodes
+            .Select(n => n?.TypeKey)
+            .OfType<string>()
+            .Where(key => !string.IsNullOrWhiteSpace(key) && !types.Contains(key) && seen.Add(key))
+            .ToList();
     }
 
     /// <summary>
@@ -595,6 +590,36 @@ internal static class ElementImporter
         {
             // First pass: resolve every member reference and record who owns whom, changing nothing yet
             var owner = new Dictionary<DiagramElement, Group>();
+            var memberLists = ResolveMembers(snapshots, groups, owner);
+
+            // A cycle never terminates and excessive depth would stress recursive model code, so bound the walk
+            foreach (var group in groups)
+            {
+                CheckNesting(group, owner);
+            }
+
+            // Second pass: the structure is sound, so wire it up
+            for (var i = 0; i < groups.Count; i++)
+            {
+                foreach (var member in memberLists[i])
+                {
+                    groups[i].InsertMemberCore(-1, member);
+                }
+
+                var position = collapsedPositions[i];
+                groups[i].SetCollapsedCore(snapshots[i].IsCollapsed, new Point(position.X + _dx, position.Y + _dy));
+            }
+        }
+
+        /// <summary>
+        ///     Resolves the member references of every group and records which group owns each element.
+        /// </summary>
+        /// <param name="snapshots">The group snapshots.</param>
+        /// <param name="groups">The created groups, parallel to <paramref name="snapshots"/>.</param>
+        /// <param name="owner">Receives the owning group of every member.</param>
+        /// <returns>The members of each group, parallel to <paramref name="snapshots"/>.</returns>
+        private List<List<DiagramElement>> ResolveMembers(IReadOnlyList<GroupSnapshot> snapshots, List<Group> groups, Dictionary<DiagramElement, Group> owner)
+        {
             var memberLists = new List<List<DiagramElement>>();
             for (var i = 0; i < snapshots.Count; i++)
             {
@@ -617,32 +642,26 @@ internal static class ElementImporter
                 memberLists.Add(members);
             }
 
-            // A cycle never terminates and excessive depth would stress recursive model code, so bound the walk
-            foreach (var group in groups)
-            {
-                var depth = 0;
-                DiagramElement current = group;
-                while (owner.TryGetValue(current, out var parent))
-                {
-                    if (++depth > MaxGroupDepth)
-                    {
-                        throw new ImportException($"Groups are nested deeper than {MaxGroupDepth} levels or contain a cycle.");
-                    }
+            return memberLists;
+        }
 
-                    current = parent;
-                }
-            }
-
-            // Second pass: the structure is sound, so wire it up
-            for (var i = 0; i < groups.Count; i++)
+        /// <summary>
+        ///     Walks up the owners of a group and rejects excessive nesting depth and cycles.
+        /// </summary>
+        /// <param name="group">The group to start from.</param>
+        /// <param name="owner">The owning group of every member.</param>
+        private static void CheckNesting(Group group, Dictionary<DiagramElement, Group> owner)
+        {
+            var depth = 0;
+            DiagramElement current = group;
+            while (owner.TryGetValue(current, out var parent))
             {
-                foreach (var member in memberLists[i])
+                if (++depth > MaxGroupDepth)
                 {
-                    groups[i].InsertMemberCore(-1, member);
+                    throw new ImportException($"Groups are nested deeper than {MaxGroupDepth} levels or contain a cycle.");
                 }
 
-                var position = collapsedPositions[i];
-                groups[i].SetCollapsedCore(snapshots[i].IsCollapsed, new Point(position.X + _dx, position.Y + _dy));
+                current = parent;
             }
         }
 

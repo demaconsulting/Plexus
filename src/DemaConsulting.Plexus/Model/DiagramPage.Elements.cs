@@ -400,12 +400,9 @@ public sealed partial class DiagramPage
     internal WireTraffic BuildTraffic(Wire? excluded)
     {
         var traffic = new WireTraffic();
-        foreach (var wire in _wires)
+        foreach (var wire in _wires.Where(w => !ReferenceEquals(w, excluded) && !w.Source.Node.IsHiddenByCollapse && !w.Target.Node.IsHiddenByCollapse))
         {
-            if (!ReferenceEquals(wire, excluded) && !wire.Source.Node.IsHiddenByCollapse && !wire.Target.Node.IsHiddenByCollapse)
-            {
-                traffic.Add(wire.Source, wire.Target, wire.Source.Anchor, wire.Route, wire.Target.Anchor);
-            }
+            traffic.Add(wire.Source, wire.Target, wire.Source.Anchor, wire.Route, wire.Target.Anchor);
         }
 
         return traffic;

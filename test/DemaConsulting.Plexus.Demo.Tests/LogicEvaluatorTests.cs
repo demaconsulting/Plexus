@@ -9,6 +9,11 @@ namespace DemaConsulting.Plexus.Demo.Tests;
 public class LogicEvaluatorTests
 {
     /// <summary>
+    ///     The gate input names in the order the switches are wired to them.
+    /// </summary>
+    private static readonly string[] GateInputNames = ["d", "c", "b", "a"];
+
+    /// <summary>
     ///     Creates a page on a fresh demo diagram.
     /// </summary>
     /// <returns>The page.</returns>
@@ -253,7 +258,7 @@ public class LogicEvaluatorTests
         var page = CreatePage();
         var gate = page.AddNode(type, 300, 0, "G");
         gate.Properties[DemoNodeTypes.GateInputsProperty] = 4;
-        foreach (var (input, index) in new[] { "d", "c", "b", "a" }.Select((name, i) => (name, i)))
+        foreach (var (input, index) in GateInputNames.Select((name, i) => (name, i)))
         {
             AddSwitch(page, $"S{index}", index < onCount);
             page.Connect($"S{index}.out", $"G.{input}");

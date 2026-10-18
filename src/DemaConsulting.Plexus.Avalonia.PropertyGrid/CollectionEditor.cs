@@ -203,12 +203,11 @@ public sealed class CollectionEditor
             return ready;
         }
 
-        foreach (var element in replacement)
+        foreach (var element in replacement.Select(ValidateElement))
         {
-            var valid = ValidateElement(element);
-            if (!valid.Succeeded)
+            if (!element.Succeeded)
             {
-                return valid;
+                return element;
             }
         }
 

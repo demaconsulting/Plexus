@@ -81,6 +81,16 @@ public static class AudioPreview
     private static readonly double FilterQ = 1.0 / Math.Sqrt(2.0);
 
     /// <summary>
+    ///     The level values of the envelope plot's vertical axis ticks.
+    /// </summary>
+    private static readonly double[] EnvelopeTickLevels = [0.0, 0.25, 0.5, 0.75, 1.0];
+
+    /// <summary>
+    ///     The decibel values of the filter response plot's vertical axis ticks.
+    /// </summary>
+    private static readonly double[] ResponseTickDecibels = [-48.0, -36.0, -24.0, -12.0, 0.0];
+
+    /// <summary>
     ///     The labelled ticks of the logarithmic frequency axis.
     /// </summary>
     private static readonly IReadOnlyList<PlotTick> FrequencyTicks =
@@ -223,7 +233,7 @@ public static class AudioPreview
     {
         var points = EnvelopePoints(settings);
         var end = points[^1].X;
-        var yTicks = new[] { 0.0, 0.25, 0.5, 0.75, 1.0 }.Select(v => new PlotTick(v, Format(v * 100) + "%")).ToList();
+        var yTicks = EnvelopeTickLevels.Select(v => new PlotTick(v, Format(v * 100) + "%")).ToList();
         return new PlotData(
             points,
             new PlotAxis(0, end, "Time (ms)", LinearTicks(end)),
@@ -287,7 +297,7 @@ public static class AudioPreview
             points.Add(new PlotPoint(hertz, FilterMagnitudeDb(settings, hertz)));
         }
 
-        var yTicks = new[] { -48.0, -36.0, -24.0, -12.0, 0.0 }.Select(v => new PlotTick(v, Format(v))).ToList();
+        var yTicks = ResponseTickDecibels.Select(v => new PlotTick(v, Format(v))).ToList();
         return new PlotData(
             points,
             new PlotAxis(MinimumFrequency, MaximumFrequency, "Frequency (Hz)", FrequencyTicks, IsLogarithmic: true),

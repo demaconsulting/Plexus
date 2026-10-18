@@ -206,8 +206,11 @@ public static class NodePropertiesDialog
         // Validate the size before anything is built so a bad option never leaves a half-made window
         var preview = options?.Preview;
         var side = options?.PreviewPlacement != NodePreviewPlacement.Top;
-        var width = Validate(options?.Width, nameof(NodePropertiesDialogOptions.Width)) ?? (preview is not null && side ? SidePreviewDialogWidth : DialogWidth);
-        var height = Validate(options?.Height, nameof(NodePropertiesDialogOptions.Height)) ?? (preview is not null && !side ? TopPreviewDialogHeight : DialogHeight);
+        var hasPreview = preview is not null;
+        var requestedWidth = Validate(options?.Width, nameof(NodePropertiesDialogOptions.Width));
+        var requestedHeight = Validate(options?.Height, nameof(NodePropertiesDialogOptions.Height));
+        var width = requestedWidth ?? GetDefaultSize(hasPreview && side, SidePreviewDialogWidth, DialogWidth);
+        var height = requestedHeight ?? GetDefaultSize(hasPreview && !side, TopPreviewDialogHeight, DialogHeight);
 
         // Build the plain dialog; without a preview this is the same window as Create(node)
         var dialog = new PropertyGridDialog(node, options?.Title ?? GetTitle(node)) { Width = width, Height = height };
@@ -249,6 +252,15 @@ public static class NodePropertiesDialog
         ArgumentNullException.ThrowIfNull(node);
         return node.Name + " - Properties";
     }
+
+    /// <summary>
+    ///     Picks the default size of a dialog dimension.
+    /// </summary>
+    /// <param name="withPreview">Whether the preview takes room along this dimension.</param>
+    /// <param name="previewSize">The size with the preview.</param>
+    /// <param name="plainSize">The size without the preview.</param>
+    /// <returns>The chosen size.</returns>
+    private static double GetDefaultSize(bool withPreview, double previewSize, double plainSize) => withPreview ? previewSize : plainSize;
 
     /// <summary>
     ///     Checks an optional dialog dimension.

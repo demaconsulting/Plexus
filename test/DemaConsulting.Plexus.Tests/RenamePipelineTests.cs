@@ -5,6 +5,7 @@ namespace DemaConsulting.Plexus.Tests;
 /// </summary>
 public class RenamePipelineTests
 {
+    private static readonly string[] ExpectedRenames = ["Alpha->Gamma", "Gamma->Alpha", "Alpha->Gamma"];
     /// <summary>
     ///     Creates a diagram with two nodes named Alpha and Beta on one page.
     /// </summary>
@@ -79,7 +80,7 @@ public class RenamePipelineTests
         Assert.False(ok);
         Assert.Contains("Beta", reason, StringComparison.Ordinal);
         Assert.Throws<ArgumentException>(() => alpha.Name = "Beta");
-        Assert.False(diagram.History.UndoDescription == "Rename node");
+        Assert.NotEqual("Rename node", diagram.History.UndoDescription);
     }
 
     /// <summary>
@@ -247,7 +248,7 @@ public class RenamePipelineTests
 
         // Assert
         Assert.Equal(1, renaming);
-        Assert.Equal(new[] { "Alpha->Gamma", "Gamma->Alpha", "Alpha->Gamma" }, renamed);
+        Assert.Equal(ExpectedRenames, renamed);
     }
 
     /// <summary>

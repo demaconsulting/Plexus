@@ -67,6 +67,6 @@ public class DiagramJsonTests
         Assert.Throws<ArgumentNullException>(() => Diagram.FromJson((string)null!, TestModel.CreateTypes()));
         Assert.Throws<ArgumentNullException>(() => Diagram.FromJson(json, null!));
         Assert.ThrowsAny<JsonException>(() => Diagram.FromJson("{ not json", TestModel.CreateTypes()));
-        Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, new NodeTypeRegistry()));
+        Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, []));
     }
 }

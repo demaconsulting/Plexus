@@ -100,37 +100,9 @@ internal sealed partial record GuiOptions(
                 return false;
             }
 
-            switch (arg)
+            if (!TryApplyOption(arg, value, ref file, ref sample, ref types, ref automation, out error))
             {
-                case "--open":
-                    file = value;
-                    break;
-                case "--sample":
-                    sample = DemoSamples.Names.FirstOrDefault(n => string.Equals(n, value, StringComparison.OrdinalIgnoreCase));
-                    if (sample is null)
-                    {
-                        error = $"Unknown sample '{value}'. Available: {string.Join(", ", DemoSamples.Names)}.";
-                        return false;
-                    }
-
-                    break;
-                case "--types":
-                    if (!Enum.TryParse(value, ignoreCase: true, out types) || !Enum.IsDefined(types))
-                    {
-                        error = $"Unknown type set '{value}'. Use 'full' or 'basic'.";
-                        return false;
-                    }
-
-                    break;
-                default:
-                    if (!PipeNamePattern().IsMatch(value))
-                    {
-                        error = $"Automation name '{value}' may only contain letters, digits, '-' and '_'.";
-                        return false;
-                    }
-
-                    automation = value;
-                    break;
+                return false;
             }
         }
 
@@ -143,6 +115,54 @@ internal sealed partial record GuiOptions(
         error = null;
         options = new GuiOptions(file, sample, types, automation, help);
         return true;
+    }
+
+    /// <summary>
+    ///     Applies the value of one option to the parsed state.
+    /// </summary>
+    /// <param name="option">The option name.</param>
+    /// <param name="value">The option's value.</param>
+    /// <param name="file">The file to open; updated by <c>--open</c>.</param>
+    /// <param name="sample">The sample to open; updated by <c>--sample</c>.</param>
+    /// <param name="types">The node type set; updated by <c>--types</c>.</param>
+    /// <param name="automation">The automation name; updated by <c>--automation</c>.</param>
+    /// <param name="error">A message describing the problem when the value is invalid; otherwise null.</param>
+    /// <returns>True when the value is valid.</returns>
+    private static bool TryApplyOption(string option, string value, ref string? file, ref string? sample, ref NodeTypeSet types, ref string? automation, out string? error)
+    {
+        error = null;
+        switch (option)
+        {
+            case "--open":
+                file = value;
+                return true;
+            case "--sample":
+                sample = DemoSamples.Names.FirstOrDefault(n => string.Equals(n, value, StringComparison.OrdinalIgnoreCase));
+                if (sample is null)
+                {
+                    error = $"Unknown sample '{value}'. Available: {string.Join(", ", DemoSamples.Names)}.";
+                    return false;
+                }
+
+                return true;
+            case "--types":
+                if (!Enum.TryParse(value, ignoreCase: true, out types) || !Enum.IsDefined(types))
+                {
+                    error = $"Unknown type set '{value}'. Use 'full' or 'basic'.";
+                    return false;
+                }
+
+                return true;
+            default:
+                if (!PipeNamePattern().IsMatch(value))
+                {
+                    error = $"Automation name '{value}' may only contain letters, digits, '-' and '_'.";
+                    return false;
+                }
+
+                automation = value;
+                return true;
+        }
     }
 
     /// <summary>

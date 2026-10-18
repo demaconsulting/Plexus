@@ -25,7 +25,7 @@ public class SpatialIndexTests
         var result = index.Query(new Rect(-5, -5, 40, 40));
 
         // Assert
-        Assert.Equal(new[] { "a", "b" }, result);
+        Assert.Equal(["a", "b"], result);
         Assert.Equal(4, index.Count);
     }
 
@@ -43,7 +43,7 @@ public class SpatialIndexTests
         var result = index.Query(new Rect(0, 0, 200, 200));
 
         // Assert
-        Assert.Equal(new[] { "wide" }, result);
+        Assert.Equal(["wide"], result);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ public class SpatialIndexTests
         var outside = index.Query(new Rect(200_000, 200_000, 5, 5));
 
         // Assert
-        Assert.Equal(new[] { "huge", "small" }, inside);
+        Assert.Equal(["huge", "small"], inside);
         Assert.Empty(outside);
     }
 
@@ -76,7 +76,7 @@ public class SpatialIndexTests
         var index = new SpatialIndex<int>(10);
         for (var i = 0; i < 20; i++)
         {
-            index.Add(i, new Rect(i * 30, 0, 5, 5));
+            index.Add(i, new Rect(i * 30.0, 0, 5, 5));
         }
 
         // Act
@@ -97,7 +97,7 @@ public class SpatialIndexTests
         index.Add("neg", new Rect(-120, -80, 20, 20));
 
         // Act / Assert
-        Assert.Equal(new[] { "neg" }, index.Query(new Rect(-115, -75, 2, 2)));
+        Assert.Equal(["neg"], index.Query(new Rect(-115, -75, 2, 2)));
         Assert.Empty(index.Query(new Rect(0, 0, 10, 10)));
     }
 
@@ -122,7 +122,7 @@ public class SpatialIndexTests
         Node? previous = null;
         for (var i = 0; i < 12; i++)
         {
-            var node = page.AddNode("acme.Gain", i % 4 * 250, i / 4 * 250, null);
+            var node = page.AddNode("acme.Gain", i % 4 * 250.0, Math.Floor(i / 4.0) * 250.0, null);
             if (previous is not null)
             {
                 page.Connect(previous.Port("out"), node.Port("in"));

@@ -17,7 +17,7 @@ public class NodePortsTests
     {
         var diagram = TestModel.CreateDynamicDiagram();
         var page = diagram.Pages.Add("Main");
-        var producers = Enumerable.Range(0, 4).Select(i => page.AddNode("acme.Producer", 0, i * 150, $"P{i}")).ToArray();
+        var producers = Enumerable.Range(0, 4).Select(i => page.AddNode("acme.Producer", 0, i * 150.0, $"P{i}")).ToArray();
         var bus = page.AddNode("acme.Bus", 300, 0, "Bus");
         return (diagram, page, bus, producers);
     }
@@ -431,12 +431,14 @@ public class NodePortsTests
     public void Node_Ports_ProviderReturnsNull_ThrowsInvalidOperation()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Broken")
+        var types = new NodeTypeRegistry
         {
-            Properties = { new PropertyDefinition("Mode", 0) },
-            PortProvider = node => node.Properties.Get<int>("Mode") == 0 ? new PortSet([], []) : null!,
-        });
+            new NodeType("acme.Broken")
+            {
+                Properties = { new PropertyDefinition("Mode", 0) },
+                PortProvider = node => node.Properties.Get<int>("Mode") == 0 ? new PortSet([], []) : null!,
+            },
+        };
         var page = new Diagram(types).Pages.Add("Main");
         var node = page.AddNode("acme.Broken", 0, 0);
 

@@ -12,26 +12,40 @@ namespace DemaConsulting.Plexus.Tests;
 /// </remarks>
 public class PropertiesTests
 {
+    private static readonly string[] DeclaredNames = ["Label", "Gain", "Enabled", "Retries", "Samples", "Tint", "Mode"];
+
+    private static readonly string[] ModeChoices = ["A", "B", "C"];
+
+    private static readonly int[] OrderValues = [3, 1, 2, 0];
+
+    private static readonly string[] OrderedNames = ["A", "B", "C", "D"];
+
+    private static readonly string[] DeclaredAndAdHocNames =
+        ["Label", "Gain", "Enabled", "Retries", "Samples", "Tint", "Mode", "zeta", "alpha"];
+
+    private static readonly string[] ExpectedChangeNames = ["Retries", "Item[]", "note", "Item[]", "note", "Item[]"];
     /// <summary>
     ///     Creates a diagram with a single node of a type that declares one property of every kind.
     /// </summary>
     /// <returns>The diagram and the node.</returns>
     private static (Diagram Diagram, Node Node) Create()
     {
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("demo.Sensor")
+        var types = new NodeTypeRegistry
         {
-            Properties =
+            new NodeType("demo.Sensor")
             {
-                new PropertyDefinition("Label", "S") { ShowInSummary = true },
-                new PropertyDefinition("Gain", 1.0) { Unit = "dB", DisplayName = "Gain Factor", ShowInSummary = true },
-                new PropertyDefinition("Enabled", true),
-                new PropertyDefinition("Retries", 3),
-                new PropertyDefinition("Samples", 100L),
-                new PropertyDefinition("Tint", Color.Parse("#112233")),
-                new PropertyDefinition("Mode", "A") { Choices = ["A", "B", "C"] },
+                Properties =
+                {
+                    new PropertyDefinition("Label", "S") { ShowInSummary = true },
+                    new PropertyDefinition("Gain", 1.0) { Unit = "dB", DisplayName = "Gain Factor", ShowInSummary = true },
+                    new PropertyDefinition("Enabled", true),
+                    new PropertyDefinition("Retries", 3),
+                    new PropertyDefinition("Samples", 100L),
+                    new PropertyDefinition("Tint", Color.Parse("#112233")),
+                    new PropertyDefinition("Mode", "A") { Choices = ["A", "B", "C"] },
+                },
             },
-        });
+        };
 
         var diagram = new Diagram(types);
         return (diagram, diagram.Pages.Add("Main").AddNode("demo.Sensor", 0, 0));
@@ -48,7 +62,7 @@ public class PropertiesTests
         var bag = node.Properties;
 
         // Act
-        var kinds = new[] { "Label", "Gain", "Enabled", "Retries", "Samples", "Tint", "Mode" }
+        var kinds = DeclaredNames
             .Select(name => bag.GetDefinition(name)!.ValueKind)
             .ToArray();
 
@@ -60,7 +74,7 @@ public class PropertiesTests
                 PropertyValueKind.Int64, PropertyValueKind.Color, PropertyValueKind.Choice,
             },
             kinds);
-        Assert.Equal(new[] { "A", "B", "C" }, bag.GetDefinition("Mode")!.Choices);
+        Assert.Equal(ModeChoices, bag.GetDefinition("Mode")!.Choices);
         Assert.Equal(Color.Parse("#112233"), bag.GetDefinition("Tint")!.DefaultValue);
         Assert.Equal("dB", bag.GetDefinition("Gain")!.Unit);
         Assert.Null(bag.GetDefinition("Label")!.Choices);
@@ -90,23 +104,25 @@ public class PropertiesTests
     public void Properties_PresentationHints_DeclaredHints_AreExposedWithoutRestrictingValues()
     {
         // Arrange: a type whose property carries every presentation hint, including the read-only hint
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("demo.Amp")
+        var types = new NodeTypeRegistry
         {
-            Properties =
+            new NodeType("demo.Amp")
             {
-                new PropertyDefinition("Gain", 1.0)
+                Properties =
                 {
-                    DisplayName = "Gain Factor",
-                    Description = "Output gain",
-                    Category = "Signal",
-                    Unit = "dB",
-                    EditorHint = "slider",
-                    ShowInSummary = true,
-                    IsReadOnly = true,
+                    new PropertyDefinition("Gain", 1.0)
+                    {
+                        DisplayName = "Gain Factor",
+                        Description = "Output gain",
+                        Category = "Signal",
+                        Unit = "dB",
+                        EditorHint = "slider",
+                        ShowInSummary = true,
+                        IsReadOnly = true,
+                    },
                 },
             },
-        });
+        };
         var diagram = new Diagram(types);
         var node = diagram.Pages.Add("Main").AddNode("demo.Amp", 0, 0);
 
@@ -134,26 +150,28 @@ public class PropertiesTests
     public void Properties_DisplayOrder_DeclaredOrders_KeepDeclarationOrder()
     {
         // Arrange: properties A, B and C declared with orders 3, 1 and 2, and D left at the default
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("demo.Ordered")
+        var types = new NodeTypeRegistry
         {
-            Properties =
+            new NodeType("demo.Ordered")
             {
-                new PropertyDefinition("A", 1) { Order = 3 },
-                new PropertyDefinition("B", 1) { Order = 1 },
-                new PropertyDefinition("C", 1) { Order = 2 },
-                new PropertyDefinition("D", 1),
+                Properties =
+                {
+                    new PropertyDefinition("A", 1) { Order = 3 },
+                    new PropertyDefinition("B", 1) { Order = 1 },
+                    new PropertyDefinition("C", 1) { Order = 2 },
+                    new PropertyDefinition("D", 1),
+                },
             },
-        });
+        };
         var diagram = new Diagram(types);
 
         // Act
         var node = diagram.Pages.Add("Main").AddNode("demo.Ordered", 0, 0);
 
         // Assert: the hints are exposed, the declaration and enumeration orders are unchanged
-        Assert.Equal(new[] { 3, 1, 2, 0 }, node.Type.Properties.Select(p => p.Order));
-        Assert.Equal(new[] { "A", "B", "C", "D" }, node.Type.Properties.Select(p => p.Name));
-        Assert.Equal(new[] { "A", "B", "C", "D" }, node.Properties.Select(p => p.Key));
+        Assert.Equal(OrderValues, node.Type.Properties.Select(p => p.Order));
+        Assert.Equal(OrderedNames, node.Type.Properties.Select(p => p.Name));
+        Assert.Equal(OrderedNames, node.Properties.Select(p => p.Key));
     }
 
     /// <summary>
@@ -334,7 +352,7 @@ public class PropertiesTests
 
         // Assert: declared properties come first in declaration order, then ad-hoc ones in insertion order
         Assert.Equal(
-            new[] { "Label", "Gain", "Enabled", "Retries", "Samples", "Tint", "Mode", "zeta", "alpha" },
+            DeclaredAndAdHocNames,
             node.Properties.Select(p => p.Key));
 
         // Act: reset a declared property and an ad-hoc one
@@ -369,7 +387,7 @@ public class PropertiesTests
 
         // Assert: one entry per real change, with notifications for the bag and the diagram
         Assert.Equal(baseline + 3, diagram.History.UndoCount);
-        Assert.Equal(new[] { "Retries", "Item[]", "note", "Item[]", "note", "Item[]" }, names);
+        Assert.Equal(ExpectedChangeNames, names);
         Assert.All(changes, c => Assert.Equal("Properties", c.PropertyName));
         Assert.Equal(3, changes.Count);
 

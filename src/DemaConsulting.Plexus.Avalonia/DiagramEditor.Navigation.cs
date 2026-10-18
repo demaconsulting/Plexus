@@ -223,9 +223,8 @@ public sealed partial class DiagramEditor
 
         // Union of what is visible of each element still on the page
         PlexusRect? union = null;
-        foreach (var element in elements.Where(e => ReferenceEquals(e.Page, page)))
+        foreach (var box in elements.Where(e => ReferenceEquals(e.Page, page)).Select(TargetBounds))
         {
-            var box = TargetBounds(element);
             union = union is { } current ? current.Union(box) : box;
         }
 

@@ -8,6 +8,18 @@ namespace DemaConsulting.Plexus.Tests;
 /// </summary>
 public class PropertyBagTests
 {
+    private static readonly string[] ExpectedChoices = ["A", "B"];
+
+    private static readonly string[] ExpectedKeyOrder =
+        ["Format", "Gain", "Enabled", "Count", "Big", "Tint", "Mode", "zeta", "alpha"];
+
+    private static readonly string[] ExpectedAdHocKeys = ["first", "second"];
+
+    private static readonly string[] ExpectedChangeNames = ["Gain", "Item[]", "Gain", "Item[]"];
+
+    private static readonly string[] ExpectedTypeSummary = ["Format: F32", "Gain: 2.5 x"];
+
+    private static readonly string[] ExpectedCustomSummary = ["name=Producer1"];
     /// <summary>
     ///     Creates a diagram with one producer node.
     /// </summary>
@@ -84,7 +96,7 @@ public class PropertyBagTests
 
         // Assert
         Assert.Equal(PropertyValueKind.Choice, choice.ValueKind);
-        Assert.Equal(new[] { "A", "B" }, choice.Choices);
+        Assert.Equal(ExpectedChoices, choice.Choices);
         Assert.Equal("B", choice.DefaultValue);
         Assert.True(choice.ShowInSummary);
         Assert.Equal("Mode: B x", choice.FormatSummary("B"));
@@ -165,7 +177,7 @@ public class PropertyBagTests
         var names = node.Properties.Select(p => p.Key).ToList();
 
         // Assert
-        Assert.Equal(new[] { "Format", "Gain", "Enabled", "Count", "Big", "Tint", "Mode", "zeta", "alpha" }, names);
+        Assert.Equal(ExpectedKeyOrder, names);
         Assert.Equal(names, node.Properties.Keys);
         Assert.Equal(9, node.Properties.Values.Count());
     }
@@ -430,7 +442,7 @@ public class PropertyBagTests
         TestModel.AssertRoundTrip(diagram, () => node.Properties.Reset("first"));
         Assert.False(node.Properties.ContainsKey("first"));
         diagram.History.Undo();
-        Assert.Equal(new[] { "first", "second" }, node.Properties.Select(p => p.Key).Skip(7));
+        Assert.Equal(ExpectedAdHocKeys, node.Properties.Select(p => p.Key).Skip(7));
     }
 
     /// <summary>
@@ -464,7 +476,7 @@ public class PropertyBagTests
         diagram.History.Undo();
 
         // Assert
-        Assert.Equal(new[] { "Gain", "Item[]", "Gain", "Item[]" }, names);
+        Assert.Equal(ExpectedChangeNames, names);
     }
 
     /// <summary>
@@ -529,8 +541,8 @@ public class PropertyBagTests
         var custom = new NodeType("t.Custom") { Summary = n => [$"name={n.Name}"] };
 
         // Act / Assert
-        Assert.Equal(new[] { "Format: F32", "Gain: 2.5 x" }, node.Type.GetSummaryLines(node));
-        Assert.Equal(new[] { "name=Producer1" }, custom.GetSummaryLines(node));
+        Assert.Equal(ExpectedTypeSummary, node.Type.GetSummaryLines(node));
+        Assert.Equal(ExpectedCustomSummary, custom.GetSummaryLines(node));
     }
 
     /// <summary>

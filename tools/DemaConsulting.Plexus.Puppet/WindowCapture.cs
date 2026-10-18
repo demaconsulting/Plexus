@@ -8,7 +8,7 @@ namespace DemaConsulting.Plexus.Puppet;
 /// <summary>
 ///     Renders windows to bitmaps with <c>PrintWindow</c>, so a shot shows the demo even when another window covers it.
 /// </summary>
-internal static class WindowCapture
+internal static partial class WindowCapture
 {
     /// <summary>
     ///     Asks the window to render its full content, including what DirectComposition draws (Windows 8.1+).
@@ -80,30 +80,38 @@ internal static class WindowCapture
     {
         var handle = window.Properties.NativeWindowHandle.ValueOrDefault;
         var image = new Bitmap(Math.Max(1, bounds.Width), Math.Max(1, bounds.Height), PixelFormat.Format32bppArgb);
-        using var graphics = Graphics.FromImage(image);
-
-        // A pop-up without a window handle of its own (a tooltip) cannot be printed: copy its pixels from the screen
-        if (handle == IntPtr.Zero)
-        {
-            graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
-            return image;
-        }
-
-        var dc = graphics.GetHdc();
         try
         {
-            if (!PrintWindow(handle, dc, RenderFullContent))
-            {
-                image.Dispose();
-                throw new InvalidOperationException($"the window \"{window.Name}\" could not be rendered (PrintWindow failed)");
-            }
-        }
-        finally
-        {
-            graphics.ReleaseHdc(dc);
-        }
+            using var graphics = Graphics.FromImage(image);
 
-        return image;
+            // A pop-up without a window handle of its own (a tooltip) cannot be printed: copy its pixels from the screen
+            if (handle == IntPtr.Zero)
+            {
+                graphics.CopyFromScreen(bounds.Location, Point.Empty, bounds.Size);
+                return image;
+            }
+
+            var dc = graphics.GetHdc();
+            try
+            {
+                if (!PrintWindow(handle, dc, RenderFullContent))
+                {
+                    throw new InvalidOperationException($"the window \"{window.Name}\" could not be rendered (PrintWindow failed)");
+                }
+            }
+            finally
+            {
+                graphics.ReleaseHdc(dc);
+            }
+
+            return image;
+        }
+        catch
+        {
+            // The caller never receives the bitmap when rendering throws, so it is released here
+            image.Dispose();
+            throw;
+        }
     }
 
     /// <summary>
@@ -113,9 +121,9 @@ internal static class WindowCapture
     /// <param name="hdc">The device context to draw into.</param>
     /// <param name="flags">The render flags.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll", SetLastError = true)]
+    [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint flags);
+    private static partial bool PrintWindow(IntPtr hwnd, IntPtr hdc, uint flags);
 
     /// <summary>
     ///     Native <c>GetWindowRect</c>.
@@ -123,9 +131,9 @@ internal static class WindowCapture
     /// <param name="hwnd">The window.</param>
     /// <param name="rect">Its frame.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll", SetLastError = true)]
+    [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
+    private static partial bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
 
     /// <summary>
     ///     The native <c>RECT</c> structure.

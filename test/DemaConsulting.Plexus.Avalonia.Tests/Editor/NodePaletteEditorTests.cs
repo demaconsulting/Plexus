@@ -85,8 +85,7 @@ public class NodePaletteEditorTests
         using var host = new PaletteHost(followEditor: true);
         var secondPage = host.Diagram.Pages.Add("Second");
         var items = host.Palette.Items.ToList();
-        var otherTypes = new NodeTypeRegistry();
-        otherTypes.Add(new NodeType("other.Thing") { Title = "THING" });
+        var otherTypes = new NodeTypeRegistry { new NodeType("other.Thing") { Title = "THING" } };
         var otherPage = new Diagram(otherTypes).Pages.Add("Other");
 
         // Act
@@ -118,8 +117,7 @@ public class NodePaletteEditorTests
         var grid = (Grid)host.Window.Content!;
         grid.Children.Remove(host.Palette);
         host.Flush();
-        var otherTypes = new NodeTypeRegistry();
-        otherTypes.Add(new NodeType("other.Thing") { Title = "THING" });
+        var otherTypes = new NodeTypeRegistry { new NodeType("other.Thing") { Title = "THING" } };
         var otherPage = new Diagram(otherTypes).Pages.Add("Other");
 
         // Act: the editor moves on while the palette is away, then the palette returns

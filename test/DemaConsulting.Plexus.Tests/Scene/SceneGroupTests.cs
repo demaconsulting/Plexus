@@ -378,7 +378,7 @@ public class SceneGroupTests
         var mixer = page.AddNode("acme.Mixer", 300, 0, "M");
         foreach (var input in mixer.Inputs)
         {
-            var producer = page.AddNode("acme.Producer", 0, mixer.Wires.Count * 120, null);
+            var producer = page.AddNode("acme.Producer", 0, mixer.Wires.Count * 120.0, null);
             page.Connect(producer.Port("value"), input);
         }
 

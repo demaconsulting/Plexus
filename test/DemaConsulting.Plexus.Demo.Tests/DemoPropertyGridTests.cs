@@ -25,9 +25,9 @@ public class DemoPropertyGridTests
         host.Flush();
         window.UpdateLayout();
         host.Flush();
-        var folder = Path.Combine(Path.GetTempPath(), "plexus-pg-demo");
+        var folder = Path.Join(Path.GetTempPath(), "plexus-pg-demo");
         Directory.CreateDirectory(folder);
-        var path = Path.Combine(folder, name + ".png");
+        var path = Path.Join(folder, name + ".png");
         using var frame = window.CaptureRenderedFrame() ?? throw new InvalidOperationException("No frame was rendered.");
         frame.Save(path, global::Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
         return path;

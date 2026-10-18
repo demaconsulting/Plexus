@@ -65,7 +65,7 @@ public class PlexusRenderingTests
     {
         // Arrange
         var page = CreateConnectedPage();
-        var path = Path.Combine(Path.GetTempPath(), $"plexus-system-{Guid.NewGuid():N}.png");
+        var path = Path.Join(Path.GetTempPath(), $"plexus-system-{Guid.NewGuid():N}.png");
 
         try
         {

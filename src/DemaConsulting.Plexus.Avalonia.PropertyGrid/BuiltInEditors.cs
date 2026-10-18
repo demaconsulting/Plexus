@@ -295,7 +295,7 @@ internal static class BuiltInEditors
     /// <param name="context">The row context.</param>
     /// <param name="enumType">The enumeration type.</param>
     /// <returns>The editor.</returns>
-    private static Control FlagsEditor(PropertyEditorContext context, Type enumType)
+    private static DropDownButton FlagsEditor(PropertyEditorContext context, Type enumType)
     {
         var members = Enum.GetValues(enumType).Cast<object>().Where(m => ToBits(m) != 0).Distinct().ToList();
         var checks = new List<(CheckBox Box, ulong Bits)>();

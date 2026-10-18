@@ -399,7 +399,7 @@ public class PlexusRendererTests
         // Arrange
         var (_, page) = RenderTestModel.CreatePage();
         page.AddNode("t.Plain", 30, 30, "N");
-        var path = Path.Combine(Path.GetTempPath(), $"plexus-{Guid.NewGuid():N}.png");
+        var path = Path.Join(Path.GetTempPath(), $"plexus-{Guid.NewGuid():N}.png");
 
         try
         {
@@ -427,8 +427,8 @@ public class PlexusRendererTests
         // Arrange: a path in a folder that does not exist
         var (_, page) = RenderTestModel.CreatePage();
         page.AddNode("t.Plain", 30, 30, "N");
-        var folder = Path.Combine(Path.GetTempPath(), $"plexus-missing-{Guid.NewGuid():N}");
-        var path = Path.Combine(folder, "diagram.png");
+        var folder = Path.Join(Path.GetTempPath(), $"plexus-missing-{Guid.NewGuid():N}");
+        var path = Path.Join(folder, "diagram.png");
 
         // Act / Assert: the file-system exception reaches the caller untranslated, and neither the folder nor the file was created
         Assert.Throws<DirectoryNotFoundException>(() => PlexusRenderer.SavePng(page, path));

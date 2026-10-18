@@ -62,7 +62,7 @@ public sealed class NodeTypeRegistry : IEnumerable<NodeType>
     /// <summary>
     ///     Gets the port types referenced by node type ports.
     /// </summary>
-    public PortTypeRegistry PortTypes { get; } = new();
+    public PortTypeRegistry PortTypes { get; } = [];
 
     /// <summary>
     ///     Gets the number of registered node types.

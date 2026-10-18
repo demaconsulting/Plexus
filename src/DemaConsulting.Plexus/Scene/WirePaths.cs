@@ -84,14 +84,7 @@ internal static class WirePaths
         IReadOnlyList<WireHop>? hops = null)
     {
         // Repeated points have no direction and would make corner maths degenerate
-        var distinct = new List<Point>(points.Count);
-        foreach (var point in points)
-        {
-            if (distinct.Count == 0 || Distance(distinct[^1], point) > Epsilon)
-            {
-                distinct.Add(point);
-            }
-        }
+        var distinct = RemoveRepeatedPoints(points);
 
         var commands = new List<PathCommand>(distinct.Count + 4);
         if (distinct.Count == 0)
@@ -141,20 +134,55 @@ internal static class WirePaths
 
         if (distinct.Count > 1)
         {
-            var tip = distinct[^1];
-            var previous = distinct[^2];
-            var length = Distance(previous, tip);
-            var cut = Math.Min(Math.Max(0, endTrim), length * 0.75);
-            commands.Add(PathCommand.LineTo(cut <= Epsilon ? tip : Interpolate(tip, previous, cut / length)));
+            return AppendTip(commands, distinct, endClearance, endTrim, hops);
+        }
 
-            if (hops is { Count: > 0 })
+        return commands;
+    }
+
+    /// <summary>
+    ///     Drops consecutive points that coincide, which have no direction and would make corner maths degenerate.
+    /// </summary>
+    /// <param name="points">The polyline points.</param>
+    /// <returns>The points without repeats.</returns>
+    private static List<Point> RemoveRepeatedPoints(IReadOnlyList<Point> points)
+    {
+        var distinct = new List<Point>(points.Count);
+        foreach (var point in points)
+        {
+            if (distinct.Count == 0 || Distance(distinct[^1], point) > Epsilon)
             {
-                // Hops stay clear of the arrowhead: on the last piece they may not reach past the clearance before the tip
-                var lastEnd = endClearance > Epsilon && length > Epsilon
-                    ? Interpolate(tip, previous, Math.Min(1, endClearance / length))
-                    : tip;
-                return InsertHops(commands, hops, lastEnd);
+                distinct.Add(point);
             }
+        }
+
+        return distinct;
+    }
+
+    /// <summary>
+    ///     Adds the final line to the tip, trimmed for the arrowhead, and the hops when there are any.
+    /// </summary>
+    /// <param name="commands">The commands so far.</param>
+    /// <param name="distinct">The polyline points without repeats; at least two.</param>
+    /// <param name="endClearance">The clearance before the tip that hops keep.</param>
+    /// <param name="endTrim">How far the path is cut back from the tip.</param>
+    /// <param name="hops">The crossings to hop over, or null.</param>
+    /// <returns>The path commands.</returns>
+    private static List<PathCommand> AppendTip(List<PathCommand> commands, List<Point> distinct, double endClearance, double endTrim, IReadOnlyList<WireHop>? hops)
+    {
+        var tip = distinct[^1];
+        var previous = distinct[^2];
+        var length = Distance(previous, tip);
+        var cut = Math.Min(Math.Max(0, endTrim), length * 0.75);
+        commands.Add(PathCommand.LineTo(cut <= Epsilon ? tip : Interpolate(tip, previous, cut / length)));
+
+        if (hops is { Count: > 0 })
+        {
+            // Hops stay clear of the arrowhead: on the last piece they may not reach past the clearance before the tip
+            var lastEnd = endClearance > Epsilon && length > Epsilon
+                ? Interpolate(tip, previous, Math.Min(1, endClearance / length))
+                : tip;
+            return InsertHops(commands, hops, lastEnd);
         }
 
         return commands;
@@ -202,49 +230,98 @@ internal static class WirePaths
         }
 
         var period = pattern.Sum();
-        if (pattern.Count == 0 || line.Count < 2 || total / period * (pattern.Count / 2) > MaxDashes)
+        var dashPairs = pattern.Count / 2;
+        if (pattern.Count == 0 || line.Count < 2 || total / period * dashPairs > MaxDashes)
         {
             return [.. commands];
         }
 
         var result = new List<PathCommand>();
-        var entry = 0;
-        var remaining = pattern[0];
-        var figureOpen = false;
+        var walk = new DashWalk(pattern);
         for (var i = 1; i < line.Count; i++)
         {
-            var from = line[i - 1];
-            var to = line[i];
-            var length = Distance(from, to);
-            var position = 0.0;
-            while (position < length - Epsilon)
-            {
-                var step = Math.Min(remaining, length - position);
-                var on = entry % 2 == 0;
-                if (on)
-                {
-                    if (!figureOpen)
-                    {
-                        result.Add(PathCommand.MoveTo(Interpolate(from, to, position / length)));
-                        figureOpen = true;
-                    }
-
-                    result.Add(PathCommand.LineTo(Interpolate(from, to, (position + step) / length)));
-                }
-
-                position += step;
-                remaining -= step;
-                if (remaining <= Epsilon)
-                {
-                    // The current pattern entry is used up: an "on" entry ends its dash, then the next entry starts
-                    entry = (entry + 1) % pattern.Count;
-                    remaining = pattern[entry];
-                    figureOpen = false;
-                }
-            }
+            DashSegment(result, walk, line[i - 1], line[i]);
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     Walks one straight piece of a flattened path, adding the "on" parts of the pattern to the result.
+    /// </summary>
+    /// <param name="result">The commands so far.</param>
+    /// <param name="walk">Where in the pattern the walk is; advanced here.</param>
+    /// <param name="from">The start of the piece.</param>
+    /// <param name="to">The end of the piece.</param>
+    private static void DashSegment(List<PathCommand> result, DashWalk walk, Point from, Point to)
+    {
+        var length = Distance(from, to);
+        var position = 0.0;
+        while (position < length - Epsilon)
+        {
+            var step = Math.Min(walk.Remaining, length - position);
+            if (walk.Entry % 2 == 0)
+            {
+                if (!walk.FigureOpen)
+                {
+                    result.Add(PathCommand.MoveTo(Interpolate(from, to, position / length)));
+                    walk.FigureOpen = true;
+                }
+
+                result.Add(PathCommand.LineTo(Interpolate(from, to, (position + step) / length)));
+            }
+
+            position += step;
+            walk.Remaining -= step;
+            if (walk.Remaining <= Epsilon)
+            {
+                // The current pattern entry is used up: an "on" entry ends its dash, then the next entry starts
+                walk.Advance();
+            }
+        }
+    }
+
+    /// <summary>
+    ///     The position of a dash walk within its pattern.
+    /// </summary>
+    private sealed class DashWalk
+    {
+        private readonly IReadOnlyList<double> _pattern;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DashWalk"/> class at the start of a pattern.
+        /// </summary>
+        /// <param name="pattern">The alternating on and off lengths.</param>
+        public DashWalk(IReadOnlyList<double> pattern)
+        {
+            _pattern = pattern;
+            Remaining = pattern[0];
+        }
+
+        /// <summary>
+        ///     Gets the index of the current pattern entry; even entries are "on".
+        /// </summary>
+        public int Entry { get; private set; }
+
+        /// <summary>
+        ///     Gets or sets the length left in the current entry.
+        /// </summary>
+        public double Remaining { get; set; }
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether a dash figure is open.
+        /// </summary>
+        public bool FigureOpen { get; set; }
+
+        /// <summary>
+        ///     Moves to the next pattern entry, ending the open dash.
+        /// </summary>
+        public void Advance()
+        {
+            Entry = (Entry + 1) % _pattern.Count;
+            Remaining = _pattern[Entry];
+            FigureOpen = false;
+        }
     }
 
     /// <summary>

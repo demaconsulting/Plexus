@@ -75,7 +75,7 @@ public class PropertyGridScreenshotTests
         grid.Session.SetText(grid.Session.FindItem("Timeout")!, "9999");
         GridHarness.Capture(window, "grid-categorized-dark");
         window.Close();
-        Assert.True(File.Exists(Path.Combine(Path.GetTempPath(), "plexus-pg", "grid-categorized-dark.png")));
+        Assert.True(File.Exists(Path.Join(Path.GetTempPath(), "plexus-pg", "grid-categorized-dark.png")));
     });
 
     /// <summary>
@@ -89,7 +89,7 @@ public class PropertyGridScreenshotTests
         var window = GridHarness.Host(grid, 440, 640, ThemeVariant.Dark);
         GridHarness.Capture(window, "grid-alphabetical-dark");
         window.Close();
-        Assert.True(File.Exists(Path.Combine(Path.GetTempPath(), "plexus-pg", "grid-alphabetical-dark.png")));
+        Assert.True(File.Exists(Path.Join(Path.GetTempPath(), "plexus-pg", "grid-alphabetical-dark.png")));
     });
 
     /// <summary>
@@ -103,7 +103,7 @@ public class PropertyGridScreenshotTests
         var window = GridHarness.Host(grid, 440, 640, ThemeVariant.Light);
         GridHarness.Capture(window, "grid-categorized-light");
         window.Close();
-        Assert.True(File.Exists(Path.Combine(Path.GetTempPath(), "plexus-pg", "grid-categorized-light.png")));
+        Assert.True(File.Exists(Path.Join(Path.GetTempPath(), "plexus-pg", "grid-categorized-light.png")));
     });
 
     /// <summary>
@@ -123,7 +123,7 @@ public class PropertyGridScreenshotTests
         dialog.Accept();
         GridHarness.Capture(dialog, "dialog-light");
         dialog.Close();
-        Assert.True(File.Exists(Path.Combine(Path.GetTempPath(), "plexus-pg", "dialog-light.png")));
+        Assert.True(File.Exists(Path.Join(Path.GetTempPath(), "plexus-pg", "dialog-light.png")));
     });
 
     /// <summary>
@@ -143,6 +143,6 @@ public class PropertyGridScreenshotTests
         GridHarness.Capture(dialog, "collection-editor-dark");
         dialog.Close();
         owner.Close();
-        Assert.True(File.Exists(Path.Combine(Path.GetTempPath(), "plexus-pg", "collection-editor-dark.png")));
+        Assert.True(File.Exists(Path.Join(Path.GetTempPath(), "plexus-pg", "collection-editor-dark.png")));
     });
 }

@@ -239,7 +239,7 @@ public class DiagramTreeTests
 
         // Act / Assert
         Assert.Throws<ArgumentNullException>(() => Diagram.FromTree(null!, types));
-        Assert.Throws<ArgumentNullException>(() => Diagram.FromTree(new Dictionary<string, object?>(), null!));
+        Assert.Throws<ArgumentNullException>(() => Diagram.FromTree([], null!));
         Assert.Throws<SnapshotException>(() => Diagram.FromTree(new Dictionary<string, object?> { ["pages"] = new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc) }, types));
         Assert.Throws<SnapshotException>(() => Diagram.FromTree(new Dictionary<string, object?> { ["pages"] = double.NaN }, types));
         Assert.Throws<SnapshotException>(() => Diagram.FromTree(new Dictionary<string, object?> { ["pages"] = new SortedList { [1] = "x" } }, types));

@@ -210,7 +210,7 @@ internal sealed partial class MainWindow : Window
     ///     many columns as the pane is wide enough for, so dragging the splitter beside it shows more at once.
     /// </remarks>
     /// <returns>The pane.</returns>
-    private Control BuildPalette()
+    private Border BuildPalette()
     {
         ToolTip.SetTip(Palette, "Drag a node type onto the canvas, or double-click it, to add the node");
 
@@ -233,7 +233,7 @@ internal sealed partial class MainWindow : Window
     ///     Builds the status bar.
     /// </summary>
     /// <returns>The status bar.</returns>
-    private Control BuildStatusBar()
+    private Border BuildStatusBar()
     {
         _statusText.WithId(AutomationIds.StatusText);
         _statusSelection.WithId(AutomationIds.StatusSelection);

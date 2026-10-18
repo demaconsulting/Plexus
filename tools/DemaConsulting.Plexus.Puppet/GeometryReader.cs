@@ -165,13 +165,10 @@ internal static class GeometryReader
     private static List<ScreenRect> AvoidRects(JsonNode nodeGeometry)
     {
         var rects = new List<ScreenRect>();
-        foreach (var key in new[] { "nameRect", "title" })
-        {
-            if (nodeGeometry[key] is { } label)
-            {
-                rects.Add(ReadRect(label).Screen);
-            }
-        }
+        rects.AddRange(new[] { "nameRect", "title" }
+            .Select(key => nodeGeometry[key])
+            .Where(label => label is not null)
+            .Select(label => ReadRect(label!).Screen));
 
         if (nodeGeometry["ports"] is JsonArray ports)
         {
