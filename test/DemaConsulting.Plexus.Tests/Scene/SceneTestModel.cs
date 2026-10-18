@@ -9,7 +9,7 @@ using DemaConsulting.Plexus.Scene;
 internal sealed class FixedTextMeasurer : ITextMeasurer
 {
     /// <inheritdoc />
-    public Size Measure(string text, TextStyle style) => new(text.Length * 10, 12);
+    public Size Measure(string text, TextStyle style) => new((double)text.Length * 10, 12);
 }
 
 /// <summary>

@@ -22,6 +22,11 @@ internal static partial class Commands
     private const double HoverObstacleMargin = 30;
 
     /// <summary>
+    ///     The JSON property holding an element's rectangle.
+    /// </summary>
+    private const string BoundsKey = "bounds";
+
+    /// <summary>
     ///     How much further below a node the cursor must not park, in diagram units: room for the node's summary lines.
     /// </summary>
     private const double HoverSummaryAllowance = 60;
@@ -212,9 +217,9 @@ internal static partial class Commands
     /// <param name="obstacles">Receives the obstacles.</param>
     private static void AddNodeObstacles(AttachContext context, Dictionary<string, DiagramBox> nodes, List<DiagramBox> obstacles)
     {
-        foreach (var node in ListItems(context, "list-nodes").Where(n => n?["bounds"] is not null && n["name"] is not null))
+        foreach (var node in ListItems(context, "list-nodes").Where(n => n?[BoundsKey] is not null && n["name"] is not null))
         {
-            var box = ReadBox(node!["bounds"]!);
+            var box = ReadBox(node![BoundsKey]!);
             nodes[node["name"]!.GetValue<string>()] = box;
             var grown = box.Inflate(HoverObstacleMargin);
             obstacles.Add(grown with { Height = grown.Height + HoverSummaryAllowance });
@@ -230,9 +235,9 @@ internal static partial class Commands
     {
         foreach (var command in new[] { "list-annotations", "list-groups" })
         {
-            foreach (var item in ListItems(context, command).Where(i => i?["bounds"] is not null))
+            foreach (var item in ListItems(context, command).Where(i => i?[BoundsKey] is not null))
             {
-                obstacles.Add(ReadBox(item!["bounds"]!).Inflate(HoverObstacleMargin));
+                obstacles.Add(ReadBox(item![BoundsKey]!).Inflate(HoverObstacleMargin));
             }
         }
     }

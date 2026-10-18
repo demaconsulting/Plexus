@@ -207,10 +207,8 @@ public static class NodePropertiesDialog
         var preview = options?.Preview;
         var side = options?.PreviewPlacement != NodePreviewPlacement.Top;
         var hasPreview = preview is not null;
-        var requestedWidth = Validate(options?.Width, nameof(NodePropertiesDialogOptions.Width));
-        var requestedHeight = Validate(options?.Height, nameof(NodePropertiesDialogOptions.Height));
-        var width = requestedWidth ?? GetDefaultSize(hasPreview && side, SidePreviewDialogWidth, DialogWidth);
-        var height = requestedHeight ?? GetDefaultSize(hasPreview && !side, TopPreviewDialogHeight, DialogHeight);
+        var width = ValidateOrDefault(options?.Width, nameof(NodePropertiesDialogOptions.Width), GetDefaultSize(hasPreview && side, SidePreviewDialogWidth, DialogWidth));
+        var height = ValidateOrDefault(options?.Height, nameof(NodePropertiesDialogOptions.Height), GetDefaultSize(hasPreview && !side, TopPreviewDialogHeight, DialogHeight));
 
         // Build the plain dialog; without a preview this is the same window as Create(node)
         var dialog = new PropertyGridDialog(node, options?.Title ?? GetTitle(node)) { Width = width, Height = height };
@@ -267,15 +265,21 @@ public static class NodePropertiesDialog
     /// </summary>
     /// <param name="value">The dimension, or <see langword="null"/> for the default.</param>
     /// <param name="name">The option name, for the exception.</param>
-    /// <returns>The dimension, or <see langword="null"/>.</returns>
+    /// <param name="fallback">The dimension to use when <paramref name="value"/> is <see langword="null"/>.</param>
+    /// <returns>The dimension, or <paramref name="fallback"/>.</returns>
     /// <exception cref="ArgumentOutOfRangeException"><paramref name="value"/> is not a positive finite number.</exception>
-    private static double? Validate(double? value, string name)
+    private static double ValidateOrDefault(double? value, string name, double fallback)
     {
-        if (value is { } size && (!double.IsFinite(size) || size <= 0))
+        if (value is not { } size)
+        {
+            return fallback;
+        }
+
+        if (!double.IsFinite(size) || size <= 0)
         {
             throw new ArgumentOutOfRangeException(name, size, $"The dialog {name.ToLowerInvariant()} must be a positive finite number.");
         }
 
-        return value;
+        return size;
     }
 }

@@ -155,7 +155,7 @@ public static class RouteEditor
     /// </summary>
     /// <param name="points">The full polyline.</param>
     /// <returns><see langword="true"/> when the polyline is a valid orthogonal route.</returns>
-    private static bool IsEditable(IReadOnlyList<Point> points)
+    private static bool IsEditable(List<Point> points)
     {
         if (points.Count < 2)
         {
@@ -269,7 +269,7 @@ public static class RouteEditor
     /// <param name="coordinate">The requested coordinate.</param>
     /// <param name="stubLength">The stub length.</param>
     /// <returns>The coordinate to use.</returns>
-    private static double KeepStubsClear(IReadOnlyList<Point> points, int segment, bool horizontal, double coordinate, double stubLength)
+    private static double KeepStubsClear(List<Point> points, int segment, bool horizontal, double coordinate, double stubLength)
     {
         if (horizontal || stubLength <= 0)
         {
