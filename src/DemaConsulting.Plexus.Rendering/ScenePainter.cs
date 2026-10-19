@@ -465,7 +465,7 @@ internal sealed class ScenePainter
     ///     Tracks the open figure while a scene path is converted, so a drawing command after a close (or before any
     ///     move) implicitly starts a figure.
     /// </summary>
-    private sealed class FigureTracker
+    private struct FigureTracker
     {
         private readonly PathBuilder _builder = new();
         private readonly bool _closeFigures;
