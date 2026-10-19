@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using DemaConsulting.Plexus.Geometry;
 
 namespace DemaConsulting.Plexus.Tests.Serialization;
@@ -6,8 +7,14 @@ namespace DemaConsulting.Plexus.Tests.Serialization;
 /// <summary>
 ///     Tests for <see cref="Diagram.ToSnapshot"/>, <see cref="Diagram.FromSnapshot"/> and <see cref="PlexusJson"/>.
 /// </summary>
-public class SnapshotTests
+public partial class SnapshotTests
 {
+    /// <summary>
+    ///     Matches the type key of the producer node in saved JSON.
+    /// </summary>
+    /// <returns>The compiled regular expression.</returns>
+    [GeneratedRegex("\"typeKey\"\\s*:\\s*\"acme.Producer\"")]
+    private static partial Regex TypeKeyPattern();
     /// <summary>
     ///     Validates that a snapshot of a rich two-page diagram restores to an identical model.
     /// </summary>
@@ -622,9 +629,8 @@ public class SnapshotTests
         // Arrange: a saved diagram whose only node lost its type key
         var diagram = TestModel.CreateDiagram();
         diagram.Pages.Add("Main").AddNode("acme.Producer", 0, 0);
-        var json = System.Text.RegularExpressions.Regex.Replace(
+        var json = TypeKeyPattern().Replace(
             diagram.ToJson(),
-            "\"typeKey\"\\s*:\\s*\"acme.Producer\"",
             "\"typeKey\":" + typeKey);
         var skip = new DiagramOptions { UnknownNodeTypes = UnknownNodeTypeHandling.Skip };
 

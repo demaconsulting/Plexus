@@ -266,7 +266,7 @@ public class MainWindowTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var path = System.IO.Path.Combine(temp.Create(), "plumbing.json");
+        var path = System.IO.Path.Join(temp.Create(), "plumbing.json");
         DemoDocument.Save(DemoSamples.Plumbing(), path);
 
         // Act

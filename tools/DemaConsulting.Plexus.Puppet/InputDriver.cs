@@ -15,7 +15,7 @@ namespace DemaConsulting.Plexus.Puppet;
 ///     never lands a click in somebody else's window. Moves go in small steps with short pauses so Avalonia sees real
 ///     pointer movement rather than a jump.
 /// </remarks>
-internal static class InputDriver
+internal static partial class InputDriver
 {
     /// <summary>
     ///     The distance in pixels of one interpolated mouse step.
@@ -324,17 +324,17 @@ internal static class InputDriver
     ///     Native <c>GetForegroundWindow</c>.
     /// </summary>
     /// <returns>The foreground window, or zero.</returns>
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetForegroundWindow();
+    [LibraryImport("user32.dll")]
+    private static partial IntPtr GetForegroundWindow();
 
     /// <summary>
     ///     Native <c>SetForegroundWindow</c>.
     /// </summary>
     /// <param name="hwnd">The window.</param>
     /// <returns><see langword="true"/> when the window was brought to the foreground.</returns>
-    [DllImport("user32.dll")]
+    [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetForegroundWindow(IntPtr hwnd);
+    private static partial bool SetForegroundWindow(IntPtr hwnd);
 
     /// <summary>
     ///     Native <c>AttachThreadInput</c>.
@@ -343,25 +343,25 @@ internal static class InputDriver
     /// <param name="attachTo">The thread to attach to.</param>
     /// <param name="attachNow"><see langword="true"/> to attach, <see langword="false"/> to detach.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll")]
+    [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool AttachThreadInput(uint attach, uint attachTo, [MarshalAs(UnmanagedType.Bool)] bool attachNow);
+    private static partial bool AttachThreadInput(uint attach, uint attachTo, [MarshalAs(UnmanagedType.Bool)] bool attachNow);
 
     /// <summary>
     ///     Native <c>GetCurrentThreadId</c>.
     /// </summary>
     /// <returns>The calling thread's id.</returns>
-    [DllImport("kernel32.dll")]
-    private static extern uint GetCurrentThreadId();
+    [LibraryImport("kernel32.dll")]
+    private static partial uint GetCurrentThreadId();
 
     /// <summary>
     ///     Native <c>IsIconic</c>.
     /// </summary>
     /// <param name="hwnd">The window.</param>
     /// <returns><see langword="true"/> when the window is minimized.</returns>
-    [DllImport("user32.dll")]
+    [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool IsIconic(IntPtr hwnd);
+    private static partial bool IsIconic(IntPtr hwnd);
 
     /// <summary>
     ///     Native <c>ShowWindow</c>.
@@ -369,17 +369,17 @@ internal static class InputDriver
     /// <param name="hwnd">The window.</param>
     /// <param name="command">The show command.</param>
     /// <returns><see langword="true"/> when the window was visible before.</returns>
-    [DllImport("user32.dll")]
+    [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool ShowWindow(IntPtr hwnd, int command);
+    private static partial bool ShowWindow(IntPtr hwnd, int command);
 
     /// <summary>
     ///     Native <c>WindowFromPoint</c>.
     /// </summary>
     /// <param name="point">The pixel.</param>
     /// <returns>The window handle, or zero.</returns>
-    [DllImport("user32.dll")]
-    private static extern IntPtr WindowFromPoint(NativePoint point);
+    [LibraryImport("user32.dll")]
+    private static partial IntPtr WindowFromPoint(NativePoint point);
 
     /// <summary>
     ///     Native <c>GetAncestor</c>.
@@ -387,8 +387,8 @@ internal static class InputDriver
     /// <param name="hwnd">The window.</param>
     /// <param name="flags">The ancestor kind.</param>
     /// <returns>The ancestor handle.</returns>
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
+    [LibraryImport("user32.dll")]
+    private static partial IntPtr GetAncestor(IntPtr hwnd, uint flags);
 
     /// <summary>
     ///     Native <c>GetWindowThreadProcessId</c>.
@@ -396,8 +396,8 @@ internal static class InputDriver
     /// <param name="hwnd">The window.</param>
     /// <param name="processId">The owning process id.</param>
     /// <returns>The thread id.</returns>
-    [DllImport("user32.dll")]
-    private static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+    [LibraryImport("user32.dll")]
+    private static partial uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
 
     /// <summary>
     ///     The native <c>POINT</c> structure.
@@ -419,7 +419,7 @@ internal static class InputDriver
     /// <summary>
     ///     Holds modifier keys down for the lifetime of the instance and releases them (in reverse) on disposal.
     /// </summary>
-    private sealed class HeldModifiers : IDisposable
+    private sealed partial class HeldModifiers : IDisposable
     {
         /// <summary>
         ///     The bit of a <c>GetAsyncKeyState</c> result that is set while the key is down.
@@ -440,12 +440,9 @@ internal static class InputDriver
             // Stale modifier state from an earlier aborted run would change the meaning of the input. Only a modifier that
             // really is down is released: a key-up of a key that is not down is not something a keyboard sends, and an
             // Alt key-up on its own opens the menu bar of an Avalonia window
-            foreach (var key in new[] { VirtualKeyShort.SHIFT, VirtualKeyShort.CONTROL, VirtualKeyShort.ALT })
+            foreach (var key in new[] { VirtualKeyShort.SHIFT, VirtualKeyShort.CONTROL, VirtualKeyShort.ALT }.Where(key => (GetAsyncKeyState((int)key) & KeyDownBit) != 0))
             {
-                if ((GetAsyncKeyState((int)key) & KeyDownBit) != 0)
-                {
-                    _ = UiActions.Safe(() => { Keyboard.Release(key); return true; }, false);
-                }
+                _ = UiActions.Safe(() => { Keyboard.Release(key); return true; }, false);
             }
 
             if (modifiers.HasFlag(KeyChordModifiers.Control))
@@ -482,8 +479,8 @@ internal static class InputDriver
         /// </summary>
         /// <param name="virtualKey">The virtual key code.</param>
         /// <returns>A value whose high bit is set while the key is down.</returns>
-        [DllImport("user32.dll")]
-        private static extern short GetAsyncKeyState(int virtualKey);
+        [LibraryImport("user32.dll")]
+        private static partial short GetAsyncKeyState(int virtualKey);
 
         /// <summary>
         ///     Presses a modifier and remembers it.

@@ -14,6 +14,11 @@ namespace DemaConsulting.Plexus.Puppet;
 internal static partial class Commands
 {
     /// <summary>
+    ///     The error code reported when an element cannot be found.
+    /// </summary>
+    private const string NotFoundCode = "NOT_FOUND";
+
+    /// <summary>
     ///     Prints the main window's identity and bounds.
     /// </summary>
     /// <param name="parsed">The parsed command.</param>
@@ -37,7 +42,7 @@ internal static partial class Commands
         if (parsed.GetOption("under") is { } under)
         {
             var root = ElementFinder.FindById(context, under)
-                ?? throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", ElementFinder.BuildNotFoundMessage(context, under));
+                ?? throw new PuppetException(ExitCodes.NotFound, NotFoundCode, ElementFinder.BuildNotFoundMessage(context, under));
             Console.Write(UiTreeDumper.Dump(root, depth));
             return ExitCodes.Success;
         }
@@ -143,7 +148,7 @@ internal static partial class Commands
             var item = context.Roots()
                 .SelectMany(root => UiActions.Safe(() => root.FindAllDescendants(cf => cf.ByControlType(ControlType.ListItem)), []))
                 .FirstOrDefault(e => string.Equals(UiActions.Safe(() => e.Name, string.Empty), text, StringComparison.OrdinalIgnoreCase))
-                ?? throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", $"'{parsed.Positional[0]}' has no item \"{text}\".");
+                ?? throw new PuppetException(ExitCodes.NotFound, NotFoundCode, $"'{parsed.Positional[0]}' has no item \"{text}\".");
             UiActions.Activate(item);
             _ = UiActions.Safe(() => { combo.Patterns.ExpandCollapse.Pattern.Collapse(); return true; }, false);
             return Ok($"OK chose automationId=\"{parsed.Positional[0]}\" item=\"{text}\"");
@@ -168,7 +173,7 @@ internal static partial class Commands
         if (parsed.GetOption("to") is { } id)
         {
             var requested = ElementFinder.FindById(context, id)
-                ?? throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", ElementFinder.BuildNotFoundMessage(context, id));
+                ?? throw new PuppetException(ExitCodes.NotFound, NotFoundCode, ElementFinder.BuildNotFoundMessage(context, id));
             if (!UiActions.TryFocus(KeyboardTarget(requested)))
             {
                 throw new PuppetException(ExitCodes.NoFocus, "NO_FOCUS", $"'{id}' would not take keyboard focus.");
@@ -229,7 +234,7 @@ internal static partial class Commands
 
         if (!result.Succeeded)
         {
-            throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", $"Menu item '{result.FailedSegment}' of '{parsed.Positional[0]}' was not found.");
+            throw new PuppetException(ExitCodes.NotFound, NotFoundCode, $"Menu item '{result.FailedSegment}' of '{parsed.Positional[0]}' was not found.");
         }
 
         return Ok($"OK menu path=\"{parsed.Positional[0]}\" id=\"{result.InvokedId}\"");
@@ -302,7 +307,7 @@ internal static partial class Commands
         var handle = context.MainWindow.Properties.NativeWindowHandle.ValueOrDefault;
         if (handle == IntPtr.Zero)
         {
-            throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", "the main window has no window handle.");
+            throw new PuppetException(ExitCodes.NotFound, NotFoundCode, "the main window has no window handle.");
         }
 
         var workArea = WindowPlacement.GetWorkArea();

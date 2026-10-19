@@ -94,13 +94,19 @@ public class DiagramStreamTests
         // Arrange
         var json = SerializationFixtures.CreateRichDiagram().ToJson();
 
+        using var empty = new MemoryStream();
+        using var notJson = new MemoryStream(Encoding.UTF8.GetBytes("{ not json"));
+        using var richJson = new MemoryStream(Encoding.UTF8.GetBytes(json));
+        using var badVersion = new MemoryStream(Encoding.UTF8.GetBytes("{\"formatVersion\":99,\"pages\":[]}"));
+        using var nullJson = new MemoryStream(Encoding.UTF8.GetBytes("null"));
+
         // Act / Assert
         Assert.Throws<ArgumentNullException>(() => Diagram.FromJson((Stream)null!, TestModel.CreateTypes()));
-        Assert.Throws<ArgumentNullException>(() => Diagram.FromJson(new MemoryStream(), null!));
+        Assert.Throws<ArgumentNullException>(() => Diagram.FromJson(empty, null!));
         Assert.Throws<ArgumentNullException>(() => TestModel.CreateDiagram().ToJson((Stream)null!));
-        Assert.ThrowsAny<JsonException>(() => Diagram.FromJson(new MemoryStream(Encoding.UTF8.GetBytes("{ not json")), TestModel.CreateTypes()));
-        Assert.Throws<SnapshotException>(() => Diagram.FromJson(new MemoryStream(Encoding.UTF8.GetBytes(json)), TestModel.CreateTypes()));
-        Assert.Throws<SnapshotException>(() => Diagram.FromJson(new MemoryStream(Encoding.UTF8.GetBytes("{\"formatVersion\":99,\"pages\":[]}")), TestModel.CreateTypes()));
-        Assert.ThrowsAny<JsonException>(() => Diagram.FromJson(new MemoryStream(Encoding.UTF8.GetBytes("null")), TestModel.CreateTypes()));
+        Assert.ThrowsAny<JsonException>(() => Diagram.FromJson(notJson, TestModel.CreateTypes()));
+        Assert.Throws<SnapshotException>(() => Diagram.FromJson(richJson, TestModel.CreateTypes()));
+        Assert.Throws<SnapshotException>(() => Diagram.FromJson(badVersion, TestModel.CreateTypes()));
+        Assert.ThrowsAny<JsonException>(() => Diagram.FromJson(nullJson, TestModel.CreateTypes()));
     }
 }

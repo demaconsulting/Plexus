@@ -155,19 +155,19 @@ public class WireCrossingTests
         var runs = new List<WireRun>();
         for (var j = count; j >= 1; j--)
         {
-            runs.Add(Run($"v{j}", 2, new Point(j * 10, -50), new Point(j * 10, 400)));
+            runs.Add(Run($"v{j}", 2, new Point(j * 10.0, -50), new Point(j * 10.0, 400)));
         }
 
         for (var i = 1; i <= count; i++)
         {
-            runs.Add(Run($"h{i}", 2, new Point(0, i * 10), new Point(400, i * 10)));
+            runs.Add(Run($"h{i}", 2, new Point(0, i * 10.0), new Point(400, i * 10.0)));
         }
 
         // Act
         var hops = WireCrossings.Find(runs, 4, 2, 6, 3);
 
         // Assert: no vertical wire hops; each horizontal wire hops every vertical one, right to left as they were listed
-        var expected = Enumerable.Range(1, count).Reverse().Select(j => (double)(j * 10)).ToList();
+        var expected = Enumerable.Range(1, count).Reverse().Select(j => j * 10.0).ToList();
         Assert.All(hops.Take(count), Assert.Empty);
         Assert.All(hops.Skip(count), h => Assert.Equal(expected, h.Select(hop => hop.X)));
     }

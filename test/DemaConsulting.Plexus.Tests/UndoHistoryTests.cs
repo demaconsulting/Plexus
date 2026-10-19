@@ -321,8 +321,8 @@ public class UndoHistoryTests
     {
         // Arrange: two open transactions
         var history = new UndoHistory();
-        var outer = history.BeginTransaction("Outer");
-        var inner = history.BeginTransaction("Inner");
+        using var outer = history.BeginTransaction("Outer");
+        using var inner = history.BeginTransaction("Inner");
 
         // Act / Assert: the outer cannot complete before the inner
         Assert.Throws<InvalidOperationException>(() => outer.Dispose());
@@ -339,7 +339,7 @@ public class UndoHistoryTests
     {
         // Arrange: a transaction that was committed
         var history = new UndoHistory();
-        var transaction = history.BeginTransaction("T");
+        using var transaction = history.BeginTransaction("T");
         transaction.Dispose();
 
         // Act / Assert: second dispose is a no-op, rollback after completion is an error
@@ -424,11 +424,9 @@ public class UndoHistoryTests
             history.Execute(new AddCommand(counter, 5));
 
             // Act: an inner transaction adds and rolls back a mergeable command
-            using (var inner = history.BeginTransaction("Inner"))
-            {
-                history.Execute(new AddCommand(counter, 7));
-                inner.Rollback();
-            }
+            using var inner = history.BeginTransaction("Inner");
+            history.Execute(new AddCommand(counter, 7));
+            inner.Rollback();
         }
 
         // Assert: only the outer command's effect remains
@@ -468,8 +466,8 @@ public class UndoHistoryTests
     {
         // Arrange: two nested suspensions
         var history = new UndoHistory();
-        var outer = history.Suspend();
-        var inner = history.Suspend();
+        using var outer = history.Suspend();
+        using var inner = history.Suspend();
 
         // Act / Assert: still suspended until both are disposed; double disposal does not underflow
         inner.Dispose();
@@ -548,8 +546,8 @@ public class UndoHistoryTests
         var counter = new Counter();
         Increment(history, counter);
         history.MarkClean();
-        var outer = history.Suspend();
-        var inner = history.Suspend();
+        using var outer = history.Suspend();
+        using var inner = history.Suspend();
 
         // Act: end the inner scope first
         Increment(history, counter);
@@ -574,7 +572,7 @@ public class UndoHistoryTests
         var history = new UndoHistory();
         var raised = 0;
         history.Changed += (_, _) => raised++;
-        var scope = history.Suspend();
+        using var scope = history.Suspend();
 
         // Act
         scope.Dispose();
@@ -893,6 +891,7 @@ public class UndoHistoryTests
             }
             catch (Exception ex)
             {
+                // Intentionally broad: the test records which exception type each rejected call raises.
                 outcomes.Add(ex.GetType());
             }
         }
@@ -932,7 +931,7 @@ public class UndoHistoryTests
         // Arrange: three commands in one transaction; the middle one cannot be reverted
         var history = new UndoHistory();
         var counter = new Counter();
-        var transaction = history.BeginTransaction("Group");
+        using var transaction = history.BeginTransaction("Group");
         history.Execute("a", () => counter.Value += 1, () => counter.Value -= 1);
         history.Execute("b", () => counter.Value += 10, () => throw new InvalidOperationException("cannot revert b"));
         history.Execute("c", () => counter.Value += 100, () => counter.Value -= 100);
@@ -984,9 +983,9 @@ public class UndoHistoryTests
         // Arrange: an outer command, then an inner transaction with a failing and a succeeding command
         var history = new UndoHistory();
         var counter = new Counter();
-        var outer = history.BeginTransaction("Outer");
+        using var outer = history.BeginTransaction("Outer");
         Increment(history, counter);
-        var inner = history.BeginTransaction("Inner");
+        using var inner = history.BeginTransaction("Inner");
         history.Execute("fails", () => counter.Value += 10, () => throw new InvalidOperationException("cannot revert"));
         history.Execute("works", () => counter.Value += 100, () => counter.Value -= 100);
 
@@ -1047,6 +1046,7 @@ public class UndoHistoryTests
             }
             catch (Exception ex)
             {
+                // Intentionally broad: the test records which exception type each rejected call raises.
                 outcomes.Add(ex.GetType());
             }
         }
@@ -1088,7 +1088,7 @@ public class UndoHistoryTests
         // Arrange: a transaction holding one command
         var history = new UndoHistory();
         var counter = new Counter();
-        var transaction = history.BeginTransaction("Group");
+        using var transaction = history.BeginTransaction("Group");
         Increment(history, counter);
 
         // Act / Assert: suspending is refused, also from a nested transaction
@@ -1244,6 +1244,7 @@ public class UndoHistoryTests
             }
             catch (Exception ex)
             {
+                // Intentionally broad: the test records which exception type each rejected call raises.
                 outcomes.Add(ex.GetType());
             }
         }

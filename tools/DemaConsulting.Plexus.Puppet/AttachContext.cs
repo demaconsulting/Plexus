@@ -118,25 +118,34 @@ internal sealed class AttachContext : IDisposable
     internal static AttachContext? TryAttach(string alias, Process process, out string error)
     {
         var automation = new UIA3Automation();
+        var attached = false;
         try
         {
             var app = FlaUiApplication.Attach(process);
             var window = app.GetMainWindow(automation, WindowAppearTimeout);
             if (window is null)
             {
-                automation.Dispose();
                 error = $"Instance '{alias}' (pid={process.Id}) has no main window yet.";
                 return null;
             }
 
             error = string.Empty;
-            return new AttachContext(alias, automation, app, window);
+            var context = new AttachContext(alias, automation, app, window);
+            attached = true;
+            return context;
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            automation.Dispose();
             error = ex.Message;
             return null;
+        }
+        finally
+        {
+            // The session is owned by the context on success; on every other path (no window, an exception) it is released exactly once here
+            if (!attached)
+            {
+                automation.Dispose();
+            }
         }
     }
 

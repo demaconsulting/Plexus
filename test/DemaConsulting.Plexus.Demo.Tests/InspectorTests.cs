@@ -189,7 +189,7 @@ public class InspectorTests
         var amp = host.Session.Diagram.FindNode("Amp")!;
 
         // Act
-        var content = Assert.IsAssignableFrom<Control>(host.Editor.GetToolTipContent(osc));
+        var content = Assert.IsType<Control>(host.Editor.GetToolTipContent(osc), exactMatch: false);
         var portTip = host.Editor.GetToolTipContent(osc, osc.Port("out"));
         var ampTip = host.Editor.GetToolTipContent(amp);
         var parts = content.GetSelfAndLogicalDescendants().ToList();
@@ -201,8 +201,8 @@ public class InspectorTests
             () => Assert.Equal(2000.0 / 220.0, plot.Data!.XAxis.Maximum, 9),
             () => Assert.Contains("Saw, 220 Hz", parts.OfType<TextBlock>().Select(t => t.Text)),
             () => Assert.Contains("Osc1", parts.OfType<TextBlock>().Select(t => t.Text)),
-            () => Assert.IsNotAssignableFrom<Control>(portTip),
-            () => Assert.IsNotAssignableFrom<Control>(ampTip));
+            () => Assert.IsNotType<Control>(portTip, exactMatch: false),
+            () => Assert.IsNotType<Control>(ampTip, exactMatch: false));
     });
 
     /// <summary>
@@ -219,8 +219,8 @@ public class InspectorTests
         var tone = host.Session.Diagram.FindNode("Tone")!;
 
         // Act
-        var shapeParts = Assert.IsAssignableFrom<Control>(host.Editor.GetToolTipContent(shape)).GetSelfAndLogicalDescendants().ToList();
-        var toneParts = Assert.IsAssignableFrom<Control>(host.Editor.GetToolTipContent(tone)).GetSelfAndLogicalDescendants().ToList();
+        var shapeParts = Assert.IsType<Control>(host.Editor.GetToolTipContent(shape), exactMatch: false).GetSelfAndLogicalDescendants().ToList();
+        var toneParts = Assert.IsType<Control>(host.Editor.GetToolTipContent(tone), exactMatch: false).GetSelfAndLogicalDescendants().ToList();
 
         // Assert
         Assert.Multiple(
@@ -247,10 +247,10 @@ public class InspectorTests
         darkWindow.Show();
 
         // Act
-        var lightText = Assert.IsAssignableFrom<ISolidColorBrush>(light.GetBrush(SignalPlot.TextKey)).Color;
-        var darkText = Assert.IsAssignableFrom<ISolidColorBrush>(dark.GetBrush(SignalPlot.TextKey)).Color;
+        var lightText = Assert.IsType<ISolidColorBrush>(light.GetBrush(SignalPlot.TextKey), exactMatch: false).Color;
+        var darkText = Assert.IsType<ISolidColorBrush>(dark.GetBrush(SignalPlot.TextKey), exactMatch: false).Color;
         darkWindow.RequestedThemeVariant = ThemeVariant.Light;
-        var switched = Assert.IsAssignableFrom<ISolidColorBrush>(dark.GetBrush(SignalPlot.TextKey)).Color;
+        var switched = Assert.IsType<ISolidColorBrush>(dark.GetBrush(SignalPlot.TextKey), exactMatch: false).Color;
 
         // Assert
         Assert.NotEqual(lightText, darkText);
@@ -285,9 +285,9 @@ public class InspectorTests
         dialog.UpdateLayout();
         host.Flush();
         using var inspector = dialog.CaptureRenderedFrame();
-        var folder = Path.Combine(Path.GetTempPath(), "plexus-pg-demo");
+        var folder = Path.Join(Path.GetTempPath(), "plexus-pg-demo");
         Directory.CreateDirectory(folder);
-        inspector?.Save(Path.Combine(folder, "oscillator-inspector.png"), global::Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+        inspector?.Save(Path.Join(folder, "oscillator-inspector.png"), global::Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
 
         // Assert
         Assert.NotNull(frame);

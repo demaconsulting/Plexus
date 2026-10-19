@@ -12,6 +12,11 @@ namespace DemaConsulting.Plexus.Demo.Gui;
 internal sealed partial class MainWindow
 {
     /// <summary>
+    ///     The label of the delete menu item.
+    /// </summary>
+    private const string DeleteLabel = "Delete";
+
+    /// <summary>
     ///     Builds and opens the context menu for a right-click reported by the editor.
     /// </summary>
     /// <param name="sender">The editor.</param>
@@ -34,18 +39,18 @@ internal sealed partial class MainWindow
                 FillNodeMenu(menu, node);
                 break;
             case Wire wire:
-                menu.Items.Add(Ui.Item("Delete", AutomationIds.Context("Wire_Delete"), Editor.DeleteSelection));
+                menu.Items.Add(Ui.Item(DeleteLabel, AutomationIds.Context("Wire_Delete"), Editor.DeleteSelection));
                 menu.Items.Add(Ui.Item("Reroute", AutomationIds.Context("Wire_Reroute"), wire.Reroute));
                 break;
             case Annotation annotation:
                 menu.Items.Add(Ui.Item("Edit Text", AutomationIds.Context("Annotation_EditText"), () => Editor.BeginEditAnnotation(annotation)));
-                menu.Items.Add(Ui.Item("Delete", AutomationIds.Context("Annotation_Delete"), Editor.DeleteSelection));
+                menu.Items.Add(Ui.Item(DeleteLabel, AutomationIds.Context("Annotation_Delete"), Editor.DeleteSelection));
                 break;
             case Group group:
                 menu.Items.Add(Ui.Item("Rename...", AutomationIds.Context("Group_Rename"), () => Fire(() => RenameGroupAsync(group))));
                 menu.Items.Add(Ui.Item("Toggle Collapse", AutomationIds.Context("Group_ToggleCollapse"), () => Editor.ToggleCollapseSelection()));
                 menu.Items.Add(Ui.Item("Ungroup", AutomationIds.Context("Group_Ungroup"), () => Editor.UngroupSelection()));
-                menu.Items.Add(Ui.Item("Delete", AutomationIds.Context("Group_Delete"), Editor.DeleteSelection));
+                menu.Items.Add(Ui.Item(DeleteLabel, AutomationIds.Context("Group_Delete"), Editor.DeleteSelection));
                 break;
             default:
                 FillCanvasMenu(menu, position);
@@ -71,7 +76,7 @@ internal sealed partial class MainWindow
         menu.Items.Add(Ui.Item("Properties...", AutomationIds.Context("Node_Properties"), () => Fire(() => ShowPropertiesAsync(node))));
         menu.Items.Add(Ui.Item("Rename", AutomationIds.Context("Node_Rename"), () => Editor.BeginRename(node)));
         menu.Items.Add(Ui.Item("Duplicate", AutomationIds.Context("Node_Duplicate"), () => Editor.DuplicateSelection()));
-        menu.Items.Add(Ui.Item("Delete", AutomationIds.Context("Node_Delete"), Editor.DeleteSelection));
+        menu.Items.Add(Ui.Item(DeleteLabel, AutomationIds.Context("Node_Delete"), Editor.DeleteSelection));
 
         var move = Ui.Item("Move To Page", AutomationIds.Context("Node_MoveToPage"));
         RebuildMoveToPageMenu(move, AutomationIds.Context("Node_MoveToPage"), enabled: true);

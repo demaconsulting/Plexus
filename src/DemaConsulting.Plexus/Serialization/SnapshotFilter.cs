@@ -82,6 +82,34 @@ internal static class SnapshotFilter
 
         // A wire cannot outlive either of its nodes
         var allWires = page.Wires ?? [];
+        var keptWires = KeepWires(allWires, gone);
+        wires = allWires.Count - keptWires.Count;
+
+        // Members leave their groups; groups that lost all of their members leave too, which may empty their parents in turn
+        var keptGroups = (page.Groups ?? []).ToList();
+        groups = PruneEmptyGroups(keptGroups, gone);
+
+        var reducedGroups = keptGroups
+            .Select(g => g is null || (g.MemberIds ?? []).All(m => !gone.Contains(m)) ? g : g with { MemberIds = [.. g.MemberIds!.Where(m => !gone.Contains(m))] })
+            .Cast<GroupSnapshot>().ToList();
+
+        return page with
+        {
+            Nodes = keptNodes,
+            Wires = keptWires,
+            Groups = reducedGroups,
+            ZOrder = page.ZOrder?.Where(id => !gone.Contains(id)).ToList(),
+        };
+    }
+
+    /// <summary>
+    ///     Keeps the wires whose nodes both remain, adding the removed wires to the gone set.
+    /// </summary>
+    /// <param name="allWires">The wire snapshots.</param>
+    /// <param name="gone">The ids removed so far; extended with removed wires.</param>
+    /// <returns>The kept wires.</returns>
+    private static List<WireSnapshot> KeepWires(IReadOnlyList<WireSnapshot> allWires, HashSet<string> gone)
+    {
         var keptWires = new List<WireSnapshot>();
         foreach (var wire in allWires)
         {
@@ -95,10 +123,18 @@ internal static class SnapshotFilter
             }
         }
 
-        wires = allWires.Count - keptWires.Count;
+        return keptWires;
+    }
 
-        // Members leave their groups; groups that lost all of their members leave too, which may empty their parents in turn
-        var keptGroups = (page.Groups ?? []).ToList();
+    /// <summary>
+    ///     Removes groups whose members all left, repeating because that may empty their parents in turn.
+    /// </summary>
+    /// <param name="keptGroups">The groups; pruned in place.</param>
+    /// <param name="gone">The ids removed so far; extended with removed groups.</param>
+    /// <returns>The number of groups removed.</returns>
+    private static int PruneEmptyGroups(List<GroupSnapshot> keptGroups, HashSet<string> gone)
+    {
+        var removed = 0;
         var changed = true;
         while (changed)
         {
@@ -110,22 +146,12 @@ internal static class SnapshotFilter
                 {
                     gone.Add(group.Id);
                     keptGroups.Remove(group);
-                    groups++;
+                    removed++;
                     changed = true;
                 }
             }
         }
 
-        var reducedGroups = keptGroups
-            .Select(g => g is null || (g.MemberIds ?? []).All(m => !gone.Contains(m)) ? g : g with { MemberIds = [.. g.MemberIds!.Where(m => !gone.Contains(m))] })
-            .Cast<GroupSnapshot>().ToList();
-
-        return page with
-        {
-            Nodes = keptNodes,
-            Wires = keptWires,
-            Groups = reducedGroups,
-            ZOrder = page.ZOrder?.Where(id => !gone.Contains(id)).ToList(),
-        };
+        return removed;
     }
 }

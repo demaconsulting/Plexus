@@ -9,6 +9,7 @@ namespace DemaConsulting.Plexus.Tests;
 /// </summary>
 public class DiagramChangedEventTests
 {
+    private static readonly string[] ExpectedEventOrder = ["Theme", "Router", "ConnectionRules", "RequireUniqueNodeNames"];
     /// <summary>
     ///     Subscribes to a diagram's Changed event and collects the notifications.
     /// </summary>
@@ -151,7 +152,7 @@ public class DiagramChangedEventTests
 
         // Assert
         Assert.All(events, e => Assert.Equal(DiagramChangeKind.SettingsChanged, e.Kind));
-        Assert.Equal(new[] { "Theme", "Router", "ConnectionRules", "RequireUniqueNodeNames" }, events.Select(e => e.PropertyName));
+        Assert.Equal(ExpectedEventOrder, events.Select(e => e.PropertyName));
         Assert.Throws<ArgumentNullException>(() => diagram.Router = null!);
     }
 
@@ -452,14 +453,16 @@ public class DiagramChangedEventTests
     public void Diagram_Changed_OperationFailsAndHandlerThrows_OperationExceptionPropagates()
     {
         // Arrange: a node whose port provider fails for Mode 1, and a handler that throws on every notification
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Fragile")
+        var types = new NodeTypeRegistry
         {
-            Properties = { new PropertyDefinition("Mode", 0) },
-            PortProvider = node => node.Properties.Get<int>("Mode") == 0
-                ? new PortSet([], [])
-                : throw new NotSupportedException("mode not supported"),
-        });
+            new NodeType("acme.Fragile")
+            {
+                Properties = { new PropertyDefinition("Mode", 0) },
+                PortProvider = node => node.Properties.Get<int>("Mode") == 0
+                    ? new PortSet([], [])
+                    : throw new NotSupportedException("mode not supported"),
+            },
+        };
         var diagram = new Diagram(types);
         var page = diagram.Pages.Add("Main");
         var node = page.AddNode("acme.Fragile", 0, 0);

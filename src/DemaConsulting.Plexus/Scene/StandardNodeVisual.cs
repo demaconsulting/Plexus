@@ -99,11 +99,11 @@ public class StandardNodeVisual : INodeVisual
             var fade = 1.0 - ((double)ring / GlowRings);
             var color = context.Faded(glow with { A = (byte)Math.Round(glow.A * 0.5 * fade * fade) });
             context.Add(new RectPrimitive(
-                context.Layout.Box.Inflate(1 + (2 * ring)),
+                context.Layout.Box.Inflate(1 + (2.0 * ring)),
                 null,
                 color,
                 2,
-                context.Theme.NodeCornerRadius + 1 + (2 * ring)));
+                context.Theme.NodeCornerRadius + 1 + (2.0 * ring)));
         }
     }
 

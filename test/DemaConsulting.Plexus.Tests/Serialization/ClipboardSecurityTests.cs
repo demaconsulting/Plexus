@@ -224,8 +224,8 @@ public class ClipboardSecurityTests
         {
             var nodes = "\"nodes\":[" + ValidNode + "," + ValidConsumer + "]";
             const string group = """{"id":"g1","title":"G","memberIds":["n1"],"isCollapsed":false,"collapsedPosition":{"x":0,"y":0}}""";
-            return new TheoryData<string>
-            {
+            return
+            [
                 // Wire references an unknown node, an unknown port, the wrong direction, or the same node twice
                 nodes + ""","wires":[{"id":"w","sourceNodeId":"zzz","sourcePort":"value","targetNodeId":"n2","targetPort":"in"}]""",
                 nodes + ""","wires":[{"id":"w","sourceNodeId":"n1","sourcePort":"nope","targetNodeId":"n2","targetPort":"in"}]""",
@@ -256,7 +256,7 @@ public class ClipboardSecurityTests
                 "\"nodes\":[" + """{"id":"n1","typeKey":"acme.Producer","name":"P","bounds":{"x":0,"y":0,"width":1,"height":1},"properties":{"Count":{"kind":"int","value":1.5}}}""" + "]",
                 "\"nodes\":[" + """{"id":"n1","typeKey":"acme.Producer","name":"P","bounds":{"x":0,"y":0,"width":1,"height":1},"properties":{"Count":null}}""" + "]",
                 "\"nodes\":[" + """{"id":"n1","typeKey":"acme.Producer","name":"P","bounds":{"x":0,"y":0,"width":1,"height":1},"properties":{"Count":{"kind":"int"}}}""" + "]",
-            };
+            ];
         }
     }
 

@@ -14,6 +14,11 @@ namespace DemaConsulting.Plexus.Avalonia.Tests;
 public class NodePaletteColumnTests
 {
     /// <summary>
+    ///     The column counts exercised by the width tests.
+    /// </summary>
+    private static readonly int[] WantedColumns = [1, 2, 3, 4];
+
+    /// <summary>
     ///     The space the palette keeps around its entries on each side, in device-independent pixels.
     /// </summary>
     private const double Margin = 4;
@@ -94,7 +99,7 @@ public class NodePaletteColumnTests
         var counts = new List<(int Wanted, int Exact, int OneLess, int Columns)>();
 
         // Act: widths that hold 1 to 4 columns exactly, and one pixel less
-        foreach (var wanted in new[] { 1, 2, 3, 4 })
+        foreach (var wanted in WantedColumns)
         {
             host.SetPaletteWidth(WidthFor(host, wanted));
             var exact = host.Palette.ColumnCount;

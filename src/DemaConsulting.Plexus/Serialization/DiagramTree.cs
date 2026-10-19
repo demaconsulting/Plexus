@@ -103,12 +103,10 @@ internal static class DiagramTree
         {
             foreach (var node in (page.GetValueOrDefault("nodes") as List<object?> ?? []).OfType<Dictionary<string, object?>>())
             {
-                foreach (var property in (node.GetValueOrDefault("properties") as Dictionary<string, object?> ?? []).Values.OfType<Dictionary<string, object?>>())
+                foreach (var property in (node.GetValueOrDefault("properties") as Dictionary<string, object?> ?? []).Values.OfType<Dictionary<string, object?>>()
+                    .Where(p => p.GetValueOrDefault("kind") as string == "double" && p.GetValueOrDefault("value") is long))
                 {
-                    if (property.GetValueOrDefault("kind") as string == "double" && property.GetValueOrDefault("value") is long whole)
-                    {
-                        property["value"] = (double)whole;
-                    }
+                    property["value"] = (double)(long)property["value"]!;
                 }
             }
         }

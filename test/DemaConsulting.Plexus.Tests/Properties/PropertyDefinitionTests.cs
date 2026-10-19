@@ -9,6 +9,7 @@ namespace DemaConsulting.Plexus.Tests;
 /// </summary>
 public class PropertyDefinitionTests
 {
+    private static readonly string[] ExpectedChoices = ["A", "B"];
     /// <summary>
     ///     Validates that integral and decimal numeric defaults widen to the canonical int, long and double kinds.
     /// </summary>
@@ -115,7 +116,7 @@ public class PropertyDefinitionTests
         source.Add("C");
 
         // Assert
-        Assert.Equal(new[] { "A", "B" }, definition.Choices);
+        Assert.Equal(ExpectedChoices, definition.Choices);
     }
 
     /// <summary>

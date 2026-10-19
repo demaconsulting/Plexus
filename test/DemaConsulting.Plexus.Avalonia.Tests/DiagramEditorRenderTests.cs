@@ -55,7 +55,7 @@ public class DiagramEditorRenderTests
         // Act: make many changes before anyone asks for the scene
         for (var i = 0; i < 20; i++)
         {
-            host.Page.AddNode("test.Source", i * 20, 0);
+            host.Page.AddNode("test.Source", i * 20.0, 0);
         }
 
         _ = host.Editor.Scene;
@@ -162,9 +162,9 @@ public class DiagramEditorRenderTests
 
         // Act: capture a rendered frame and save it for visual inspection
         var frame = window.CaptureRenderedFrame()!;
-        var picturePath = Path.Combine(Path.GetTempPath(), "plexus-avalonia");
+        var picturePath = Path.Join(Path.GetTempPath(), "plexus-avalonia");
         Directory.CreateDirectory(picturePath);
-        frame.Save(Path.Combine(picturePath, "editor-small.png"), PngBitmapEncoderOptions.Default);
+        frame.Save(Path.Join(picturePath, "editor-small.png"), PngBitmapEncoderOptions.Default);
 
         // Assert: the canvas background and the node fill are both present in the picture
         var pixels = ReadPixels(frame);
@@ -200,14 +200,14 @@ public class DiagramEditorRenderTests
         host.BeginDrag(from);
         host.MoveTo(new Point(from.X + 120, from.Y + 90));
         var frame = host.Window.CaptureRenderedFrame()!;
-        var picturePath = Path.Combine(Path.GetTempPath(), "plexus-avalonia");
+        var picturePath = Path.Join(Path.GetTempPath(), "plexus-avalonia");
         Directory.CreateDirectory(picturePath);
-        frame.Save(Path.Combine(picturePath, "editor-groups.png"), PngBitmapEncoderOptions.Default);
+        frame.Save(Path.Join(picturePath, "editor-groups.png"), PngBitmapEncoderOptions.Default);
         host.EndDrag(new Point(from.X + 120, from.Y + 90));
 
         // Assert: the picture exists and the crossing wire survived the collapse
         Assert.Multiple(
-            () => Assert.True(File.Exists(Path.Combine(picturePath, "editor-groups.png"))),
+            () => Assert.True(File.Exists(Path.Join(picturePath, "editor-groups.png"))),
             () => Assert.NotNull(crossing.Page));
     });
     /// <summary>

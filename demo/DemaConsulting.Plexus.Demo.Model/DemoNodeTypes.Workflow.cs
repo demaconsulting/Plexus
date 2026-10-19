@@ -6,6 +6,11 @@ namespace DemaConsulting.Plexus.Demo.Model;
 public static partial class DemoNodeTypes
 {
     /// <summary>
+    ///     The description of an input that the preceding steps feed.
+    /// </summary>
+    private const string StepsLeadHere = "The steps that lead here.";
+
+    /// <summary>
     ///     The key of the workflow start node type.
     /// </summary>
     public const string Start = "demo.workflow.Start";
@@ -56,7 +61,7 @@ public static partial class DemoNodeTypes
         // The task also carries host data (see TaskDetails) beyond its declared properties
         const string task = "A piece of work someone does.";
         types.Add(Define(Task, "TASK", "Task", WorkflowCategory, "Task",
-            [new("in", Flow) { AllowsMultipleWires = true, Description = "The steps that lead here." }],
+            [new("in", Flow) { AllowsMultipleWires = true, Description = StepsLeadHere }],
             [new("out", Flow) { Description = "The next step, once the task is done." }],
             [new PropertyDefinition("Assignee", "Unassigned") { ShowInSummary = true, Description = "Who is responsible for the task." }, Summarized("Duration", 2, "h", description: "The planned effort.")],
             dataType: typeof(TaskDetails),
@@ -65,14 +70,14 @@ public static partial class DemoNodeTypes
             toolTip: Live(task, node => $"{Value(node, "Assignee")} · {Value(node, "Duration")}")));
         const string decision = "Chooses the next path by a condition.";
         types.Add(Define(Decision, "DECISION", "Decision", WorkflowCategory, "Decision",
-            [new("in", Flow) { AllowsMultipleWires = true, Description = "The steps that lead here." }],
+            [new("in", Flow) { AllowsMultipleWires = true, Description = StepsLeadHere }],
             [new("yes", Flow) { Description = "Taken when the condition holds." }, new("no", Flow) { Description = "Taken otherwise." }],
             [new PropertyDefinition("Condition", "Amount > 1000") { ShowInSummary = true, Description = "The rule that picks the path." }],
             description: decision,
             toolTip: Live(decision, node => $"If {Value(node, "Condition")}")));
         const string approval = "Waits for someone to approve or reject.";
         types.Add(Define(Approval, "APPROVAL", "Approval", WorkflowCategory, "Approval",
-            [new("in", Flow) { AllowsMultipleWires = true, Description = "The steps that lead here." }],
+            [new("in", Flow) { AllowsMultipleWires = true, Description = StepsLeadHere }],
             [new("approved", Flow) { Description = "Taken when approved." }, new("rejected", Flow) { Description = "Taken when rejected." }],
             [
                 new PropertyDefinition("Approver", "Manager") { ShowInSummary = true, Description = "Who approves." },
@@ -82,7 +87,7 @@ public static partial class DemoNodeTypes
             toolTip: Live(approval, node => $"{Value(node, "Approver")} · {Value(node, "Timeout")} timeout")));
         const string notify = "Sends a message and continues.";
         types.Add(Define(Notify, "NOTIFY", "Notify", WorkflowCategory, "Notify",
-            [new("in", Flow) { AllowsMultipleWires = true, Description = "The steps that lead here." }],
+            [new("in", Flow) { AllowsMultipleWires = true, Description = StepsLeadHere }],
             [new("out", Flow) { Description = "The next step." }],
             [
                 Choice("Channel", "Email", ["Email", "SMS", "Chat"], description: "How the message is sent."),
@@ -92,7 +97,7 @@ public static partial class DemoNodeTypes
             toolTip: Live(notify, node => $"{Value(node, "Channel")} to {Value(node, "Recipient")}")));
         const string end = "Where the workflow finishes.";
         types.Add(Define(End, "END", "End", WorkflowCategory, "End",
-            [new("in", Flow) { AllowsMultipleWires = true, Description = "The steps that lead here." }],
+            [new("in", Flow) { AllowsMultipleWires = true, Description = StepsLeadHere }],
             [],
             [Choice("Outcome", "Completed", ["Completed", "Cancelled"], description: "How the workflow ends.")],
             description: end,

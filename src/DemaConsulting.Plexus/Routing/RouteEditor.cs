@@ -155,7 +155,7 @@ public static class RouteEditor
     /// </summary>
     /// <param name="points">The full polyline.</param>
     /// <returns><see langword="true"/> when the polyline is a valid orthogonal route.</returns>
-    private static bool IsEditable(IReadOnlyList<Point> points)
+    private static bool IsEditable(List<Point> points)
     {
         if (points.Count < 2)
         {
@@ -190,7 +190,7 @@ public static class RouteEditor
     /// <param name="moves">The segments to move and their new coordinates.</param>
     /// <param name="stubLength">The stub length kept at a port when a jog is inserted.</param>
     /// <returns>The new interior bend points, or null when the route cannot be edited that way.</returns>
-    private static IReadOnlyList<Point>? ApplyMoves(IReadOnlyList<Point> original, (int Segment, double Coordinate)[] moves, double stubLength)
+    private static IReadOnlyList<Point>? ApplyMoves(List<Point> original, (int Segment, double Coordinate)[] moves, double stubLength)
     {
         if (!IsEditable(original))
         {
@@ -238,7 +238,7 @@ public static class RouteEditor
         foreach (var (segment, coordinate) in jogs)
         {
             var horizontal = IsHorizontal(original[segment], original[segment + 1]);
-            if (!AddJog(points, last, segment, horizontal, coordinate, stubLength, before, after))
+            if (!AddJog(points, segment, horizontal, coordinate, stubLength, before, after))
             {
                 return null;
             }
@@ -269,7 +269,7 @@ public static class RouteEditor
     /// <param name="coordinate">The requested coordinate.</param>
     /// <param name="stubLength">The stub length.</param>
     /// <returns>The coordinate to use.</returns>
-    private static double KeepStubsClear(IReadOnlyList<Point> points, int segment, bool horizontal, double coordinate, double stubLength)
+    private static double KeepStubsClear(List<Point> points, int segment, bool horizontal, double coordinate, double stubLength)
     {
         if (horizontal || stubLength <= 0)
         {
@@ -294,7 +294,6 @@ public static class RouteEditor
     ///     Computes the points of a jog beside a port and files them before or after the interior points.
     /// </summary>
     /// <param name="points">The polyline with the moved neighbors already in place.</param>
-    /// <param name="last">The index of the last point.</param>
     /// <param name="segment">The moved segment; the first, the last or the only one.</param>
     /// <param name="horizontal">Whether the segment is horizontal.</param>
     /// <param name="coordinate">The new coordinate of the segment's line.</param>
@@ -304,7 +303,6 @@ public static class RouteEditor
     /// <returns><see langword="false"/> when there is no room for the jog.</returns>
     private static bool AddJog(
         List<Point> points,
-        int last,
         int segment,
         bool horizontal,
         double coordinate,
@@ -312,6 +310,7 @@ public static class RouteEditor
         List<Point> before,
         List<Point> after)
     {
+        var last = points.Count - 1;
         var first = points[0];
         var final = points[last];
         var firstAlong = Along(first, horizontal);
@@ -321,16 +320,14 @@ public static class RouteEditor
         {
             // A wire without bends: two steps, one beside each port, joined by the moved middle piece
             var direction = finalAlong >= firstAlong ? 1 : -1;
-            var step = Math.Min(stubLength > 0 ? stubLength : double.MaxValue, Math.Abs(finalAlong - firstAlong) / 4);
+            var step = Math.Min(StubStep(stubLength), Math.Abs(finalAlong - firstAlong) / 4);
             if (step <= Epsilon)
             {
                 return false;
             }
 
-            before.Add(Make(horizontal, firstAlong + (direction * step), Coordinate(first, horizontal)));
-            before.Add(Make(horizontal, firstAlong + (direction * step), coordinate));
-            after.Add(Make(horizontal, finalAlong - (direction * step), coordinate));
-            after.Add(Make(horizontal, finalAlong - (direction * step), Coordinate(final, horizontal)));
+            AddSourceJog(before, first, horizontal, coordinate, firstAlong + (direction * step));
+            AddTargetJog(after, final, horizontal, coordinate, finalAlong - (direction * step));
             return true;
         }
 
@@ -339,29 +336,62 @@ public static class RouteEditor
             // The jog sits at most one stub away from the source port, on the side the wire leaves to
             var gap = Along(points[1], horizontal) - firstAlong;
             var direction = horizontal ? 1 : Math.Sign(gap);
-            var step = Math.Min(stubLength > 0 ? stubLength : double.MaxValue, Math.Abs(gap) / 2);
+            var step = Math.Min(StubStep(stubLength), Math.Abs(gap) / 2);
             if (gap * direction <= Epsilon || step <= Epsilon)
             {
                 return false;
             }
 
-            before.Add(Make(horizontal, firstAlong + (direction * step), Coordinate(first, horizontal)));
-            before.Add(Make(horizontal, firstAlong + (direction * step), coordinate));
+            AddSourceJog(before, first, horizontal, coordinate, firstAlong + (direction * step));
             return true;
         }
 
         // The last segment: the jog sits at most one stub away from the target port, on the side the wire arrives from
         var distance = finalAlong - Along(points[last - 1], horizontal);
         var approach = horizontal ? 1 : Math.Sign(distance);
-        var jog = Math.Min(stubLength > 0 ? stubLength : double.MaxValue, Math.Abs(distance) / 2);
+        var jog = Math.Min(StubStep(stubLength), Math.Abs(distance) / 2);
         if (distance * approach <= Epsilon || jog <= Epsilon)
         {
             return false;
         }
 
-        after.Add(Make(horizontal, finalAlong - (approach * jog), coordinate));
-        after.Add(Make(horizontal, finalAlong - (approach * jog), Coordinate(final, horizontal)));
+        AddTargetJog(after, final, horizontal, coordinate, finalAlong - (approach * jog));
         return true;
+    }
+
+    /// <summary>
+    ///     Gets the longest allowed jog step for a stub length; a stub length of zero or less means no limit.
+    /// </summary>
+    /// <param name="stubLength">The stub length.</param>
+    /// <returns>The longest allowed step.</returns>
+    private static double StubStep(double stubLength) => stubLength > 0 ? stubLength : double.MaxValue;
+
+    /// <summary>
+    ///     Adds the two points of a jog beside the source port.
+    /// </summary>
+    /// <param name="before">The list that receives the points.</param>
+    /// <param name="port">The source port's point.</param>
+    /// <param name="horizontal">Whether the segment is horizontal.</param>
+    /// <param name="coordinate">The new coordinate of the segment's line.</param>
+    /// <param name="along">The position along the segment where the jog sits.</param>
+    private static void AddSourceJog(List<Point> before, Point port, bool horizontal, double coordinate, double along)
+    {
+        before.Add(Make(horizontal, along, Coordinate(port, horizontal)));
+        before.Add(Make(horizontal, along, coordinate));
+    }
+
+    /// <summary>
+    ///     Adds the two points of a jog beside the target port.
+    /// </summary>
+    /// <param name="after">The list that receives the points.</param>
+    /// <param name="port">The target port's point.</param>
+    /// <param name="horizontal">Whether the segment is horizontal.</param>
+    /// <param name="coordinate">The new coordinate of the segment's line.</param>
+    /// <param name="along">The position along the segment where the jog sits.</param>
+    private static void AddTargetJog(List<Point> after, Point port, bool horizontal, double coordinate, double along)
+    {
+        after.Add(Make(horizontal, along, coordinate));
+        after.Add(Make(horizontal, along, Coordinate(port, horizontal)));
     }
 
     /// <summary>

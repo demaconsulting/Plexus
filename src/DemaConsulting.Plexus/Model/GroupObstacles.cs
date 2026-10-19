@@ -36,12 +36,9 @@ internal sealed class GroupObstacles
         }
 
         // Groups hidden inside a collapsed group are not drawn and therefore do not block anything
-        foreach (var group in groups)
+        foreach (var group in groups.Where(g => !g.IsHiddenByCollapse && (includeCollapsed || !g.IsCollapsed)))
         {
-            if (!group.IsHiddenByCollapse && (includeCollapsed || !group.IsCollapsed))
-            {
-                _frames.Add((group, group.Bounds.Inflate(theme.ObstacleMargin)));
-            }
+            _frames.Add((group, group.Bounds.Inflate(theme.ObstacleMargin)));
         }
     }
 

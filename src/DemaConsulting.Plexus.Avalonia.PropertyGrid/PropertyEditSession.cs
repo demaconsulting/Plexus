@@ -161,56 +161,19 @@ public sealed class PropertyEditSession
         ArgumentNullException.ThrowIfNull(path);
 
         // The root is the top-level item whose path is the longest prefix of the path that ends at a segment boundary
-        PropertyItem? current = null;
-        foreach (var item in Source.GetItems())
-        {
-            var root = item.Path;
-            var boundary = path.Length == root.Length || (path.Length > root.Length && path[root.Length] is '.' or '[');
-            if (path.StartsWith(root, StringComparison.Ordinal) && boundary && (current is null || root.Length > current.Path.Length))
-            {
-                current = item;
-            }
-        }
-
+        var current = FindRoot(path);
         if (current is null)
         {
             return null;
         }
 
+        // Every step below leaves a non-null item or returns null, so the current item is never null at the top of an iteration
         var position = current.Path.Length;
         while (position < path.Length)
         {
-            if (path[position] == '[')
-            {
-                var close = path.IndexOf(']', position);
-                if (current is null || close < 0 || !int.TryParse(path.AsSpan(position + 1, close - position - 1), NumberStyles.None, CultureInfo.InvariantCulture, out var index))
-                {
-                    return null;
-                }
-
-                var elements = current.GetCollectionItems();
-                current = index < elements.Count ? elements[index] : null;
-                position = close + 1;
-            }
-            else
-            {
-                if (path[position] == '.')
-                {
-                    if (current is null)
-                    {
-                        return null;
-                    }
-
-                    position++;
-                }
-
-                var end = path.IndexOfAny(['.', '['], position);
-                end = end < 0 ? path.Length : end;
-                var name = path[position..end];
-                current = (current is null ? Source.GetItems() : current.Children).FirstOrDefault(i => i.Name == name);
-                position = end;
-            }
-
+            current = path[position] == '['
+                ? StepIntoElement(current, path, ref position)
+                : StepIntoChild(current, path, ref position);
             if (current is null)
             {
                 return null;
@@ -218,6 +181,68 @@ public sealed class PropertyEditSession
         }
 
         return current;
+    }
+
+    /// <summary>
+    ///     Finds the top-level item whose path is the longest prefix of <paramref name="path"/> ending at a segment boundary.
+    /// </summary>
+    /// <param name="path">The path.</param>
+    /// <returns>The root item, or <see langword="null"/> when no top-level item matches.</returns>
+    private PropertyItem? FindRoot(string path)
+    {
+        PropertyItem? best = null;
+        foreach (var item in Source.GetItems())
+        {
+            var root = item.Path;
+            var boundary = path.Length == root.Length || (path.Length > root.Length && path[root.Length] is '.' or '[');
+            if (path.StartsWith(root, StringComparison.Ordinal) && boundary && (best is null || root.Length > best.Path.Length))
+            {
+                best = item;
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>
+    ///     Follows an <c>[index]</c> segment of a path starting at <paramref name="position"/>.
+    /// </summary>
+    /// <param name="current">The item that owns the collection.</param>
+    /// <param name="path">The path.</param>
+    /// <param name="position">The position of the opening bracket; advanced past the closing bracket.</param>
+    /// <returns>The element, or <see langword="null"/> when the segment is malformed or out of range.</returns>
+    private static PropertyItem? StepIntoElement(PropertyItem current, string path, ref int position)
+    {
+        var close = path.IndexOf(']', position);
+        if (close < 0 || !int.TryParse(path.AsSpan(position + 1, close - position - 1), NumberStyles.None, CultureInfo.InvariantCulture, out var index))
+        {
+            return null;
+        }
+
+        var elements = current.GetCollectionItems();
+        position = close + 1;
+        return index < elements.Count ? elements[index] : null;
+    }
+
+    /// <summary>
+    ///     Follows a (optionally dot-prefixed) property name segment of a path starting at <paramref name="position"/>.
+    /// </summary>
+    /// <param name="current">The item that owns the property.</param>
+    /// <param name="path">The path.</param>
+    /// <param name="position">The position of the segment; advanced past the name.</param>
+    /// <returns>The child, or <see langword="null"/> when there is none with that name.</returns>
+    private static PropertyItem? StepIntoChild(PropertyItem current, string path, ref int position)
+    {
+        if (path[position] == '.')
+        {
+            position++;
+        }
+
+        var end = path.IndexOfAny(['.', '['], position);
+        end = end < 0 ? path.Length : end;
+        var name = path[position..end];
+        position = end;
+        return current.Children.FirstOrDefault(i => i.Name == name);
     }
 
     /// <summary>

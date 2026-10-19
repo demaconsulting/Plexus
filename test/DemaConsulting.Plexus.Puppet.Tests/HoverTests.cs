@@ -202,6 +202,6 @@ public class HoverTests
         // Arrange / Act / Assert
         Assert.Equal(("Meter.flow", "in"), HoverPlanner.SplitPortReference("Meter.flow@in"));
         Assert.Equal(("Meter.flow", "out"), HoverPlanner.SplitPortReference("Meter.flow@out"));
-        Assert.Equal(("Osc1.out", (string?)null), HoverPlanner.SplitPortReference("Osc1.out"));
+        Assert.Equal(("Osc1.out", null), HoverPlanner.SplitPortReference("Osc1.out"));
     }
 }

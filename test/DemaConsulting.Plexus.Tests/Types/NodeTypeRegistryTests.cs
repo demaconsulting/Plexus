@@ -9,6 +9,15 @@ namespace DemaConsulting.Plexus.Tests;
 /// </summary>
 public class NodeTypeRegistryTests
 {
+    private static readonly string[] RegistrationOrder = ["acme.Charlie", "acme.Alpha", "acme.Bravo"];
+
+    private static readonly string[] OrderAfterRemoval = ["acme.Charlie", "acme.Bravo"];
+
+    private static readonly string[] InputNames = ["c", "a"];
+
+    private static readonly string[] InputTypeKeys = ["f32", "i32"];
+
+    private static readonly string[] OutputNames = ["z", "y"];
     /// <summary>
     ///     Validates that enumeration follows registration order and that removal keeps the remaining order.
     /// </summary>
@@ -27,8 +36,8 @@ public class NodeTypeRegistryTests
         var afterRemoval = registry.Select(t => t.Key).ToArray();
 
         // Assert
-        Assert.Equal(new[] { "acme.Charlie", "acme.Alpha", "acme.Bravo" }, all);
-        Assert.Equal(new[] { "acme.Charlie", "acme.Bravo" }, afterRemoval);
+        Assert.Equal(RegistrationOrder, all);
+        Assert.Equal(OrderAfterRemoval, afterRemoval);
     }
 
     /// <summary>
@@ -100,9 +109,9 @@ public class NodeTypeRegistryTests
         new NodeTypeRegistry().Add(type);
 
         // Assert: order is exactly as declared, with the type key kept
-        Assert.Equal(new[] { "c", "a" }, type.Inputs.Select(p => p.Name));
-        Assert.Equal(new[] { "f32", "i32" }, type.Inputs.Select(p => p.TypeKey));
-        Assert.Equal(new[] { "z", "y" }, type.Outputs.Select(p => p.Name));
+        Assert.Equal(InputNames, type.Inputs.Select(p => p.Name));
+        Assert.Equal(InputTypeKeys, type.Inputs.Select(p => p.TypeKey));
+        Assert.Equal(OutputNames, type.Outputs.Select(p => p.Name));
     }
 
     /// <summary>
@@ -307,12 +316,14 @@ public class NodeTypeRegistryTests
     public void PortDefinition_Description_IsExposedOnPort()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("t.Doc")
+        var types = new NodeTypeRegistry
         {
-            Inputs = { new PortDefinition("x", "f32") { Description = "The x value." } },
-            Outputs = { new PortDefinition("y", "f32") },
-        });
+            new NodeType("t.Doc")
+            {
+                Inputs = { new PortDefinition("x", "f32") { Description = "The x value." } },
+                Outputs = { new PortDefinition("y", "f32") },
+            },
+        };
 
         // Act
         var node = new Diagram(types).Pages.Add("P").AddNode("t.Doc", 0, 0);
@@ -368,8 +379,10 @@ public class NodeTypeRegistryTests
     public void NodeType_PortProvider_ReturnsNull_ThrowsInvalidOperation()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("t.Broken") { PortProvider = _ => null! });
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("t.Broken") { PortProvider = _ => null! },
+        };
         var page = new Diagram(types).Pages.Add("P");
 
         // Act
@@ -387,13 +400,15 @@ public class NodeTypeRegistryTests
     public void NodeType_PortProvider_EmptyPortSet_AddsNodeWithoutPorts()
     {
         // Arrange: declared defaults, but a provider that returns nothing in either direction
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("t.Empty")
+        var types = new NodeTypeRegistry
         {
-            Inputs = { new PortDefinition("x", "f32") },
-            Outputs = { new PortDefinition("y", "f32") },
-            PortProvider = _ => new PortSet([], []),
-        });
+            new NodeType("t.Empty")
+            {
+                Inputs = { new PortDefinition("x", "f32") },
+                Outputs = { new PortDefinition("y", "f32") },
+                PortProvider = _ => new PortSet([], []),
+            },
+        };
         var page = new Diagram(types).Pages.Add("P");
 
         // Act

@@ -385,7 +385,7 @@ public class SceneTests
         var nodes = new List<Node>();
         for (var i = 0; i < 1000; i++)
         {
-            nodes.Add(page.AddNode("acme.Gain", i % 40 * 200, i / 40 * 150, null));
+            nodes.Add(page.AddNode("acme.Gain", i % 40 * 200.0, Math.Floor(i / 40.0) * 150.0, null));
         }
 
         for (var i = 0; i < 1000; i++)

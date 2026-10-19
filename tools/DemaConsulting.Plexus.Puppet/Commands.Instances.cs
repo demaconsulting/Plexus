@@ -9,6 +9,11 @@ namespace DemaConsulting.Plexus.Puppet;
 internal static partial class Commands
 {
     /// <summary>
+    ///     The error code reported when an instance cannot be launched.
+    /// </summary>
+    private const string LaunchFailedCode = "LAUNCH_FAILED";
+
+    /// <summary>
     ///     How long a launched instance gets to answer its pipe and show its window.
     /// </summary>
     private static readonly TimeSpan LaunchTimeout = TimeSpan.FromSeconds(45);
@@ -33,12 +38,12 @@ internal static partial class Commands
         var alias = parsed.Instance;
         if (!parsed.HasOption("allow-existing") && DemoProcess.TryGetPid(alias, out var existing))
         {
-            throw new PuppetException(ExitCodes.LaunchFailed, "LAUNCH_FAILED", $"Instance '{alias}' is already running (pid={existing}). Use quit first, another --instance alias, or --allow-existing.");
+            throw new PuppetException(ExitCodes.LaunchFailed, LaunchFailedCode, $"Instance '{alias}' is already running (pid={existing}). Use quit first, another --instance alias, or --allow-existing.");
         }
 
         if (!DemoProcess.TryResolveExePath(parsed.GetOption("exe"), out var exe, out var resolveError))
         {
-            throw new PuppetException(ExitCodes.LaunchFailed, "LAUNCH_FAILED", resolveError);
+            throw new PuppetException(ExitCodes.LaunchFailed, LaunchFailedCode, resolveError);
         }
 
         // Shell execution gives the demo no inherited standard handles: a caller that captures the Puppet's output
@@ -50,7 +55,7 @@ internal static partial class Commands
             Arguments = LaunchOptions.JoinArguments(arguments),
         };
         using var process = Process.Start(startInfo)
-            ?? throw new PuppetException(ExitCodes.LaunchFailed, "LAUNCH_FAILED", $"Starting '{exe}' returned no process.");
+            ?? throw new PuppetException(ExitCodes.LaunchFailed, LaunchFailedCode, $"Starting '{exe}' returned no process.");
 
         // The id is read once: FlaUI takes over (and may dispose) the Process object it attaches to
         var pid = process.Id;
@@ -141,7 +146,7 @@ internal static partial class Commands
         {
             if (process.HasExited)
             {
-                throw new PuppetException(ExitCodes.LaunchFailed, "LAUNCH_FAILED", $"plexus-demo exited with code {process.ExitCode} before it was ready.");
+                throw new PuppetException(ExitCodes.LaunchFailed, LaunchFailedCode, $"plexus-demo exited with code {process.ExitCode} before it was ready.");
             }
 
             if (TryPing(alias) && TryReadTitle(alias, pid) is { } title)
@@ -152,7 +157,7 @@ internal static partial class Commands
             Thread.Sleep(250);
         }
 
-        throw new PuppetException(ExitCodes.LaunchFailed, "LAUNCH_FAILED", $"Instance '{alias}' (pid={pid}) was not ready within {LaunchTimeout.TotalSeconds:0}s.");
+        throw new PuppetException(ExitCodes.LaunchFailed, LaunchFailedCode, $"Instance '{alias}' (pid={pid}) was not ready within {LaunchTimeout.TotalSeconds:0}s.");
     }
 
     /// <summary>

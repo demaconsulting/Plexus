@@ -237,18 +237,20 @@ public class PlexusTests
     {
         // Arrange: an envelope whose properties should be listed Attack, Decay, Sustain, Release in an editor,
         // declared in another order
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Envelope")
+        var types = new NodeTypeRegistry
         {
-            Properties =
+            new NodeType("acme.Envelope")
             {
-                new PropertyDefinition("Release", 0.5) { Order = 4 },
-                new PropertyDefinition("Attack", 0.01) { Order = 1 },
-                new PropertyDefinition("Sustain", 0.7) { Order = 3 },
-                new PropertyDefinition("Decay", 0.1) { Order = 2 },
-                new PropertyDefinition("Label", "Env"),
+                Properties =
+                {
+                    new PropertyDefinition("Release", 0.5) { Order = 4 },
+                    new PropertyDefinition("Attack", 0.01) { Order = 1 },
+                    new PropertyDefinition("Sustain", 0.7) { Order = 3 },
+                    new PropertyDefinition("Decay", 0.1) { Order = 2 },
+                    new PropertyDefinition("Label", "Env"),
+                },
             },
-        });
+        };
         var diagram = new Diagram(types);
 
         // Act
@@ -838,7 +840,7 @@ public class PlexusTests
         Assert.Equal(new Point(100, 100), targetPage.Nodes[0].Bounds.Position);
 
         // Act: paste into a diagram that does not know the node types
-        var foreign = new Diagram(new NodeTypeRegistry());
+        var foreign = new Diagram([]);
         var foreignPage = foreign.Pages.Add("Foreign");
         var undoBeforePaste = foreign.History.UndoDescription;
         var failed = PlexusClipboard.Paste(foreignPage, text);
@@ -966,16 +968,18 @@ public class PlexusTests
     public void Plexus_DynamicPorts_PropertyChange_UpdatesPortsWiresAndUndoesInOneStep()
     {
         // Arrange: a host type with a "Channels" property deciding its inputs, fed on its first and fourth channels
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Source") { Outputs = { new PortDefinition("out", "f32") } });
-        types.Add(new NodeType("acme.Bus")
+        var types = new NodeTypeRegistry
         {
-            Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
-            Properties = { new PropertyDefinition("Channels", 2) },
-            PortProvider = node => new PortSet(
-                Enumerable.Range(0, node.Properties.Get<int>("Channels")).Select(i => new PortDefinition($"in{i}", "f32")),
-                []),
-        });
+            new NodeType("acme.Source") { Outputs = { new PortDefinition("out", "f32") } },
+            new NodeType("acme.Bus")
+            {
+                Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
+                Properties = { new PropertyDefinition("Channels", 2) },
+                PortProvider = node => new PortSet(
+                    Enumerable.Range(0, node.Properties.Get<int>("Channels")).Select(i => new PortDefinition($"in{i}", "f32")),
+                    []),
+            },
+        };
         var diagram = new Diagram(types);
         var page = diagram.Pages.Add("Main");
         page.AddNode("acme.Source", 0, 0, "S1");
@@ -1092,13 +1096,15 @@ public class PlexusTests
     public void Plexus_Descriptions_ToolTipFunction_FollowsNodeState()
     {
         // Arrange: a gauge whose tooltip shows its current value
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Gauge")
+        var types = new NodeTypeRegistry
         {
-            Description = "Shows a value.",
-            Properties = { new PropertyDefinition("Value", 0.0) },
-            ToolTip = node => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Value = {node.Properties.Get<double>("Value")}"),
-        });
+            new NodeType("acme.Gauge")
+            {
+                Description = "Shows a value.",
+                Properties = { new PropertyDefinition("Value", 0.0) },
+                ToolTip = node => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Value = {node.Properties.Get<double>("Value")}"),
+            },
+        };
         var diagram = new Diagram(types);
         var gauge = diagram.Pages.Add("Main").AddNode("acme.Gauge", 0, 0);
         var texts = new List<string?>();
@@ -1126,14 +1132,16 @@ public class PlexusTests
             Enumerable.Range(0, node.Properties.Get<int>("Channels"))
                 .Select(i => new PortDefinition($"in{i}", (string)node.Properties["Kind"])),
             []);
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Source") { Outputs = { new PortDefinition("out", "f32") } });
-        types.Add(new NodeType("acme.Bus")
+        var types = new NodeTypeRegistry
         {
-            Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
-            Properties = { new PropertyDefinition("Channels", 2), new PropertyDefinition("Kind", "f32") },
-            PortProvider = provider is null ? ports : provider(ports),
-        });
+            new NodeType("acme.Source") { Outputs = { new PortDefinition("out", "f32") } },
+            new NodeType("acme.Bus")
+            {
+                Inputs = { new PortDefinition("in0", "f32"), new PortDefinition("in1", "f32") },
+                Properties = { new PropertyDefinition("Channels", 2), new PropertyDefinition("Kind", "f32") },
+                PortProvider = provider is null ? ports : provider(ports),
+            },
+        };
         return types;
     }
 
@@ -1360,6 +1368,6 @@ public class PlexusTests
     private sealed class WideMeasurer : ITextMeasurer
     {
         /// <inheritdoc />
-        public Size Measure(string text, TextStyle style) => new(text.Length * 20, 14);
+        public Size Measure(string text, TextStyle style) => new(text.Length * 20.0, 14);
     }
 }

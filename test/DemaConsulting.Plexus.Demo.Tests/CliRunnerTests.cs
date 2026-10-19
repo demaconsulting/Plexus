@@ -36,7 +36,7 @@ public class CliRunnerTests
 
         // Assert
         Assert.Equal(CliRunner.Success, code);
-        var file = Path.Combine(temp.Path, "Plumbing.png");
+        var file = Path.Join(temp.Path, "Plumbing.png");
         Assert.True(File.Exists(file));
         Assert.Contains("Plumbing.png", output, StringComparison.Ordinal);
         using var image = PngCodec.Load(file);
@@ -51,8 +51,8 @@ public class CliRunnerTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var scaled = Path.Combine(temp.Path, "x2");
-        var plain = Path.Combine(temp.Path, "x1");
+        var scaled = Path.Join(temp.Path, "x2");
+        var plain = Path.Join(temp.Path, "x1");
 
         // Act
         var (codeScaled, _, _) = Run("--sample", "showcase", "--out", scaled, "--scale", "2", "--no-grid");
@@ -61,8 +61,8 @@ public class CliRunnerTests
         // Assert: seven pages; the 2x images are about twice the size
         Assert.Equal(0, codeScaled + codePlain);
         Assert.Equal(["Audio.png", "Groups.png", "Logic.png", "Math.png", "Plumbing.png", "Wiring.png", "Workflow.png"], Directory.GetFiles(scaled).Select(Path.GetFileName).Order().ToArray());
-        using var small = PngCodec.Load(Path.Combine(plain, "Audio.png"));
-        using var large = PngCodec.Load(Path.Combine(scaled, "Audio.png"));
+        using var small = PngCodec.Load(Path.Join(plain, "Audio.png"));
+        using var large = PngCodec.Load(Path.Join(scaled, "Audio.png"));
         Assert.InRange(large.Width, (small.Width * 2) - 2, (small.Width * 2) + 2);
     }
 
@@ -115,9 +115,9 @@ public class CliRunnerTests
         // Arrange
         using var temp = new TempDirectory();
         var root = temp.Create();
-        var json = Path.Combine(root, "math.json");
-        var fromSample = Path.Combine(root, "sample");
-        var fromFile = Path.Combine(root, "file");
+        var json = Path.Join(root, "math.json");
+        var fromSample = Path.Join(root, "sample");
+        var fromFile = Path.Join(root, "file");
 
         // Act
         var (writeCode, _, _) = Run("--sample", "math", "--out", fromSample, "--write-json", json);
@@ -125,7 +125,7 @@ public class CliRunnerTests
 
         // Assert: identical output from the sample and from its saved JSON
         Assert.Equal(0, writeCode + fileCode);
-        Assert.Equal(File.ReadAllBytes(Path.Combine(fromSample, "Math.png")), File.ReadAllBytes(Path.Combine(fromFile, "Math.png")));
+        Assert.Equal(File.ReadAllBytes(Path.Join(fromSample, "Math.png")), File.ReadAllBytes(Path.Join(fromFile, "Math.png")));
     }
 
     /// <summary>
@@ -137,11 +137,11 @@ public class CliRunnerTests
         // Arrange
         using var temp = new TempDirectory();
         var root = temp.Create();
-        var broken = Path.Combine(root, "broken.json");
+        var broken = Path.Join(root, "broken.json");
         File.WriteAllText(broken, "{ not json");
 
         // Act
-        var (missingCode, _, missingError) = Run(Path.Combine(root, "missing.json"), "--out", root);
+        var (missingCode, _, missingError) = Run(Path.Join(root, "missing.json"), "--out", root);
         var (brokenCode, _, brokenError) = Run(broken, "--out", root);
 
         // Assert

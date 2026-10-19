@@ -321,7 +321,7 @@ public sealed class PropertyDefinition
     /// <param name="text">The trimmed text.</param>
     /// <param name="error">Receives the reason on failure.</param>
     /// <returns>The boxed value, or null.</returns>
-    private static object? ParseBoolean(string text, out string? error)
+    private static bool? ParseBoolean(string text, out string? error)
     {
         error = null;
         switch (text.ToLowerInvariant())
@@ -373,7 +373,7 @@ public sealed class PropertyDefinition
     /// <param name="text">The trimmed text.</param>
     /// <param name="error">Receives the reason on failure.</param>
     /// <returns>The boxed value, or null.</returns>
-    private static object? ParseDouble(string text, out string? error)
+    private static double? ParseDouble(string text, out string? error)
     {
         error = null;
         if (!double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
@@ -397,7 +397,7 @@ public sealed class PropertyDefinition
     /// <param name="text">The trimmed text.</param>
     /// <param name="error">Receives the reason on failure.</param>
     /// <returns>The boxed color, or null.</returns>
-    private static object? ParseColor(string text, out string? error)
+    private static Color? ParseColor(string text, out string? error)
     {
         error = null;
         var candidate = text.StartsWith('#') ? text : "#" + text;
@@ -416,7 +416,7 @@ public sealed class PropertyDefinition
     /// <param name="text">The trimmed text.</param>
     /// <param name="error">Receives the reason on failure.</param>
     /// <returns>The declared choice, or null.</returns>
-    private object? ParseChoice(string text, out string? error)
+    private string? ParseChoice(string text, out string? error)
     {
         error = null;
         var choices = _choices ?? [];

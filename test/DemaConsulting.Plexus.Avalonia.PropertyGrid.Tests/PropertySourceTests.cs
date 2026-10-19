@@ -226,8 +226,8 @@ public class PropertySourceTests
         // Assert
         Assert.DoesNotContain(source.GetItems(), i => i.Name == "Mode");
         Assert.NotSame(before, TestHelpers.Item(source, "Shown"));
-        Assert.Single(notifications);
-        Assert.True(notifications[0].IsAll);
+        var item = Assert.Single(notifications);
+        Assert.True(item.IsAll);
     }
 
     /// <summary>
@@ -271,7 +271,7 @@ public class PropertySourceTests
     public void CompositePropertySource_AddRemoveDispose_UpdateItemsAndSubscriptions()
     {
         var extra = new CustomPropertySource([new CustomPropertyItem("X", typeof(int), () => 1)]);
-        var composite = new CompositePropertySource();
+        using var composite = new CompositePropertySource();
         var all = 0;
         composite.Changed += (_, e) => all += e.IsAll ? 1 : 0;
 

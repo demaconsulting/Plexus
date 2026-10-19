@@ -16,6 +16,11 @@ namespace DemaConsulting.Plexus.Puppet;
 internal static partial class Commands
 {
     /// <summary>
+    ///     The name of the demo command that reports where things are.
+    /// </summary>
+    private const string GeometryCommand = "geometry";
+
+    /// <summary>
     ///     Drags a node by a diagram offset.
     /// </summary>
     /// <param name="parsed">The parsed command: the node name, dx and dy in diagram units.</param>
@@ -67,8 +72,8 @@ internal static partial class Commands
         RequireArgs(parsed, 1, "plexus-puppet double-click-name <node> [--instance <alias>]");
         using var context = Attach(parsed);
         InputDriver.BringToFront(context);
-        var geometry = Call(context.Alias, "geometry", new JsonObject { ["node"] = parsed.Positional[0] })!;
-        var name = GeometryReader.ReadRect(geometry["nameRect"] ?? throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", $"Node '{parsed.Positional[0]}' has no drawn name label."));
+        var geometry = Call(context.Alias, GeometryCommand, new JsonObject { ["node"] = parsed.Positional[0] })!;
+        var name = GeometryReader.ReadRect(geometry["nameRect"] ?? throw new PuppetException(ExitCodes.NotFound, NotFoundCode, $"Node '{parsed.Positional[0]}' has no drawn name label."));
         var at = name.Screen.Center;
         Guard(context, name.Visible, at, $"the name of '{parsed.Positional[0]}'");
         InputDriver.Click(at, MouseButton.Left, KeyChordModifiers.None, 2);
@@ -103,8 +108,8 @@ internal static partial class Commands
         RequireArgs(parsed, 1, "plexus-puppet click-toggle <group title or id> [--instance <alias>]");
         using var context = Attach(parsed);
         InputDriver.BringToFront(context);
-        var geometry = Call(context.Alias, "geometry", new JsonObject { ["element"] = parsed.Positional[0] })!;
-        var toggle = GeometryReader.ReadRect(geometry["toggle"] ?? throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", $"'{parsed.Positional[0]}' is not a visible group (it has no collapse toggle)."));
+        var geometry = Call(context.Alias, GeometryCommand, new JsonObject { ["element"] = parsed.Positional[0] })!;
+        var toggle = GeometryReader.ReadRect(geometry["toggle"] ?? throw new PuppetException(ExitCodes.NotFound, NotFoundCode, $"'{parsed.Positional[0]}' is not a visible group (it has no collapse toggle)."));
         var at = toggle.Screen.Center;
         Guard(context, toggle.Visible, at, $"the toggle of '{parsed.Positional[0]}'");
         InputDriver.Click(at, MouseButton.Left, KeyChordModifiers.None);
@@ -126,7 +131,7 @@ internal static partial class Commands
         InputDriver.BringToFront(context);
         var id = ResolvePaletteId(context, type);
         var item = ElementFinder.FindById(context, id)
-            ?? throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", ElementFinder.BuildNotFoundMessage(context, id));
+            ?? throw new PuppetException(ExitCodes.NotFound, NotFoundCode, ElementFinder.BuildNotFoundMessage(context, id));
         var palette = ElementFinder.FindById(context, PaletteIds.Palette);
 
         // The palette scrolls and clips its items: ask the entry to scroll itself into view before reading where it is
@@ -258,7 +263,7 @@ internal static partial class Commands
         using var context = Attach(parsed);
         InputDriver.BringToFront(context);
         var element = ElementFinder.FindById(context, id)
-            ?? throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", ElementFinder.BuildNotFoundMessage(context, id));
+            ?? throw new PuppetException(ExitCodes.NotFound, NotFoundCode, ElementFinder.BuildNotFoundMessage(context, id));
         var bounds = element.BoundingRectangle;
         var from = new ScreenPoint(bounds.X + (bounds.Width / 2.0), bounds.Y + (bounds.Height / 2.0));
         var to = new ScreenPoint(from.X + dx, from.Y + dy);
@@ -292,7 +297,7 @@ internal static partial class Commands
         }
         else
         {
-            var editor = Call(context.Alias, "geometry", new JsonObject { ["editor"] = true })!;
+            var editor = Call(context.Alias, GeometryCommand, new JsonObject { ["editor"] = true })!;
             var rect = GeometryReader.ReadRect(new JsonObject
             {
                 ["diagram"] = new JsonObject { ["x"] = 0, ["y"] = 0, ["width"] = 0, ["height"] = 0 },
@@ -356,14 +361,14 @@ internal static partial class Commands
     /// <returns>The point, in both coordinate systems.</returns>
     private static TargetPoint NodeBody(string alias, string name)
     {
-        var geometry = Call(alias, "geometry", new JsonObject { ["node"] = name })!;
+        var geometry = Call(alias, GeometryCommand, new JsonObject { ["node"] = name })!;
         try
         {
             return GeometryReader.BodyPoint(geometry);
         }
         catch (InvalidOperationException ex)
         {
-            throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", $"Node '{name}': {ex.Message}.");
+            throw new PuppetException(ExitCodes.NotFound, NotFoundCode, $"Node '{name}': {ex.Message}.");
         }
     }
 
@@ -376,7 +381,7 @@ internal static partial class Commands
     /// <returns>The point, in both coordinate systems.</returns>
     private static TargetPoint DiagramPoint(string alias, double x, double y)
     {
-        var geometry = Call(alias, "geometry", new JsonObject { ["point"] = new JsonObject { ["x"] = x, ["y"] = y } })!;
+        var geometry = Call(alias, GeometryCommand, new JsonObject { ["point"] = new JsonObject { ["x"] = x, ["y"] = y } })!;
         return GeometryReader.ReadPoint(geometry["point"]);
     }
 
@@ -395,11 +400,11 @@ internal static partial class Commands
         JsonNode geometry;
         try
         {
-            geometry = Call(alias, "geometry", new JsonObject { ["port"] = path, ["direction"] = explicitSide ?? preferred })!;
+            geometry = Call(alias, GeometryCommand, new JsonObject { ["port"] = path, ["direction"] = explicitSide ?? preferred })!;
         }
         catch (PuppetException) when (explicitSide is null)
         {
-            geometry = Call(alias, "geometry", new JsonObject { ["port"] = path })!;
+            geometry = Call(alias, GeometryCommand, new JsonObject { ["port"] = path })!;
         }
 
         return GeometryReader.PortPressPoint(geometry["port"]!);

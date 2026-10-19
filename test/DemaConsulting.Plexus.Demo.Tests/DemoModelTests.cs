@@ -233,7 +233,7 @@ public class DemoModelTests
         // Arrange
         using var temp = new TempDirectory();
         var original = DemoSamples.Showcase();
-        var path = Path.Combine(temp.Create(), "showcase.json");
+        var path = Path.Join(temp.Create(), "showcase.json");
 
         // Act
         DemoDocument.Save(original, path);
@@ -295,7 +295,7 @@ public class DemoModelTests
         // Arrange
         using var temp = new TempDirectory();
         var original = DemoSamples.Audio();
-        var path = Path.Combine(temp.Create(), "audio.json");
+        var path = Path.Join(temp.Create(), "audio.json");
         DemoDocument.Save(original, path);
 
         // Act
@@ -318,7 +318,7 @@ public class DemoModelTests
         Assert.Throws<ArgumentException>(() => DemoDocument.Load(" "));
         Assert.Throws<ArgumentNullException>(() => DemoDocument.Save(null!, "x.json"));
         Assert.Throws<ArgumentException>(() => DemoDocument.Save(DemoSamples.Audio(), string.Empty));
-        Assert.ThrowsAny<IOException>(() => DemoDocument.Load(Path.Combine(temp.Path, "missing.json")));
+        Assert.ThrowsAny<IOException>(() => DemoDocument.Load(Path.Join(temp.Path, "missing.json")));
     }
 
     /// <summary>
@@ -401,7 +401,7 @@ public class DemoModelTests
         }
 
         using var temp = new TempDirectory();
-        var path = Path.Combine(temp.Create(), "old.json");
+        var path = Path.Join(temp.Create(), "old.json");
         File.WriteAllText(path, root.ToJsonString());
 
         // Act
@@ -477,7 +477,7 @@ public class DemoModelTests
         // Arrange: one node of every type on a page, so live tooltips can read their page
         var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
         var page = diagram.Pages.Add("Main");
-        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200))).ToList();
+        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200.0))).ToList();
 
         // Act / Assert
         Assert.All(nodes, node =>
@@ -498,7 +498,7 @@ public class DemoModelTests
         // Arrange: nodes, so ports a provider computes are included too
         var diagram = new Diagram(DemoNodeTypes.CreateRegistry());
         var page = diagram.Pages.Add("Main");
-        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200))).ToList();
+        var nodes = diagram.Types.Select((type, i) => page.AddNode(type, new Point(0, i * 200.0))).ToList();
 
         // Act
         var ports = nodes.SelectMany(n => n.Ports).ToList();
@@ -561,18 +561,15 @@ public class DemoModelTests
         osc.Properties[DemoNodeTypes.WaveformProperty] = "Saw";
         osc.Properties[DemoNodeTypes.FrequencyProperty] = 220.0;
         var root = System.Text.Json.Nodes.JsonNode.Parse(diagram.ToJson())!;
-        foreach (var node in root["pages"]![0]!["nodes"]!.AsArray())
+        foreach (var properties in root["pages"]![0]!["nodes"]!.AsArray().Select(node => node!["properties"]).OfType<System.Text.Json.Nodes.JsonObject>())
         {
-            if (node!["properties"] is System.Text.Json.Nodes.JsonObject properties)
-            {
-                properties.Remove(DemoNodeTypes.AmplitudeProperty);
-                properties.Remove(DemoNodeTypes.PhaseProperty);
-                properties.Remove(DemoNodeTypes.DcOffsetProperty);
-            }
+            properties.Remove(DemoNodeTypes.AmplitudeProperty);
+            properties.Remove(DemoNodeTypes.PhaseProperty);
+            properties.Remove(DemoNodeTypes.DcOffsetProperty);
         }
 
         using var temp = new TempDirectory();
-        var path = Path.Combine(temp.Create(), "old.json");
+        var path = Path.Join(temp.Create(), "old.json");
         File.WriteAllText(path, root.ToJsonString());
 
         // Act

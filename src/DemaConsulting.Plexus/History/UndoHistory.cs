@@ -702,6 +702,7 @@ public sealed class UndoHistory
                 }
                 catch (Exception ex)
                 {
+                    // Intentional catch-all: every failing inverse must be collected and reported, not just the first
                     (failures ??= []).Add(ex);
                 }
             }

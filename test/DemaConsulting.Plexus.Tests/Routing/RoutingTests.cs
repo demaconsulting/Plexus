@@ -136,7 +136,7 @@ public class RoutingTests
         {
             for (var r = 0; r < rows; r++)
             {
-                nodes[c, r] = page.AddNode("acme.Mixer", c * 240, r * 180, $"M{c}_{r}");
+                nodes[c, r] = page.AddNode("acme.Mixer", c * 240.0, r * 180.0, $"M{c}_{r}");
             }
         }
 
@@ -299,7 +299,7 @@ public class RoutingTests
                 new Rect(395, 60, 15, 80),
             ],
         };
-        IWireRouter router = new OrthogonalRouter();
+        var router = new OrthogonalRouter();
 
         // Act
         var route = router.Route(request);
@@ -339,7 +339,7 @@ public class RoutingTests
         {
             for (var r = 0; r < rows; r++)
             {
-                nodes[c, r] = page.AddNode("acme.Mixer", c * 240, r * 180, $"M{c}_{r}");
+                nodes[c, r] = page.AddNode("acme.Mixer", c * 240.0, r * 180.0, $"M{c}_{r}");
             }
         }
 

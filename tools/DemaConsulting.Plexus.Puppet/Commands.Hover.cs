@@ -22,6 +22,11 @@ internal static partial class Commands
     private const double HoverObstacleMargin = 30;
 
     /// <summary>
+    ///     The JSON property holding an element's rectangle.
+    /// </summary>
+    private const string BoundsKey = "bounds";
+
+    /// <summary>
     ///     How much further below a node the cursor must not park, in diagram units: room for the node's summary lines.
     /// </summary>
     private const double HoverSummaryAllowance = 60;
@@ -97,7 +102,7 @@ internal static partial class Commands
         }
 
         // Rest on the middle of the wire's longest segment, the easiest part to hit
-        var geometry = Call(context.Alias, "geometry", new JsonObject { ["element"] = id })!;
+        var geometry = Call(context.Alias, GeometryCommand, new JsonObject { ["element"] = id })!;
         if (!string.Equals(geometry["kind"]?.GetValue<string>(), "wire", StringComparison.Ordinal))
         {
             throw new PuppetException(ExitCodes.NotFound, "NOT_FOUND", $"'{id}' is not a wire.");
@@ -175,42 +180,11 @@ internal static partial class Commands
     /// <returns>The park point, or <see langword="null"/> when no free, visible point was found.</returns>
     private static TargetPoint? FindParkPoint(AttachContext context, TargetPoint target)
     {
-        // Nodes, with room above and beside them for names and ports, and below them for their summary lines
         var nodes = new Dictionary<string, DiagramBox>(StringComparer.Ordinal);
         var obstacles = new List<DiagramBox>();
-        foreach (var node in Call(context.Alias, "list-nodes") as JsonArray ?? [])
-        {
-            if (node?["bounds"] is { } bounds && node["name"]?.GetValue<string>() is { } name)
-            {
-                var box = ReadBox(bounds);
-                nodes[name] = box;
-                var grown = box.Inflate(HoverObstacleMargin);
-                obstacles.Add(grown with { Height = grown.Height + HoverSummaryAllowance });
-            }
-        }
-
-        // Annotations and groups show tooltips too
-        foreach (var command in new[] { "list-annotations", "list-groups" })
-        {
-            foreach (var item in Call(context.Alias, command) as JsonArray ?? [])
-            {
-                if (item?["bounds"] is { } bounds)
-                {
-                    obstacles.Add(ReadBox(bounds).Inflate(HoverObstacleMargin));
-                }
-            }
-        }
-
-        // Wires near the target: their drawn polylines (the stored route lacks the end points, which the geometry adds)
-        var wires = new List<IReadOnlyList<(double X, double Y)>>();
-        foreach (var wire in Call(context.Alias, "list-wires") as JsonArray ?? [])
-        {
-            if (wire?["id"]?.GetValue<string>() is { } id && IsWireNear(wire, nodes, target))
-            {
-                var points = Call(context.Alias, "geometry", new JsonObject { ["element"] = id })?["points"] as JsonArray ?? [];
-                wires.Add([.. points.Select(GeometryReader.ReadPoint).Select(p => (p.DiagramX, p.DiagramY))]);
-            }
-        }
+        AddNodeObstacles(context, nodes, obstacles);
+        AddOverlayObstacles(context, obstacles);
+        var wires = ReadNearbyWires(context, nodes, target);
 
         // The first free candidate that is visible and really on this instance's window
         foreach (var (x, y) in HoverPlanner.FreeParkPoints(target.DiagramX, target.DiagramY, obstacles, wires).Take(HoverParkTries))
@@ -226,6 +200,69 @@ internal static partial class Commands
     }
 
     /// <summary>
+    ///     Lists the items a <c>list-*</c> command returns.
+    /// </summary>
+    /// <param name="context">The attached instance.</param>
+    /// <param name="command">The command name.</param>
+    /// <returns>The items; empty when the result is not an array.</returns>
+    private static JsonArray ListItems(AttachContext context, string command) =>
+        Call(context.Alias, command) as JsonArray ?? [];
+
+    /// <summary>
+    ///     Records every node's bounds by name and adds each node, with room above and beside it for its name and ports
+    ///     and below it for its summary lines, as an obstacle.
+    /// </summary>
+    /// <param name="context">The attached instance.</param>
+    /// <param name="nodes">Receives the bounds of the page's nodes by name.</param>
+    /// <param name="obstacles">Receives the obstacles.</param>
+    private static void AddNodeObstacles(AttachContext context, Dictionary<string, DiagramBox> nodes, List<DiagramBox> obstacles)
+    {
+        foreach (var node in ListItems(context, "list-nodes").Where(n => n?[BoundsKey] is not null && n["name"] is not null))
+        {
+            var box = ReadBox(node![BoundsKey]!);
+            nodes[node["name"]!.GetValue<string>()] = box;
+            var grown = box.Inflate(HoverObstacleMargin);
+            obstacles.Add(grown with { Height = grown.Height + HoverSummaryAllowance });
+        }
+    }
+
+    /// <summary>
+    ///     Adds the annotations and groups, which show tooltips too, as obstacles.
+    /// </summary>
+    /// <param name="context">The attached instance.</param>
+    /// <param name="obstacles">Receives the obstacles.</param>
+    private static void AddOverlayObstacles(AttachContext context, List<DiagramBox> obstacles)
+    {
+        foreach (var command in new[] { "list-annotations", "list-groups" })
+        {
+            foreach (var item in ListItems(context, command).Where(i => i?[BoundsKey] is not null))
+            {
+                obstacles.Add(ReadBox(item![BoundsKey]!).Inflate(HoverObstacleMargin));
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Reads the drawn polylines of the wires near the target (the stored route lacks the end points, which the geometry adds).
+    /// </summary>
+    /// <param name="context">The attached instance.</param>
+    /// <param name="nodes">The bounds of the page's nodes by name.</param>
+    /// <param name="target">The target.</param>
+    /// <returns>The polylines in diagram units.</returns>
+    private static List<IReadOnlyList<(double X, double Y)>> ReadNearbyWires(AttachContext context, Dictionary<string, DiagramBox> nodes, TargetPoint target)
+    {
+        var wires = new List<IReadOnlyList<(double X, double Y)>>();
+        foreach (var wire in ListItems(context, "list-wires").Where(w => w?["id"]?.GetValue<string>() is not null && IsWireNear(w, nodes, target)))
+        {
+            var id = wire!["id"]!.GetValue<string>();
+            var points = Call(context.Alias, GeometryCommand, new JsonObject { ["element"] = id })?["points"] as JsonArray ?? [];
+            wires.Add([.. points.Select(GeometryReader.ReadPoint).Select(p => (p.DiagramX, p.DiagramY))]);
+        }
+
+        return wires;
+    }
+
+    /// <summary>
     ///     Tests whether a wire could pass within park reach of a target, from its bend points and its end nodes' bounds.
     /// </summary>
     /// <param name="wire">The wire from <c>list-wires</c>.</param>
@@ -234,13 +271,9 @@ internal static partial class Commands
     /// <returns><see langword="true"/> when the wire's extent, grown by the park reach, contains the target.</returns>
     private static bool IsWireNear(JsonNode wire, Dictionary<string, DiagramBox> nodes, TargetPoint target)
     {
-        var xs = new List<double>();
-        var ys = new List<double>();
-        foreach (var point in wire["route"] as JsonArray ?? [])
-        {
-            xs.Add(point!["x"]!.GetValue<double>());
-            ys.Add(point["y"]!.GetValue<double>());
-        }
+        var route = (wire["route"] as JsonArray ?? []).Select(point => (X: point!["x"]!.GetValue<double>(), Y: point["y"]!.GetValue<double>())).ToList();
+        var xs = route.Select(point => point.X).ToList();
+        var ys = route.Select(point => point.Y).ToList();
 
         foreach (var end in new[] { "source", "target" })
         {

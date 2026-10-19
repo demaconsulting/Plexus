@@ -9,7 +9,7 @@ internal sealed class TempDirectory : IDisposable
     ///     Initializes a new instance of the <see cref="TempDirectory"/> class. The directory itself is
     ///     not created until a test needs it (see <see cref="Create"/>).
     /// </summary>
-    public TempDirectory() => Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"plexus-demo-{Guid.NewGuid():N}");
+    public TempDirectory() => Path = System.IO.Path.Join(System.IO.Path.GetTempPath(), $"plexus-demo-{Guid.NewGuid():N}");
 
     /// <summary>
     ///     Gets the full path of the directory.

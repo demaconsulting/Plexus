@@ -65,7 +65,7 @@ public class PlexusRenderingTests
     {
         // Arrange
         var page = CreateConnectedPage();
-        var path = Path.Combine(Path.GetTempPath(), $"plexus-system-{Guid.NewGuid():N}.png");
+        var path = Path.Join(Path.GetTempPath(), $"plexus-system-{Guid.NewGuid():N}.png");
 
         try
         {
@@ -293,9 +293,11 @@ public class PlexusRenderingTests
         var options = new RenderOptions { Bounds = new Rect(0, 0, 100, 100), ShowGrid = false };
 
         // Act: render, then scribble over the first surface and dispose it before rendering again
-        var first = PlexusRenderer.Render(page, options);
-        first.Clear(new Rgba32(1, 2, 3, 255));
-        first.Dispose();
+        using (var first = PlexusRenderer.Render(page, options))
+        {
+            first.Clear(new Rgba32(1, 2, 3, 255));
+        }
+
         using var second = PlexusRenderer.Render(page, options);
 
         // Assert: the second render is unaffected by what the caller did to the first

@@ -298,7 +298,7 @@ public class ToolbarTests
         }
 
         // Assert
-        Assert.True(new System.IO.FileInfo(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "plexus-toolbar.png")).Length > 0);
+        Assert.True(new System.IO.FileInfo(System.IO.Path.Join(System.IO.Path.GetTempPath(), "plexus-toolbar.png")).Length > 0);
     });
 
     /// <summary>
@@ -313,7 +313,7 @@ public class ToolbarTests
         application.RequestedThemeVariant = variant;
         host.Flush();
         using var frame = host.Window.CaptureRenderedFrame() ?? throw new InvalidOperationException("No frame was rendered.");
-        frame.Save(System.IO.Path.Combine(System.IO.Path.GetTempPath(), fileName), global::Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
+        frame.Save(System.IO.Path.Join(System.IO.Path.GetTempPath(), fileName), global::Avalonia.Media.Imaging.PngBitmapEncoderOptions.Default);
     }
 
     /// <summary>

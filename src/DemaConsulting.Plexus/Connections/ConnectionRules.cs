@@ -173,9 +173,8 @@ public static class ConnectionRules
 
         return (from, to) =>
         {
-            foreach (var rule in captured)
+            foreach (var result in captured.Select(rule => rule(from, to)))
             {
-                var result = rule(from, to);
                 if (!result.IsAllowed)
                 {
                     return result;

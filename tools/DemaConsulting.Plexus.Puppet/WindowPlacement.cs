@@ -98,7 +98,7 @@ internal sealed record PlacementRequest(Rectangle? Explicit, int LeftGap, int Ma
 /// <summary>
 ///     Moves and resizes top-level windows with Win32.
 /// </summary>
-internal static class WindowPlacement
+internal static partial class WindowPlacement
 {
     /// <summary>
     ///     <c>SystemParametersInfo</c> action that reads the work area of the primary screen.
@@ -181,9 +181,9 @@ internal static class WindowPlacement
     /// <param name="rect">The rectangle that receives the work area.</param>
     /// <param name="flags">Not used.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll", SetLastError = true)]
+    [LibraryImport("user32.dll", EntryPoint = "SystemParametersInfoW", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SystemParametersInfo(uint action, uint param, out NativeRect rect, uint flags);
+    private static partial bool SystemParametersInfo(uint action, uint param, out NativeRect rect, uint flags);
 
     /// <summary>
     ///     Native <c>ShowWindow</c>.
@@ -191,9 +191,9 @@ internal static class WindowPlacement
     /// <param name="hwnd">The window.</param>
     /// <param name="command">The show command.</param>
     /// <returns>Whether the window was visible before.</returns>
-    [DllImport("user32.dll")]
+    [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool ShowWindow(IntPtr hwnd, int command);
+    private static partial bool ShowWindow(IntPtr hwnd, int command);
 
     /// <summary>
     ///     Native <c>SetWindowPos</c>.
@@ -206,9 +206,9 @@ internal static class WindowPlacement
     /// <param name="height">The height.</param>
     /// <param name="flags">The flags.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll", SetLastError = true)]
+    [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
+    private static partial bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int width, int height, uint flags);
 
     /// <summary>
     ///     Native <c>GetWindowRect</c>.
@@ -216,9 +216,9 @@ internal static class WindowPlacement
     /// <param name="hwnd">The window.</param>
     /// <param name="rect">Its frame including the invisible borders.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll", SetLastError = true)]
+    [LibraryImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
+    private static partial bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
 
     /// <summary>
     ///     Native <c>DwmGetWindowAttribute</c> (the rectangle form).
@@ -228,8 +228,8 @@ internal static class WindowPlacement
     /// <param name="value">The rectangle that receives the value.</param>
     /// <param name="size">The size of the rectangle.</param>
     /// <returns>0 on success.</returns>
-    [DllImport("dwmapi.dll")]
-    private static extern int DwmGetWindowAttribute(IntPtr hwnd, int attribute, out NativeRect value, int size);
+    [LibraryImport("dwmapi.dll")]
+    private static partial int DwmGetWindowAttribute(IntPtr hwnd, int attribute, out NativeRect value, int size);
 
     /// <summary>
     ///     The native <c>RECT</c> structure.

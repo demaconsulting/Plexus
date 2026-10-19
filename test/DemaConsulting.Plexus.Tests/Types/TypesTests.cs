@@ -7,6 +7,13 @@ namespace DemaConsulting.Plexus.Tests;
 /// </summary>
 public class TypesTests
 {
+    private static readonly string[] ValidKeys = ["acme.Valid"];
+
+    private static readonly string[] BlockInputNames = ["a", "b"];
+
+    private static readonly string[] BlockInputTypeKeys = ["f32", "i32"];
+
+    private static readonly string[] BlockOutputNames = ["result"];
     /// <summary>
     ///     An SVG document used as an icon.
     /// </summary>
@@ -76,7 +83,7 @@ public class TypesTests
         Assert.Throws<ArgumentException>(() => types.PortTypes.Add(new PortType("f32", Color.Blue)));
 
         // Assert: nothing but the original declarations is registered
-        Assert.Equal(new[] { "acme.Valid" }, types.Select(t => t.Key));
+        Assert.Equal(ValidKeys, types.Select(t => t.Key));
         Assert.Equal(Color.Red, types.PortTypes.Get("f32").Color);
         Assert.Equal(1, types.PortTypes.Count);
     }
@@ -108,11 +115,13 @@ public class TypesTests
     public void Types_Icons_SameSvgOnTwoNodeTypes_SharesKeyAndEquality()
     {
         // Arrange: two icons created independently from identical text, and one from different text
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.A") { Icon = IconSource.FromSvg(Svg) });
-        types.Add(new NodeType("acme.B") { Icon = IconSource.FromSvg(Svg) });
-        types.Add(new NodeType("acme.C") { Icon = IconSource.FromSvg("<svg/>") });
-        types.Add(new NodeType("acme.D"));
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("acme.A") { Icon = IconSource.FromSvg(Svg) },
+            new NodeType("acme.B") { Icon = IconSource.FromSvg(Svg) },
+            new NodeType("acme.C") { Icon = IconSource.FromSvg("<svg/>") },
+            new NodeType("acme.D"),
+        };
 
         // Act
         var a = types.Get("acme.A").Icon;
@@ -135,13 +144,15 @@ public class TypesTests
     public void Types_NodeDefaults_AddNode_UsesDeclaredPortsAndSize()
     {
         // Arrange: a type with ports in each direction and an explicit size
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Block")
+        var types = new NodeTypeRegistry
         {
-            DefaultSize = new Size(200, 120),
-            Inputs = { new PortDefinition("a", "f32"), new PortDefinition("b", "i32") { Label = "Second" } },
-            Outputs = { new PortDefinition("result", "f32") },
-        });
+            new NodeType("acme.Block")
+            {
+                DefaultSize = new Size(200, 120),
+                Inputs = { new PortDefinition("a", "f32"), new PortDefinition("b", "i32") { Label = "Second" } },
+                Outputs = { new PortDefinition("result", "f32") },
+            },
+        };
         var page = new Diagram(types).Pages.Add("Main");
 
         // Act
@@ -149,10 +160,10 @@ public class TypesTests
 
         // Assert: size comes from the type, ports are created in declaration order with their types and labels
         Assert.Equal(new Rect(10, 20, 200, 120), node.Bounds);
-        Assert.Equal(new[] { "a", "b" }, node.Inputs.Select(p => p.Name));
-        Assert.Equal(new[] { "f32", "i32" }, node.Inputs.Select(p => p.TypeKey));
+        Assert.Equal(BlockInputNames, node.Inputs.Select(p => p.Name));
+        Assert.Equal(BlockInputTypeKeys, node.Inputs.Select(p => p.TypeKey));
         Assert.Equal("Second", node.Inputs[1].Label);
-        Assert.Equal(new[] { "result" }, node.Outputs.Select(p => p.Name));
+        Assert.Equal(BlockOutputNames, node.Outputs.Select(p => p.Name));
         Assert.All(node.Inputs, p => Assert.Equal(PortDirection.Input, p.Direction));
         Assert.All(node.Outputs, p => Assert.Equal(PortDirection.Output, p.Direction));
     }
@@ -164,8 +175,10 @@ public class TypesTests
     public void Types_Availability_RemoveAndReRegister_ControlsNodeCreation()
     {
         // Arrange: a diagram whose registry holds one type
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Temp"));
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("acme.Temp"),
+        };
         var page = new Diagram(types).Pages.Add("Main");
         Assert.Equal("Temp1", page.AddNode("acme.Temp", 0, 0).Name);
 
@@ -238,16 +251,18 @@ public class TypesTests
     public void Types_PortProvider_InputsAndOutputs_ComputedPerNode()
     {
         // Arrange: a splitter whose input and output counts are both properties
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("t.Splitter")
+        var types = new NodeTypeRegistry
         {
-            Inputs = { new PortDefinition("i0", "number") },
-            Outputs = { new PortDefinition("o0", "number") },
-            Properties = { new PropertyDefinition("Ins", 1), new PropertyDefinition("Outs", 1) },
-            PortProvider = node => new PortSet(
-                Enumerable.Range(0, node.Properties.Get<int>("Ins")).Select(i => new PortDefinition($"i{i}", "number")),
-                Enumerable.Range(0, node.Properties.Get<int>("Outs")).Select(i => new PortDefinition($"o{i}", "number"))),
-        });
+            new NodeType("t.Splitter")
+            {
+                Inputs = { new PortDefinition("i0", "number") },
+                Outputs = { new PortDefinition("o0", "number") },
+                Properties = { new PropertyDefinition("Ins", 1), new PropertyDefinition("Outs", 1) },
+                PortProvider = node => new PortSet(
+                    Enumerable.Range(0, node.Properties.Get<int>("Ins")).Select(i => new PortDefinition($"i{i}", "number")),
+                    Enumerable.Range(0, node.Properties.Get<int>("Outs")).Select(i => new PortDefinition($"o{i}", "number"))),
+            },
+        };
         var page = new Diagram(types).Pages.Add("Main");
         var a = page.AddNode("t.Splitter", 0, 0);
         var b = page.AddNode("t.Splitter", 0, 200);
@@ -272,8 +287,10 @@ public class TypesTests
     public void Types_PortProvider_ReturnsNull_AddNodeFails()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("t.Broken") { PortProvider = _ => null! });
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("t.Broken") { PortProvider = _ => null! },
+        };
         var page = new Diagram(types).Pages.Add("Main");
 
         // Act
@@ -291,15 +308,17 @@ public class TypesTests
     public void Types_Descriptions_ToolTipFunction_FollowsNodeState()
     {
         // Arrange: a tooltip built from a property and the payload
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("t.Gauge")
+        var types = new NodeTypeRegistry
         {
-            Description = "Shows a value.",
-            DataType = typeof(string),
-            CreateData = () => "ok",
-            Properties = { new PropertyDefinition("Value", 0.0) },
-            ToolTip = node => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Value = {node.Properties.Get<double>("Value")} ({node.Data})"),
-        });
+            new NodeType("t.Gauge")
+            {
+                Description = "Shows a value.",
+                DataType = typeof(string),
+                CreateData = () => "ok",
+                Properties = { new PropertyDefinition("Value", 0.0) },
+                ToolTip = node => string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Value = {node.Properties.Get<double>("Value")} ({node.Data})"),
+            },
+        };
         var node = new Diagram(types).Pages.Add("Main").AddNode("t.Gauge", 0, 0);
         var initial = node.Type.GetToolTip(node);
 

@@ -14,6 +14,11 @@ namespace DemaConsulting.Plexus.Demo.Tests;
 public class DemoAppearanceTests
 {
     /// <summary>
+    ///     The ports whose upstream fluid is checked.
+    /// </summary>
+    private static readonly string[] FluidPorts = ["Supply.out", "Feed.out", "Throttle.out", "Meter.flow", "Split.a", "Split.b"];
+
+    /// <summary>
     ///     The color of a logic wire that carries true.
     /// </summary>
     private static readonly PlexusColor LogicOn = PlexusColor.Parse("#00E83C");
@@ -48,7 +53,7 @@ public class DemoAppearanceTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var path = Path.Combine(temp.Create(), "logic.json");
+        var path = Path.Join(temp.Create(), "logic.json");
         DemoDocument.Save(DemoSamples.Logic(), path);
 
         // Act
@@ -73,7 +78,7 @@ public class DemoAppearanceTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var path = Path.Combine(temp.Create(), "logic.json");
+        var path = Path.Join(temp.Create(), "logic.json");
         var sample = DemoSamples.Logic();
 
         // Act
@@ -94,7 +99,7 @@ public class DemoAppearanceTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var path = Path.Combine(temp.Create(), "logic.json");
+        var path = Path.Join(temp.Create(), "logic.json");
         DemoDocument.Save(DemoSamples.Logic(), path);
 
         // Act
@@ -190,7 +195,7 @@ public class DemoAppearanceTests
         diagram.FindNode("Feed")!.Properties["Fluid"] = "Oil";
 
         // Act
-        var fluids = new[] { "Supply.out", "Feed.out", "Throttle.out", "Meter.flow", "Split.a", "Split.b" }
+        var fluids = FluidPorts
             .ToDictionary(port => port, port => DemoAppearance.FluidOf(WireFrom(diagram, port)));
 
         // Assert: the tank upstream of the pump still supplies water; everything after the pump carries oil
@@ -314,8 +319,8 @@ public class DemoAppearanceTests
     {
         // Arrange
         using var temp = new TempDirectory();
-        var styledDir = Path.Combine(temp.Path, "styled");
-        var plainFile = Path.Combine(temp.Path, "plain.png");
+        var styledDir = Path.Join(temp.Path, "styled");
+        var plainFile = Path.Join(temp.Path, "plain.png");
         using var output = new StringWriter();
         using var error = new StringWriter();
         var plain = DemoSamples.Logic();
@@ -327,7 +332,7 @@ public class DemoAppearanceTests
 
         // Assert
         Assert.Equal(CliRunner.Success, code);
-        using var styled = PngCodec.Load(Path.Combine(styledDir, "Logic.png"));
+        using var styled = PngCodec.Load(Path.Join(styledDir, "Logic.png"));
         using var unstyled = PngCodec.Load(plainFile);
         var on = new Rgba32(LogicOn.R, LogicOn.G, LogicOn.B, LogicOn.A);
         Assert.True(Count(styled, on) > 200, "the styled render has bright green logic wires");
@@ -350,7 +355,7 @@ public class DemoAppearanceTests
 
         // Assert: oil brown and steam gray both occur on the page, which the theme alone would draw black
         Assert.Equal(CliRunner.Success, code);
-        using var image = PngCodec.Load(Path.Combine(temp.Path, "Plumbing.png"));
+        using var image = PngCodec.Load(Path.Join(temp.Path, "Plumbing.png"));
         Assert.True(Count(image, new Rgba32(0xA8, 0x60, 0x0F, 0xFF)) > 100, "oil pipes are brown");
         Assert.True(Count(image, new Rgba32(0xE4, 0xE8, 0xEC, 0xFF)) > 50, "steam pipes are light gray");
         Assert.True(Count(image, new Rgba32(0x1E, 0x78, 0xE6, 0xFF)) > 200, "water pipes are blue");

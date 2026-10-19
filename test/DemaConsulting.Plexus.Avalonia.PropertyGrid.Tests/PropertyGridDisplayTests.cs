@@ -198,9 +198,9 @@ public class PropertyGridDisplayTests
         var id = GridHarness.Row(grid, "Id");
 
         Assert.True(id.Item!.IsReadOnly);
-        Assert.IsType<TextBlock>(id.Editor);
-        Assert.True(((TextBlock)id.Editor).Opacity < 1);
-        Assert.Equal("W-1042", ((TextBlock)id.Editor).Text);
+        var editor = Assert.IsType<TextBlock>(id.Editor);
+        Assert.True(editor.Opacity < 1);
+        Assert.Equal("W-1042", editor.Text);
         Assert.True(id.NameLabel.Opacity < 1);
         Assert.Equal(1, GridHarness.Row(grid, "Caption").NameLabel.Opacity);
         window.Close();

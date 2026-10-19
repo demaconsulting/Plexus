@@ -59,49 +59,8 @@ internal static class CollectionApplier
         var elementType = item.CollectionItemType ?? typeof(object);
         item.TryGetValue(out var current);
 
-        if (current is Array array && array.Length == working.Count)
+        if (TryApplyInPlace(current, elementType, working))
         {
-            for (var i = 0; i < working.Count; i++)
-            {
-                array.SetValue(working[i], i);
-            }
-
-            return;
-        }
-
-        if (current is IList list and not Array)
-        {
-            if (!list.IsReadOnly && !list.IsFixedSize)
-            {
-                list.Clear();
-                foreach (var element in working)
-                {
-                    list.Add(element);
-                }
-
-                return;
-            }
-
-            if (!list.IsReadOnly && list.Count == working.Count)
-            {
-                for (var i = 0; i < working.Count; i++)
-                {
-                    list[i] = working[i];
-                }
-
-                return;
-            }
-        }
-        else if (current is not null && current is not Array && CollectionTypes.GetGenericCollectionInterface(current, elementType) is { } generic &&
-                 !IsReadOnlyGeneric(generic, current))
-        {
-            generic.GetMethod(nameof(ICollection<>.Clear))!.Invoke(current, null);
-            var add = generic.GetMethod(nameof(ICollection<>.Add))!;
-            foreach (var element in working)
-            {
-                add.Invoke(current, [element]);
-            }
-
             return;
         }
 
@@ -114,6 +73,83 @@ internal static class CollectionApplier
         }
 
         item.SetValue(CreateCollection(item.PropertyType, elementType, working));
+    }
+
+    /// <summary>
+    ///     Tries to update the current collection instance in place.
+    /// </summary>
+    /// <param name="current">The current collection, or null.</param>
+    /// <param name="elementType">The element type.</param>
+    /// <param name="working">The elements the collection must contain afterwards.</param>
+    /// <returns><see langword="true"/> when the instance was updated.</returns>
+    private static bool TryApplyInPlace(object? current, Type elementType, IReadOnlyList<object?> working)
+    {
+        if (current is Array array)
+        {
+            if (array.Length != working.Count)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < working.Count; i++)
+            {
+                array.SetValue(working[i], i);
+            }
+
+            return true;
+        }
+
+        if (current is IList list)
+        {
+            return TryApplyToList(list, working);
+        }
+
+        if (current is not null && CollectionTypes.GetGenericCollectionInterface(current, elementType) is { } generic &&
+            !IsReadOnlyGeneric(generic, current))
+        {
+            generic.GetMethod(nameof(ICollection<>.Clear))!.Invoke(current, null);
+            var add = generic.GetMethod(nameof(ICollection<>.Add))!;
+            foreach (var element in working)
+            {
+                add.Invoke(current, [element]);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Tries to refill a resizable list, or overwrite a writable list of the same length, in place.
+    /// </summary>
+    /// <param name="list">The list.</param>
+    /// <param name="working">The elements the list must contain afterwards.</param>
+    /// <returns><see langword="true"/> when the list was updated.</returns>
+    private static bool TryApplyToList(IList list, IReadOnlyList<object?> working)
+    {
+        if (!list.IsReadOnly && !list.IsFixedSize)
+        {
+            list.Clear();
+            foreach (var element in working)
+            {
+                list.Add(element);
+            }
+
+            return true;
+        }
+
+        if (!list.IsReadOnly && list.Count == working.Count)
+        {
+            for (var i = 0; i < working.Count; i++)
+            {
+                list[i] = working[i];
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -148,32 +184,46 @@ internal static class CollectionApplier
             return created;
         }
 
-        if (!collectionType.IsAbstract && !collectionType.IsInterface && collectionType.GetConstructor(Type.EmptyTypes) is not null)
+        if (!collectionType.IsAbstract && !collectionType.IsInterface && collectionType.GetConstructor(Type.EmptyTypes) is not null
+            && FillInstance(Activator.CreateInstance(collectionType)!, elementType, working) is { } filled)
         {
-            var instance = Activator.CreateInstance(collectionType)!;
-            if (instance is IList list)
-            {
-                foreach (var element in working)
-                {
-                    list.Add(element);
-                }
-
-                return instance;
-            }
-
-            if (CollectionTypes.GetGenericCollectionInterface(instance, elementType) is { } generic)
-            {
-                var add = generic.GetMethod(nameof(ICollection<>.Add))!;
-                foreach (var element in working)
-                {
-                    add.Invoke(instance, [element]);
-                }
-
-                return instance;
-            }
+            return filled;
         }
 
         throw new NotSupportedException($"A new collection of type {collectionType.Name} cannot be created; supply a settable property or an editable instance.");
+    }
+
+    /// <summary>
+    ///     Adds the elements to a new collection instance through <see cref="IList"/> or <c>ICollection&lt;T&gt;</c>.
+    /// </summary>
+    /// <param name="instance">The new, empty collection.</param>
+    /// <param name="elementType">The element type.</param>
+    /// <param name="working">The elements.</param>
+    /// <returns>The instance when it could be filled; otherwise <see langword="null"/>.</returns>
+    private static object? FillInstance(object instance, Type elementType, IReadOnlyList<object?> working)
+    {
+        if (instance is IList list)
+        {
+            foreach (var element in working)
+            {
+                list.Add(element);
+            }
+
+            return instance;
+        }
+
+        if (CollectionTypes.GetGenericCollectionInterface(instance, elementType) is { } generic)
+        {
+            var add = generic.GetMethod(nameof(ICollection<>.Add))!;
+            foreach (var element in working)
+            {
+                add.Invoke(instance, [element]);
+            }
+
+            return instance;
+        }
+
+        return null;
     }
 
     /// <summary>

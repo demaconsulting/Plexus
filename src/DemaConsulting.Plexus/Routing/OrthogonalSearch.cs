@@ -625,85 +625,157 @@ internal sealed class OrthogonalSearch
         var ny = _ys.Length;
         var startX = NearestIndex(_xs, _from.X);
         var startY = NearestIndex(_ys, _from.Y);
-        var endX = NearestIndex(_xs, _to.X);
-        var endY = NearestIndex(_ys, _to.Y);
-        var centerX = (_from.X + _to.X) / 2;
-        var centerY = (_from.Y + _to.Y) / 2;
-
-        // best: cheapest known cost per state; parent: predecessor state for path reconstruction
-        var best = new Dictionary<int, double>();
-        var parent = new Dictionary<int, int>();
-        var open = new PriorityQueue<(int Key, double Cost), (double Total, double Remaining, int Sequence)>();
-        var sequence = 0;
+        var search = new SearchState(ny, NearestIndex(_xs, _to.X), NearestIndex(_ys, _to.Y), (_from.X + _to.X) / 2, (_from.Y + _to.Y) / 2);
 
         var startKey = EncodeState(startX, startY, _startDirection, ny);
-        best[startKey] = 0;
-        parent[startKey] = -1;
-        open.Enqueue((startKey, 0), (Heuristic(startX, startY, endX, endY), Heuristic(startX, startY, endX, endY), sequence++));
+        search.Best[startKey] = 0;
+        search.Parent[startKey] = -1;
+        var startEstimate = Heuristic(startX, startY, search.EndX, search.EndY);
+        search.Open.Enqueue((startKey, 0), (startEstimate, startEstimate, search.Sequence++));
 
-        while (open.TryDequeue(out var current, out _))
+        while (search.Open.TryDequeue(out var current, out _))
         {
             // Skip entries superseded by a cheaper route to the same state
-            if (current.Cost > best[current.Key] + Epsilon)
+            if (current.Cost > search.Best[current.Key] + Epsilon)
             {
                 continue;
             }
 
             var (ix, iy, direction) = DecodeState(current.Key, ny);
-            if (ix == endX && iy == endY)
+            if (ix == search.EndX && iy == search.EndY)
             {
-                return Reconstruct(current.Key, parent, ny);
+                return Reconstruct(current.Key, search.Parent, ny);
             }
 
             for (var next = 0; next < 4; next++)
             {
                 // Never reverse: a U-turn would double back over the wire itself
-                if (next == Opposite(direction))
+                if (next != Opposite(direction))
                 {
-                    continue;
+                    Relax(search, current, (ix, iy), direction, next);
                 }
-
-                var nx = ix + StepX[next];
-                var nyIndex = iy + StepY[next];
-                if (nx < 0 || nx >= _xs.Length || nyIndex < 0 || nyIndex >= ny || IsBlocked(ix, iy, next))
-                {
-                    continue;
-                }
-
-                // The wire must reach the end stub traveling the way the stub expects
-                var reachesEnd = nx == endX && nyIndex == endY;
-                if (reachesEnd && next == Opposite(_arrivalDirection))
-                {
-                    continue;
-                }
-
-                var cost = current.Cost + Math.Abs(_xs[nx] - _xs[ix]) + Math.Abs(_ys[nyIndex] - _ys[iy]) + ForeignCost(ix, iy, nx, nyIndex, next);
-                if (next != direction)
-                {
-                    cost += _bendPenalty + (CenterBias * (Math.Abs(_xs[ix] - centerX) + Math.Abs(_ys[iy] - centerY)));
-                }
-
-                var key = EncodeState(nx, nyIndex, next, ny);
-                if (best.TryGetValue(key, out var known) && known <= cost + Epsilon)
-                {
-                    continue;
-                }
-
-                best[key] = cost;
-                parent[key] = current.Key;
-
-                // Arriving at the end in the wrong direction costs one more bend into the stub; that bend
-                // sits at the end point and takes part in the center tie-break like every other bend
-                var remaining = Heuristic(nx, nyIndex, endX, endY);
-                var arrivalBend = reachesEnd && next != _arrivalDirection
-                    ? _bendPenalty + (CenterBias * (Math.Abs(_xs[nx] - centerX) + Math.Abs(_ys[nyIndex] - centerY)))
-                    : 0;
-                var total = cost + remaining + arrivalBend;
-                open.Enqueue((key, cost), (total, remaining, sequence++));
             }
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Tries to extend the path from a state one grid step in a direction, queueing the new state when it is cheaper than any known.
+    /// </summary>
+    /// <param name="search">The search state.</param>
+    /// <param name="current">The state being expanded and its cost.</param>
+    /// <param name="position">The grid column and row of the state.</param>
+    /// <param name="direction">The direction the wire arrived in.</param>
+    /// <param name="next">The direction of the step.</param>
+    private void Relax(SearchState search, (int Key, double Cost) current, (int X, int Y) position, int direction, int next)
+    {
+        var (ix, iy) = position;
+        var nx = ix + StepX[next];
+        var nyIndex = iy + StepY[next];
+        if (nx < 0 || nx >= _xs.Length || nyIndex < 0 || nyIndex >= search.Ny || IsBlocked(ix, iy, next))
+        {
+            return;
+        }
+
+        // The wire must reach the end stub traveling the way the stub expects
+        var reachesEnd = nx == search.EndX && nyIndex == search.EndY;
+        if (reachesEnd && next == Opposite(_arrivalDirection))
+        {
+            return;
+        }
+
+        var cost = current.Cost + Math.Abs(_xs[nx] - _xs[ix]) + Math.Abs(_ys[nyIndex] - _ys[iy]) + ForeignCost(ix, iy, nx, nyIndex, next);
+        if (next != direction)
+        {
+            cost += _bendPenalty + (CenterBias * (Math.Abs(_xs[ix] - search.CenterX) + Math.Abs(_ys[iy] - search.CenterY)));
+        }
+
+        var key = EncodeState(nx, nyIndex, next, search.Ny);
+        if (search.Best.TryGetValue(key, out var known) && known <= cost + Epsilon)
+        {
+            return;
+        }
+
+        search.Best[key] = cost;
+        search.Parent[key] = current.Key;
+
+        // Arriving at the end in the wrong direction costs one more bend into the stub; that bend
+        // sits at the end point and takes part in the center tie-break like every other bend
+        var remaining = Heuristic(nx, nyIndex, search.EndX, search.EndY);
+        var arrivalBend = reachesEnd && next != _arrivalDirection
+            ? _bendPenalty + (CenterBias * (Math.Abs(_xs[nx] - search.CenterX) + Math.Abs(_ys[nyIndex] - search.CenterY)))
+            : 0;
+        var total = cost + remaining + arrivalBend;
+        search.Open.Enqueue((key, cost), (total, remaining, search.Sequence++));
+    }
+
+    /// <summary>
+    ///     The mutable state of one A* run.
+    /// </summary>
+    private sealed class SearchState
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchState"/> class.
+        /// </summary>
+        /// <param name="ny">The number of grid rows.</param>
+        /// <param name="endX">The goal column index.</param>
+        /// <param name="endY">The goal row index.</param>
+        /// <param name="centerX">The X of the center between start and end.</param>
+        /// <param name="centerY">The Y of the center between start and end.</param>
+        public SearchState(int ny, int endX, int endY, double centerX, double centerY)
+        {
+            Ny = ny;
+            EndX = endX;
+            EndY = endY;
+            CenterX = centerX;
+            CenterY = centerY;
+        }
+
+        /// <summary>
+        ///     Gets the number of grid rows.
+        /// </summary>
+        public int Ny { get; }
+
+        /// <summary>
+        ///     Gets the goal column index.
+        /// </summary>
+        public int EndX { get; }
+
+        /// <summary>
+        ///     Gets the goal row index.
+        /// </summary>
+        public int EndY { get; }
+
+        /// <summary>
+        ///     Gets the X of the center between start and end.
+        /// </summary>
+        public double CenterX { get; }
+
+        /// <summary>
+        ///     Gets the Y of the center between start and end.
+        /// </summary>
+        public double CenterY { get; }
+
+        /// <summary>
+        ///     Gets the cheapest known cost per state.
+        /// </summary>
+        public Dictionary<int, double> Best { get; } = [];
+
+        /// <summary>
+        ///     Gets the predecessor state per state, for path reconstruction.
+        /// </summary>
+        public Dictionary<int, int> Parent { get; } = [];
+
+        /// <summary>
+        ///     Gets the open states ordered by estimated total cost, remaining estimate and insertion sequence.
+        /// </summary>
+        public PriorityQueue<(int Key, double Cost), (double Total, double Remaining, int Sequence)> Open { get; } = new();
+
+        /// <summary>
+        ///     Gets or sets the next insertion sequence number, which keeps equal priorities in insertion order.
+        /// </summary>
+        public int Sequence { get; set; }
     }
 
     /// <summary>
@@ -774,6 +846,8 @@ internal sealed class OrthogonalSearch
             // Horizontal step: it lies in the column between two vertical lines, at the row's y
             var column = direction == 0 ? ix : ix - 1;
             var y = _ys[iy];
+
+            // Plain loops (not LINQ): this runs in the search's inner loop and must not allocate
             foreach (var index in ColumnObstacles(column))
             {
                 var box = _boxes[index];

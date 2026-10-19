@@ -257,59 +257,27 @@ internal sealed class ScenePainter
     /// <returns>The path.</returns>
     private CanvasPath BuildPath(IReadOnlyList<PathCommand> commands, bool closeFigures)
     {
-        var builder = new PathBuilder();
-        var hasFigure = false;
-        var isOpen = false;
-        var start = Vector2.Zero;
+        var figures = new FigureTracker(closeFigures);
         foreach (var command in commands)
         {
             switch (command.Kind)
             {
                 case PathCommandKind.MoveTo:
-                    if (closeFigures && isOpen)
-                    {
-                        builder.Close();
-                    }
-
-                    start = ToDevice(command.End);
-                    builder.MoveTo(start);
-                    (hasFigure, isOpen) = (true, true);
+                    figures.MoveTo(ToDevice(command.End));
                     break;
                 case PathCommandKind.LineTo:
-                    // A drawing command after a close (or with no figure yet) implicitly starts a figure
-                    StartFigureIfNeeded();
-                    builder.LineTo(ToDevice(command.End));
+                    figures.LineTo(ToDevice(command.End));
                     break;
                 case PathCommandKind.CubicTo:
-                    StartFigureIfNeeded();
-                    builder.CubicBezierTo(ToDevice(command.Control1), ToDevice(command.Control2), ToDevice(command.End));
+                    figures.CubicTo(ToDevice(command.Control1), ToDevice(command.Control2), ToDevice(command.End));
                     break;
                 default:
-                    if (isOpen)
-                    {
-                        builder.Close();
-                        isOpen = false;
-                    }
-
+                    figures.Close();
                     break;
             }
         }
 
-        if (closeFigures && isOpen)
-        {
-            builder.Close();
-        }
-
-        return builder.Build();
-
-        void StartFigureIfNeeded()
-        {
-            if (!isOpen)
-            {
-                builder.MoveTo(hasFigure ? start : Vector2.Zero);
-                (hasFigure, isOpen) = (true, true);
-            }
-        }
+        return figures.Build();
     }
 
     /// <summary>
@@ -394,22 +362,35 @@ internal sealed class ScenePainter
                 continue;
             }
 
-            var source = icon.GetRowSpan(row);
-            var target = _surface.GetRowSpan(targetY);
-            for (var column = 0; column < width; column++)
-            {
-                var targetX = x + column;
-                if (targetX >= 0 && targetX < target.Length && source[column].A > 0)
-                {
-                    var pixel = source[column];
-                    if (tint is { } silhouette)
-                    {
-                        pixel = new Rgba32(silhouette.R, silhouette.G, silhouette.B, (byte)Math.Round(pixel.A * silhouette.A / 255.0));
-                    }
+            CompositeIconRow(icon.GetRowSpan(row)[..width], _surface.GetRowSpan(targetY), x, tint, primitive.Opacity);
+        }
+    }
 
-                    Blend(ref target[targetX], pixel, primitive.Opacity);
-                }
+    /// <summary>
+    ///     Composites one row of an icon onto one row of the surface, clipped to the surface.
+    /// </summary>
+    /// <param name="source">The icon's row.</param>
+    /// <param name="target">The surface's row.</param>
+    /// <param name="x">The surface column of the icon's first pixel.</param>
+    /// <param name="tint">The silhouette tint, or <see langword="null"/> to keep the icon's colors.</param>
+    /// <param name="opacity">The primitive's opacity.</param>
+    private static void CompositeIconRow(ReadOnlySpan<Rgba32> source, Span<Rgba32> target, int x, Rgba32? tint, double opacity)
+    {
+        for (var column = 0; column < source.Length; column++)
+        {
+            var targetX = x + column;
+            if (targetX < 0 || targetX >= target.Length || source[column].A == 0)
+            {
+                continue;
             }
+
+            var pixel = source[column];
+            if (tint is { } silhouette)
+            {
+                pixel = new Rgba32(silhouette.R, silhouette.G, silhouette.B, (byte)Math.Round(pixel.A * (double)silhouette.A / 255.0));
+            }
+
+            Blend(ref target[targetX], pixel, opacity);
         }
     }
 
@@ -476,6 +457,101 @@ internal sealed class ScenePainter
                 {
                     Blend(ref row[pixelX], color, verticalCoverage * Math.Min(1, size - dx));
                 }
+            }
+        }
+    }
+
+    /// <summary>
+    ///     Tracks the open figure while a scene path is converted, so a drawing command after a close (or before any
+    ///     move) implicitly starts a figure.
+    /// </summary>
+    private struct FigureTracker
+    {
+        private readonly PathBuilder _builder = new();
+        private readonly bool _closeFigures;
+        private bool _hasFigure;
+        private bool _isOpen;
+        private Vector2 _start = Vector2.Zero;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="FigureTracker"/> class.
+        /// </summary>
+        /// <param name="closeFigures">True to close every figure (for filling).</param>
+        public FigureTracker(bool closeFigures)
+        {
+            _closeFigures = closeFigures;
+        }
+
+        /// <summary>
+        ///     Starts a new figure, closing the previous one when figures are closed.
+        /// </summary>
+        /// <param name="point">The start point in device space.</param>
+        public void MoveTo(Vector2 point)
+        {
+            if (_closeFigures && _isOpen)
+            {
+                _builder.Close();
+            }
+
+            _start = point;
+            _builder.MoveTo(point);
+            (_hasFigure, _isOpen) = (true, true);
+        }
+
+        /// <summary>
+        ///     Adds a line to a point.
+        /// </summary>
+        /// <param name="point">The end point in device space.</param>
+        public void LineTo(Vector2 point)
+        {
+            StartFigureIfNeeded();
+            _builder.LineTo(point);
+        }
+
+        /// <summary>
+        ///     Adds a cubic curve.
+        /// </summary>
+        /// <param name="control1">The first control point in device space.</param>
+        /// <param name="control2">The second control point in device space.</param>
+        /// <param name="end">The end point in device space.</param>
+        public void CubicTo(Vector2 control1, Vector2 control2, Vector2 end)
+        {
+            StartFigureIfNeeded();
+            _builder.CubicBezierTo(control1, control2, end);
+        }
+
+        /// <summary>
+        ///     Closes the open figure, if any.
+        /// </summary>
+        public void Close()
+        {
+            if (_isOpen)
+            {
+                _builder.Close();
+                _isOpen = false;
+            }
+        }
+
+        /// <summary>
+        ///     Finishes the path, closing the last figure when figures are closed.
+        /// </summary>
+        /// <returns>The path.</returns>
+        public CanvasPath Build()
+        {
+            if (_closeFigures && _isOpen)
+            {
+                _builder.Close();
+            }
+
+            return _builder.Build();
+        }
+
+        private void StartFigureIfNeeded()
+        {
+            if (!_isOpen)
+            {
+                _builder.MoveTo(_hasFigure ? _start : Vector2.Zero);
+                (_hasFigure, _isOpen) = (true, true);
             }
         }
     }

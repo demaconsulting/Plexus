@@ -16,8 +16,10 @@ public class TypesAndGeometryTests
     public void PortTypeRegistry_Get_RegisteredAndUnknownKeys()
     {
         // Arrange
-        var registry = new PortTypeRegistry();
-        registry.Add(new PortType("f32", Color.Parse("#FF8C00")));
+        var registry = new PortTypeRegistry
+        {
+            new PortType("f32", Color.Parse("#FF8C00")),
+        };
 
         // Act
         var known = registry.Get("f32");
@@ -186,7 +188,7 @@ public class TypesAndGeometryTests
     public void IconSource_FromFileAndResource_LoadContentAndRejectMissing()
     {
         // Arrange
-        var path = Path.Combine(Path.GetTempPath(), $"plexus-icon-{Guid.NewGuid():N}.svg");
+        var path = Path.Join(Path.GetTempPath(), $"plexus-icon-{Guid.NewGuid():N}.svg");
         File.WriteAllText(path, "<svg/>");
 
         try

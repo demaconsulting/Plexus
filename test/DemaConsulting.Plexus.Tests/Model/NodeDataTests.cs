@@ -56,8 +56,10 @@ public class NodeDataTests
     public void Node_Data_DeclaredDerivedOrNull_IsAccepted()
     {
         // Arrange: a type that declares a base class as its data type
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Base") { DataType = typeof(BaseData) });
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("acme.Base") { DataType = typeof(BaseData) },
+        };
         var node = new Diagram(types).Pages.Add("P").AddNode("acme.Base", 0, 0);
 
         // Act
@@ -142,8 +144,10 @@ public class NodeDataTests
     public void NodeType_CreateData_WrongTypeFromFactory_ThrowsInvalidOperation()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Broken") { DataType = typeof(SensorData), CreateData = () => "oops" });
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("acme.Broken") { DataType = typeof(SensorData), CreateData = () => "oops" },
+        };
         var page = new Diagram(types).Pages.Add("P");
 
         // Act / Assert
@@ -159,8 +163,10 @@ public class NodeDataTests
     public void NodeType_CreateData_ReturningNull_StartsWithoutData()
     {
         // Arrange
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("acme.Empty") { DataType = typeof(SensorData), CreateData = () => null! });
+        var types = new NodeTypeRegistry
+        {
+            new NodeType("acme.Empty") { DataType = typeof(SensorData), CreateData = () => null! },
+        };
 
         // Act
         var node = new Diagram(types).Pages.Add("P").AddNode("acme.Empty", 0, 0);

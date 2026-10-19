@@ -10,7 +10,7 @@ namespace DemaConsulting.Plexus.Puppet;
 ///     (UI Automation rectangles, the cursor position), so without this the mouse would land in the wrong place on a
 ///     scaled monitor.
 /// </remarks>
-internal static class DpiAwareness
+internal static partial class DpiAwareness
 {
     /// <summary>
     ///     The per-monitor-aware-v2 context handle (<c>DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2</c>).
@@ -44,15 +44,15 @@ internal static class DpiAwareness
     /// </summary>
     /// <param name="value">The awareness context.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll")]
+    [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetProcessDpiAwarenessContext(IntPtr value);
+    private static partial bool SetProcessDpiAwarenessContext(IntPtr value);
 
     /// <summary>
     ///     Native <c>SetProcessDPIAware</c>.
     /// </summary>
     /// <returns><see langword="true"/> on success.</returns>
-    [DllImport("user32.dll")]
+    [LibraryImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SetProcessDPIAware();
+    private static partial bool SetProcessDPIAware();
 }

@@ -122,6 +122,7 @@ internal sealed class CompositeCommand : IUndoableCommand
             }
             catch (Exception ex)
             {
+                // Intentional catch-all: every failing inverse must be collected and reported together with the original failure
                 (failures ??= [cause]).Add(ex);
             }
         }

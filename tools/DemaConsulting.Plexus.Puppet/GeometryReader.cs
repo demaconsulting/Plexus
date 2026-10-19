@@ -68,6 +68,8 @@ internal readonly record struct TargetRect(double DiagramX, double DiagramY, dou
 /// </summary>
 internal static class GeometryReader
 {
+    private static readonly string[] LabelKeys = ["nameRect", "title"];
+
     /// <summary>
     ///     The places inside a node's box to try, as fractions of its width and height, best first.
     /// </summary>
@@ -165,13 +167,10 @@ internal static class GeometryReader
     private static List<ScreenRect> AvoidRects(JsonNode nodeGeometry)
     {
         var rects = new List<ScreenRect>();
-        foreach (var key in new[] { "nameRect", "title" })
-        {
-            if (nodeGeometry[key] is { } label)
-            {
-                rects.Add(ReadRect(label).Screen);
-            }
-        }
+        rects.AddRange(LabelKeys
+            .Select(key => nodeGeometry[key])
+            .Where(label => label is not null)
+            .Select(label => ReadRect(label!).Screen));
 
         if (nodeGeometry["ports"] is JsonArray ports)
         {

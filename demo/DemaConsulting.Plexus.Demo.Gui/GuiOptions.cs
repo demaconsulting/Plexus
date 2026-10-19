@@ -74,8 +74,7 @@ internal sealed partial record GuiOptions(
     {
         ArgumentNullException.ThrowIfNull(args);
         options = null;
-        string? file = null, sample = null, automation = null;
-        var types = NodeTypeSet.Full;
+        var state = new ParseState();
         var help = false;
 
         // Consume the arguments in order; every option except help takes the argument that follows it
@@ -100,49 +99,93 @@ internal sealed partial record GuiOptions(
                 return false;
             }
 
-            switch (arg)
+            if (!TryApplyOption(arg, value, state, out error))
             {
-                case "--open":
-                    file = value;
-                    break;
-                case "--sample":
-                    sample = DemoSamples.Names.FirstOrDefault(n => string.Equals(n, value, StringComparison.OrdinalIgnoreCase));
-                    if (sample is null)
-                    {
-                        error = $"Unknown sample '{value}'. Available: {string.Join(", ", DemoSamples.Names)}.";
-                        return false;
-                    }
-
-                    break;
-                case "--types":
-                    if (!Enum.TryParse(value, ignoreCase: true, out types) || !Enum.IsDefined(types))
-                    {
-                        error = $"Unknown type set '{value}'. Use 'full' or 'basic'.";
-                        return false;
-                    }
-
-                    break;
-                default:
-                    if (!PipeNamePattern().IsMatch(value))
-                    {
-                        error = $"Automation name '{value}' may only contain letters, digits, '-' and '_'.";
-                        return false;
-                    }
-
-                    automation = value;
-                    break;
+                return false;
             }
         }
 
-        if (file is not null && sample is not null)
+        if (state.File is not null && state.Sample is not null)
         {
             error = "Use either --open or --sample, not both.";
             return false;
         }
 
         error = null;
-        options = new GuiOptions(file, sample, types, automation, help);
+        options = new GuiOptions(state.File, state.Sample, state.Types, state.Automation, help);
         return true;
+    }
+
+    /// <summary>
+    ///     Applies the value of one option to the parsed state.
+    /// </summary>
+    /// <param name="option">The option name.</param>
+    /// <param name="value">The option's value.</param>
+    /// <param name="state">The parsed state to update.</param>
+    /// <param name="error">A message describing the problem when the value is invalid; otherwise null.</param>
+    /// <returns>True when the value is valid.</returns>
+    private static bool TryApplyOption(string option, string value, ParseState state, out string? error)
+    {
+        error = null;
+        switch (option)
+        {
+            case "--open":
+                state.File = value;
+                return true;
+            case "--sample":
+                state.Sample = DemoSamples.Names.FirstOrDefault(n => string.Equals(n, value, StringComparison.OrdinalIgnoreCase));
+                if (state.Sample is null)
+                {
+                    error = $"Unknown sample '{value}'. Available: {string.Join(", ", DemoSamples.Names)}.";
+                    return false;
+                }
+
+                return true;
+            case "--types":
+                if (!Enum.TryParse(value, ignoreCase: true, out NodeTypeSet parsed) || !Enum.IsDefined(parsed))
+                {
+                    error = $"Unknown type set '{value}'. Use 'full' or 'basic'.";
+                    return false;
+                }
+
+                state.Types = parsed;
+                return true;
+            default:
+                if (!PipeNamePattern().IsMatch(value))
+                {
+                    error = $"Automation name '{value}' may only contain letters, digits, '-' and '_'.";
+                    return false;
+                }
+
+                state.Automation = value;
+                return true;
+        }
+    }
+
+    /// <summary>
+    ///     The mutable state accumulated while parsing the command line.
+    /// </summary>
+    private sealed class ParseState
+    {
+        /// <summary>
+        ///     Gets or sets the file to open.
+        /// </summary>
+        public string? File { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the sample to open.
+        /// </summary>
+        public string? Sample { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the node type set.
+        /// </summary>
+        public NodeTypeSet Types { get; set; } = NodeTypeSet.Full;
+
+        /// <summary>
+        ///     Gets or sets the automation name.
+        /// </summary>
+        public string? Automation { get; set; }
     }
 
     /// <summary>

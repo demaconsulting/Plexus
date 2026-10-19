@@ -329,32 +329,13 @@ public sealed partial class DiagramEditor
 
         var additive = IsAdditive(e.KeyModifiers);
         var editable = !IsReadOnly;
+        if (editable && TryBeginEditGesture(e, screen, hit))
+        {
+            return;
+        }
+
         switch (hit.Kind)
         {
-            case HitKind.Port when editable && hit.Port is { } port:
-                BeginGesture(e, new ConnectGesture(this, screen, port));
-                break;
-            case HitKind.AnnotationResizeHandle when editable && hit.Element is Annotation annotation:
-                BeginGesture(e, new ResizeGesture(this, screen, annotation));
-                break;
-            case HitKind.GroupCollapseToggle when editable && hit.Element is Group group:
-                // The toggle is a button: one undoable change, no drag
-                SetSelection([group]);
-                group.IsCollapsed = !group.IsCollapsed;
-                e.Handled = true;
-                break;
-            case HitKind.WireBend when editable && hit.Element is Wire bendWire:
-                // Handles exist only on a selected wire, so the selection needs no change; a bend the wire
-                // cannot reshape (transient display route) is just ignored
-                if (WireBendGesture.TryCreate(this, screen, bendWire, hit.BendIndex) is { } bendGesture)
-                {
-                    BeginGesture(e, bendGesture);
-                }
-
-                break;
-            case HitKind.WireSourceHandle or HitKind.WireTargetHandle when editable && hit.Element is Wire endWire:
-                BeginGesture(e, new WireEndGesture(this, screen, endWire, hit.Kind == HitKind.WireSourceHandle));
-                break;
             case HitKind.Wire when hit.Element is Wire wire:
                 PressElement(e, screen, wire, additive, WireSegmentGesture.TryCreate(this, screen, wire, hit.SegmentIndex), editable);
                 break;
@@ -373,6 +354,46 @@ public sealed partial class DiagramEditor
                 }
 
                 break;
+        }
+    }
+
+    /// <summary>
+    ///     Starts the gesture of an editing hit (a port, a resize or wire handle, a group toggle) of an editable diagram.
+    /// </summary>
+    /// <param name="e">The press.</param>
+    /// <param name="screen">The press position relative to the control.</param>
+    /// <param name="hit">What the press landed on.</param>
+    /// <returns><see langword="true"/> when the press was an editing hit and has been handled.</returns>
+    private bool TryBeginEditGesture(PointerPressedEventArgs e, AvaloniaPoint screen, HitResult hit)
+    {
+        switch (hit.Kind)
+        {
+            case HitKind.Port when hit.Port is { } port:
+                BeginGesture(e, new ConnectGesture(this, screen, port));
+                return true;
+            case HitKind.AnnotationResizeHandle when hit.Element is Annotation annotation:
+                BeginGesture(e, new ResizeGesture(this, screen, annotation));
+                return true;
+            case HitKind.GroupCollapseToggle when hit.Element is Group group:
+                // The toggle is a button: one undoable change, no drag
+                SetSelection([group]);
+                group.IsCollapsed = !group.IsCollapsed;
+                e.Handled = true;
+                return true;
+            case HitKind.WireBend when hit.Element is Wire bendWire:
+                // Handles exist only on a selected wire, so the selection needs no change; a bend the wire
+                // cannot reshape (transient display route) is just ignored
+                if (WireBendGesture.TryCreate(this, screen, bendWire, hit.BendIndex) is { } bendGesture)
+                {
+                    BeginGesture(e, bendGesture);
+                }
+
+                return true;
+            case HitKind.WireSourceHandle or HitKind.WireTargetHandle when hit.Element is Wire endWire:
+                BeginGesture(e, new WireEndGesture(this, screen, endWire, hit.Kind == HitKind.WireSourceHandle));
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -513,7 +534,7 @@ public sealed partial class DiagramEditor
             HitKind.WireBend when !IsReadOnly => StandardCursorType.SizeAll,
             HitKind.WireSourceHandle or HitKind.WireTargetHandle when !IsReadOnly => StandardCursorType.Cross,
             HitKind.Wire when !IsReadOnly => WireSegmentCursor(hit),
-            _ => (StandardCursorType?)null,
+            _ => null,
         };
         SetCursor(cursor);
     }

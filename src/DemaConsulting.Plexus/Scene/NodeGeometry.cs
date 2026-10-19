@@ -348,11 +348,11 @@ public static class NodeGeometry
     /// <param name="theme">The theme supplying port geometry.</param>
     /// <param name="textTheme">The theme supplying the label text style.</param>
     /// <returns>The grown extent.</returns>
-    private static Rect ExtendByPorts(Rect extent, Rect box, PortDirection direction, IReadOnlyList<string> labels, DiagramTheme theme, DiagramTheme textTheme)
+    private static Rect ExtendByPorts(Rect extent, Rect box, PortDirection direction, string[] labels, DiagramTheme theme, DiagramTheme textTheme)
     {
-        for (var i = 0; i < labels.Count; i++)
+        for (var i = 0; i < labels.Length; i++)
         {
-            var edge = PortEdge(box, direction, i, labels.Count, theme);
+            var edge = PortEdge(box, direction, i, labels.Length, theme);
             var anchor = PortAnchor(edge, direction, labels[i], theme);
             var left = Math.Min(edge.X, anchor.X);
             var size = AnchorMeasurer.Measure(labels[i], textTheme.PortLabelTextStyle);

@@ -88,7 +88,7 @@ public class NodePalettePixelTests
         var frame = host.Window.CaptureRenderedFrame()!;
         Directory.CreateDirectory(PicturePath);
         var name = $"palette-vs-canvas-{key.Replace("test.", string.Empty, StringComparison.Ordinal)}-z{zoom:0.##}-{(light ? "light" : "classic")}";
-        frame.Save(Path.Combine(PicturePath, name + ".png"), PngBitmapEncoderOptions.Default);
+        frame.Save(Path.Join(PicturePath, name + ".png"), PngBitmapEncoderOptions.Default);
 
         // Assert: crop the node's visual extent from both places and compare
         var picture = PictureReader.Read(frame);
@@ -112,7 +112,7 @@ public class NodePalettePixelTests
     /// <summary>
     ///     Gets the folder where the tests save their pictures for inspection.
     /// </summary>
-    private static string PicturePath => Path.Combine(Path.GetTempPath(), "plexus-palette");
+    private static string PicturePath => Path.Join(Path.GetTempPath(), "plexus-palette");
 
     /// <summary>
     ///     Gets the fractional part of a coordinate.

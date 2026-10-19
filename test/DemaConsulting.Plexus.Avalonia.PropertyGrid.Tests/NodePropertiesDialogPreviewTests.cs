@@ -591,7 +591,7 @@ public class NodePropertiesDialogPreviewTests
         var (_, node) = NodeFixture.Create();
         using var source = new NodePropertySource(node);
         var session = new PropertyEditSession(source, PropertyEditMode.Staged);
-        var context = new NodePreviewContext(session);
+        using var context = new NodePreviewContext(session);
         var raised = 0;
         context.Changed += (_, _) => raised++;
 

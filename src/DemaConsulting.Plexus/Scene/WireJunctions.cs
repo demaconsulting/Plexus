@@ -45,7 +45,28 @@ internal static class WireJunctions
     /// <returns>Each junction point with the index of the first wire that has a point there, in a deterministic order.</returns>
     public static List<(Point Point, int Owner)> Find(IReadOnlyList<IReadOnlyList<Point>> wires)
     {
-        // Every vertex of every wire is a candidate; remember which wire named it first and the directions its neighbors lie in
+        var candidates = CollectCandidates(wires);
+        AddCrossingDirections(candidates, wires);
+
+        var junctions = new List<(Point, int)>();
+        foreach (var (point, owner, directions) in candidates)
+        {
+            if (BitCount(directions) >= 3)
+            {
+                junctions.Add((point, owner));
+            }
+        }
+
+        return junctions;
+    }
+
+    /// <summary>
+    ///     Collects every vertex of every wire as a candidate with the directions its neighbors lie in.
+    /// </summary>
+    /// <param name="wires">The displayed polylines of the wires of the net.</param>
+    /// <returns>The candidates, each with the wire that named it first.</returns>
+    private static List<(Point Point, int Owner, int Directions)> CollectCandidates(IReadOnlyList<IReadOnlyList<Point>> wires)
+    {
         var candidates = new List<(Point Point, int Owner, int Directions)>();
         for (var w = 0; w < wires.Count; w++)
         {
@@ -67,7 +88,16 @@ internal static class WireJunctions
             }
         }
 
-        // A candidate that lies inside another wire's segment also has that segment's two directions
+        return candidates;
+    }
+
+    /// <summary>
+    ///     Gives a candidate that lies inside another wire's segment that segment's two directions.
+    /// </summary>
+    /// <param name="candidates">The candidates; updated in place.</param>
+    /// <param name="wires">The displayed polylines of the wires of the net.</param>
+    private static void AddCrossingDirections(List<(Point Point, int Owner, int Directions)> candidates, IReadOnlyList<IReadOnlyList<Point>> wires)
+    {
         for (var c = 0; c < candidates.Count; c++)
         {
             foreach (var points in wires)
@@ -83,17 +113,6 @@ internal static class WireJunctions
                 }
             }
         }
-
-        var junctions = new List<(Point, int)>();
-        foreach (var (point, owner, directions) in candidates)
-        {
-            if (BitCount(directions) >= 3)
-            {
-                junctions.Add((point, owner));
-            }
-        }
-
-        return junctions;
     }
 
     /// <summary>

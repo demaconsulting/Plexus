@@ -66,7 +66,43 @@ public sealed partial class DiagramPage
         EnsureFinite(dy, nameof(dy));
         EnsureAttached();
 
-        // Expand groups to their members, keeping first-seen order and dropping duplicates
+        var movable = CollectMovable(elements);
+
+        // Nothing to do for an empty set or a zero delta (exact comparison on purpose: only a delta of exactly zero is a no-op)
+        if (movable.Count == 0 || (dx == 0 && dy == 0))
+        {
+            return;
+        }
+
+        var newBounds = new Dictionary<DiagramElement, Rect>();
+        var newPositions = new Dictionary<Group, Point>();
+        foreach (var element in movable)
+        {
+            switch (element)
+            {
+                case Node node:
+                    newBounds[node] = node.Bounds.Offset(dx, dy);
+                    break;
+                case Annotation annotation:
+                    newBounds[annotation] = annotation.Bounds.Offset(dx, dy);
+                    break;
+                case Group group:
+                    newPositions[group] = group.CollapsedPosition.Offset(dx, dy);
+                    break;
+            }
+        }
+
+        CommitLayout("Move", newBounds, newPositions);
+    }
+
+    /// <summary>
+    ///     Expands groups to their members, keeping first-seen order and dropping duplicates and wires.
+    /// </summary>
+    /// <param name="elements">The elements to move.</param>
+    /// <returns>The elements that actually move.</returns>
+    /// <exception cref="ArgumentException">Thrown when an element is not on this page.</exception>
+    private List<DiagramElement> CollectMovable(IEnumerable<DiagramElement> elements)
+    {
         var movable = new List<DiagramElement>();
         var seen = new HashSet<DiagramElement>();
         foreach (var element in elements)
@@ -92,31 +128,7 @@ public sealed partial class DiagramPage
             }
         }
 
-        // Nothing to do for an empty set or a zero delta
-        if (movable.Count == 0 || (dx == 0 && dy == 0))
-        {
-            return;
-        }
-
-        var newBounds = new Dictionary<DiagramElement, Rect>();
-        var newPositions = new Dictionary<Group, Point>();
-        foreach (var element in movable)
-        {
-            switch (element)
-            {
-                case Node node:
-                    newBounds[node] = node.Bounds.Offset(dx, dy);
-                    break;
-                case Annotation annotation:
-                    newBounds[annotation] = annotation.Bounds.Offset(dx, dy);
-                    break;
-                case Group group:
-                    newPositions[group] = group.CollapsedPosition.Offset(dx, dy);
-                    break;
-            }
-        }
-
-        CommitLayout("Move", newBounds, newPositions);
+        return movable;
     }
 
     /// <summary>
@@ -203,7 +215,7 @@ public sealed partial class DiagramPage
     /// <param name="command">The command to add route changes to.</param>
     /// <param name="changedNodes">The nodes whose bounds change and their new bounds.</param>
     /// <param name="forcedReroutes">Wires to re-route regardless of their end nodes, or null.</param>
-    private void PlanWireUpdates(LayoutCommand command, IReadOnlyDictionary<Node, Rect> changedNodes, IReadOnlySet<Wire>? forcedReroutes = null)
+    private void PlanWireUpdates(LayoutCommand command, Dictionary<Node, Rect> changedNodes, HashSet<Wire>? forcedReroutes = null)
     {
         if (changedNodes.Count == 0 && (forcedReroutes is null || forcedReroutes.Count == 0))
         {
@@ -217,36 +229,7 @@ public sealed partial class DiagramPage
         var rerouted = new List<Wire>();
         foreach (var wire in _wires)
         {
-            var sourceMoved = changedNodes.TryGetValue(wire.Source.Node, out var sourceBounds);
-            var targetMoved = changedNodes.TryGetValue(wire.Target.Node, out var targetBounds);
-            if (!sourceMoved && !targetMoved)
-            {
-                if (forcedReroutes is not null && forcedReroutes.Contains(wire))
-                {
-                    rerouted.Add(wire);
-                }
-                else if (!wire.Source.Node.IsHiddenByCollapse && !wire.Target.Node.IsHiddenByCollapse)
-                {
-                    traffic.Add(wire.Source, wire.Target, wire.Source.Anchor, wire.Route, wire.Target.Anchor);
-                }
-
-                continue;
-            }
-
-            if (sourceMoved && targetMoved
-                && TryGetCommonTranslation(wire.Source.Node.Bounds, sourceBounds, wire.Target.Node.Bounds, targetBounds, out var delta))
-            {
-                var route = wire.Route.Select(p => p.Offset(delta.X, delta.Y)).ToArray();
-                traffic.Add(wire.Source, wire.Target, AnchorOf(wire.Source, changedNodes), route, AnchorOf(wire.Target, changedNodes));
-                if (!wire.Route.SequenceEqual(route))
-                {
-                    command.AddRoute(wire, [.. wire.Route], route);
-                }
-            }
-            else
-            {
-                rerouted.Add(wire);
-            }
+            PlanWire(command, wire, changedNodes, forcedReroutes, traffic, rerouted);
         }
 
         // With no hypothetical bounds the cached obstacles of the current layout are valid
@@ -261,6 +244,55 @@ public sealed partial class DiagramPage
             {
                 command.AddRoute(wire, [.. wire.Route], route);
             }
+        }
+    }
+
+    /// <summary>
+    ///     Plans one wire: untouched wires join the traffic, translated wires get a shifted route, the rest are queued for re-routing.
+    /// </summary>
+    /// <param name="command">The command to add route changes to.</param>
+    /// <param name="wire">The wire.</param>
+    /// <param name="changedNodes">The nodes whose bounds change and their new bounds.</param>
+    /// <param name="forcedReroutes">Wires to re-route regardless of their end nodes, or null.</param>
+    /// <param name="traffic">The traffic of the wires that keep their shape; extended here.</param>
+    /// <param name="rerouted">The wires that need a new route; extended here.</param>
+    private void PlanWire(
+        LayoutCommand command,
+        Wire wire,
+        Dictionary<Node, Rect> changedNodes,
+        HashSet<Wire>? forcedReroutes,
+        WireTraffic traffic,
+        List<Wire> rerouted)
+    {
+        var sourceMoved = changedNodes.TryGetValue(wire.Source.Node, out var sourceBounds);
+        var targetMoved = changedNodes.TryGetValue(wire.Target.Node, out var targetBounds);
+        if (!sourceMoved && !targetMoved)
+        {
+            if (forcedReroutes is not null && forcedReroutes.Contains(wire))
+            {
+                rerouted.Add(wire);
+            }
+            else if (!wire.Source.Node.IsHiddenByCollapse && !wire.Target.Node.IsHiddenByCollapse)
+            {
+                traffic.Add(wire.Source, wire.Target, wire.Source.Anchor, wire.Route, wire.Target.Anchor);
+            }
+
+            return;
+        }
+
+        if (sourceMoved && targetMoved
+            && TryGetCommonTranslation(wire.Source.Node.Bounds, sourceBounds, wire.Target.Node.Bounds, targetBounds, out var delta))
+        {
+            var route = wire.Route.Select(p => p.Offset(delta.X, delta.Y)).ToArray();
+            traffic.Add(wire.Source, wire.Target, AnchorOf(wire.Source, changedNodes), route, AnchorOf(wire.Target, changedNodes));
+            if (!wire.Route.SequenceEqual(route))
+            {
+                command.AddRoute(wire, [.. wire.Route], route);
+            }
+        }
+        else
+        {
+            rerouted.Add(wire);
         }
     }
 

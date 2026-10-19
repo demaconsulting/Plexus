@@ -61,6 +61,7 @@ public class IconSourceTests
         Assert.True(first.Equals((object)same));
         Assert.False(first.Equals(other));
         Assert.False(first.Equals((IconSource?)null));
+        // Equals(object) with an unrelated type is intentionally exercised: it must return false, not throw
         Assert.False(first.Equals("not an icon"));
         Assert.Equal(2, set.Count);
     }
@@ -72,7 +73,7 @@ public class IconSourceTests
     public void IconSource_FromSvgFile_ExistingFile_LoadsContent()
     {
         // Arrange: write a file beside the test binaries
-        var path = Path.Combine(AppContext.BaseDirectory, string.Create(CultureInfo.InvariantCulture, $"icon-source-{Guid.NewGuid():N}.svg"));
+        var path = Path.Join(AppContext.BaseDirectory, string.Create(CultureInfo.InvariantCulture, $"icon-source-{Guid.NewGuid():N}.svg"));
         File.WriteAllText(path, Svg);
 
         try
@@ -97,7 +98,7 @@ public class IconSourceTests
     public void IconSource_FromSvgFile_MissingFileOrBlankPath_Throws()
     {
         // Arrange
-        var missing = Path.Combine(AppContext.BaseDirectory, "no-such-icon.svg");
+        var missing = Path.Join(AppContext.BaseDirectory, "no-such-icon.svg");
 
         // Act / Assert
         Assert.ThrowsAny<IOException>(() => IconSource.FromSvgFile(missing));

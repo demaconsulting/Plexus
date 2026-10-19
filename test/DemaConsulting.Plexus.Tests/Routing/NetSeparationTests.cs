@@ -150,7 +150,7 @@ public class NetSeparationTests
         // Act
         for (var i = 0; i < nets; i++)
         {
-            var request = Request(new Point(0, i * 30), new Point(300, (nets - 1 - i) * 30), i, existing);
+            var request = Request(new Point(0, i * 30.0), new Point(300, (nets - 1 - i) * 30.0), i, existing);
             var route = router.Route(request);
             existing.AddRange(Segments(request, route, i).Select(s => new RouteSegment(s.Start, s.End, i)));
             all.Add(Segments(request, route, i));

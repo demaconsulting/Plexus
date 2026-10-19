@@ -219,8 +219,7 @@ public class ScenePainterTests
     /// <returns>The scene.</returns>
     private static DiagramScene BuildIconScene(IconSource icon)
     {
-        var types = new NodeTypeRegistry();
-        types.Add(new NodeType("viz.Iconic") { Title = "ICONIC", Icon = icon });
+        var types = new NodeTypeRegistry { new NodeType("viz.Iconic") { Title = "ICONIC", Icon = icon } };
         var diagram = new Diagram(types);
         var page = diagram.Pages.Add("Icons");
         page.AddNode("viz.Iconic", 60, 60, "Icon1");

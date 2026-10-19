@@ -83,17 +83,7 @@ internal static class WireCrossings
 
                 // Gather the verticals of other nets inside the span, then visit them in wire and segment order so
                 // the hops come out in the same order as a scan over every wire would produce
-                candidates.Clear();
-                var right = Math.Max(a.X, b.X);
-                for (var k = LowerBound(verticals, Math.Min(a.X, b.X)); k < verticals.Count && verticals[k].X < right; k++)
-                {
-                    if (!ReferenceEquals(wires[verticals[k].Wire].Net, wire.Net))
-                    {
-                        candidates.Add(verticals[k]);
-                    }
-                }
-
-                candidates.Sort(static (p, q) => p.Wire != q.Wire ? p.Wire.CompareTo(q.Wire) : p.Segment.CompareTo(q.Segment));
+                GatherCandidates(candidates, wires, verticals, wire, a, b);
                 foreach (var candidate in candidates)
                 {
                     var other = wires[candidate.Wire];
@@ -117,6 +107,36 @@ internal static class WireCrossings
         }
 
         return result;
+    }
+
+    /// <summary>
+    ///     Gathers the verticals of other nets within the span of a horizontal segment, in wire and segment order.
+    /// </summary>
+    /// <param name="candidates">Receives the candidates; cleared first.</param>
+    /// <param name="wires">The wires.</param>
+    /// <param name="verticals">The vertical segments sorted by X.</param>
+    /// <param name="wire">The wire owning the horizontal segment.</param>
+    /// <param name="a">The start of the horizontal segment.</param>
+    /// <param name="b">The end of the horizontal segment.</param>
+    private static void GatherCandidates(
+        List<VerticalSegment> candidates,
+        IReadOnlyList<WireRun> wires,
+        List<VerticalSegment> verticals,
+        WireRun wire,
+        Point a,
+        Point b)
+    {
+        candidates.Clear();
+        var right = Math.Max(a.X, b.X);
+        for (var k = LowerBound(verticals, Math.Min(a.X, b.X)); k < verticals.Count && verticals[k].X < right; k++)
+        {
+            if (!ReferenceEquals(wires[verticals[k].Wire].Net, wire.Net))
+            {
+                candidates.Add(verticals[k]);
+            }
+        }
+
+        candidates.Sort(static (p, q) => p.Wire != q.Wire ? p.Wire.CompareTo(q.Wire) : p.Segment.CompareTo(q.Segment));
     }
 
     /// <summary>

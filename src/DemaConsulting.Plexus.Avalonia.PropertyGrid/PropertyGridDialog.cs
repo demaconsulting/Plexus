@@ -295,9 +295,9 @@ public sealed class PropertyGridDialog : Window
             if (!result.Succeeded)
             {
                 // Show the failing row, then the reason
-                if (result.Failed.FirstOrDefault() is { } failed)
+                if (result.Failed.Count > 0)
                 {
-                    Grid.SelectItem(failed.Item);
+                    Grid.SelectItem(result.Failed[0].Item);
                 }
 
                 _status.Text = result.Error ?? result.Failed.Select(f => f.Error).FirstOrDefault(e => e is not null) ?? session.GetErrors().Values.FirstOrDefault() ?? "The changes could not be applied.";

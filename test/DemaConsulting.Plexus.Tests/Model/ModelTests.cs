@@ -8,6 +8,13 @@ namespace DemaConsulting.Plexus.Tests;
 /// </summary>
 public class ModelTests
 {
+    private static readonly string[] ExpectedFinalOrder = ["B", "A2"];
+
+    private static readonly string[] OriginalOrder = ["A", "B"];
+
+    private static readonly string[] RenamedOnce = ["A>ALPHA"];
+
+    private static readonly string[] RenamedTwice = ["A>ALPHA", "ALPHA>A"];
     /// <summary>
     ///     Validates that pages can be added, inserted, renamed, reordered and removed, and that every step is undoable.
     /// </summary>
@@ -27,13 +34,13 @@ public class ModelTests
         var finalOrder = diagram.Pages.Select(p => p.Name).ToArray();
 
         // Assert: the final order, then a full undo and redo of the four steps
-        Assert.Equal(new[] { "B", "A2" }, finalOrder);
+        Assert.Equal(ExpectedFinalOrder, finalOrder);
         for (var i = 0; i < 4; i++)
         {
             Assert.True(diagram.History.Undo());
         }
 
-        Assert.Equal(new[] { "A", "B" }, diagram.Pages.Select(p => p.Name));
+        Assert.Equal(OriginalOrder, diagram.Pages.Select(p => p.Name));
         for (var i = 0; i < 4; i++)
         {
             Assert.True(diagram.History.Redo());
@@ -145,12 +152,12 @@ public class ModelTests
         Assert.Equal("Reserved name.", cancelReason);
         Assert.False(empty);
         Assert.NotNull(emptyReason);
-        Assert.Equal(new[] { "A>ALPHA" }, renamed);
+        Assert.Equal(RenamedOnce, renamed);
 
         // Act / Assert: undo restores the old name and reports it
         diagram.History.Undo();
         Assert.Equal("A", a.Name);
-        Assert.Equal(new[] { "A>ALPHA", "ALPHA>A" }, renamed);
+        Assert.Equal(RenamedTwice, renamed);
     }
 
     /// <summary>
@@ -247,7 +254,7 @@ public class ModelTests
         Assert.Same(inner, a.Parent);
         Assert.Same(outer, inner.Parent);
         Assert.Equal(new Point(origin.X + 10, origin.Y + 20), a.Bounds.Position);
-        Assert.Equal(new[] { a, b, (DiagramElement)c }, outer.AllMembers().OfType<Node>().OrderBy(n => n.Name));
+        Assert.Equal(new[] { a, b, c }, outer.AllMembers().OfType<Node>().OrderBy(n => n.Name));
 
         // Act: collapse and expand the inner group
         inner.IsCollapsed = true;
@@ -572,7 +579,7 @@ public class ModelTests
         bus.Properties["Channels"] = 4;
         for (var i = 0; i < 4; i++)
         {
-            page.AddNode("acme.Producer", 0, i * 150, $"P{i}");
+            page.AddNode("acme.Producer", 0, i * 150.0, $"P{i}");
             page.Connect($"P{i}.value", $"Bus.in{i}");
         }
 

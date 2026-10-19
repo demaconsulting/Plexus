@@ -253,7 +253,7 @@ public class DemoPaletteTests
         // Arrange
         using var host = new MainWindowHost(MainWindowHost.Options());
         using var temp = new TempDirectory();
-        var path = Path.Combine(temp.Create(), "logic.json");
+        var path = Path.Join(temp.Create(), "logic.json");
         DemoDocument.Save(DemoSamples.Logic(), path);
 
         // Act

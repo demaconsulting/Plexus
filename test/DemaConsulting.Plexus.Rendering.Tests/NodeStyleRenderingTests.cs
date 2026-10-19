@@ -103,8 +103,8 @@ public class NodeStyleRenderingTests
         var far = glowing[(int)box.Left - 11, y];
         var beyond = glowing[(int)box.Left - 16, y];
         Assert.Multiple(
-            () => Assert.True(near.G - near.R > 10, $"near halo pixel {near}"),
-            () => Assert.True(far.G > canvas.G - 5 && (far.R < canvas.R || far.B < canvas.B), $"far halo pixel {far}"),
+            () => Assert.True(near.G - near.R > 10, $"near halo pixel ({near.R}, {near.G}, {near.B}, {near.A})"),
+            () => Assert.True(far.G > canvas.G - 5 && (far.R < canvas.R || far.B < canvas.B), $"far halo pixel ({far.R}, {far.G}, {far.B}, {far.A})"),
             () => Assert.True(near.R < far.R, "the halo fades outward"),
             () => Assert.Equal(canvas, beyond));
 

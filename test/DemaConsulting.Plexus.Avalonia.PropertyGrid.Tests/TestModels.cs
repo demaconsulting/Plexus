@@ -127,6 +127,11 @@ public sealed class TemperatureConverter : TypeConverter
 /// </summary>
 public sealed class ChoiceConverter : StringConverter
 {
+    /// <summary>
+    ///     The standard values offered when the edited instance is not a person.
+    /// </summary>
+    private static readonly string[] NoneValues = ["none"];
+
     /// <inheritdoc />
     public override bool GetStandardValuesSupported(ITypeDescriptorContext? context) => true;
 
@@ -135,7 +140,7 @@ public sealed class ChoiceConverter : StringConverter
 
     /// <inheritdoc />
     public override StandardValuesCollection? GetStandardValues(ITypeDescriptorContext? context) =>
-        new(context?.Instance is Person person ? new[] { "first-" + person.Name, "second" } : new[] { "none" });
+        new(context?.Instance is Person person ? new[] { "first-" + person.Name, "second" } : NoneValues);
 }
 
 /// <summary>
@@ -254,7 +259,7 @@ public class Person
     public int Fragile
     {
         get => 0;
-        set => throw new InvalidOperationException("Fragile does not accept values.");
+        set => throw new InvalidOperationException("Fragile does not accept values."); // intentionally ignores the value: the setter only exists to throw
     }
 
     /// <summary>Gets or sets an object-typed property.</summary>

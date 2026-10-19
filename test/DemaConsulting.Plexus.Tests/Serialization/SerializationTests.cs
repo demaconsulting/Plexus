@@ -9,6 +9,7 @@ namespace DemaConsulting.Plexus.Tests.Serialization;
 /// </summary>
 public class SerializationTests
 {
+    private static readonly string[] ExpectedSourceNames = ["value", "z"];
     /// <summary>
     ///     Validates that a rich diagram written to JSON loads back to an identical model with a clean history.
     /// </summary>
@@ -181,9 +182,8 @@ public class SerializationTests
         many.Append("]}");
 
         // Act / Assert
-        foreach (var json in new[] { oversize, tooDeep, many.ToString() })
+        foreach (var result in new[] { oversize, tooDeep, many.ToString() }.Select(json => PlexusClipboard.Paste(page, json)))
         {
-            var result = PlexusClipboard.Paste(page, json);
             Assert.False(result.Success);
             Assert.False(string.IsNullOrEmpty(result.Error));
         }
@@ -342,7 +342,7 @@ public class SerializationTests
         Assert.True(pasted.Success, pasted.Error);
         Assert.Equal(2, target.Wires.Count);
         Assert.Equal(2, duplicates.OfType<Wire>().Count());
-        Assert.All(duplicates.OfType<Wire>().Concat(target.Wires), w => Assert.Contains(w.Source.Name, new[] { "value", "z" }));
+        Assert.All(duplicates.OfType<Wire>().Concat(target.Wires), w => Assert.Contains(w.Source.Name, ExpectedSourceNames));
         Assert.Contains(target.Wires, w => w.Target.Name == "in2");
     }
 

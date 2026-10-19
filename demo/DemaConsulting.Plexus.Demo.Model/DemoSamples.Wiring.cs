@@ -8,6 +8,21 @@ namespace DemaConsulting.Plexus.Demo.Model;
 public static partial class DemoSamples
 {
     /// <summary>
+    ///     The path of the third fan source's output port.
+    /// </summary>
+    private const string FanCValue = "FanC.value";
+
+    /// <summary>
+    ///     The name of a source node's output port.
+    /// </summary>
+    private const string ValuePort = "value";
+
+    /// <summary>
+    ///     The name of a target node's input port.
+    /// </summary>
+    private const string SignalPort = "signal";
+
+    /// <summary>
     ///     How far right of an output port's anchor the vertical run of an explicitly routed wire sits between close columns.
     /// </summary>
     private const double TrunkOffset = 30;
@@ -63,10 +78,10 @@ public static partial class DemoSamples
         AddNode(page, DemoNodeTypes.Constant, "FanC", 1125, 255);
         AddNode(page, DemoNodeTypes.Add, "FanCAdd", 1365, 120);
         AddNode(page, DemoNodeTypes.Multiply, "FanCMul", 1365, 330);
-        page.Connect("FanC.value", "FanCAdd.a");
-        page.Connect("FanC.value", "FanCAdd.b");
-        page.Connect("FanC.value", "FanCMul.a");
-        page.Connect("FanC.value", "FanCMul.b");
+        page.Connect(FanCValue, "FanCAdd.a");
+        page.Connect(FanCValue, "FanCAdd.b");
+        page.Connect(FanCValue, "FanCMul.a");
+        page.Connect(FanCValue, "FanCMul.b");
     }
 
     /// <summary>
@@ -107,10 +122,10 @@ public static partial class DemoSamples
 
         // The horizontal wire is straight; the two vertical wires nest (so they never cross each other) and run
         // 6 units apart, close enough to share one hop
-        var x = outer.Port("value").Anchor.X + WideTrunkOffset;
-        page.Connect(across.Port("value"), acrossTarget.Input("signal"));
-        ConnectVertical(page, outer.Port("value"), outerTarget.Input("signal"), x);
-        ConnectVertical(page, inner.Port("value"), innerTarget.Input("signal"), x - 6);
+        var x = outer.Port(ValuePort).Anchor.X + WideTrunkOffset;
+        page.Connect(across.Port(ValuePort), acrossTarget.Input(SignalPort));
+        ConnectVertical(page, outer.Port(ValuePort), outerTarget.Input(SignalPort), x);
+        ConnectVertical(page, inner.Port(ValuePort), innerTarget.Input(SignalPort), x - 6);
     }
 
     /// <summary>
@@ -124,9 +139,9 @@ public static partial class DemoSamples
         var lower = AddNode(page, DemoNodeTypes.Constant, "TouchV", 45, 1800);
         var upperTarget = AddNode(page, DemoNodeTypes.Scope, "TouchUT", 285, 1830);
         var lowerTarget = AddNode(page, DemoNodeTypes.Scope, "TouchVT", 285, 1650);
-        var touchX = upper.Port("value").Anchor.X + TrunkOffset;
-        ConnectVertical(page, upper.Port("value"), upperTarget.Input("signal"), touchX);
-        ConnectVertical(page, lower.Port("value"), lowerTarget.Input("signal"), touchX);
+        var touchX = upper.Port(ValuePort).Anchor.X + TrunkOffset;
+        ConnectVertical(page, upper.Port(ValuePort), upperTarget.Input(SignalPort), touchX);
+        ConnectVertical(page, lower.Port(ValuePort), lowerTarget.Input(SignalPort), touchX);
 
         page.AddAnnotation("Dashed steam fan-out: the dashes and the dots\nfollow the same wires.", new Rect(585, 1530, 450, 45));
         AddNode(page, DemoNodeTypes.Tank, "SteamTank", 585, 1740, ("Fluid", "Steam"), ("Level", 65));
@@ -140,15 +155,15 @@ public static partial class DemoSamples
         page.AddAnnotation("A collapsed group fans out from its box: its display\nroutes make the same T junctions.", new Rect(1125, 1530, 450, 45));
         var source = AddNode(page, DemoNodeTypes.Constant, "GroupSource", 1125, 1680);
         var sum = AddNode(page, DemoNodeTypes.Add, "GroupSum", 1125, 1830);
-        source.Port("value").ConnectTo(sum.Input("a"));
+        source.Port(ValuePort).ConnectTo(sum.Input("a"));
         var group = page.CreateGroup([source, sum], "Inner");
         group.IsCollapsed = true;
         var first = AddNode(page, DemoNodeTypes.Scope, "GroupS1", 1485, 1620);
         var second = AddNode(page, DemoNodeTypes.Scope, "GroupS2", 1485, 1800);
         var third = AddNode(page, DemoNodeTypes.Scope, "GroupS3", 1485, 1980);
-        sum.Port("sum").ConnectTo(first.Input("signal"));
-        sum.Port("sum").ConnectTo(second.Input("signal"));
-        sum.Port("sum").ConnectTo(third.Input("signal"));
+        sum.Port("sum").ConnectTo(first.Input(SignalPort));
+        sum.Port("sum").ConnectTo(second.Input(SignalPort));
+        sum.Port("sum").ConnectTo(third.Input(SignalPort));
     }
 
     /// <summary>

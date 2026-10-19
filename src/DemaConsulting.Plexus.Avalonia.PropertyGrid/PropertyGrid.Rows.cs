@@ -228,22 +228,7 @@ public partial class PropertyGrid
         var ordered = new List<GridRowView>(specs.Count);
         foreach (var spec in specs)
         {
-            GridRowView view;
-            if (_views.TryGetValue(spec.Key, out var existing) && ReferenceEquals(existing.Item, spec.Item))
-            {
-                view = existing;
-            }
-            else
-            {
-                view = spec.Item is null
-                    ? new CategoryRowView(this, spec.Category!, spec.Expanded)
-                    : new PropertyRowView(this, spec.Item);
-                if (view is PropertyRowView created)
-                {
-                    created.SetNameWidth(Math.Max(30, NameColumnWidth));
-                }
-            }
-
+            var view = GetOrCreateView(spec);
             switch (view)
             {
                 case PropertyRowView property:
@@ -281,6 +266,28 @@ public partial class PropertyGrid
     }
 
     /// <summary>
+    ///     Gets the existing view of a row when it still shows the same item, otherwise creates a new one.
+    /// </summary>
+    /// <param name="spec">The row.</param>
+    /// <returns>The view.</returns>
+    private GridRowView GetOrCreateView(RowSpec spec)
+    {
+        if (_views.TryGetValue(spec.Key, out var existing) && ReferenceEquals(existing.Item, spec.Item))
+        {
+            return existing;
+        }
+
+        if (spec.Item is null)
+        {
+            return new CategoryRowView(this, spec.Category!, spec.Expanded);
+        }
+
+        var created = new PropertyRowView(this, spec.Item);
+        created.SetNameWidth(Math.Max(30, NameColumnWidth));
+        return created;
+    }
+
+    /// <summary>
     ///     Shows the message that tells why there are no rows.
     /// </summary>
     /// <param name="rowCount">The number of rows.</param>
@@ -290,11 +297,10 @@ public partial class PropertyGrid
         if (Session is null)
         {
             _emptyText.Text = "No object selected.";
+            return;
         }
-        else
-        {
-            _emptyText.Text = string.IsNullOrWhiteSpace(Filter) ? "This object has no properties." : "No matching properties.";
-        }
+
+        _emptyText.Text = string.IsNullOrWhiteSpace(Filter) ? "This object has no properties." : "No matching properties.";
     }
 
     /// <summary>
@@ -320,14 +326,9 @@ public partial class PropertyGrid
                 continue;
             }
 
-            if (group.Category is { } category)
+            if (group.Category is { } category && !AddCategory(specs, category, filtering))
             {
-                var expanded = filtering || IsCategoryExpanded(category);
-                specs.Add(new RowSpec(CategoryKey(category), category, null, 0, true, expanded));
-                if (!expanded)
-                {
-                    continue;
-                }
+                continue;
             }
 
             foreach (var item in visible)
@@ -337,6 +338,20 @@ public partial class PropertyGrid
         }
 
         return specs;
+    }
+
+    /// <summary>
+    ///     Adds the header row of a category.
+    /// </summary>
+    /// <param name="specs">The row list.</param>
+    /// <param name="category">The category.</param>
+    /// <param name="filtering">Whether a filter is active, which expands every category.</param>
+    /// <returns><see langword="true"/> when the category is expanded and its items follow.</returns>
+    private bool AddCategory(List<RowSpec> specs, string category, bool filtering)
+    {
+        var expanded = filtering || IsCategoryExpanded(category);
+        specs.Add(new RowSpec(CategoryKey(category), category, null, 0, true, expanded));
+        return expanded;
     }
 
     /// <summary>
