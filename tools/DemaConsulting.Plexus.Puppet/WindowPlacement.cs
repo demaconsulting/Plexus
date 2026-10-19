@@ -181,7 +181,7 @@ internal static partial class WindowPlacement
     /// <param name="rect">The rectangle that receives the work area.</param>
     /// <param name="flags">Not used.</param>
     /// <returns><see langword="true"/> on success.</returns>
-    [LibraryImport("user32.dll", SetLastError = true)]
+    [LibraryImport("user32.dll", EntryPoint = "SystemParametersInfoW", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool SystemParametersInfo(uint action, uint param, out NativeRect rect, uint flags);
 
