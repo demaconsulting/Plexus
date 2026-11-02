@@ -39,9 +39,9 @@
   <!-- The UI is built in code (no XAML), so the only Avalonia pieces needed are the desktop host and the Fluent theme.
        Material.Icons.Avalonia supplies the toolbar icons; it is a demo-only dependency that the shipped libraries never reference. -->
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Desktop" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Avalonia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
     <PackageReference Include="Material.Icons.Avalonia" Version="3.0.2" />
   </ItemGroup>
 

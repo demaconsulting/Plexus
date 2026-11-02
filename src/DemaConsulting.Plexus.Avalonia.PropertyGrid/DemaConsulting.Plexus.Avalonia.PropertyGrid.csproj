@@ -96,7 +96,7 @@
   <!-- Package References: only the adapter layer in the Diagrams folder (namespace ...PropertyGrid.Diagrams) uses Plexus types;
        the generic layers must not depend on them. -->
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.4" />
+    <PackageReference Include="Avalonia" Version="12.1.5" />
   </ItemGroup>
 
   <ItemGroup>

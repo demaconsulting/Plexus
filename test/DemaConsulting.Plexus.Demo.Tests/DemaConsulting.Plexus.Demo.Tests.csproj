@@ -31,7 +31,7 @@
       <IncludeAssets>compile; runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
-    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.2" />
     <PackageReference Include="xunit.v3" Version="4.0.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
       <PrivateAssets>all</PrivateAssets>
@@ -61,9 +61,9 @@
     <ProjectReference Include="..\..\src\DemaConsulting.Plexus.Avalonia\DemaConsulting.Plexus.Avalonia.csproj" />
     <!-- The GUI tests drive the real window headlessly. Avalonia.Headless.XUnit 12.1.4 is compiled against xunit.v3 3.x
          and fails discovery under xunit.v3 4.x, so the tests run on the UI thread through Avalonia.Headless directly (see UiTest). -->
-    <PackageReference Include="Avalonia.Headless" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Skia" Version="12.1.4" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.4" />
+    <PackageReference Include="Avalonia.Headless" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
   </ItemGroup>
 
 </Project>
