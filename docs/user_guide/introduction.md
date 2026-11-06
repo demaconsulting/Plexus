@@ -12,6 +12,11 @@ diagram model, editing behavior, rendering and an interactive editor control. Th
 uses each of those parts, task by task, and keeps every task short: if a common task needs a page of code, that is a
 defect of the library to be reported, not something to document.
 
+The figure below shows how the pieces fit together: your application uses the Rendering, Avalonia and PropertyGrid
+packages as needed, and all of them build on the UI-free core.
+
+![Plexus architecture: your application uses the Rendering, Avalonia and PropertyGrid packages, which all depend on the UI-free core](architecture.svg)
+
 ![The Plexus demo application showing a multi-page diagram](images/overview.png)
 
 ## Scope

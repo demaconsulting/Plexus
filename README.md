@@ -13,6 +13,8 @@ Plexus is a general-purpose .NET library for building and editing node-based blo
 wires, annotations, nestable collapsible groups, multiple pages, full undo/redo, and cross-application copy/paste. It
 ships a UI-free core, a headless PNG renderer built on CanvasNet, and an Avalonia editor control.
 
+![Plexus architecture: your application uses the Rendering, Avalonia and PropertyGrid packages, which all depend on the UI-free core][img-architecture]
+
 ## Features
 
 - 🔌 **Typed Ports** - Directional, colored port types; single-wire inputs by default, optional fan-in, per-node ports
@@ -237,6 +239,7 @@ By contributing to this project, you agree that your contributions will be licen
 [link-releases]: https://github.com/demaconsulting/Plexus/releases/latest
 
 <!-- Image References -->
+[img-architecture]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/images/architecture.png
 [img-overview]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/user_guide/images/overview.png
 [img-drop-ghost]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/user_guide/images/drop-ghost.png
 [img-dialog]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/user_guide/images/property-grid-dialog.png
