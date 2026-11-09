@@ -67,7 +67,7 @@
 
   <!-- Build Tool Dependencies -->
   <ItemGroup>
-    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.11" PrivateAssets="All" />
+    <PackageReference Include="DemaConsulting.ApiMark.MSBuild" Version="0.5.12" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Sbom.Targets" Version="4.1.13" PrivateAssets="All" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.403" PrivateAssets="All" />
   </ItemGroup>
@@ -96,7 +96,7 @@
   <!-- Package References: only the adapter layer in the Diagrams folder (namespace ...PropertyGrid.Diagrams) uses Plexus types;
        the generic layers must not depend on them. -->
   <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.5" />
+    <PackageReference Include="Avalonia" Version="12.1.6" />
   </ItemGroup>
 
   <ItemGroup>

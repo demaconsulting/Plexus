@@ -38,7 +38,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
     <PackageReference Include="Microsoft.Testing.Extensions.TrxReport" Version="2.5.2" />
-    <PackageReference Include="xunit.v3" Version="4.0.2" />
+    <PackageReference Include="xunit.v3" Version="4.0.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -67,9 +67,9 @@
     <ProjectReference Include="..\..\src\DemaConsulting.Plexus.Avalonia.PropertyGrid\DemaConsulting.Plexus.Avalonia.PropertyGrid.csproj" />
     <!-- Avalonia.Headless.XUnit 12.1.4 is compiled against xunit.v3 3.x and fails discovery under xunit.v3 4.x
          (MissingMethodException), so the tests drive the UI thread through Avalonia.Headless directly (see UiTest). -->
-    <PackageReference Include="Avalonia.Headless" Version="12.1.5" />
-    <PackageReference Include="Avalonia.Skia" Version="12.1.5" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.5" />
+    <PackageReference Include="Avalonia.Headless" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Skia" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
   </ItemGroup>
 
 </Project>
