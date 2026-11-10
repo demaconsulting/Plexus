@@ -1,4 +1,6 @@
 package PlexusRendering {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * Headless renderer that paints a Plexus scene for one page to a PNG image using CanvasNet.
@@ -7,11 +9,14 @@ package PlexusRendering {
     part def PlexusRenderingSystem {
         doc /* Headless renderer that paints a Plexus scene for one page to a PNG image using CanvasNet. */
 
-        comment sourceRef /* Source: src/DemaConsulting.Plexus.Rendering/NamespaceDoc.cs */
-        comment testRef /* Test: test/DemaConsulting.Plexus.Rendering.Tests/PlexusRenderingTests.cs */
-        comment designRef /* Design: docs/design/plexus-rendering.md */
-        comment verificationRef /* Verification: docs/verification/plexus-rendering.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus-rendering.yaml */
+        metadata info : SoftwareInfo {
+            description = "Headless renderer that paints a Plexus scene for one page to a PNG image using CanvasNet.";
+            sourceFiles = ("src/DemaConsulting.Plexus.Rendering/NamespaceDoc.cs");
+            testFiles = ("test/DemaConsulting.Plexus.Rendering.Tests/PlexusRenderingTests.cs");
+            designFiles = ("docs/design/plexus-rendering.md");
+            verificationFiles = ("docs/verification/plexus-rendering.md");
+            requirementFiles = ("docs/reqstream/plexus-rendering.yaml");
+        }
 
         ref part core : Plexus::PlexusSystem;
         part plexusRenderer : PlexusRenderer;

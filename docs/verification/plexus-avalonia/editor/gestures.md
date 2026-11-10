@@ -29,7 +29,7 @@ no transaction left open.
 - **MoveGesture_Complete_AfterDrag_SnapsAndRecordsOneUndoEntry**: a two-step drag lands the corner on the grid, the
   cursor is the move cursor, and one history entry is recorded.
 - **MoveGesture_Move_ControlHeld_DuplicatesAndMovesCopy**: with Ctrl the original stays, the selected copy moves.
-- **MoveGesture_Cancel_AfterDrag_RestoresPositionSelectionAndHistory**: cancelling a Ctrl-drag removes the copy,
+- **MoveGesture_Cancel_AfterDrag_RestoresPositionSelectionAndHistory**: canceling a Ctrl-drag removes the copy,
   restores the selection and leaves no entry.
 - **MoveGesture_Complete_ClickOnSelectedNode_FinishesDeferredSelectionChange**: a click on one of two selected nodes
   narrows the selection; with Shift it removes the node instead.

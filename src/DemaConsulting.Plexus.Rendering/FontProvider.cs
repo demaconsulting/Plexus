@@ -37,7 +37,7 @@ internal static class FontProvider
     /// <returns>The loaded font.</returns>
     private static TrueTypeFont Load(string family, bool bold)
     {
-        // A system match can still fail to parse (unsupported CFF flavours, corrupt files), and
+        // A system match can still fail to parse (unsupported CFF flavors, corrupt files), and
         // that must never stop rendering, so any such failure falls through to the bundled font
         var match = SystemFontCatalog.FindBestMatch(family, bold, false, false, false);
         if (match is { } info)

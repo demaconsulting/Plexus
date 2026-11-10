@@ -1,4 +1,6 @@
 package PlexusAvaloniaPropertyGrid {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * Generic, annotation-driven property grid for Avalonia: the UI-free layers and the Avalonia controls (grid, editors, collection editor, dialog) that show and edit any annotated .NET object through System.ComponentModel annotations, type converters, edit sessions and a pluggable editor registry.
@@ -7,11 +9,14 @@ package PlexusAvaloniaPropertyGrid {
     part def PlexusAvaloniaPropertyGridSystem {
         doc /* Generic, annotation-driven property grid for Avalonia: the UI-free layers and the Avalonia controls (grid, editors, collection editor, dialog) that show and edit any annotated .NET object through System.ComponentModel annotations, type converters, edit sessions and a pluggable editor registry. */
 
-        comment sourceRef /* Source: src/DemaConsulting.Plexus.Avalonia.PropertyGrid/NamespaceDoc.cs */
-        comment testRef /* Test: test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PlexusAvaloniaPropertyGridTests.cs */
-        comment designRef /* Design: docs/design/plexus-avalonia-property-grid.md */
-        comment verificationRef /* Verification: docs/verification/plexus-avalonia-property-grid.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus-avalonia-property-grid.yaml */
+        metadata info : SoftwareInfo {
+            description = "Generic, annotation-driven property grid for Avalonia: the UI-free layers and the Avalonia controls (grid, editors, collection editor, dialog) that show and edit any annotated .NET object through System.ComponentModel annotations, type converters, edit sessions and a pluggable editor registry.";
+            sourceFiles = ("src/DemaConsulting.Plexus.Avalonia.PropertyGrid/NamespaceDoc.cs");
+            testFiles = ("test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PlexusAvaloniaPropertyGridTests.cs");
+            designFiles = ("docs/design/plexus-avalonia-property-grid.md");
+            verificationFiles = ("docs/verification/plexus-avalonia-property-grid.md");
+            requirementFiles = ("docs/reqstream/plexus-avalonia-property-grid.yaml");
+        }
 
         part propertyModel : PropertyModel;
         part propertySources : PropertySources;

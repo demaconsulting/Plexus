@@ -1,11 +1,16 @@
 package PlexusAvalonia {
+    private import SoftwareItemMetadata::*;
+
     part def DiagramEditor {
         doc /* The Avalonia editor control: view state, selection, keyboard, rename, annotation editing, history commands, hover tooltips, navigation to elements, host events and automation peer. */
 
-        comment sourceRef /* Source: src/DemaConsulting.Plexus.Avalonia/DiagramEditor*.cs, src/DemaConsulting.Plexus.Avalonia/*EventArgs.cs, src/DemaConsulting.Plexus.Avalonia/AssemblyInfo.cs */
-        comment testRef /* Test: test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditor*Tests.cs, test/DemaConsulting.Plexus.Avalonia.Tests/Editor/DiagramEditorWireEditingTests.cs */
-        comment designRef /* Design: docs/design/plexus-avalonia/editor/diagram-editor.md */
-        comment verificationRef /* Verification: docs/verification/plexus-avalonia/editor/diagram-editor.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus-avalonia/editor/diagram-editor.yaml */
+        metadata info : SoftwareInfo {
+            description = "The Avalonia editor control: view state, selection, keyboard, rename, annotation editing, history commands, hover tooltips, navigation to elements, host events and automation peer.";
+            sourceFiles = ("src/DemaConsulting.Plexus.Avalonia/DiagramEditor.AddNode.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.Annotation.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.Commands.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.DragDrop.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.Input.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.Keyboard.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.Navigation.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.Rename.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.Selection.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.SelectionCommands.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.ToolTips.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditor.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramEditorAutomationPeer.cs", "src/DemaConsulting.Plexus.Avalonia/ClipboardFailedEventArgs.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramContextRequestedEventArgs.cs", "src/DemaConsulting.Plexus.Avalonia/DiagramToolTipRequestedEventArgs.cs", "src/DemaConsulting.Plexus.Avalonia/NodeDoubleClickedEventArgs.cs", "src/DemaConsulting.Plexus.Avalonia/NodeTypeActivatedEventArgs.cs", "src/DemaConsulting.Plexus.Avalonia/PasteFailedEventArgs.cs", "src/DemaConsulting.Plexus.Avalonia/AssemblyInfo.cs");
+            testFiles = ("test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorAnnotationEditTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorClipboardTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorDragTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorDynamicPortsTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorHistoryCommandTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorKeyboardTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorNavigationTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorNodeDropTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorPageTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorRenameAndEventTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorRenderTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorSelectionCommandTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorSelectionTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorToolTipTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/DiagramEditorViewTests.cs", "test/DemaConsulting.Plexus.Avalonia.Tests/Editor/DiagramEditorWireEditingTests.cs");
+            designFiles = ("docs/design/plexus-avalonia/editor/diagram-editor.md");
+            verificationFiles = ("docs/verification/plexus-avalonia/editor/diagram-editor.md");
+            requirementFiles = ("docs/reqstream/plexus-avalonia/editor/diagram-editor.yaml");
+        }
     }
 }

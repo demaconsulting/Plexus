@@ -1,11 +1,16 @@
 package PlexusAvalonia {
+    private import SoftwareItemMetadata::*;
+
     part def AvaloniaTextMeasurer {
         doc /* Text measurer backed by Avalonia text APIs. */
 
-        comment sourceRef /* Source: src/DemaConsulting.Plexus.Avalonia/AvaloniaTextMeasurer.cs */
-        comment testRef /* Test: test/DemaConsulting.Plexus.Avalonia.Tests/AvaloniaTextMeasurerTests.cs */
-        comment designRef /* Design: docs/design/plexus-avalonia/avalonia-text-measurer.md */
-        comment verificationRef /* Verification: docs/verification/plexus-avalonia/avalonia-text-measurer.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus-avalonia/avalonia-text-measurer.yaml */
+        metadata info : SoftwareInfo {
+            description = "Text measurer backed by Avalonia text APIs.";
+            sourceFiles = ("src/DemaConsulting.Plexus.Avalonia/AvaloniaTextMeasurer.cs");
+            testFiles = ("test/DemaConsulting.Plexus.Avalonia.Tests/AvaloniaTextMeasurerTests.cs");
+            designFiles = ("docs/design/plexus-avalonia/avalonia-text-measurer.md");
+            verificationFiles = ("docs/verification/plexus-avalonia/avalonia-text-measurer.md");
+            requirementFiles = ("docs/reqstream/plexus-avalonia/avalonia-text-measurer.yaml");
+        }
     }
 }

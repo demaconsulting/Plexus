@@ -4,7 +4,7 @@ using DemaConsulting.Plexus.Geometry;
 using DemaConsulting.Plexus.Scene;
 
 /// <summary>
-///     Unit tests for <see cref="ApproximateTextMeasurer"/> and the <see cref="ITextMeasurer"/> contract it fulfils.
+///     Unit tests for <see cref="ApproximateTextMeasurer"/> and the <see cref="ITextMeasurer"/> contract it fulfills.
 /// </summary>
 public class TextMeasurementTests
 {

@@ -223,7 +223,7 @@ public sealed partial class DiagramEditor
             return false;
         }
 
-        // An interaction in flight consumes the request: cancelling it is the whole undo.
+        // An interaction in flight consumes the request: canceling it is the whole undo.
         if (_gesture is not null || IsEditing)
         {
             CancelInteractions();
@@ -254,7 +254,7 @@ public sealed partial class DiagramEditor
             return false;
         }
 
-        // An interaction in flight consumes the request: cancelling it is the whole redo.
+        // An interaction in flight consumes the request: canceling it is the whole redo.
         if (_gesture is not null || IsEditing)
         {
             CancelInteractions();

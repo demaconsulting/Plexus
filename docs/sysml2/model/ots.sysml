@@ -1,4 +1,6 @@
 package OTS {
+    private import SoftwareItemMetadata::*;
+
     doc
     /*
      * Off-the-shelf (third-party) software items used by Plexus: runtime libraries consumed by the
@@ -8,120 +10,165 @@ package OTS {
     part def CanvasNet {
         doc /* DemaConsulting.CanvasNet and DemaConsulting.CanvasNet.Svg: 2D drawing, text, SVG rasterization and PNG encoding used by the headless renderer. */
 
-        comment designRef /* Design: docs/design/ots/canvasnet.md */
-        comment verificationRef /* Verification: docs/verification/ots/canvasnet.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/canvasnet.yaml */
+        metadata info : SoftwareInfo {
+            description = "DemaConsulting.CanvasNet and DemaConsulting.CanvasNet.Svg: 2D drawing, text, SVG rasterization and PNG encoding used by the headless renderer.";
+            designFiles = ("docs/design/ots/canvasnet.md");
+            verificationFiles = ("docs/verification/ots/canvasnet.md");
+            requirementFiles = ("docs/reqstream/ots/canvasnet.yaml");
+        }
     }
 
     part def Avalonia {
         doc /* Avalonia UI framework (including Avalonia.Headless for tests): controls, drawing context, input and clipboard used by the editor control. */
 
-        comment designRef /* Design: docs/design/ots/avalonia.md */
-        comment verificationRef /* Verification: docs/verification/ots/avalonia.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/avalonia.yaml */
+        metadata info : SoftwareInfo {
+            description = "Avalonia UI framework (including Avalonia.Headless for tests): controls, drawing context, input and clipboard used by the editor control.";
+            designFiles = ("docs/design/ots/avalonia.md");
+            verificationFiles = ("docs/verification/ots/avalonia.md");
+            requirementFiles = ("docs/reqstream/ots/avalonia.yaml");
+        }
     }
 
     part def SvgSkia {
         doc /* Svg.Controls.Skia.Avalonia: converts SVG text to Avalonia images for node icons in the editor control. */
 
-        comment designRef /* Design: docs/design/ots/svg-skia.md */
-        comment verificationRef /* Verification: docs/verification/ots/svg-skia.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/svg-skia.yaml */
+        metadata info : SoftwareInfo {
+            description = "Svg.Controls.Skia.Avalonia: converts SVG text to Avalonia images for node icons in the editor control.";
+            designFiles = ("docs/design/ots/svg-skia.md");
+            verificationFiles = ("docs/verification/ots/svg-skia.md");
+            requirementFiles = ("docs/reqstream/ots/svg-skia.yaml");
+        }
     }
 
     part def XUnit {
         doc /* xUnit v3 unit-testing framework used to discover, execute and report automated tests. */
 
-        comment designRef /* Design: docs/design/ots/xunit.md */
-        comment verificationRef /* Verification: docs/verification/ots/xunit.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/xunit.yaml */
+        metadata info : SoftwareInfo {
+            description = "xUnit v3 unit-testing framework used to discover, execute and report automated tests.";
+            designFiles = ("docs/design/ots/xunit.md");
+            verificationFiles = ("docs/verification/ots/xunit.md");
+            requirementFiles = ("docs/reqstream/ots/xunit.yaml");
+        }
     }
 
     part def ReqStream {
         doc /* ReqStream tool enforcing requirements-to-test traceability and generating requirements reports. */
 
-        comment designRef /* Design: docs/design/ots/reqstream.md */
-        comment verificationRef /* Verification: docs/verification/ots/reqstream.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/reqstream.yaml */
+        metadata info : SoftwareInfo {
+            description = "ReqStream tool enforcing requirements-to-test traceability and generating requirements reports.";
+            designFiles = ("docs/design/ots/reqstream.md");
+            verificationFiles = ("docs/verification/ots/reqstream.md");
+            requirementFiles = ("docs/reqstream/ots/reqstream.yaml");
+        }
     }
 
     part def BuildMark {
         doc /* BuildMark tool generating build-notes documentation from build metadata. */
 
-        comment designRef /* Design: docs/design/ots/buildmark.md */
-        comment verificationRef /* Verification: docs/verification/ots/buildmark.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/buildmark.yaml */
+        metadata info : SoftwareInfo {
+            description = "BuildMark tool generating build-notes documentation from build metadata.";
+            designFiles = ("docs/design/ots/buildmark.md");
+            verificationFiles = ("docs/verification/ots/buildmark.md");
+            requirementFiles = ("docs/reqstream/ots/buildmark.yaml");
+        }
     }
 
     part def VersionMark {
         doc /* VersionMark tool capturing and publishing tool-version information. */
 
-        comment designRef /* Design: docs/design/ots/versionmark.md */
-        comment verificationRef /* Verification: docs/verification/ots/versionmark.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/versionmark.yaml */
+        metadata info : SoftwareInfo {
+            description = "VersionMark tool capturing and publishing tool-version information.";
+            designFiles = ("docs/design/ots/versionmark.md");
+            verificationFiles = ("docs/verification/ots/versionmark.md");
+            requirementFiles = ("docs/reqstream/ots/versionmark.yaml");
+        }
     }
 
     part def SarifMark {
         doc /* SarifMark tool converting CodeQL SARIF results to a markdown report. */
 
-        comment designRef /* Design: docs/design/ots/sarifmark.md */
-        comment verificationRef /* Verification: docs/verification/ots/sarifmark.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/sarifmark.yaml */
+        metadata info : SoftwareInfo {
+            description = "SarifMark tool converting CodeQL SARIF results to a markdown report.";
+            designFiles = ("docs/design/ots/sarifmark.md");
+            verificationFiles = ("docs/verification/ots/sarifmark.md");
+            requirementFiles = ("docs/reqstream/ots/sarifmark.yaml");
+        }
     }
 
     part def SonarMark {
         doc /* SonarMark tool generating a SonarCloud quality report. */
 
-        comment designRef /* Design: docs/design/ots/sonarmark.md */
-        comment verificationRef /* Verification: docs/verification/ots/sonarmark.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/sonarmark.yaml */
+        metadata info : SoftwareInfo {
+            description = "SonarMark tool generating a SonarCloud quality report.";
+            designFiles = ("docs/design/ots/sonarmark.md");
+            verificationFiles = ("docs/verification/ots/sonarmark.md");
+            requirementFiles = ("docs/reqstream/ots/sonarmark.yaml");
+        }
     }
 
     part def SysML2Tools {
         doc /* SysML2Tools tool linting the SysML2 architecture model and rendering its views to SVG. */
 
-        comment designRef /* Design: docs/design/ots/sysml2tools.md */
-        comment verificationRef /* Verification: docs/verification/ots/sysml2tools.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/sysml2tools.yaml */
+        metadata info : SoftwareInfo {
+            description = "SysML2Tools tool linting the SysML2 architecture model and rendering its views to SVG.";
+            designFiles = ("docs/design/ots/sysml2tools.md");
+            verificationFiles = ("docs/verification/ots/sysml2tools.md");
+            requirementFiles = ("docs/reqstream/ots/sysml2tools.yaml");
+        }
     }
 
     part def ReviewMark {
         doc /* ReviewMark tool enforcing file review coverage and currency. */
 
-        comment designRef /* Design: docs/design/ots/reviewmark.md */
-        comment verificationRef /* Verification: docs/verification/ots/reviewmark.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/reviewmark.yaml */
+        metadata info : SoftwareInfo {
+            description = "ReviewMark tool enforcing file review coverage and currency.";
+            designFiles = ("docs/design/ots/reviewmark.md");
+            verificationFiles = ("docs/verification/ots/reviewmark.md");
+            requirementFiles = ("docs/reqstream/ots/reviewmark.yaml");
+        }
     }
 
     part def Pandoc {
         doc /* Pandoc tool converting markdown documentation to HTML. */
 
-        comment designRef /* Design: docs/design/ots/pandoc.md */
-        comment verificationRef /* Verification: docs/verification/ots/pandoc.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/pandoc.yaml */
+        metadata info : SoftwareInfo {
+            description = "Pandoc tool converting markdown documentation to HTML.";
+            designFiles = ("docs/design/ots/pandoc.md");
+            verificationFiles = ("docs/verification/ots/pandoc.md");
+            requirementFiles = ("docs/reqstream/ots/pandoc.yaml");
+        }
     }
 
     part def WeasyPrint {
         doc /* WeasyPrint tool converting HTML documentation to PDF. */
 
-        comment designRef /* Design: docs/design/ots/weasyprint.md */
-        comment verificationRef /* Verification: docs/verification/ots/weasyprint.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/weasyprint.yaml */
+        metadata info : SoftwareInfo {
+            description = "WeasyPrint tool converting HTML documentation to PDF.";
+            designFiles = ("docs/design/ots/weasyprint.md");
+            verificationFiles = ("docs/verification/ots/weasyprint.md");
+            requirementFiles = ("docs/reqstream/ots/weasyprint.yaml");
+        }
     }
 
     part def FileAssert {
         doc /* FileAssert tool validating generated documents against acceptance criteria. */
 
-        comment designRef /* Design: docs/design/ots/fileassert.md */
-        comment verificationRef /* Verification: docs/verification/ots/fileassert.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/fileassert.yaml */
+        metadata info : SoftwareInfo {
+            description = "FileAssert tool validating generated documents against acceptance criteria.";
+            designFiles = ("docs/design/ots/fileassert.md");
+            verificationFiles = ("docs/verification/ots/fileassert.md");
+            requirementFiles = ("docs/reqstream/ots/fileassert.yaml");
+        }
     }
 
     part def ApiMark {
         doc /* ApiMark MSBuild package generating the gradual-disclosure Markdown API reference shipped in each NuGet package. */
 
-        comment designRef /* Design: docs/design/ots/apimark.md */
-        comment verificationRef /* Verification: docs/verification/ots/apimark.md */
-        comment reqRef /* Requirements: docs/reqstream/ots/apimark.yaml */
+        metadata info : SoftwareInfo {
+            description = "ApiMark MSBuild package generating the gradual-disclosure Markdown API reference shipped in each NuGet package.";
+            designFiles = ("docs/design/ots/apimark.md");
+            verificationFiles = ("docs/verification/ots/apimark.md");
+            requirementFiles = ("docs/reqstream/ots/apimark.yaml");
+        }
     }
 }

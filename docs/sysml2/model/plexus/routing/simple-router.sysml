@@ -1,11 +1,16 @@
 package Plexus {
+    private import SoftwareItemMetadata::*;
+
     part def SimpleRouter {
         doc /* Lightweight router that produces simple orthogonal routes without obstacle avoidance. */
 
-        comment sourceRef /* Source: src/DemaConsulting.Plexus/Routing/SimpleRouter.cs */
-        comment testRef /* Test: test/DemaConsulting.Plexus.Tests/Routing/SimpleRouterTests.cs */
-        comment designRef /* Design: docs/design/plexus/routing/simple-router.md */
-        comment verificationRef /* Verification: docs/verification/plexus/routing/simple-router.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus/routing/simple-router.yaml */
+        metadata info : SoftwareInfo {
+            description = "Lightweight router that produces simple orthogonal routes without obstacle avoidance.";
+            sourceFiles = ("src/DemaConsulting.Plexus/Routing/SimpleRouter.cs");
+            testFiles = ("test/DemaConsulting.Plexus.Tests/Routing/SimpleRouterTests.cs");
+            designFiles = ("docs/design/plexus/routing/simple-router.md");
+            verificationFiles = ("docs/verification/plexus/routing/simple-router.md");
+            requirementFiles = ("docs/reqstream/plexus/routing/simple-router.yaml");
+        }
     }
 }

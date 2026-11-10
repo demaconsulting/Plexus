@@ -309,7 +309,7 @@ public class NodePropertySourceTests
     }
 
     /// <summary>
-    ///     Cancelling a staged session changes nothing and the live data is never touched while editing.
+    ///     Canceling a staged session changes nothing and the live data is never touched while editing.
     /// </summary>
     [Fact]
     public void NodePropertySource_StagedCancel_ChangesNothing()

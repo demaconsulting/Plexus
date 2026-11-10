@@ -279,7 +279,7 @@ sections:
               - id: Plexus-Scene-SceneBuilder-ProxyPorts
                 title: >-
                   The builder shall give a collapsed group one proxy port per inner port that a wire crossing the
-                  group boundary uses (inputs left, outputs right, labelled with the inner port's path), display
+                  group boundary uses (inputs left, outputs right, labeled with the inner port's path), display
                   such wires to the proxy port with a transient route, and hide wires with both ends inside the group.
                 justification: |
                   Collapsed groups must stay visibly connected, and wires inside them must not clutter the picture.

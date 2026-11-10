@@ -1,5 +1,5 @@
 ---
-# Spell-Checking
+# Spell-Checking with TextLint
 #
 # PURPOSE:
 # - Maintain professional documentation and code quality
@@ -12,80 +12,75 @@
 version: "0.2"
 language: en
 
+# The files to spell-check
+files:
+  - "**/*.{md,yaml,yml,json,cs,cpp,hpp,h,txt}"
+# Also check hidden paths such as .github/ and .*.yaml
+enableGlobDot: true
+
 # Project-specific technical terms and tool names
 words:
-  - apimark
+  - AARRGGBB
+  - Adsr
+  - ADSR
+  - Argb
+  - ARGB
   - axaml
-  - ApiMark
-  - inheritdoc
-  - msbuild
-  - Tomlyn
-  - buildmark
-  - DEMA
+  - BGRA
+  - browsable
+  - Browsable
+  - Butterworth
+  - CLIPBRD
+  - Cutme
   - Dema
-  - FileAssert
-  - fileassert
-  - xunit
-  - Pandoc
+  - DEMA
+  - demaconsulting
+  - DEMACONSULTINGNUGETKEY
+  - dwmapi
+  - fghij
+  - headlessly
+  - Headlessly
+  - HRESULT
+  - ijlt
+  - Labelled
+  - LTRB
+  - Namey
+  - ncipollo
+  - nestings
+  - netstandard
+  - ordinally
+  - pngs
   - Qube
-  - reqstream
-  - reviewmark
+  - rasterizations
+  - Rasterizations
+  - redoable
+  - Renam
+  - reparsed
+  - ROOTOWNER
+  - sarif
   - Sarif
   - SARIF
-  - sarifmark
-  - sonarmark
-  - sysml
-  - versionmark
-  - Weasy
-  - WeasyPrint
-  - weasyprint
-  - netstandard
-  - yamlfix
-  # Plexus domain and dependency terms
-  - dwmapi
-  - Avalonia
-  - canvasnet
-  - CanvasNet
-  - demaconsulting
-  - FlaUI
-  - focusable
-  - browsable
-  - Skia
+  - Setext
+  - shopt
   - slnx
-  - Segoe
-  - headlessly
+  - snupkg
+  - sonarscanner
+  - thirdparty
+  - Tomlyn
   - undoable
+  - Undoable
   - undoably
-  - redoable
-  - ungroup
-  - ungrouping
-  - rects
-  - rasterizations
-  - rasterizes
-  - rasterizing
-  - reparsed
-  - rethrowing
-  - pngs
-  - ADSR
-  - Butterworth
-  - RGBA
-  - BGRA
-  - Argb
-  - AARRGGBB
-  - RRGGBB
-  - LTRB
-  - HRESULT
-  - CLIPBRD
-  - ordinally
-  - ROOTOWNER
-  # Test fixture literals (sample names, keystroke-like strings and sample text)
-  - Cutme
-  - fghij
-  - ijlt
-  - Namey
+  - Undoably
   - undu
+  - ungroup
+  - Ungroup
+  - ungrouping
   - ünïcode
+  - unidirectionality
+  - venv
+  - Weasy
   - Xena
+  - yamlfix
   - zoomtofit
 
 # Exclude common build artifacts, dependencies, and vendored third-party code

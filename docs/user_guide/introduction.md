@@ -78,7 +78,7 @@ annotated .NET object and adds a small adapter for Plexus nodes.
 Plexus follows the
 [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance) methodology, which ensures
 compliance evidence is generated automatically on every CI run. Requirements are traced to passing tests, markdownlint,
-cspell and yamllint are enforced before any build proceeds, and each release ships with generated requirements, trace
+TextLint and yamllint are enforced before any build proceeds, and each release ships with generated requirements, trace
 matrix, design, verification and quality documents.
 
 ## References

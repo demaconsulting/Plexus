@@ -73,7 +73,7 @@ public class AudioPreviewTests
     }
 
     /// <summary>
-    ///     Validates that the oscillator plot spans two periods in ms with labelled time ticks and amplitude grid lines that
+    ///     Validates that the oscillator plot spans two periods in ms with labeled time ticks and amplitude grid lines that
     ///     fit the offset wave.
     /// </summary>
     [Fact]
@@ -148,7 +148,7 @@ public class AudioPreviewTests
 
     /// <summary>
     ///     Validates that the envelope follows attack, decay to sustain, the illustrative hold and release, with each phase
-    ///     labelled on a ms axis.
+    ///     labeled on a ms axis.
     /// </summary>
     [Fact]
     public void AudioPreview_Envelope_FollowsAdsrWithLabelledPhases()
@@ -219,7 +219,7 @@ public class AudioPreviewTests
     }
 
     /// <summary>
-    ///     Validates the filter plot: a logarithmic 20 Hz to 20 kHz axis with labelled decades, a dB axis every 12 dB and
+    ///     Validates the filter plot: a logarithmic 20 Hz to 20 kHz axis with labeled decades, a dB axis every 12 dB and
     ///     a cutoff marker.
     /// </summary>
     [Fact]

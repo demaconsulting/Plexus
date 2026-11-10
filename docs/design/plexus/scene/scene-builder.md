@@ -169,7 +169,7 @@ highlight, and, only while selected, the resize handle with its hit target.
 
 `AddExpandedGroup` and `AddCollapsedGroup`: draw the frame or box, title bar, toggle and title; publish the group
 layout; record hit targets (border band, header and toggle for expanded groups; box and toggle for collapsed ones).
-Proxy ports mirror the node port look and are labelled with the inner port's path.
+Proxy ports mirror the node port look and are labeled with the inner port's path.
 
 `StandardNodeVisual.Build`: adds the glow (when the style has one), the box, the title (wrapped, and shrunk in
 half-unit steps down to a minimum font size while it would not fit), the icon, the name, the summary lines and the

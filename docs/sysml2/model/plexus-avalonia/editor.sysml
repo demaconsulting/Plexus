@@ -1,11 +1,16 @@
 package PlexusAvalonia {
+    private import SoftwareItemMetadata::*;
+
     part def Editor {
         doc /* Interactive editor control: view, input gestures, clipboard bridge and drag-and-drop of node types. */
 
-        comment testRef /* Test: test/DemaConsulting.Plexus.Avalonia.Tests/Editor/EditorTests.cs */
-        comment designRef /* Design: docs/design/plexus-avalonia/editor.md */
-        comment verificationRef /* Verification: docs/verification/plexus-avalonia/editor.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus-avalonia/editor.yaml */
+        metadata info : SoftwareInfo {
+            description = "Interactive editor control: view, input gestures, clipboard bridge and drag-and-drop of node types.";
+            testFiles = ("test/DemaConsulting.Plexus.Avalonia.Tests/Editor/EditorTests.cs");
+            designFiles = ("docs/design/plexus-avalonia/editor.md");
+            verificationFiles = ("docs/verification/plexus-avalonia/editor.md");
+            requirementFiles = ("docs/reqstream/plexus-avalonia/editor.yaml");
+        }
 
         part diagramEditor : DiagramEditor;
         part gestures : Gestures;

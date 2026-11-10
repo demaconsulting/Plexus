@@ -90,7 +90,7 @@ While a gesture runs it owns the pointer: movement and release are forwarded to 
 (rubber band, connection preview) after the scene. A gesture that edits the model does so inside one history
 transaction, so release commits one undo entry and cancellation rolls the model back completely.
 
-Cancelling is centralized in the control. Escape, Undo, Redo, a page change, losing pointer capture, leaving the visual
+Canceling is centralized in the control. Escape, Undo, Redo, a page change, losing pointer capture, leaving the visual
 tree and switching to read-only mode all abandon the running gesture; Undo and Redo also abandon an open inline editor.
 In those cases the request is consumed and the history is untouched, so a second request is needed to revert the
 previous completed entry.

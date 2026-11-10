@@ -219,7 +219,7 @@ public class LogicEvaluatorTests
     }
 
     /// <summary>
-    ///     Validates that a scene built from the logic sample draws the gates as paths and that a gate's centre hits the node.
+    ///     Validates that a scene built from the logic sample draws the gates as paths and that a gate's center hits the node.
     /// </summary>
     [Fact]
     public void GateVisual_LogicSampleScene_DrawsPathsAndHitTestsTheNode()
