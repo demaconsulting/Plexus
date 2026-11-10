@@ -11,6 +11,7 @@ package PlexusRendering {
 
         metadata info : SoftwareInfo {
             description = "Headless renderer that paints a Plexus scene for one page to a PNG image using CanvasNet.";
+            sourceFiles = ("src/DemaConsulting.Plexus.Rendering/NamespaceDoc.cs");
             testFiles = ("test/DemaConsulting.Plexus.Rendering.Tests/PlexusRenderingTests.cs");
             designFiles = ("docs/design/plexus-rendering.md");
             verificationFiles = ("docs/verification/plexus-rendering.md");

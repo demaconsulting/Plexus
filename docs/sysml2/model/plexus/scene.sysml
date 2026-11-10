@@ -6,6 +6,7 @@ package Plexus {
 
         metadata info : SoftwareInfo {
             description = "Painter-independent scene graph: theme, node layout, text measurement, scene building and hit testing.";
+            sourceFiles = ("src/DemaConsulting.Plexus/Scene/NamespaceDoc.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/Scene/SceneTests.cs");
             designFiles = ("docs/design/plexus/scene.md");
             verificationFiles = ("docs/verification/plexus/scene.md");

@@ -11,6 +11,7 @@ package PlexusAvalonia {
 
         metadata info : SoftwareInfo {
             description = "Avalonia editor control that shows one diagram page at a time with pointer and keyboard editing, inline rename, host events and an operating-system clipboard bridge.";
+            sourceFiles = ("src/DemaConsulting.Plexus.Avalonia/NamespaceDoc.cs");
             testFiles = ("test/DemaConsulting.Plexus.Avalonia.Tests/PlexusAvaloniaTests.cs");
             designFiles = ("docs/design/plexus-avalonia.md");
             verificationFiles = ("docs/verification/plexus-avalonia.md");
