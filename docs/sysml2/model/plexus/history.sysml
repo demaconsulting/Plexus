@@ -1,11 +1,16 @@
 package Plexus {
+    private import SoftwareItemMetadata::*;
+
     part def History {
         doc /* Command-based undo/redo history in which every operation is undoable. */
 
-        comment testRef /* Test: test/DemaConsulting.Plexus.Tests/History/HistoryTests.cs */
-        comment designRef /* Design: docs/design/plexus/history.md */
-        comment verificationRef /* Verification: docs/verification/plexus/history.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus/history.yaml */
+        metadata info : SoftwareInfo {
+            description = "Command-based undo/redo history in which every operation is undoable.";
+            testFiles = ("test/DemaConsulting.Plexus.Tests/History/HistoryTests.cs");
+            designFiles = ("docs/design/plexus/history.md");
+            verificationFiles = ("docs/verification/plexus/history.md");
+            requirementFiles = ("docs/reqstream/plexus/history.yaml");
+        }
 
         part undoHistory : UndoHistory;
     }

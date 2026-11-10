@@ -86,7 +86,7 @@ public class GesturesTests
     });
 
     /// <summary>
-    ///     Validates that cancelling a drag restores positions, the selection and the history.
+    ///     Validates that canceling a drag restores positions, the selection and the history.
     /// </summary>
     [Fact]
     public Task MoveGesture_Cancel_AfterDrag_RestoresPositionSelectionAndHistory() => UiTest.Run(host =>
@@ -311,7 +311,7 @@ public class GesturesTests
     });
 
     /// <summary>
-    ///     Validates that cancelling a resize restores the original bounds and records nothing.
+    ///     Validates that canceling a resize restores the original bounds and records nothing.
     /// </summary>
     [Fact]
     public Task ResizeGesture_Cancel_AfterDrag_RestoresBoundsAndHistory() => UiTest.Run(host =>
@@ -393,7 +393,7 @@ public class GesturesTests
     });
 
     /// <summary>
-    ///     Validates that cancelling a segment drag restores the original route and records nothing.
+    ///     Validates that canceling a segment drag restores the original route and records nothing.
     /// </summary>
     [Fact]
     public Task WireSegmentGesture_Cancel_AfterDrag_RestoresRoute() => UiTest.Run(host =>
@@ -522,7 +522,7 @@ public class GesturesTests
     });
 
     /// <summary>
-    ///     Validates that a band never records history and that cancelling it leaves the live selection alone.
+    ///     Validates that a band never records history and that canceling it leaves the live selection alone.
     /// </summary>
     [Fact]
     public Task RubberBandGesture_Cancel_AfterMove_RecordsNoHistory() => UiTest.Run(host =>

@@ -33,7 +33,7 @@ public sealed partial class DiagramEditor
     private EditorGesture? _gesture;
 
     /// <summary>
-    ///     The pointer captured for the gesture in progress, so cancelling can release it.
+    ///     The pointer captured for the gesture in progress, so canceling can release it.
     /// </summary>
     private IPointer? _gesturePointer;
 

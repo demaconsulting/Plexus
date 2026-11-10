@@ -1,11 +1,16 @@
 package PlexusAvalonia {
+    private import SoftwareItemMetadata::*;
+
     part def PlexusIcons {
         doc /* Converts host SVG icons to cached Avalonia images, tolerating malformed SVG. */
 
-        comment sourceRef /* Source: src/DemaConsulting.Plexus.Avalonia/PlexusIcons.cs */
-        comment testRef /* Test: test/DemaConsulting.Plexus.Avalonia.Tests/PlexusIconsTests.cs */
-        comment designRef /* Design: docs/design/plexus-avalonia/plexus-icons.md */
-        comment verificationRef /* Verification: docs/verification/plexus-avalonia/plexus-icons.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus-avalonia/plexus-icons.yaml */
+        metadata info : SoftwareInfo {
+            description = "Converts host SVG icons to cached Avalonia images, tolerating malformed SVG.";
+            sourceFiles = ("src/DemaConsulting.Plexus.Avalonia/PlexusIcons.cs");
+            testFiles = ("test/DemaConsulting.Plexus.Avalonia.Tests/PlexusIconsTests.cs");
+            designFiles = ("docs/design/plexus-avalonia/plexus-icons.md");
+            verificationFiles = ("docs/verification/plexus-avalonia/plexus-icons.md");
+            requirementFiles = ("docs/reqstream/plexus-avalonia/plexus-icons.yaml");
+        }
     }
 }

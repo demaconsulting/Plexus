@@ -1,11 +1,16 @@
 package Plexus {
+    private import SoftwareItemMetadata::*;
+
     part def Serialization {
         doc /* Versioned JSON clipboard interchange and the snapshot model behind it. */
 
-        comment testRef /* Test: test/DemaConsulting.Plexus.Tests/Serialization/SerializationTests.cs */
-        comment designRef /* Design: docs/design/plexus/serialization.md */
-        comment verificationRef /* Verification: docs/verification/plexus/serialization.md */
-        comment reqRef /* Requirements: docs/reqstream/plexus/serialization.yaml */
+        metadata info : SoftwareInfo {
+            description = "Versioned JSON clipboard interchange and the snapshot model behind it.";
+            testFiles = ("test/DemaConsulting.Plexus.Tests/Serialization/SerializationTests.cs");
+            designFiles = ("docs/design/plexus/serialization.md");
+            verificationFiles = ("docs/verification/plexus/serialization.md");
+            requirementFiles = ("docs/reqstream/plexus/serialization.yaml");
+        }
 
         part snapshotUnit : Snapshot;
         part plexusClipboard : PlexusClipboard;

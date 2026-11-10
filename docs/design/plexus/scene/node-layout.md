@@ -20,7 +20,7 @@ of annotation text (`TextWrapper`).
   of triangle and label where wires attach), the node's visual bounds (box, name, summary lines and, per port row, the
   triangle height or the label's line height in `PortLabelTextStyle` - whichever is taller - centered on the row from
   the box edge out to the anchor; 15 units for the classic theme versus a 10-unit triangle), and the routing obstacles
-  (the inflated node box plus one strip, one port row tall, per labelled port whose label reaches beyond the margin).
+  (the inflated node box plus one strip, one port row tall, per labeled port whose label reaches beyond the margin).
   The visual bounds and the `RoutingObstacles(Rect, Node, DiagramTheme)` overload use the node's current ports (which a
   `NodeType.PortProvider` may compute per node); the `RoutingObstacles(Rect, NodeType, DiagramTheme)` overload uses the
   type's declared ports. The internal `PortColumnHeight(node, theme)` is the required height of the node's longer

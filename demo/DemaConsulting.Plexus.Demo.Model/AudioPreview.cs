@@ -91,7 +91,7 @@ public static class AudioPreview
     private static readonly double[] ResponseTickDecibels = [-48.0, -36.0, -24.0, -12.0, 0.0];
 
     /// <summary>
-    ///     The labelled ticks of the logarithmic frequency axis.
+    ///     The labeled ticks of the logarithmic frequency axis.
     /// </summary>
     private static readonly IReadOnlyList<PlotTick> FrequencyTicks =
     [
@@ -224,7 +224,7 @@ public static class AudioPreview
     }
 
     /// <summary>
-    ///     Plots an ADSR envelope with its four phases labelled A, D, S and R.
+    ///     Plots an ADSR envelope with its four phases labeled A, D, S and R.
     /// </summary>
     /// <param name="settings">The envelope settings.</param>
     /// <returns>The plot: X in ms, Y the level from 0 % to 100 %, and one region per phase.</returns>

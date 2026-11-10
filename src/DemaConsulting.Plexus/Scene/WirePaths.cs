@@ -83,7 +83,7 @@ internal static class WirePaths
         IReadOnlyList<Point>? sharpCorners = null,
         IReadOnlyList<WireHop>? hops = null)
     {
-        // Repeated points have no direction and would make corner maths degenerate
+        // Repeated points have no direction and would make corner math degenerate
         var distinct = RemoveRepeatedPoints(points);
 
         var commands = new List<PathCommand>(distinct.Count + 4);
@@ -141,7 +141,7 @@ internal static class WirePaths
     }
 
     /// <summary>
-    ///     Drops consecutive points that coincide, which have no direction and would make corner maths degenerate.
+    ///     Drops consecutive points that coincide, which have no direction and would make corner math degenerate.
     /// </summary>
     /// <param name="points">The polyline points.</param>
     /// <returns>The points without repeats.</returns>

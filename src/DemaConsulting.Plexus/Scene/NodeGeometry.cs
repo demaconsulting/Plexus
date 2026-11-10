@@ -377,7 +377,7 @@ public static class NodeGeometry
     /// </summary>
     /// <remarks>
     ///     The first box is the node box inflated by <see cref="DiagramTheme.ObstacleMargin"/>. Every
-    ///     labelled port whose label reaches beyond that margin adds a strip from the box edge to its
+    ///     labeled port whose label reaches beyond that margin adds a strip from the box edge to its
     ///     anchor (one port row tall), so wires of other nodes never run across a port label. A
     ///     port's own wire is unaffected because its stub leaves from the end of its own strip.
     /// </remarks>

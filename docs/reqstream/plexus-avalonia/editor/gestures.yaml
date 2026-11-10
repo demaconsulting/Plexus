@@ -35,7 +35,7 @@ sections:
 
               - id: PlexusAvalonia-Editor-Gestures-MoveCancel
                 title: >-
-                  Cancelling a move gesture shall restore the positions, remove any copies, restore the previous
+                  Canceling a move gesture shall restore the positions, remove any copies, restore the previous
                   selection and leave the history unchanged.
                 justification: |
                   Decomposes PlexusAvalonia-Editor-GestureCancellation; Escape must undo a drag completely.
@@ -76,7 +76,7 @@ sections:
 
               - id: PlexusAvalonia-Editor-Gestures-ConnectCancel
                 title: >-
-                  Cancelling a connect gesture shall forget the port it hovered so that nothing is connected.
+                  Canceling a connect gesture shall forget the port it hovered so that nothing is connected.
                 justification: |
                   Decomposes PlexusAvalonia-Editor-GestureCancellation.
                 tests:
@@ -102,7 +102,7 @@ sections:
 
               - id: PlexusAvalonia-Editor-Gestures-ResizeCancel
                 title: >-
-                  Cancelling a resize gesture shall restore the original bounds and leave the history unchanged.
+                  Canceling a resize gesture shall restore the original bounds and leave the history unchanged.
                 justification: |
                   Decomposes PlexusAvalonia-Editor-GestureCancellation.
                 tests:
@@ -130,7 +130,7 @@ sections:
 
               - id: PlexusAvalonia-Editor-Gestures-WireSegmentCancel
                 title: >-
-                  Cancelling a wire segment gesture shall restore the original route and leave the history
+                  Canceling a wire segment gesture shall restore the original route and leave the history
                   unchanged.
                 justification: |
                   Decomposes PlexusAvalonia-Editor-GestureCancellation.

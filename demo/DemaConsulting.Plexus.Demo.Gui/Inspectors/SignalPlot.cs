@@ -8,7 +8,7 @@ using DemaConsulting.Plexus.Demo.Model;
 namespace DemaConsulting.Plexus.Demo.Gui.Inspectors;
 
 /// <summary>
-///     A small, theme-aware plot of one trace: grid lines, axes with tick labels and titles, labelled regions and markers,
+///     A small, theme-aware plot of one trace: grid lines, axes with tick labels and titles, labeled regions and markers,
 ///     drawn directly with a <see cref="DrawingContext"/>.
 /// </summary>
 /// <remarks>
@@ -235,7 +235,7 @@ internal sealed class SignalPlot : Control
         new(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Typeface.Default, FontSize, brush);
 
     /// <summary>
-    ///     Draws the labelled regions as alternating bands behind everything else.
+    ///     Draws the labeled regions as alternating bands behind everything else.
     /// </summary>
     /// <param name="context">The drawing context.</param>
     /// <param name="data">The plot.</param>

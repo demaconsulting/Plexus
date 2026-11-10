@@ -92,7 +92,7 @@ public class OrthogonalRouterTests
     }
 
     /// <summary>
-    ///     Validates that top and bottom sides are honoured as stub directions.
+    ///     Validates that top and bottom sides are honored as stub directions.
     /// </summary>
     [Fact]
     public void OrthogonalRouter_Route_BottomStartSide_LeavesDownward()
