@@ -11,6 +11,7 @@ package Plexus {
 
         metadata info : SoftwareInfo {
             description = "UI-free core library: document model, undo history, node types, properties, routing, scene graph and clipboard serialization for node-based diagrams.";
+            sourceFiles = ("src/DemaConsulting.Plexus/NamespaceDoc.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/PlexusTests.cs", "test/DemaConsulting.Plexus.Tests/PlexusWireStylingTests.cs", "test/DemaConsulting.Plexus.Tests/PlexusNodeStylingTests.cs");
             designFiles = ("docs/design/plexus.md");
             verificationFiles = ("docs/verification/plexus.md");

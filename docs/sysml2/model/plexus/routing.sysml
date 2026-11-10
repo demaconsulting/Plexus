@@ -6,6 +6,7 @@ package Plexus {
 
         metadata info : SoftwareInfo {
             description = "Wire routing strategies producing orthogonal waypoints between ports.";
+            sourceFiles = ("src/DemaConsulting.Plexus/Routing/NamespaceDoc.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/Routing/RoutingTests.cs");
             designFiles = ("docs/design/plexus/routing.md");
             verificationFiles = ("docs/verification/plexus/routing.md");
