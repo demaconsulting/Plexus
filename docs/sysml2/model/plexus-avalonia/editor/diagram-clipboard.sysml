@@ -5,7 +5,6 @@ package PlexusAvalonia {
         doc /* Operating-system clipboard bridge and clipboard text formats. */
 
         metadata info : SoftwareInfo {
-            description = "Operating-system clipboard bridge and clipboard text formats.";
             sourceFiles = ("src/DemaConsulting.Plexus.Avalonia/IDiagramClipboard.cs", "src/DemaConsulting.Plexus.Avalonia/SystemDiagramClipboard.cs", "src/DemaConsulting.Plexus.Avalonia/TextFormats.cs");
             testFiles = ("test/DemaConsulting.Plexus.Avalonia.Tests/Editor/DiagramClipboardTests.cs");
             designFiles = ("docs/design/plexus-avalonia/editor/diagram-clipboard.md");

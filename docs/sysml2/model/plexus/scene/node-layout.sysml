@@ -5,7 +5,6 @@ package Plexus {
         doc /* Node geometry, port placement and text layout and wrapping. */
 
         metadata info : SoftwareInfo {
-            description = "Node geometry, port placement and text layout and wrapping.";
             sourceFiles = ("src/DemaConsulting.Plexus/Scene/NodeGeometry.cs", "src/DemaConsulting.Plexus/Scene/NodeLayout.cs", "src/DemaConsulting.Plexus/Scene/PortLayout.cs", "src/DemaConsulting.Plexus/Scene/LayoutText.cs", "src/DemaConsulting.Plexus/Scene/TextWrapper.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/Scene/NodeLayoutTests.cs");
             designFiles = ("docs/design/plexus/scene/node-layout.md");

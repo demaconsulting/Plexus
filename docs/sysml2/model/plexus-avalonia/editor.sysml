@@ -5,7 +5,6 @@ package PlexusAvalonia {
         doc /* Interactive editor control: view, input gestures, clipboard bridge and drag-and-drop of node types. */
 
         metadata info : SoftwareInfo {
-            description = "Interactive editor control: view, input gestures, clipboard bridge and drag-and-drop of node types.";
             testFiles = ("test/DemaConsulting.Plexus.Avalonia.Tests/Editor/EditorTests.cs");
             designFiles = ("docs/design/plexus-avalonia/editor.md");
             verificationFiles = ("docs/verification/plexus-avalonia/editor.md");

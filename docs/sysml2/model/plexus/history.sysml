@@ -5,7 +5,6 @@ package Plexus {
         doc /* Command-based undo/redo history in which every operation is undoable. */
 
         metadata info : SoftwareInfo {
-            description = "Command-based undo/redo history in which every operation is undoable.";
             testFiles = ("test/DemaConsulting.Plexus.Tests/History/HistoryTests.cs");
             designFiles = ("docs/design/plexus/history.md");
             verificationFiles = ("docs/verification/plexus/history.md");
