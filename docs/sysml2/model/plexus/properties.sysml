@@ -5,7 +5,6 @@ package Plexus {
         doc /* Typed, undoable property definitions and per-element property bags. */
 
         metadata info : SoftwareInfo {
-            description = "Typed, undoable property definitions and per-element property bags.";
             testFiles = ("test/DemaConsulting.Plexus.Tests/Properties/PropertiesTests.cs");
             designFiles = ("docs/design/plexus/properties.md");
             verificationFiles = ("docs/verification/plexus/properties.md");

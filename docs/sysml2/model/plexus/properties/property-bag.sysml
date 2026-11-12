@@ -5,7 +5,6 @@ package Plexus {
         doc /* Per-node property storage with typed values and automatic undo. */
 
         metadata info : SoftwareInfo {
-            description = "Per-node property storage with typed values and automatic undo.";
             sourceFiles = ("src/DemaConsulting.Plexus/Properties/PropertyBag.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/PropertyBagTests.cs");
             designFiles = ("docs/design/plexus/properties/property-bag.md");

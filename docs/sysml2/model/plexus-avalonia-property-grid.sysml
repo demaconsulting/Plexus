@@ -10,7 +10,6 @@ package PlexusAvaloniaPropertyGrid {
         doc /* Generic, annotation-driven property grid for Avalonia: the UI-free layers and the Avalonia controls (grid, editors, collection editor, dialog) that show and edit any annotated .NET object through System.ComponentModel annotations, type converters, edit sessions and a pluggable editor registry. */
 
         metadata info : SoftwareInfo {
-            description = "Generic, annotation-driven property grid for Avalonia: the UI-free layers and the Avalonia controls (grid, editors, collection editor, dialog) that show and edit any annotated .NET object through System.ComponentModel annotations, type converters, edit sessions and a pluggable editor registry.";
             sourceFiles = ("src/DemaConsulting.Plexus.Avalonia.PropertyGrid/NamespaceDoc.cs");
             testFiles = ("test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/PlexusAvaloniaPropertyGridTests.cs");
             designFiles = ("docs/design/plexus-avalonia-property-grid.md");
