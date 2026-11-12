@@ -3,11 +3,14 @@
 // directly. Per SysML2Tools syntax, 'expose' is only valid inside a named 'view' usage (not a
 // 'view def' definition), and it - not 'render' - is what scopes the rendered diagram content.
 package Plexus {
-    view SoftwareStructureView {
+    private import StandardViewDefinitions::*;
+
+    view SoftwareStructureView : GeneralView {
         expose Plexus::**;
         expose PlexusRendering::**;
         expose PlexusAvalonia::**;
         expose PlexusAvaloniaPropertyGrid::**;
+        filter not @SysML::Documentation;
     }
 
     view PlexusView {
