@@ -5,7 +5,6 @@ package PlexusRendering {
         doc /* Paints scene primitives (rectangles, paths, text, icons, grid) onto a CanvasNet surface. */
 
         metadata info : SoftwareInfo {
-            description = "Paints scene primitives (rectangles, paths, text, icons, grid) onto a CanvasNet surface.";
             sourceFiles = ("src/DemaConsulting.Plexus.Rendering/ScenePainter.cs");
             testFiles = ("test/DemaConsulting.Plexus.Rendering.Tests/ScenePainterTests.cs");
             designFiles = ("docs/design/plexus-rendering/scene-painter.md");

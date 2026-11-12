@@ -5,7 +5,6 @@ package Plexus {
         doc /* Diagram document model: diagram root, pages, nodes, ports, wires, annotations and groups with undoable mutation and change notification. */
 
         metadata info : SoftwareInfo {
-            description = "Diagram document model: diagram root, pages, nodes, ports, wires, annotations and groups with undoable mutation and change notification.";
             testFiles = ("test/DemaConsulting.Plexus.Tests/Model/ModelTests.cs");
             designFiles = ("docs/design/plexus/model.md");
             verificationFiles = ("docs/verification/plexus/model.md");

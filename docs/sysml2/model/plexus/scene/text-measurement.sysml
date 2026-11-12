@@ -5,7 +5,6 @@ package Plexus {
         doc /* Text measurement abstraction and the approximate default measurer. */
 
         metadata info : SoftwareInfo {
-            description = "Text measurement abstraction and the approximate default measurer.";
             sourceFiles = ("src/DemaConsulting.Plexus/Scene/ITextMeasurer.cs", "src/DemaConsulting.Plexus/Scene/ApproximateTextMeasurer.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/Scene/TextMeasurementTests.cs");
             designFiles = ("docs/design/plexus/scene/text-measurement.md");

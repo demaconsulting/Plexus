@@ -5,7 +5,6 @@ package PlexusRendering {
         doc /* Cache of rasterized SVG icons keyed by icon and size. */
 
         metadata info : SoftwareInfo {
-            description = "Cache of rasterized SVG icons keyed by icon and size.";
             sourceFiles = ("src/DemaConsulting.Plexus.Rendering/IconCache.cs");
             testFiles = ("test/DemaConsulting.Plexus.Rendering.Tests/IconCacheTests.cs");
             designFiles = ("docs/design/plexus-rendering/icon-cache.md");

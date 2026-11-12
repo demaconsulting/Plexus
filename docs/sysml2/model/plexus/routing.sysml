@@ -5,7 +5,6 @@ package Plexus {
         doc /* Wire routing strategies producing orthogonal waypoints between ports. */
 
         metadata info : SoftwareInfo {
-            description = "Wire routing strategies producing orthogonal waypoints between ports.";
             sourceFiles = ("src/DemaConsulting.Plexus/Routing/NamespaceDoc.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/Routing/RoutingTests.cs");
             designFiles = ("docs/design/plexus/routing.md");

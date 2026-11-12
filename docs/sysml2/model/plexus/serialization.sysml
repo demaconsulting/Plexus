@@ -5,7 +5,6 @@ package Plexus {
         doc /* Versioned JSON clipboard interchange and the snapshot model behind it. */
 
         metadata info : SoftwareInfo {
-            description = "Versioned JSON clipboard interchange and the snapshot model behind it.";
             testFiles = ("test/DemaConsulting.Plexus.Tests/Serialization/SerializationTests.cs");
             designFiles = ("docs/design/plexus/serialization.md");
             verificationFiles = ("docs/verification/plexus/serialization.md");

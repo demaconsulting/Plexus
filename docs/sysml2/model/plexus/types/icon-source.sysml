@@ -5,7 +5,6 @@ package Plexus {
         doc /* SVG icon descriptor supplied by hosts for node types. */
 
         metadata info : SoftwareInfo {
-            description = "SVG icon descriptor supplied by hosts for node types.";
             sourceFiles = ("src/DemaConsulting.Plexus/Types/IconSource.cs");
             testFiles = ("test/DemaConsulting.Plexus.Tests/Types/IconSourceTests.cs", "test/DemaConsulting.Plexus.Tests/TypesAndGeometryTests.cs");
             designFiles = ("docs/design/plexus/types/icon-source.md");
