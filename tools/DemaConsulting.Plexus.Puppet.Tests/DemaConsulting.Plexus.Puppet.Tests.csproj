@@ -61,7 +61,7 @@
 
   <!-- Project References: the Avalonia library is referenced only to prove the Puppet's palette id rule agrees with the library's -->
   <ItemGroup>
-    <ProjectReference Include="..\..\tools\DemaConsulting.Plexus.Puppet\DemaConsulting.Plexus.Puppet.csproj" />
+    <ProjectReference Include="..\DemaConsulting.Plexus.Puppet\DemaConsulting.Plexus.Puppet.csproj" />
     <ProjectReference Include="..\..\src\DemaConsulting.Plexus.Avalonia\DemaConsulting.Plexus.Avalonia.csproj" />
   </ItemGroup>
 

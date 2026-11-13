@@ -12,10 +12,10 @@
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/DemaConsulting.Plexus.Puppet/DemaConsulting.Plexus.Puppet.csproj" />
+    <Project Path="tools/DemaConsulting.Plexus.Puppet.Tests/DemaConsulting.Plexus.Puppet.Tests.csproj" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="test/DemaConsulting.Plexus.Demo.Tests/DemaConsulting.Plexus.Demo.Tests.csproj" />
-    <Project Path="test/DemaConsulting.Plexus.Puppet.Tests/DemaConsulting.Plexus.Puppet.Tests.csproj" />
     <Project Path="test/DemaConsulting.Plexus.Tests/DemaConsulting.Plexus.Tests.csproj" />
     <Project Path="test/DemaConsulting.Plexus.Avalonia.Tests/DemaConsulting.Plexus.Avalonia.Tests.csproj" />
     <Project Path="test/DemaConsulting.Plexus.Rendering.Tests/DemaConsulting.Plexus.Rendering.Tests.csproj" />

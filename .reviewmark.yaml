@@ -19,9 +19,8 @@ needs-review:
   - "!node_modules/**"           # Exclude npm dependencies
   - "!**/.venv/**"                # Exclude Python virtual environment
   - "!demo/**"                    # Exclude demo applications (not shipped, not software items)
-  - "!tools/**"                   # Exclude agent tooling (not shipped, not software items)
+  - "!tools/**"                   # Exclude agent tooling and its tests (not shipped, not software items)
   - "!test/DemaConsulting.Plexus.Demo.Tests/**"    # Exclude demo test project (not shipped)
-  - "!test/DemaConsulting.Plexus.Puppet.Tests/**"  # Exclude tooling test project (not shipped)
 
 # Evidence source: review data and index.json are located in the 'reviews' branch
 # of this repository, accessed through the GitHub public HTTPS raw content access.

@@ -195,7 +195,7 @@ test/DemaConsulting.Plexus.Avalonia.Tests/  — PlexusAvalonia system tests
 test/DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/ — PlexusAvaloniaPropertyGrid system tests
 
 demo/                                       — Not shipped: demo model, CLI renderer and Avalonia demo application
-tools/                                      — Not shipped: Puppet agent tooling that drives the demo application
+tools/                                      — Not shipped: agent tooling that drives the demo application, and its tests
 ```
 
 The `demo/` and `tools/` folders (and the test projects that accompany them) are not software items: they are not
@@ -227,19 +227,16 @@ These decisions apply across the packages; decisions specific to one system are 
   Avalonia; the unit tests of the packages that use them cover the functionality Plexus relies on.
 - **Demo and tooling are examples, not products.** The demo application (a reference host with node domains, a
   properties dialog on double-click, multiple pages and clipboard exchange between instances) and the command-line
-  renderer share one demo model and JSON format. The Puppet driver combines UI Automation for windows, menus and
-  dialogs, a named pipe for model commands and geometry queries, and real operating-system mouse input at the screen
-  coordinates the pipe reports, so the control's real gesture code is exercised. The pipe endpoint exists only in the
-  demo build and never in a shipped package.
+  renderer share one demo model and JSON format. The demo build adds an automation endpoint for the non-shipping agent
+  tooling under `tools/`; it exists only in the demo build and never in a shipped package. The demo and the tooling are
+  not software items and provide no verification evidence.
 
 ## Known Limitations and Future Considerations
 
-- **Windows-only demo automation.** The Puppet driver depends on Windows-only UI Automation libraries, so the demo
-  automation and the real-input verification run on Windows only. The packages themselves have no platform
+- **No real operating-system input in the tests.** The control tests drive the editor through Avalonia's headless
+  platform; gestures from real operating-system mouse input and the operating-system clipboard between processes need
+  an interactive desktop and are not part of the automated verification. The packages themselves have no platform
   restriction.
-- **Real-input verification needs an interactive desktop.** The mouse-gesture and operating-system-clipboard scenarios
-  between two demo instances need an unlocked interactive desktop and cannot run in CI; the Puppet scenarios are run
-  manually before a release.
 - **SVG subset parity.** The two painters use different SVG engines (see _SvgSkia_ and _CanvasNet_ in the OTS design
   documents); hosts should keep icons within the common subset.
 - **Clipboard format evolution.** Negotiation of a future clipboard format version and of mismatched node-type
