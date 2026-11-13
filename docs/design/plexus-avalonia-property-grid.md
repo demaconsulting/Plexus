@@ -191,7 +191,7 @@ the user commits.
 
 ## Design Constraints
 
-- Targets .NET 10 and is tested on Windows, Linux and macOS.
+- Targets .NET 10 and .NET 11 and is tested on Windows, Linux and macOS.
 - The generic layers must not reference Plexus types; the Plexus adapter is a separate layer built on `IPropertySource`
   and `IPropertyCommitScope`.
 - Every commit through a Plexus source is exactly one undo entry; hosts do not supply a commit scope for it.

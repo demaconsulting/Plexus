@@ -123,7 +123,7 @@ public class NodeStylePixelTests
     /// <summary>
     ///     Gets the folder where the tests save their pictures for inspection.
     /// </summary>
-    private static string PicturePath => Path.Join(Path.GetTempPath(), "plexus-node-style");
+    private static string PicturePath => Path.Join(Path.GetTempPath(), $"plexus-node-style-net{Environment.Version.Major}");
 
     /// <summary>
     ///     Gets the fill of a node's box in a scene.

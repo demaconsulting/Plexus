@@ -100,7 +100,7 @@ whole render).
 
 ## Design Constraints
 
-- Targets .NET 10 and is tested on Windows, Linux and macOS.
+- Targets .NET 10 and .NET 11 and is tested on Windows, Linux and macOS.
 - The package must stay headless: no reference to any UI framework (verified by a system test).
 - Text is measured and painted through the same font lookup, which prefers an installed font of the theme's family
   and falls back to the bundled Liberation Sans; output therefore differs slightly between machines with and without
@@ -130,5 +130,6 @@ whole render).
 - **Fonts differ between machines.** Output differs slightly between machines with and without the theme's font family
   installed (see _Design Constraints_); layout always matches the pixels on one machine, but stored reference images
   should be compared with a tolerance or on a controlled font set.
-- **Single target framework.** The package targets one framework although CanvasNet supports the framework range of the
-  core. Whether it should multi-target like the core is an open question that depends on consumer demand.
+- **Narrower target frameworks.** The package targets .NET 10 and .NET 11 only although CanvasNet supports the framework
+  range of the core. Whether it should also target .NET 8 and .NET 9 like the core is an open question that depends on
+  consumer demand.

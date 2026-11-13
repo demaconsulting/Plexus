@@ -168,7 +168,7 @@ public class NodeDropGhostTests
     /// <summary>
     ///     Gets the folder where the tests save their pictures for inspection.
     /// </summary>
-    private static string PicturePath => Path.Join(Path.GetTempPath(), "plexus-palette");
+    private static string PicturePath => Path.Join(Path.GetTempPath(), $"plexus-palette-net{Environment.Version.Major}");
 
     /// <summary>
     ///     Reads one pixel of a captured frame.

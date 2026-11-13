@@ -18,8 +18,8 @@ Verification_ and _SvgSkia Verification_).
 
 ## Test Environment
 
-- .NET 10 test runner, run on Windows, Linux and macOS in the build pipeline; the platform requirements use source
-  filters so each platform's own results are the evidence.
+- .NET 10 and .NET 11 test runners, run on Windows, Linux and macOS in the build pipeline; the platform requirements use
+  source filters so each platform's and runtime's own results are the evidence.
 - The Avalonia headless platform with Skia drawing (real text measurement and real rendered frames) and the Fluent
   theme, so that text boxes behave like those of an application. No display, network or other service is needed.
 - Tests that use the system clipboard rely on the headless platform's clipboard and do not depend on the machine's

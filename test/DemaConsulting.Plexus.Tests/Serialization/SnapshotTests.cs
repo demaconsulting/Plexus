@@ -461,6 +461,78 @@ public partial class SnapshotTests
     }
 
     /// <summary>
+    ///     Validates that a document without a format version is rejected on every runtime, as an unsupported version.
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Deserialize_MissingFormatVersion_IsRejected()
+    {
+        // Arrange: a document that omits formatVersion (the .NET 11 source generator would otherwise keep the initializer)
+        const string json = """{"pages":[]}""";
+
+        // Act / Assert: both the reader and the diagram loader refuse it
+        Assert.Throws<SnapshotException>(() => PlexusJson.Deserialize(json));
+        Assert.Throws<SnapshotException>(() => Diagram.FromJson(json, SerializationFixtures.CreateTypes()));
+    }
+
+    /// <summary>
+    ///     Validates that optional snapshot members missing from the JSON read as null on every runtime (the .NET 8 to 10
+    ///     behavior), and that such a document still loads.
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime()
+    {
+        // Arrange: no pages at all, and a second document whose page, node, wire and group omit every optional member
+        const string noPages = """{"formatVersion":1}""";
+        const string sparse = """
+            {"formatVersion":1,"pages":[
+              {"name":"Empty"},
+              {"name":"Sparse",
+               "nodes":[{"id":"n1","typeKey":"acme.Producer","name":"A","bounds":{"x":0,"y":0,"width":90,"height":90}}],
+               "wires":[{"id":"w1","sourceNodeId":"n1","sourcePort":"value","targetNodeId":"n1","targetPort":"value"}],
+               "groups":[{"id":"g1","title":"G","collapsedPosition":{"x":0,"y":0}}]}]}
+            """;
+
+        // Act
+        var withoutPages = PlexusJson.Deserialize(noPages);
+        var withSparsePages = PlexusJson.Deserialize(sparse);
+
+        // Assert: every member with an initializer is null when missing, not its initializer value
+        Assert.Null(withoutPages.Pages);
+        var empty = withSparsePages.Pages[0];
+        Assert.Null(empty.Nodes);
+        Assert.Null(empty.Wires);
+        Assert.Null(empty.Annotations);
+        Assert.Null(empty.Groups);
+        var page = withSparsePages.Pages[1];
+        Assert.Null(page.Annotations);
+        Assert.Null(Assert.Single(page.Nodes).Properties);
+        Assert.Null(Assert.Single(page.Wires).Route);
+        Assert.Null(Assert.Single(page.Groups).MemberIds);
+        Assert.Empty(Diagram.FromJson(noPages, SerializationFixtures.CreateTypes()).Pages);
+        Assert.Empty(Assert.Single(Diagram.FromJson("""{"formatVersion":1,"pages":[{"name":"Empty"}]}""", SerializationFixtures.CreateTypes()).Pages).Nodes);
+    }
+
+    /// <summary>
+    ///     Validates that element lists missing from clipboard JSON read as null on every runtime (the .NET 8 to 10 behavior).
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime()
+    {
+        // Arrange: a clipboard envelope with only its marker and version
+        var json = $$"""{"format":"{{PlexusClipboard.FormatId}}","version":{{PlexusClipboard.FormatVersion}}}""";
+
+        // Act
+        var envelope = JsonSerializer.Deserialize(json, PlexusJson.Compact.ClipboardEnvelope);
+
+        // Assert
+        Assert.NotNull(envelope);
+        Assert.Null(envelope.Nodes);
+        Assert.Null(envelope.Wires);
+        Assert.Null(envelope.Annotations);
+        Assert.Null(envelope.Groups);
+    }
+
+    /// <summary>
     ///     Validates that wires on ports produced by a port provider survive JSON and tree round trips.
     /// </summary>
     [Fact]

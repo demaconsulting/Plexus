@@ -160,7 +160,7 @@ the host application from the library's one exposure to untrusted data and from 
 
 ## Design Constraints
 
-- **Platforms.** Targets net8.0, net9.0 and net10.0; builds and runs on Windows, Linux and macOS (see the platform
+- **Platforms.** Targets net8.0, net9.0, net10.0 and net11.0; builds and runs on Windows, Linux and macOS (see the platform
   requirements). No platform-specific APIs are used.
 - **No UI or drawing dependency.** The library must be usable in servers, tests and command-line tools; it contains no
   reference to a UI framework, drawing library, file or clipboard API.

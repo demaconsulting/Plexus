@@ -49,6 +49,9 @@ Rejection:
 
 - **Missing types** (`Snapshot_FromSnapshot_MissingNodeTypes_ListsAllOfThem`) and **unsupported version**
   (`Snapshot_UnsupportedVersion_IsRejected`).
+- **Missing version** (`Plexus-Serialization-Snapshot-UnsupportedVersion`;
+  `PlexusJson_Deserialize_MissingFormatVersion_IsRejected`): a document without `formatVersion` is refused by the
+  reader and by `Diagram.FromJson` with a snapshot exception on every target framework.
 - **Invalid content** (`Snapshot_FromSnapshot_InvalidContent_ThrowsSnapshotException`), **duplicate ids across pages**
   (`Snapshot_FromSnapshot_DuplicateIdAcrossPages_Throws`) and **property kind mismatch**
   (`Snapshot_FromSnapshot_PropertyKindMismatch_Throws`).
@@ -72,6 +75,11 @@ JSON shape:
   (`PlexusJson_Serialize_IndentedOptionControlsWhitespace`).
 - **Unknown members ignored**
   (`PlexusJson_Deserialize_UnknownMembers_AreIgnored`), including a type-name member.
+- **Runtime consistency of missing members** (`PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime`,
+  `PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime`): missing `pages`, page element
+  lists, node `properties`, wire `route`, group `memberIds` and clipboard element lists read as null (the .NET 8 to
+  10 result) and such documents still load. They run on all four target frameworks, so a runtime that changes this
+  fails the build; they are not linked to a requirement because no requirement states this behavior.
 - **Six- and eight-digit colors** (`Plexus-Serialization-Snapshot-ColorText`;
   `Snapshot_FromJson_SixAndEightDigitColors_AreRead`): the writer emits `"#FF445566"` for an opaque and `"#80112233"`
   for a translucent color; after the opaque one is rewritten as `"#445566"` both load as the original colors.

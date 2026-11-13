@@ -1,6 +1,6 @@
 ---
-title: Plexus Review Plan
-subtitle: File Review Plan for the Plexus
+title: Plexus Code Review Plan
+subtitle: Node-based diagram editing for .NET
 author: DEMA Consulting
 description: File Review Plan for the Plexus
 lang: en-US

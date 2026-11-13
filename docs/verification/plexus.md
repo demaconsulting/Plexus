@@ -21,11 +21,11 @@ scenarios below by test method name; ReqStream matches the names in the TRX resu
   small test implementations declared in the test class.
 - **Platform requirements.** `Plexus-Platform-*` requirements are verified by running the same hello-diagram test on
   each platform and runtime; the requirement links use source filters (`windows@`, `ubuntu@`, `macos@`, `net8.0@`,
-  `net9.0@`, `net10.0@`) so that only results from that platform or runtime count as evidence.
+  `net9.0@`, `net10.0@`, `net11.0@`) so that only results from that platform or runtime count as evidence.
 
 ## Test Environment
 
-- The standard xUnit v3 runner (`dotnet test`) on .NET 8, .NET 9 and .NET 10; the test project multi-targets these
+- The standard xUnit v3 runner (`dotnet test`) on .NET 8, .NET 9, .NET 10 and .NET 11; the test project multi-targets these
   runtimes, and each scenario runs once per runtime.
 - CI runs the suite on Windows, Linux (Ubuntu) and macOS, producing one TRX file per platform and runtime.
 - No external services, network access, files, fonts or UI framework are required. Every scenario builds its own
@@ -189,8 +189,8 @@ Each heading names a requirement; the bullets name the test methods and what the
 ### Plexus-Core-Snapshot
 
 - **Plexus_Snapshot_ToJsonFromJson_RestoresContentWithCleanHistory**: a diagram with nodes, a property, a wire, an
-  annotation and a group is restored from its JSON with identical content, an empty history and a clean state; an
-  unsupported document is rejected.
+  annotation and a group is restored from its JSON with identical content, an empty history and a clean state; a
+  document without a format version is rejected with a snapshot exception.
 
 ### Plexus-Core-Duplicate
 
@@ -271,5 +271,5 @@ Plexus-Core-DynamicPortResize and Plexus-Core-DynamicPortUndo.
 ### Platform requirements (Plexus-Platform-*)
 
 - **Plexus_HelloDiagram_DefaultConfiguration_BuildsConnectedDiagram**: runs on every platform and runtime of the CI
-  matrix; the Windows, Linux, macOS, .NET 8, .NET 9 and .NET 10 requirements each accept only the result from their own
-  platform or runtime.
+  matrix; the Windows, Linux, macOS, .NET 8, .NET 9, .NET 10 and .NET 11 requirements each accept only the result from
+  their own platform or runtime.

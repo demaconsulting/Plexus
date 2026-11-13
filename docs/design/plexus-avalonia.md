@@ -153,8 +153,8 @@ change never reaches the history.
 
 ## Design Constraints
 
-- Targets .NET 10 and is tested on Windows, Linux and macOS; the control is used on the Avalonia UI thread only, like
-  the model it shows.
+- Targets .NET 10 and .NET 11 and is tested on Windows, Linux and macOS; the control is used on the Avalonia UI thread
+  only, like the model it shows.
 - The control must work with zero configuration: a bound page is displayed with the diagram's own theme and is
   editable.
 - Painting and hit testing must read the same scene so that what the user clicks is what is drawn.

@@ -12,7 +12,8 @@ used throughout the repository.
   copy/paste. It ships a UI-free core, a headless PNG renderer built on CanvasNet,
   and an Avalonia editor control.
 - **languages**: `C#`
-- **technologies**: `.NET`, `Avalonia`, `CanvasNet`, `System.Text.Json`
+- **technologies**: `.NET` (core: net8.0, net9.0, net10.0, net11.0; Rendering, Avalonia
+  and PropertyGrid: net10.0, net11.0), `Avalonia`, `CanvasNet`, `System.Text.Json`
 
 # Project Structure
 
@@ -36,11 +37,15 @@ used throughout the repository.
 ├── src/
 │   ├── DemaConsulting.Plexus/              # Core (model, undo, routing, scene)
 │   ├── DemaConsulting.Plexus.Rendering/    # Headless CanvasNet PNG painter
-│   └── DemaConsulting.Plexus.Avalonia/     # Avalonia editor control
+│   ├── DemaConsulting.Plexus.Avalonia/     # Avalonia editor control
+│   └── DemaConsulting.Plexus.Avalonia.PropertyGrid/  # Avalonia property grid
 ├── test/
 │   ├── DemaConsulting.Plexus.Tests/
 │   ├── DemaConsulting.Plexus.Rendering.Tests/
-│   └── DemaConsulting.Plexus.Avalonia.Tests/
+│   ├── DemaConsulting.Plexus.Avalonia.Tests/
+│   ├── DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/
+│   ├── DemaConsulting.Plexus.Demo.Tests/   # Not shipped: demo tests
+│   └── DemaConsulting.Plexus.Puppet.Tests/ # Not shipped: tooling tests
 └── tools/                                  # Not shipped: agent tooling
     └── DemaConsulting.Plexus.Puppet/
 ```

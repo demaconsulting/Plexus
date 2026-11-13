@@ -16,12 +16,13 @@ Avalonia headless platform (Fluent theme, Skia drawing) on which the control sce
 controls in a window, finds them by automation id, presses keys and captures screenshots, and `SampleModels.cs` holds the
 original sample object. The control scenarios drive the real controls and check the objects they edit; the screenshot
 tests (`PropertyGridScreenshotTests.cs`) render the grid, the dialog and the collection editor to PNG files in the
-`plexus-pg` folder of the temp path, which are reviewed by eye for a clean, professional look.
+`plexus-pg-net{major}` folder of the temp path (one per .NET runtime), which are reviewed by eye for a clean,
+professional look.
 
 ## Test Environment
 
-- .NET 10 test runner, run on Windows, Linux and macOS in the build pipeline; the platform requirements use source
-  filters so each platform's own results are the evidence.
+- .NET 10 and .NET 11 test runners, run on Windows, Linux and macOS in the build pipeline; the platform requirements use
+  source filters so each platform's and runtime's own results are the evidence.
 - No display or network is needed (the Avalonia headless platform renders to memory).
 - Text assertions pass an explicit culture where the result depends on it, and the one test that changes the current
   culture restores it afterwards.

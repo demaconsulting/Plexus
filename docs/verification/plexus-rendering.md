@@ -13,8 +13,8 @@ designs) and CanvasNet is verified as an OTS item through the unit tests (see _C
 
 ## Test Environment
 
-- .NET 10 test runner, run on Windows, Linux and macOS in the build pipeline; the platform requirements use source
-  filters so each platform's own results are the evidence.
+- .NET 10 and .NET 11 test runners, run on Windows, Linux and macOS in the build pipeline; the platform requirements use
+  source filters so each platform's and runtime's own results are the evidence.
 - No display, UI framework or network is needed. Tests that write files use a uniquely named file in the operating
   system's temporary folder and delete it afterwards.
 - Text assertions tolerate the difference between machines with and without the theme font installed (the bundled

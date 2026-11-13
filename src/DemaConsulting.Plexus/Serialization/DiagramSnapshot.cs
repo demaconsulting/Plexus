@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace DemaConsulting.Plexus;
 
 /// <summary>
@@ -22,6 +24,24 @@ public sealed record DiagramSnapshot
     public DiagramSnapshot()
     {
         // Nothing to initialize: every member has a usable default
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="DiagramSnapshot"/> class from JSON.
+    /// </summary>
+    /// <remarks>
+    ///     Binding the members that have initializers through this constructor makes a member missing from the JSON
+    ///     read as 0 or null on every runtime, as the .NET 8 to 10 source generator does; from .NET 11 the generator
+    ///     would otherwise keep the property initializers (see the snapshot design). A document without
+    ///     <c>formatVersion</c> therefore reads as version 0 and is rejected on every runtime.
+    /// </remarks>
+    /// <param name="formatVersion">The format version read from the document, or 0 when missing.</param>
+    /// <param name="pages">The pages read from the document, or null when missing.</param>
+    [JsonConstructor]
+    internal DiagramSnapshot(int formatVersion, IReadOnlyList<PageSnapshot>? pages)
+    {
+        FormatVersion = formatVersion;
+        Pages = pages!;
     }
 
     /// <summary>

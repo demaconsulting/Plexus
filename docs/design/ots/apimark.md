@@ -44,7 +44,7 @@ offers opt-in documentation-coverage enforcement.
 
 ApiMark is referenced as a `PackageReference` with `PrivateAssets="All"` in each of the four shipped projects, so it
 never becomes a dependency of a consuming project. Its target runs after `Build`. For the multi-targeted core project
-(`net8.0;net9.0;net10.0`) it runs once,
+(`net8.0;net9.0;net10.0;net11.0`) it runs once,
 for the first target framework only, which is correct because the public surface is identical across target
 frameworks; the same single `api/` tree is added to the package. The `build.yaml` workflow builds and then packs the
 solution, after which FileAssert asserts the contents of the produced `.nupkg` files (tag `api-docs` in

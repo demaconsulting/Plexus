@@ -12,8 +12,8 @@ Unit-level behavior is verified in the Snapshot and PlexusClipboard unit verific
 
 ### Test Environment
 
-Standard xunit runner of `DemaConsulting.Plexus.Tests` on net8.0, net9.0 and net10.0 on Windows, Linux and macOS. No
-files, network or clipboard are used. The limits tests allocate strings of about 8 MiB and a document of 10,001
+Standard xunit runner of `DemaConsulting.Plexus.Tests` on net8.0, net9.0, net10.0 and net11.0 on Windows, Linux and macOS.
+No files, network or clipboard are used. The limits tests allocate strings of about 8 MiB and a document of 10,001
 annotations.
 
 ### Acceptance Criteria
