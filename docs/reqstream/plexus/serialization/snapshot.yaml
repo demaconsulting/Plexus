@@ -150,6 +150,19 @@ sections:
                 tests:
                   - PlexusJson_Deserialize_UnknownMembers_AreIgnored
 
+              - id: Plexus-Serialization-Snapshot-OmittedMembersEmpty
+                title: >-
+                  Reading a snapshot or clipboard document that omits optional members (pages, element lists, node
+                  properties, wire routes and group member ids) shall treat them as empty, with the same result on
+                  every supported .NET runtime.
+                justification: |
+                  Other tools and hand-written documents leave out empty members, and a document must load the same
+                  way whichever runtime the host uses; the JSON library's handling of omitted members differs between
+                  .NET versions, so the behavior is pinned rather than inherited.
+                tests:
+                  - PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime
+                  - PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime
+
               - id: Plexus-Serialization-Snapshot-Tree
                 title: >-
                   It shall be possible to capture the diagram as a tree of plain values (string, bool, long, double,

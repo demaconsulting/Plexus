@@ -51,6 +51,7 @@ sections:
             children:
               - Plexus-Serialization-Snapshot-JsonShape
               - Plexus-Serialization-Snapshot-UnsupportedVersion
+              - Plexus-Serialization-Snapshot-OmittedMembersEmpty
               - Plexus-Serialization-PlexusClipboard-FormatMarker
             tests:
               - Serialization_Json_IsVersionedAndContainsNoTypeNames
