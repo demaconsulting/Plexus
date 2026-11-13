@@ -78,9 +78,9 @@ JSON shape:
 - **Runtime consistency of missing members** (`Plexus-Serialization-Snapshot-OmittedMembersEmpty`;
   `PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime`,
   `PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime`): missing `pages`, page element
-  lists, node `properties`, wire `route`, group `memberIds` and clipboard element lists read as null (the .NET 8 to
-  10 result) and such documents still load. They run on all four target frameworks, so a runtime that changes this
-  fails the build.
+  lists, node `properties`, wire `route`, group `memberIds` and clipboard element lists deserialize as null (the .NET
+  8 to 10 result), and the snapshot test also loads such documents into a diagram and finds the absent pages and nodes
+  empty. They run on all four target frameworks, so a runtime that changes this fails the build.
 - **Six- and eight-digit colors** (`Plexus-Serialization-Snapshot-ColorText`;
   `Snapshot_FromJson_SixAndEightDigitColors_AreRead`): the writer emits `"#FF445566"` for an opaque and `"#80112233"`
   for a translucent color; after the opaque one is rewritten as `"#445566"` both load as the original colors.
