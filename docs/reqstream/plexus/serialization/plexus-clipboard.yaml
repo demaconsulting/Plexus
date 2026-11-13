@@ -2,9 +2,8 @@
 # Software Unit requirements for Plexus PlexusClipboard.
 #
 # Unit requirements decompose the Serialization subsystem requirements (which link down to these IDs as children) and
-# are proven by the unit tests in ClipboardTests, ClipboardSecurityTests and DuplicateTests (plus one omitted-lists test
-# in SnapshotTests, which reads through the shared JSON context). The unit also owns the duplicate operation of a
-# page, which shares its clone path with copy and paste.
+# are proven by the unit tests in ClipboardTests, ClipboardSecurityTests and DuplicateTests. The unit also owns the
+# duplicate operation of a page, which shares its clone path with copy and paste.
 
 sections:
   - title: Plexus Requirements
