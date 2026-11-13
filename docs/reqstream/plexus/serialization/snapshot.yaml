@@ -152,18 +152,20 @@ sections:
 
               - id: Plexus-Serialization-Snapshot-OmittedMembersEmpty
                 title: >-
-                  Reading a snapshot or clipboard document that omits optional members (pages, element lists, node
-                  properties, wire routes and group member ids) shall deserialize them as absent (null) identically on
-                  every supported .NET runtime, and loading such a snapshot into a diagram shall treat the absent
-                  collections as empty.
+                  Reading a snapshot that omits optional members (pages, element lists, node properties, wire routes and
+                  group member ids) shall deserialize them as absent (null) identically on every supported .NET
+                  runtime, and loading such a snapshot into a diagram shall treat the absent collections as empty.
                 justification: |
                   Other tools and hand-written documents leave out empty members, and a document must be read the same
                   way whichever runtime the host uses. The JSON library's handling of omitted members differs between
                   .NET versions, so the deserialized result is pinned to absent rather than inherited, and the loader
-                  treats absent collections as empty so such documents still load.
+                  treats absent collections as empty so such documents still load. Each runtime's own result is the
+                  evidence.
                 tests:
-                  - PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime
-                  - PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime
+                  - "net8.0@PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime"
+                  - "net9.0@PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime"
+                  - "net10.0@PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime"
+                  - "net11.0@PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime"
 
               - id: Plexus-Serialization-Snapshot-Tree
                 title: >-

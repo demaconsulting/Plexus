@@ -76,11 +76,12 @@ JSON shape:
 - **Unknown members ignored**
   (`PlexusJson_Deserialize_UnknownMembers_AreIgnored`), including a type-name member.
 - **Runtime consistency of missing members** (`Plexus-Serialization-Snapshot-OmittedMembersEmpty`;
-  `PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime`,
-  `PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime`): missing `pages`, page element
-  lists, node `properties`, wire `route`, group `memberIds` and clipboard element lists deserialize as null (the .NET
-  8 to 10 result), and the snapshot test also loads such documents into a diagram and finds the absent pages and nodes
-  empty. They run on all four target frameworks, so a runtime that changes this fails the build.
+  `PlexusJson_Deserialize_MissingOptionalMembers_ReadAsNullOnEveryRuntime`): missing `pages`, page element lists, node
+  `properties`, wire `route` and group `memberIds` deserialize as null (the .NET 8 to 10 result), and loading such
+  documents into a diagram finds the absent pages and nodes empty. The requirement links the result of each target
+  framework (`net8.0@` to `net11.0@`), so a runtime that changes this fails the evidence. The clipboard counterpart
+  (`PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime`) also lives in `SnapshotTests`
+  but is verified under the PlexusClipboard unit.
 - **Six- and eight-digit colors** (`Plexus-Serialization-Snapshot-ColorText`;
   `Snapshot_FromJson_SixAndEightDigitColors_AreRead`): the writer emits `"#FF445566"` for an opaque and `"#80112233"`
   for a translucent color; after the opaque one is rewritten as `"#445566"` both load as the original colors.

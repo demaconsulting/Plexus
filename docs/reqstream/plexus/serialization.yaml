@@ -53,6 +53,7 @@ sections:
               - Plexus-Serialization-Snapshot-UnsupportedVersion
               - Plexus-Serialization-Snapshot-OmittedMembersEmpty
               - Plexus-Serialization-PlexusClipboard-FormatMarker
+              - Plexus-Serialization-PlexusClipboard-OmittedElementListsAbsent
             tests:
               - Serialization_Json_IsVersionedAndContainsNoTypeNames
               - Serialization_InvalidSnapshots_ThrowTheDocumentedExceptions

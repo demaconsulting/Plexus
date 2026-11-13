@@ -23,6 +23,11 @@ every rejection leaves the page, diagram and history exactly as before and never
 Copy:
 
 - **Format marker** (`PlexusClipboard_Copy_WritesFormatIdAndVersion`).
+- **Omitted element lists** (`Plexus-Serialization-PlexusClipboard-OmittedElementListsAbsent`;
+  `PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime`, in `SnapshotTests` because it reads
+  through the shared JSON context): clipboard text with only its marker and version deserializes with null node, wire,
+  annotation and group lists. The requirement links the result of each target framework (`net8.0@` to `net11.0@`), so
+  a runtime that changes this fails the evidence.
 - **Selection expansion**: group members recursively (`PlexusClipboard_Copy_Group_CopiesMembersRecursively`), wire
   with one copied end excluded (`PlexusClipboard_Copy_WireWithOneEndCopied_IsExcluded`) and wire between copied nodes
   included (`PlexusClipboard_Copy_WireBetweenCopiedNodes_IsIncludedImplicitly`).
