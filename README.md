@@ -29,7 +29,7 @@ ships a UI-free core, a headless PNG renderer built on CanvasNet, and an Avaloni
 - 📝 **Property Grid** - Generic, annotation-driven property grid with a one-line node properties dialog and an
   optional live preview panel for custom node inspectors
 - ✨ **Easy by Default** - Working diagram in a few lines; theme, router and text measurer are replaceable
-- 🔄 **Multi-Target** - Core supports .NET 8, 9 and 10; the other packages target .NET 10
+- 🔄 **Multi-Target** - Core supports .NET 8, 9, 10 and 11; the other packages target .NET 10 and 11
 - ✅ **Continuous Compliance** - [Compliance evidence][link-continuous-compliance] generated on every CI run
 
 ## Packages
@@ -173,7 +173,7 @@ The repository includes applications that are **not shipped** in any package:
 
 ## Building
 
-Plexus requires the .NET 10 SDK. To build and test the solution:
+Plexus requires the .NET 11 SDK (plus the .NET 8, 9 and 10 runtimes to run every test target). To build and test the solution:
 
 ```bash
 pwsh ./build.ps1

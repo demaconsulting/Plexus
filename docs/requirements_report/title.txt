@@ -1,6 +1,6 @@
 ---
 title: Plexus Trace Matrix
-subtitle: Requirements Traceability Matrix for the Plexus
+subtitle: Node-based diagram editing for .NET
 author: DEMA Consulting
 description: Requirements Traceability Matrix for the Plexus
 lang: en-US

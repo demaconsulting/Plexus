@@ -15,9 +15,9 @@ to PNG files for visual review.
 
 ### Test Environment
 
-- .NET 10 test runner on Windows, Linux and macOS; the Avalonia headless platform needs no display.
+- .NET 10 and .NET 11 test runners on Windows, Linux and macOS; the Avalonia headless platform needs no display.
 - One headless session is shared by the whole test run (`UiTest`), and every test body runs on its UI thread.
-- Screenshots are written to the `plexus-pg` folder of the temp path.
+- Screenshots are written to the `plexus-pg-net{major}` folder of the temp path (one per .NET runtime).
 
 ### Acceptance Criteria
 

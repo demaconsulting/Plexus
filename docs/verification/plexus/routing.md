@@ -12,7 +12,7 @@ SimpleRouter), with unit requirements linked below the subsystem requirements in
 
 ### Test Environment
 
-The standard xunit test runner of the `DemaConsulting.Plexus.Tests` project on net8.0, net9.0 and net10.0 on Windows,
+The standard xunit test runner of the `DemaConsulting.Plexus.Tests` project on net8.0, net9.0, net10.0 and net11.0 on Windows,
 Linux and macOS. No files, network or fonts are used.
 
 ### Acceptance Criteria

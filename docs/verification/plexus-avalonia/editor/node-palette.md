@@ -20,10 +20,10 @@ The unit's central claim, that an item looks exactly like the node on the canvas
 that shows one type and an editor that received the same type by a drop are rendered in one window at the same zoom
 and theme; the node is renamed to the type's display name, deselected, and scrolled so that its box lies at the same
 fractional screen position as the item's box; the node's visual extent is cropped from both places and every pixel is
-compared with a tolerance of two per channel. The frames are saved to the `plexus-palette` folder in the temporary
-folder so that a person can look at them. The tests are in `NodePaletteTests.cs`, `NodePaletteEditorTests.cs`,
-`NodePaletteColumnTests.cs` and `NodePalettePixelTests.cs`, and share the `PaletteHost` and `PictureReader` fixtures of
-the test project.
+compared with a tolerance of two per channel. The frames are saved to the `plexus-palette-net{major}` folder (one per
+.NET runtime) in the temporary folder so that a person can look at them. The tests are in `NodePaletteTests.cs`,
+`NodePaletteEditorTests.cs`, `NodePaletteColumnTests.cs` and `NodePalettePixelTests.cs`, and share the `PaletteHost`
+and `PictureReader` fixtures of the test project.
 
 The multi-column layout is verified by resizing the palette column of the host fixture (`SetPaletteWidth`, what a
 splitter drag does) to widths computed from the measured cell width, so that exactly k cells fit and one pixel less fits

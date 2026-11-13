@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace DemaConsulting.Plexus;
 
 /// <summary>
@@ -22,6 +24,21 @@ public sealed record DiagramSnapshot
     public DiagramSnapshot()
     {
         // Nothing to initialize: every member has a usable default
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="DiagramSnapshot"/> class from JSON.
+    /// </summary>
+    /// <remarks>
+    ///     Binding the version through the constructor makes a document without <c>formatVersion</c> read as version
+    ///     0 (and so be rejected) on every runtime; from .NET 11 the source generator would otherwise keep the
+    ///     property initializer and silently accept such a document as the current version.
+    /// </remarks>
+    /// <param name="formatVersion">The format version read from the document.</param>
+    [JsonConstructor]
+    internal DiagramSnapshot(int formatVersion)
+    {
+        FormatVersion = formatVersion;
     }
 
     /// <summary>

@@ -73,6 +73,13 @@ diagram or the prose below.
 
 ![Software Structure](SoftwareStructureView.svg)
 
+The diagram below complements the structure view by showing the packages from a host application's point of view:
+the application uses the Rendering, Avalonia and PropertyGrid packages it needs, each built on its OTS library
+(CanvasNet or Avalonia), and all of them depend on the UI-free core.
+
+![Plexus architecture: your application uses the Rendering, Avalonia and PropertyGrid packages, which all depend on
+the UI-free core](architecture.svg)
+
 The software items are classified as follows. Folder depth alone does not determine classification. The SysML2 model
 under `docs/sysml2/` is the authoritative software structure; the list below is a summary derived from it and must be
 kept in agreement with it.
@@ -154,7 +161,7 @@ The source code folder structure mirrors the software structure organization, wi
 and descriptions as follows:
 
 ```text
-src/DemaConsulting.Plexus/                  — Plexus system (net8.0; net9.0; net10.0)
+src/DemaConsulting.Plexus/                  — Plexus system (net8.0; net9.0; net10.0; net11.0)
 ├── Geometry/                               — Geometry unit
 ├── Connections/                            — ConnectionRules unit
 ├── Model/                                  — Model subsystem (Diagram, PageCollection, DiagramPage, Node, Wire,
@@ -167,10 +174,10 @@ src/DemaConsulting.Plexus/                  — Plexus system (net8.0; net9.0; n
 │                                             SceneBuilder and DiagramScene units)
 └── Serialization/                          — Serialization subsystem (Snapshot and PlexusClipboard units)
 
-src/DemaConsulting.Plexus.Rendering/        — PlexusRendering system (net10.0); one file group per unit
-src/DemaConsulting.Plexus.Avalonia.PropertyGrid/ — PlexusAvaloniaPropertyGrid system (net10.0); Diagrams/ holds the Plexus
-                                              adapter (PlexusNodeSource and NodePropertiesDialog units)
-src/DemaConsulting.Plexus.Avalonia/         — PlexusAvalonia system (net10.0)
+src/DemaConsulting.Plexus.Rendering/        — PlexusRendering system (net10.0; net11.0); one file group per unit
+src/DemaConsulting.Plexus.Avalonia.PropertyGrid/ — PlexusAvaloniaPropertyGrid system (net10.0; net11.0); Diagrams/ holds
+                                              the Plexus adapter (PlexusNodeSource and NodePropertiesDialog units)
+src/DemaConsulting.Plexus.Avalonia/         — PlexusAvalonia system (net10.0; net11.0)
 ├── DiagramEditor*.cs and event args        — Editor subsystem, DiagramEditor unit
 ├── Interaction/                            — Editor subsystem, Gestures unit
 ├── IDiagramClipboard.cs, SystemDiagramClipboard.cs, TextFormats.cs
@@ -211,8 +218,8 @@ These decisions apply across the packages; decisions specific to one system are 
 - **Hosts supply the vocabulary.** Node types, port types, icons, connection rules and data payload serializers come
   from the host, with defaults for each; Plexus is aimed at many independent applications, not one product, and ships
   no node-type catalog.
-- **Target frameworks.** The core multi-targets net8.0, net9.0 and net10.0 because every host references it; the
-  renderer, the editor and the property grid target net10.0 only.
+- **Target frameworks.** The core multi-targets net8.0, net9.0, net10.0 and net11.0 because every host references it;
+  the renderer, the editor and the property grid target net10.0 and net11.0 only.
 - **API governance and reference.** Public API tracking follows the repository template's defaults, with no extra
   tracking tooling. The API reference is generated from the XML documentation by ApiMark and packed into each package
   (see _ApiMark_ in the OTS design documents).

@@ -1,6 +1,6 @@
 ---
-title: Plexus Requirements
-subtitle: Requirements Specification for the Plexus
+title: Plexus Requirements Document
+subtitle: Node-based diagram editing for .NET
 author: DEMA Consulting
 description: Requirements Specification for the Plexus
 lang: en-US

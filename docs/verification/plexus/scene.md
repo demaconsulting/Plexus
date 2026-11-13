@@ -11,8 +11,8 @@ verification designs (DiagramTheme, NodeLayout, TextMeasurement, SceneBuilder, D
 
 ### Test Environment
 
-The standard xunit runner of `DemaConsulting.Plexus.Tests` on net8.0, net9.0 and net10.0 on Windows, Linux and macOS.
-No fonts, files or network are used.
+The standard xunit runner of `DemaConsulting.Plexus.Tests` on net8.0, net9.0, net10.0 and net11.0 on Windows, Linux and
+macOS. No fonts, files or network are used.
 
 ### Acceptance Criteria
 

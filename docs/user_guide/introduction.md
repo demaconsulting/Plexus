@@ -69,8 +69,8 @@ Plexus is delivered as four NuGet packages:
 | `DemaConsulting.Plexus.Avalonia`              | Avalonia editor control and node palette (depends on Avalonia)       |
 | `DemaConsulting.Plexus.Avalonia.PropertyGrid` | Property grid, properties dialog and panel (depends on Avalonia)     |
 
-The core targets .NET 8, 9 and 10 and has no third-party runtime dependencies. The other packages target .NET 10. The
-Avalonia package does not depend on the rendering package, and the property grid package is generic: it edits any
+The core targets .NET 8, 9, 10 and 11 and has no third-party runtime dependencies. The other packages target .NET 10 and
+11. The Avalonia package does not depend on the rendering package, and the property grid package is generic: it edits any
 annotated .NET object and adds a small adapter for Plexus nodes.
 
 ## Continuous Compliance

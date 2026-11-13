@@ -162,7 +162,7 @@ public class DiagramEditorRenderTests
 
         // Act: capture a rendered frame and save it for visual inspection
         var frame = window.CaptureRenderedFrame()!;
-        var picturePath = Path.Join(Path.GetTempPath(), "plexus-avalonia");
+        var picturePath = Path.Join(Path.GetTempPath(), $"plexus-avalonia-net{Environment.Version.Major}");
         Directory.CreateDirectory(picturePath);
         frame.Save(Path.Join(picturePath, "editor-small.png"), PngBitmapEncoderOptions.Default);
 
@@ -200,7 +200,7 @@ public class DiagramEditorRenderTests
         host.BeginDrag(from);
         host.MoveTo(new Point(from.X + 120, from.Y + 90));
         var frame = host.Window.CaptureRenderedFrame()!;
-        var picturePath = Path.Join(Path.GetTempPath(), "plexus-avalonia");
+        var picturePath = Path.Join(Path.GetTempPath(), $"plexus-avalonia-net{Environment.Version.Major}");
         Directory.CreateDirectory(picturePath);
         frame.Save(Path.Join(picturePath, "editor-groups.png"), PngBitmapEncoderOptions.Default);
         host.EndDrag(new Point(from.X + 120, from.Y + 90));

@@ -144,7 +144,7 @@ internal static class GridHarness
         grid.GetVisualDescendants().OfType<PropertyRowView>().Select(r => r.Item!.Path).ToList();
 
     /// <summary>
-    ///     Captures the window as a PNG under the temp folder (<c>plexus-pg</c>).
+    ///     Captures the window as a PNG under the temp folder (<c>plexus-pg-net</c> plus the .NET major version, one per runtime).
     /// </summary>
     /// <param name="window">The window.</param>
     /// <param name="name">The file name without extension.</param>
@@ -152,7 +152,7 @@ internal static class GridHarness
     internal static string Capture(Window window, string name)
     {
         Pump(window);
-        var folder = Path.Join(Path.GetTempPath(), "plexus-pg");
+        var folder = Path.Join(Path.GetTempPath(), $"plexus-pg-net{Environment.Version.Major}");
         Directory.CreateDirectory(folder);
         var path = Path.Join(folder, name + ".png");
         using var frame = window.CaptureRenderedFrame() ?? throw new InvalidOperationException("No frame was rendered.");

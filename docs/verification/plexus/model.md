@@ -14,7 +14,7 @@ of each unit and is not reused as subsystem evidence.
 
 ### Test Environment
 
-Standard xUnit v3 test runner on .NET (net8.0, net9.0 and net10.0). No external services, files or configuration.
+Standard xUnit v3 test runner on .NET (net8.0, net9.0, net10.0 and net11.0). No external services, files or configuration.
 
 ### Acceptance Criteria
 
