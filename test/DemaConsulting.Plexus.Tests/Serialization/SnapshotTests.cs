@@ -513,26 +513,6 @@ public partial class SnapshotTests
     }
 
     /// <summary>
-    ///     Validates that element lists missing from clipboard JSON read as null on every runtime (the .NET 8 to 10 behavior).
-    /// </summary>
-    [Fact]
-    public void PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime()
-    {
-        // Arrange: a clipboard envelope with only its marker and version
-        var json = $$"""{"format":"{{PlexusClipboard.FormatId}}","version":{{PlexusClipboard.FormatVersion}}}""";
-
-        // Act
-        var envelope = JsonSerializer.Deserialize(json, PlexusJson.Compact.ClipboardEnvelope);
-
-        // Assert
-        Assert.NotNull(envelope);
-        Assert.Null(envelope.Nodes);
-        Assert.Null(envelope.Wires);
-        Assert.Null(envelope.Annotations);
-        Assert.Null(envelope.Groups);
-    }
-
-    /// <summary>
     ///     Validates that wires on ports produced by a port provider survive JSON and tree round trips.
     /// </summary>
     [Fact]

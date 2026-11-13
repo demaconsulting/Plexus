@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DemaConsulting.Plexus.Geometry;
 
 namespace DemaConsulting.Plexus.Tests.Serialization;
@@ -274,6 +275,26 @@ public class ClipboardTests
         Assert.Contains("\"format\":\"plexus.clipboard\"", json, StringComparison.Ordinal);
         Assert.Contains("\"version\":1", json, StringComparison.Ordinal);
         Assert.DoesNotContain("$type", json, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    ///     Validates that element lists missing from clipboard JSON read as null on every runtime (the .NET 8 to 10 behavior).
+    /// </summary>
+    [Fact]
+    public void PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime()
+    {
+        // Arrange: a clipboard envelope with only its marker and version
+        var json = $$"""{"format":"{{PlexusClipboard.FormatId}}","version":{{PlexusClipboard.FormatVersion}}}""";
+
+        // Act
+        var envelope = JsonSerializer.Deserialize(json, PlexusJson.Compact.ClipboardEnvelope);
+
+        // Assert
+        Assert.NotNull(envelope);
+        Assert.Null(envelope.Nodes);
+        Assert.Null(envelope.Wires);
+        Assert.Null(envelope.Annotations);
+        Assert.Null(envelope.Groups);
     }
 
     /// <summary>

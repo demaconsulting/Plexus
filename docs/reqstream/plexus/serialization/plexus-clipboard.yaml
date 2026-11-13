@@ -20,6 +20,21 @@ sections:
                 tests:
                   - PlexusClipboard_Copy_WritesFormatIdAndVersion
 
+              - id: Plexus-Serialization-PlexusClipboard-OmittedElementListsAbsent
+                title: >-
+                  Reading clipboard text that omits element lists (nodes, wires, annotations and groups) shall
+                  deserialize them as absent (null) identically on every supported .NET runtime.
+                justification: |
+                  Other applications and hand-written clipboard text leave out empty lists, and pasted text must be
+                  read the same way whichever runtime the host uses. The JSON library's handling of omitted members
+                  differs between .NET versions, so the deserialized result is pinned to absent rather than inherited.
+                  Each runtime's own result is the evidence.
+                tests:
+                  - "net8.0@PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime"
+                  - "net9.0@PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime"
+                  - "net10.0@PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime"
+                  - "net11.0@PlexusJson_Deserialize_ClipboardMissingElementLists_ReadAsNullOnEveryRuntime"
+
               - id: Plexus-Serialization-PlexusClipboard-CopySelection
                 title: >-
                   Copying shall include the members of a selected group recursively and a wire whenever both of its
