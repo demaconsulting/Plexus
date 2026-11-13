@@ -111,7 +111,7 @@ every item in item order (rows are numbered across sections), which the keyboard
   only Down, Up and Enter reach the palette's keyboard handling; Home, End and the editing keys stay with the box.
 - **Automation ids** (`GetAutomationId`) — the public rule that gives an item's id: `NodePalette_` plus the key with
   every character other than an ASCII letter, digit or underscore replaced by an underscore. Items use it; hosts, tests
-  and tools call it (the Puppet restates it and a test asserts that both agree).
+  and tools call it or rely on it.
 - **Automation peers** — the item peer is a list item that implements the Invoke pattern (select and activate) and, like
   every Avalonia peer, supports the ScrollItem pattern, whose scroll request reaches the item's bring-into-view; the
   palette peer is a list.

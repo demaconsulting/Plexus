@@ -44,10 +44,10 @@ used throughout the repository.
 │   ├── DemaConsulting.Plexus.Rendering.Tests/
 │   ├── DemaConsulting.Plexus.Avalonia.Tests/
 │   ├── DemaConsulting.Plexus.Avalonia.PropertyGrid.Tests/
-│   ├── DemaConsulting.Plexus.Demo.Tests/   # Not shipped: demo tests
-│   └── DemaConsulting.Plexus.Puppet.Tests/ # Not shipped: tooling tests
+│   └── DemaConsulting.Plexus.Demo.Tests/   # Not shipped: demo tests
 └── tools/                                  # Not shipped: agent tooling
-    └── DemaConsulting.Plexus.Puppet/
+    ├── DemaConsulting.Plexus.Puppet/
+    └── DemaConsulting.Plexus.Puppet.Tests/ # Tooling tests (not regulated)
 ```
 
 # Language and Spelling (ALL Agents)

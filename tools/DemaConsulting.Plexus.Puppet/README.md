@@ -261,5 +261,5 @@ Another sequence: drag a node, check the wires and undo it.
   Before a chord the Puppet releases only the modifier keys that really are down (a key-up of a key that is not down
   is not something a keyboard sends, and a lone Alt key-up opens the menu bar of an Avalonia window).
 - The Puppet is not a Plexus feature: it is built and unit-tested (argument, chord, geometry and format parsing, and
-  the hover planning: options, park points, wire points and wire lookup) in `test/DemaConsulting.Plexus.Puppet.Tests`,
+  the hover planning: options, park points, wire points and wire lookup) in `tools/DemaConsulting.Plexus.Puppet.Tests`,
   but no UI runs in those tests.
