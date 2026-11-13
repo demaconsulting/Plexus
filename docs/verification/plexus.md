@@ -189,8 +189,8 @@ Each heading names a requirement; the bullets name the test methods and what the
 ### Plexus-Core-Snapshot
 
 - **Plexus_Snapshot_ToJsonFromJson_RestoresContentWithCleanHistory**: a diagram with nodes, a property, a wire, an
-  annotation and a group is restored from its JSON with identical content, an empty history and a clean state; an
-  unsupported document is rejected.
+  annotation and a group is restored from its JSON with identical content, an empty history and a clean state; a
+  document without a format version is rejected with a snapshot exception.
 
 ### Plexus-Core-Duplicate
 

@@ -33,7 +33,10 @@ unchanged.
 
 `PlexusJson.Serialize(snapshot, indented)`: writes the snapshot with the indented or compact context. `Deserialize(json)`:
 parses with the compact context (depth-limited), rejects a null document and rejects any format version other than the
-current one with a `SnapshotException`; JSON syntax and shape problems surface as `JsonException`.
+current one with a `SnapshotException`; JSON syntax and shape problems surface as `JsonException`. A document without
+`formatVersion` is rejected the same way: `DiagramSnapshot` has an internal `[JsonConstructor]` that binds the version,
+so a missing member reads as version 0 on every runtime. Without it, the .NET 11 source generator would keep the
+property initializer (the current version) and silently accept such a document, unlike .NET 8 to 10.
 
 `Diagram.FromSnapshot(snapshot, types)`: checks the version; collects every unknown node type across all pages and
 throws one `SnapshotException` listing them all; creates a diagram, loads each page with history suspended through the
