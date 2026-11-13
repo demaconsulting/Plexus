@@ -13,6 +13,29 @@ namespace DemaConsulting.Plexus;
 public sealed record NodeSnapshot
 {
     /// <summary>
+    ///     Initializes a new instance of the <see cref="NodeSnapshot"/> class.
+    /// </summary>
+    public NodeSnapshot()
+    {
+        // Nothing to initialize: every member is set by an object initializer or keeps its default
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="NodeSnapshot"/> class from JSON.
+    /// </summary>
+    /// <remarks>
+    ///     Binding the members that have initializers through this constructor makes a member missing from the JSON
+    ///     read as null on every runtime, as the .NET 8 to 10 source generator does; from .NET 11 the generator would
+    ///     otherwise keep the property initializer (see the snapshot design).
+    /// </remarks>
+    /// <param name="properties">The stored properties read from the JSON, or null when missing.</param>
+    [JsonConstructor]
+    internal NodeSnapshot(IReadOnlyDictionary<string, PropertySnapshot>? properties)
+    {
+        Properties = properties!;
+    }
+
+    /// <summary>
     ///     Gets the element id.
     /// </summary>
     public required string Id { get; init; }

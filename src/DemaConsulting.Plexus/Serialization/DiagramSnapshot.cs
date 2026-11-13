@@ -30,15 +30,18 @@ public sealed record DiagramSnapshot
     ///     Initializes a new instance of the <see cref="DiagramSnapshot"/> class from JSON.
     /// </summary>
     /// <remarks>
-    ///     Binding the version through the constructor makes a document without <c>formatVersion</c> read as version
-    ///     0 (and so be rejected) on every runtime; from .NET 11 the source generator would otherwise keep the
-    ///     property initializer and silently accept such a document as the current version.
+    ///     Binding the members that have initializers through this constructor makes a member missing from the JSON
+    ///     read as 0 or null on every runtime, as the .NET 8 to 10 source generator does; from .NET 11 the generator
+    ///     would otherwise keep the property initializers (see the snapshot design). A document without
+    ///     <c>formatVersion</c> therefore reads as version 0 and is rejected on every runtime.
     /// </remarks>
-    /// <param name="formatVersion">The format version read from the document.</param>
+    /// <param name="formatVersion">The format version read from the document, or 0 when missing.</param>
+    /// <param name="pages">The pages read from the document, or null when missing.</param>
     [JsonConstructor]
-    internal DiagramSnapshot(int formatVersion)
+    internal DiagramSnapshot(int formatVersion, IReadOnlyList<PageSnapshot>? pages)
     {
         FormatVersion = formatVersion;
+        Pages = pages!;
     }
 
     /// <summary>

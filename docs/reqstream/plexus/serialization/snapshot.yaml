@@ -82,6 +82,7 @@ sections:
                   A reader must not guess at the meaning of a newer format.
                 tests:
                   - Snapshot_UnsupportedVersion_IsRejected
+                  - PlexusJson_Deserialize_MissingFormatVersion_IsRejected
 
               - id: Plexus-Serialization-Snapshot-RejectInvalidContent
                 title: >-

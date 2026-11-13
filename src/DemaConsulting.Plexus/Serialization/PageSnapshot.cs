@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace DemaConsulting.Plexus;
 
 /// <summary>
@@ -10,6 +12,35 @@ namespace DemaConsulting.Plexus;
 /// </remarks>
 public sealed record PageSnapshot
 {
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PageSnapshot"/> class.
+    /// </summary>
+    public PageSnapshot()
+    {
+        // Nothing to initialize: every member is set by an object initializer or keeps its default
+    }
+
+    /// <summary>
+    ///     Initializes a new instance of the <see cref="PageSnapshot"/> class from JSON.
+    /// </summary>
+    /// <remarks>
+    ///     Binding the members that have initializers through this constructor makes a member missing from the JSON
+    ///     read as null on every runtime, as the .NET 8 to 10 source generator does; from .NET 11 the generator would
+    ///     otherwise keep the property initializer (see the snapshot design).
+    /// </remarks>
+    /// <param name="nodes">The nodes read from the JSON, or null when missing.</param>
+    /// <param name="wires">The wires read from the JSON, or null when missing.</param>
+    /// <param name="annotations">The annotations read from the JSON, or null when missing.</param>
+    /// <param name="groups">The groups read from the JSON, or null when missing.</param>
+    [JsonConstructor]
+    internal PageSnapshot(IReadOnlyList<NodeSnapshot>? nodes, IReadOnlyList<WireSnapshot>? wires, IReadOnlyList<AnnotationSnapshot>? annotations, IReadOnlyList<GroupSnapshot>? groups)
+    {
+        Nodes = nodes!;
+        Wires = wires!;
+        Annotations = annotations!;
+        Groups = groups!;
+    }
+
     /// <summary>
     ///     Gets the page name.
     /// </summary>
