@@ -22,7 +22,10 @@ the Avalonia package do not reference it. The `ScenePainter` unit translates sce
 calls, `CanvasTextMeasurer` wraps the CanvasNet font APIs behind the core text-measurement interface, `IconCache`
 rasterizes and caches SVG icons, and `PlexusRenderer` encodes the final surface as PNG. CanvasNet objects are created
 per render call and are not shared across threads; there is no global initialization or disposal step beyond
-disposing the per-render surfaces. Because the library is in a pre-release state, the dependency is pinned to an
+disposing the per-render surfaces. `IconCache` rasterizes the host-supplied icon text from memory and supplies no
+image resolver, so CanvasNet performs no file or network access for an icon: an `<image>` link in an icon draws
+nothing. The file-access policy that CanvasNet 0.2 applies to linked files therefore does not affect Plexus, and
+Plexus sets none. Because the library is in a pre-release state, the dependency is pinned to an
 exact package version in the project file.
 
 ### Known Limitations
