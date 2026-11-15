@@ -96,8 +96,8 @@
   <!-- Project and Package References -->
   <ItemGroup>
     <ProjectReference Include="..\DemaConsulting.Plexus\DemaConsulting.Plexus.csproj" />
-    <PackageReference Include="DemaConsulting.CanvasNet" Version="0.1.0" />
-    <PackageReference Include="DemaConsulting.CanvasNet.Svg" Version="0.1.0" />
+    <PackageReference Include="DemaConsulting.CanvasNet" Version="0.2.0-beta.9" />
+    <PackageReference Include="DemaConsulting.CanvasNet.Svg" Version="0.2.0-beta.9" />
   </ItemGroup>
 
   <ItemGroup>
