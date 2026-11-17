@@ -6,11 +6,11 @@ Scope: Ordered, observable collection of pages with undoable add, insert, remove
 
 #### Purpose
 
-PageCollection is the ordered list of the pages of a diagram. It creates, inserts, removes and reorders pages as undoable
-operations, publishes collection-changed notifications that UI item controls can bind to directly, and attaches and
-detaches page content so that the diagram's element index only contains elements of pages that are in the list. It also
-presents a read-only non-generic list view so that frameworks which bind to the non-generic list interface cannot bypass
-the undoable operations. The unit is the single source file `PageCollection.cs`.
+PageCollection is the ordered list of the pages of a diagram. It creates, inserts, removes and reorders pages as
+undoable operations, publishes collection-changed notifications that UI item controls can bind to directly, and attaches
+and detaches page content so that the diagram's element index only contains elements of pages that are in the list. It
+also presents a read-only non-generic list view so that frameworks which bind to the non-generic list interface cannot
+bypass the undoable operations. The unit is the single source file `PageCollection.cs`.
 
 #### Data Model
 
@@ -24,13 +24,13 @@ the undoable operations. The unit is the single source file `PageCollection.cs`.
 
 #### Key Methods
 
-- **Add(name) / Insert(index, name)**: validate the name (not blank) and the index (0 to Count), create an empty page and
-  execute an undoable entry "Add page" whose do action inserts the page and whose undo action removes it. Return the new
-  page. Redo re-inserts the same page object.
+- **Add(name) / Insert(index, name)**: validate the name (not blank) and the index (0 to Count), create an empty page
+  and execute an undoable entry "Add page" whose do action inserts the page and whose undo action removes it. Return the
+  new page. Redo re-inserts the same page object.
 - **Remove(page)**: returns false when the page is not in the list; otherwise executes an undoable entry "Remove page"
   that remembers the old index; undo re-inserts the same page at that index.
-- **Move(page, newIndex)**: validates that the page is in the list and the index is within the list, does nothing when the
-  position is unchanged, and otherwise executes an undoable entry "Move page" with the old index as its inverse.
+- **Move(page, newIndex)**: validates that the page is in the list and the index is within the list, does nothing when
+  the position is unchanged, and otherwise executes an undoable entry "Move page" with the old index as its inverse.
 - **IndexOf / Contains / enumeration / indexer**: read-only access.
 - **InsertCore (private)**: marks the page attached, registers its elements in the element index, inserts it and raises
   the `PageAdded` change. **RemoveCore (private)**: unregisters the elements, marks the page detached, removes it and

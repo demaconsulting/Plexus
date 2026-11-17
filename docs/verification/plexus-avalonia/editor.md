@@ -47,8 +47,8 @@ clipboard and drop paths reach the model or raise the right events, and read-onl
   selected node at exactly the ghost's position with no ghost left.
 - **Editor_HostIntegration_EventsAndReadOnly_AreRaisedAndRespected**: double-click and the two kinds of context request
   raise their events; after switching to read-only a drag and the Delete key change nothing.
-- **Editor_Keyboard_Shortcuts_RunCommandsUnlessInlineEditorIsOpen**: Ctrl+A, Ctrl+D, Delete, Ctrl+Z and Ctrl+Y change the
-  node count as expected; F2 opens the rename box, which then owns the Delete key.
+- **Editor_Keyboard_Shortcuts_RunCommandsUnlessInlineEditorIsOpen**: Ctrl+A, Ctrl+D, Delete, Ctrl+Z and Ctrl+Y change
+  the node count as expected; F2 opens the rename box, which then owns the Delete key.
 
 - **Editor_ToolTips_HoverNodePortAndWire_ShowDefaultOrHostContent** (`PlexusAvalonia-Editor-ToolTips`,
   `-ToolTipDefaults`, `-ToolTipHostContent`): hovering a node, a port and a wire sets the host-changed node text, the
@@ -61,15 +61,16 @@ clipboard and drop paths reach the model or raise the right events, and read-onl
 - **Editor_ToolTips_PressExitAndInlineEdit_HideTip** (`PlexusAvalonia-Editor-ToolTipHiding`): a shown tooltip is cleared
   by the pointer leaving, by a right-button press (it stays away over the pressed node until the pointer moves away and
   back) and by opening the inline rename, and no tooltip appears while the inline editor is open.
-- **Editor_ElementNavigation_BringIntoViewAndFitElements_ShowElementsAcrossPages** (`PlexusAvalonia-Editor-ElementNavigation`,
-  `-FitElements`): a node on another page and a node hidden in a collapsed group are brought into view (switching
-  pages, showing the group), and fitting two far-apart elements zooms out to show both.
+- **Editor_ElementNavigation_BringIntoViewAndFitElements_ShowElementsAcrossPages**
+  (`PlexusAvalonia-Editor-ElementNavigation`, `-FitElements`): a node on another page and a node hidden in a collapsed
+  group are brought into view (switching pages, showing the group), and fitting two far-apart elements zooms out to show
+  both.
 - **Editor_ElementNavigation_BeforeFirstLayout_AppliesLatestRequest** (`PlexusAvalonia-Editor-NavigationDeferred`): in
   an editor that has no size, a page fit, a bring-into-view of a far node and an empty fit change nothing; once the
   window is shown only the bring-into-view (the latest real request) was applied: actual size, far node in view.
 - **Editor_ElementNavigation_InvalidOrEmptyRequests_LeaveViewUnchanged** (`PlexusAvalonia-Editor-NavigationInvalid`): an
-  empty fit, a null, detached or other-diagram element, a mixed set and a negative or NaN margin leave page, zoom, offset
-  and selection unchanged, with `ArgumentNullException`, `ArgumentException` or `ArgumentOutOfRangeException` as
+  empty fit, a null, detached or other-diagram element, a mixed set and a negative or NaN margin leave page, zoom,
+  offset and selection unchanged, with `ArgumentNullException`, `ArgumentException` or `ArgumentOutOfRangeException` as
   documented.
 - **Editor_DynamicPorts_PropertyChange_SceneHitTestAndConnectFollow** (`PlexusAvalonia-Editor-DynamicPorts`): after a
   property change the scene lays out the new ports, a drag connects to the last new input and hit testing finds it.

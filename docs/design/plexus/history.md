@@ -24,7 +24,8 @@ instance and the other subsystems are its callers.
 - **IUndoableCommand**: the public contract of one reversible change (a description, an apply action and an inverse);
   both actions must be atomic (complete, or throw without changing anything) and must not change the history.
 - **IMergeableCommand**: an optional extension that lets a command absorb the next command inside a transaction.
-- **HistoryTransaction**: the handle returned when a transaction begins; disposing commits it, and it can be rolled back.
+- **HistoryTransaction**: the handle returned when a transaction begins; disposing commits it, and it can be rolled
+  back.
 
 ### Design
 

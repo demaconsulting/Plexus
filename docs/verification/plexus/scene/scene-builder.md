@@ -2,11 +2,11 @@
 
 #### Verification Approach
 
-Unit tests in `SceneBuilderTests` and `SceneGroupTests` build scenes of small real pages (`SceneTestModel`: standard test
-node types plus an icon type and custom visuals) and inspect the primitives, which are plain immutable objects, by element
-and kind (`SceneTestModel.For`). Test doubles are the fixed-width text measurer (10 units per character) and two custom
-visuals (a replacing and a decorating one), which are the unit's own extension points. The page model, routers and layout
-code are the real implementations.
+Unit tests in `SceneBuilderTests` and `SceneGroupTests` build scenes of small real pages (`SceneTestModel`: standard
+test node types plus an icon type and custom visuals) and inspect the primitives, which are plain immutable objects, by
+element and kind (`SceneTestModel.For`). Test doubles are the fixed-width text measurer (10 units per character) and two
+custom visuals (a replacing and a decorating one), which are the unit's own extension points. The page model, routers
+and layout code are the real implementations.
 
 #### Test Environment
 
@@ -47,14 +47,14 @@ Wire styling:
   (`SceneBuilder_Build_StyledThickness_WidensHitTarget`).
 - **Dashes** (`SceneBuilder_Build_StylerDash_SplitsWireIntoFigures`, `WireStyle_Dash_OddLength_RepeatsPattern`,
   `WirePaths_Dashed_AroundCorner_KeepsDashContinuous`, `WirePaths_Dashed_RoundedCorner_CoversExpectedLength`,
-  `WirePaths_Dashed_TooFinePattern_LeavesPathSolid`): dash figures have the pattern's lengths and spacing, an odd pattern
-  repeats, dashes follow corners and curves, and an excessively fine pattern stays solid.
+  `WirePaths_Dashed_TooFinePattern_LeavesPathSolid`): dash figures have the pattern's lengths and spacing, an odd
+  pattern repeats, dashes follow corners and curves, and an excessively fine pattern stays solid.
 - **Style validation and helpers** (`WireStyle_Validation_RejectsNonPositiveValues`, `WireStyle_Dash_IsCopied`,
   `WireStylers_ByPortType_UsesSourcePortTypeColor`, `WireStylers_ByTargetNodeProperty_ReadsTargetNode`,
-  `WireStylers_Combine_LaterStylersOverrideEarlierNonNullMembers`, `WireStylers_NullArguments_Throw`): invalid values are
-  rejected, the dash list is copied, and the ready-made stylers resolve and combine as documented.
-- **Per-page styler** (`WireStylers_PerPage_BuildsOncePerPageAndVersion`, `WireStylers_PerPage_FollowsPropertyEditsUndoAndRedo`,
-  `WireStylers_PerPage_KeepsPagesApartAndCombines`,
+  `WireStylers_Combine_LaterStylersOverrideEarlierNonNullMembers`, `WireStylers_NullArguments_Throw`): invalid values
+  are rejected, the dash list is copied, and the ready-made stylers resolve and combine as documented.
+- **Per-page styler** (`WireStylers_PerPage_BuildsOncePerPageAndVersion`,
+  `WireStylers_PerPage_FollowsPropertyEditsUndoAndRedo`, `WireStylers_PerPage_KeepsPagesApartAndCombines`,
   `WireStylers_PerPage_FailingFactoryFallsBackAndRetries_NullStylerStylesNothing`,
   `WireStylers_PerPage_ArgumentChecksAndDetachedWire`, in `DiagramVersionTests.cs`): two wires and two builds cost one
   factory call, a refresh, an edit, undo or redo builds a new styler, pages are kept apart and compose with other
@@ -73,9 +73,10 @@ Node styling (`NodeStyleTests.cs`):
   and title; tint and opacity reach the icon; opacity halves the alpha of box, texts and port triangles but not the
   selection outline; a glow adds six fading rings below the box that extend beyond it and the scene bounds.
 - **Failure, dynamics and selection** (`SceneBuilder_Build_NodeStylerThrows_FallsBackToTheme`,
-  `SceneBuilder_Build_PropertyChangeOnNode_RestylesNode`, `SceneBuilder_Build_StyledSelectedNode_DrawsSelectionOutlineOnTop`):
-  a throwing styler draws the theme look, a property edit and its undo restyle the node on the next build, and the
-  selection outline is the last rectangle of a styled node.
+  `SceneBuilder_Build_PropertyChangeOnNode_RestylesNode`,
+  `SceneBuilder_Build_StyledSelectedNode_DrawsSelectionOutlineOnTop`): a throwing styler draws the theme look, a
+  property edit and its undo restyle the node on the next build, and the selection outline is the last rectangle of a
+  styled node.
 - **Custom visuals** (`SceneBuilder_Build_CustomVisual_ReadsTheResolvedStyleFromTheContext`,
   `NodeVisualContext_Style_WithoutStyler_IsNoneAndFadedIsIdentity`): a visual reads the faded fill, the themed fallbacks
   and the style itself from the context, and the context holds `NodeStyle.None` without a styler.
@@ -93,14 +94,15 @@ Grid, order, highlights, culling:
 
 - **Empty page** (`SceneBuilder_Build_EmptyPage_ContainsOnlyGrid`) and **grid switch**
   (`SceneBuilder_Build_ShowGrid_ControlsGridPrimitive`).
-- **Wires under nodes** (`SceneBuilder_Build_DrawingOrder_WiresUnderNodesInZOrder`) and **nested frames outermost first**
-  (`SceneBuilder_Build_NestedExpandedGroups_DrawOuterFrameFirst`).
+- **Wires under nodes** (`SceneBuilder_Build_DrawingOrder_WiresUnderNodesInZOrder`) and **nested frames outermost
+  first** (`SceneBuilder_Build_NestedExpandedGroups_DrawOuterFrameFirst`).
 - **Selected node** (`SceneBuilder_Build_SelectedNode_AddsSelectionOutline`), **selected wire**
-  (`SceneBuilder_Build_SelectedWire_AddsWiderUnderlay`), **hover** (`SceneBuilder_Build_Hover_UsesHoverColorUnlessSelected`),
-  **selected annotation handle** (`SceneBuilder_Build_SelectedAnnotation_ShowsResizeHandle`) and **selected group**
+  (`SceneBuilder_Build_SelectedWire_AddsWiderUnderlay`), **hover**
+  (`SceneBuilder_Build_Hover_UsesHoverColorUnlessSelected`), **selected annotation handle**
+  (`SceneBuilder_Build_SelectedAnnotation_ShowsResizeHandle`) and **selected group**
   (`SceneBuilder_Build_SelectedGroup_AddsSelectionOutline`).
-- **Culling of elements and grid** (`SceneBuilder_Build_VisibleBounds_CullsElementsOutsideAndSizesGrid`) and **of wires**
-  (`SceneBuilder_Build_VisibleBounds_CullsWiresOutside`).
+- **Culling of elements and grid** (`SceneBuilder_Build_VisibleBounds_CullsElementsOutsideAndSizesGrid`) and **of
+  wires** (`SceneBuilder_Build_VisibleBounds_CullsWiresOutside`).
 
 Options and extension:
 
@@ -114,25 +116,28 @@ Groups:
 - **Expanded group** (`SceneBuilder_Build_ExpandedGroup_DrawsFrameTitleBarAndToggleBehindMembers`) and **expand again**
   (`SceneBuilder_Build_ExpandAgain_RestoresMembers`).
 - **Collapsed box** (`SceneBuilder_Build_CollapsedGroup_HidesMembersAndDrawsSummaryBox`), **growth**
-  (`SceneBuilder_Build_CollapsedGroup_BoxGrowsToFitProxyPorts`), **nest** (`SceneBuilder_Build_NestedCollapsedGroups_OutermostWins`)
-  and **hidden inner group** (`SceneBuilder_Build_ExpandedGroupInsideCollapsedGroup_IsHidden`).
+  (`SceneBuilder_Build_CollapsedGroup_BoxGrowsToFitProxyPorts`), **nest**
+  (`SceneBuilder_Build_NestedCollapsedGroups_OutermostWins`) and **hidden inner group**
+  (`SceneBuilder_Build_ExpandedGroupInsideCollapsedGroup_IsHidden`).
 - **Proxy ports** (`SceneBuilder_Build_CollapsedGroup_CrossingWiresAttachToProxyPorts`), **hidden inside wire**
-  (`SceneBuilder_Build_CollapsedGroup_WireInsideIsHidden`) and **shared inner port** (`SceneBuilder_Build_CollapsedGroup_SharedInnerPortHasOneProxy`).
+  (`SceneBuilder_Build_CollapsedGroup_WireInsideIsHidden`) and **shared inner port**
+  (`SceneBuilder_Build_CollapsedGroup_SharedInnerPortHasOneProxy`).
 - **Display routes and group frames** (`Plexus-Scene-SceneBuilder-GroupObstacles`): a collapsed group's wire avoids an
   unrelated expanded group's frame (`SceneBuilder_Build_CollapsedGroupWire_RoutesAroundUnrelatedGroupFrame`), may cross
-  the frame of a group holding its far end (`SceneBuilder_Build_CollapsedGroupWire_TargetInsideGroup_FrameIsNotAnObstacle`)
-  and ignores frames when the theme option is off (`SceneBuilder_Build_CollapsedGroupWire_GroupsAreObstaclesOff_CrossesFrame`).
+  the frame of a group holding its far end
+  (`SceneBuilder_Build_CollapsedGroupWire_TargetInsideGroup_FrameIsNotAnObstacle`) and ignores frames when the theme
+  option is off (`SceneBuilder_Build_CollapsedGroupWire_GroupsAreObstaclesOff_CrossesFrame`).
 - **Display routes and nets** (`Plexus-Scene-SceneBuilder-DisplayRouteNets`): with a recording router, the request of a
   collapsed group's wire carries its own net and the three segments of the other wire's stored route, none of them in
-  its net (`SceneBuilder_Build_CollapsedGroupWire_DisplayRequestCarriesOtherNetsSegments`); two wires out of one collapsed
-  output share a net and the second sees the first's display segments, a third wire of another net sees both
+  its net (`SceneBuilder_Build_CollapsedGroupWire_DisplayRequestCarriesOtherNetsSegments`); two wires out of one
+  collapsed output share a net and the second sees the first's display segments, a third wire of another net sees both
   (`SceneBuilder_Build_CollapsedGroupWires_ShareNetBySourcePort`); the display route is the same on every build and the
   stored route is untouched (`SceneBuilder_Build_CollapsedGroupWire_DisplayRouteIsDeterministic`).
 
 Read-only and errors:
 
-- **Model untouched** (`SceneBuilder_Build_WithCollapsedGroupAndHighlights_DoesNotModifyModelOrHistory`): dump, undo count
-  and stored route unchanged, while the scene shows a different display route.
+- **Model untouched** (`SceneBuilder_Build_WithCollapsedGroupAndHighlights_DoesNotModifyModelOrHistory`): dump, undo
+  count and stored route unchanged, while the scene shows a different display route.
 - **Null page** (`SceneBuilder_Build_NullPage_ThrowsArgumentNullException`).
 
 Wire polish (tests in `WireVisualsTests.cs`):
@@ -148,7 +153,7 @@ Wire polish (tests in `WireVisualsTests.cs`):
   (`SceneBuilder_Build_AuditConfiguration_DrawsDotsExactlyAtJunctions`):
 
   | Configuration | Expected |
-  | :------------ | :------- |
+  | :--- | :--- |
   | `TOnStraightTrunk`: one wire straight on, one branching off | one dot at the branch, square corner |
   | `SplitAtCorner`: both branches turn at one point | one dot on the bend, two square corners |
   | `FanOut3`: one input above, two below | dots at the split and where the lower pair separates |
@@ -179,27 +184,27 @@ Wire polish (tests in `WireVisualsTests.cs`):
   (`WirePaths_Rounded_SharpCorner_HasNoCurveAndLetsTheNextCornerUseTheSegment`) and does not smooth a small jog whose
   corner is a junction (`WirePaths_Rounded_SharpCornerOnSmallJog_IsNotSmoothed`).
 - **Crossing jumps** (`Plexus-Scene-SceneBuilder-WireCrossingJumps`, tests in `WireCrossingTests.cs`): detection reports
-  an interior crossing once, to the horizontal wire (`WireCrossings_Find_InteriorCrossing_IsReportedOnTheHorizontalWire`)
-  and none for the same net, for ends and bends, near a corner of the vertical wire or at junctions
-  (`WireCrossings_Find_SameNet_HasNoHop`, `WireCrossings_Find_EndsAndBends_HaveNoHop`,
-  `WireCrossings_Find_CrossingNearVerticalCorner_HasNoHop`, `WireCrossings_Find_JunctionAtCrossing_HasNoHop`); the radius
-  grows with the thickness of either wire (`WireCrossings_Find_ThickWires_GrowTheRadius`); a lattice of thirty by thirty
-  wires reports all nine hundred crossings, each wire's hops in the order the crossed wires were listed
-  (`WireCrossings_Find_ManyWires_ReportsEveryCrossingInWireOrder`). The path of one hop is two
-  cubic quarter arcs of the radius over the crossing, also right to left
-  (`WirePaths_Rounded_SingleHop_IsASemicircleOverTheCrossing`, `WirePaths_Rounded_RightToLeftWire_HopsOverTheCrossing`);
-  crossings 6 apart merge into one flat-topped hop, those 40 apart stay separate, and a hop that does not fit near a
-  corner curve, the start or the arrowhead is skipped (`WirePaths_Rounded_CloseCrossings_MergeIntoOneWiderHop`,
-  `WirePaths_Rounded_DistantCrossings_GetSeparateHops`, `WirePaths_Rounded_HopsThatDoNotFit_AreSkipped`); vertical
-  runs never hop (`WirePaths_Rounded_VerticalRun_NeverHops`); dashes follow the arc
-  (`WirePaths_Dashed_Hop_DashesFollowTheArc`). In the scene the audit crossing hops by default with the apex 4 above the
-  wire, the vertical wire has only its own corners, switching the theme option off or a touching pair draws no hop
-  (`SceneBuilder_Build_DifferentNetCrossing_HorizontalWireHopsByDefault`, `SceneBuilder_Build_JumpsOffOrTouchingNets_DrawNoHop`),
-  a thick dashed wire hops with the scaled radius and dashes on the arc
-  (`SceneBuilder_Build_ThickDashedHoppingWire_ScalesAndDashesTheHop`), the polyline, stored route and hit testing stay
-  straight (`SceneBuilder_Build_Hop_LeavesPolylineAndHitTestingStraight`), a collapsed group's display route is hopped
-  over like a stored one (`SceneBuilder_Build_CollapsedGroupDisplayRoute_ParticipatesInCrossings`) and the result is
-  deterministic (`SceneBuilder_Build_Hops_AreDeterministic`).
+  an interior crossing once, to the horizontal wire
+  (`WireCrossings_Find_InteriorCrossing_IsReportedOnTheHorizontalWire`) and none for the same net, for ends and bends,
+  near a corner of the vertical wire or at junctions (`WireCrossings_Find_SameNet_HasNoHop`,
+  `WireCrossings_Find_EndsAndBends_HaveNoHop`, `WireCrossings_Find_CrossingNearVerticalCorner_HasNoHop`,
+  `WireCrossings_Find_JunctionAtCrossing_HasNoHop`); the radius grows with the thickness of either wire
+  (`WireCrossings_Find_ThickWires_GrowTheRadius`); a lattice of thirty by thirty wires reports all nine hundred
+  crossings, each wire's hops in the order the crossed wires were listed
+  (`WireCrossings_Find_ManyWires_ReportsEveryCrossingInWireOrder`). The path of one hop is two cubic quarter arcs of the
+  radius over the crossing, also right to left (`WirePaths_Rounded_SingleHop_IsASemicircleOverTheCrossing`,
+  `WirePaths_Rounded_RightToLeftWire_HopsOverTheCrossing`); crossings 6 apart merge into one flat-topped hop, those 40
+  apart stay separate, and a hop that does not fit near a corner curve, the start or the arrowhead is skipped
+  (`WirePaths_Rounded_CloseCrossings_MergeIntoOneWiderHop`, `WirePaths_Rounded_DistantCrossings_GetSeparateHops`,
+  `WirePaths_Rounded_HopsThatDoNotFit_AreSkipped`); vertical runs never hop (`WirePaths_Rounded_VerticalRun_NeverHops`);
+  dashes follow the arc (`WirePaths_Dashed_Hop_DashesFollowTheArc`). In the scene the audit crossing hops by default
+  with the apex 4 above the wire, the vertical wire has only its own corners, switching the theme option off or a
+  touching pair draws no hop (`SceneBuilder_Build_DifferentNetCrossing_HorizontalWireHopsByDefault`,
+  `SceneBuilder_Build_JumpsOffOrTouchingNets_DrawNoHop`), a thick dashed wire hops with the scaled radius and dashes on
+  the arc (`SceneBuilder_Build_ThickDashedHoppingWire_ScalesAndDashesTheHop`), the polyline, stored route and hit
+  testing stay straight (`SceneBuilder_Build_Hop_LeavesPolylineAndHitTestingStraight`), a collapsed group's display
+  route is hopped over like a stored one (`SceneBuilder_Build_CollapsedGroupDisplayRoute_ParticipatesInCrossings`) and
+  the result is deterministic (`SceneBuilder_Build_Hops_AreDeterministic`).
 - **Arrowhead fit**: with the usual 15 unit stub the last corner keeps the full radius and the stroke ends inside the
   head (`WirePaths_Rounded_StubLengthFinalSegment_KeepsFullRadius`); on a 12 unit last segment the curve ends exactly at
   the arrowhead base (`WirePaths_Rounded_ShortFinalSegment_ArrowheadSitsOnStraightRun`); on a 5 unit last segment the

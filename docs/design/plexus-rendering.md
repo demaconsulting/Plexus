@@ -44,14 +44,14 @@ sequenceDiagram
 
 ## External Interfaces
 
-| Interface                     | Direction | Format                            | Constraints                          |
-|-------------------------------|-----------|-----------------------------------|--------------------------------------|
-| `PlexusRenderer.RenderPng`    | Out       | PNG file contents (byte array)    | Opaque backgrounds have no alpha     |
-| `PlexusRenderer.SavePng`      | Out       | PNG file at a caller path         | Replaces a file; folder must exist   |
-| `PlexusRenderer.Render`       | Out       | CanvasNet surface, straight alpha | Caller owns and disposes it          |
-| `RenderOptions`               | In        | Immutable options object          | Usable values; selection copied      |
-| `CanvasTextMeasurer`          | Out       | Core `ITextMeasurer`              | Thread-safe                          |
-| `DiagramPage`, `DiagramTheme` | In        | Core model types                  | DiagramPage not modified by a render |
+| Interface | Direction | Format | Constraints |
+| --- | --- | --- | --- |
+| `PlexusRenderer.RenderPng` | Out | PNG file contents (byte array) | Opaque backgrounds have no alpha |
+| `PlexusRenderer.SavePng` | Out | PNG file at a caller path | Replaces a file; folder must exist |
+| `PlexusRenderer.Render` | Out | CanvasNet surface, straight alpha | Caller owns and disposes it |
+| `RenderOptions` | In | Immutable options object | Usable values; selection copied |
+| `CanvasTextMeasurer` | Out | Core `ITextMeasurer` | Thread-safe |
+| `DiagramPage`, `DiagramTheme` | In | Core model types | DiagramPage not modified by a render |
 
 `RenderOptions.Theme` changes the look only: the geometry of ports, port triangles and wire ends always follows the
 diagram's own theme, so wires stay attached to their ports; port metrics are set on the diagram's theme.
@@ -70,8 +70,8 @@ Exception policy (the library translates no exception):
 ## Dependencies
 
 - **Plexus core system** — page model, scene builder, scene primitives, theme and the text-measurement interface.
-  See _Plexus System Design_.
-- **CanvasNet** (OTS) — canvas drawing, fonts, SVG rasterization and PNG encoding. See _CanvasNet_ in the OTS
+  See *Plexus System Design*.
+- **CanvasNet** (OTS) — canvas drawing, fonts, SVG rasterization and PNG encoding. See *CanvasNet* in the OTS
   design documents.
 
 The package has no dependency on Avalonia or on any other UI framework.
@@ -114,7 +114,7 @@ whole render).
 - **A separate headless package on CanvasNet.** Rendering is its own package, and the editor package does not reference
   it, so that servers, build pipelines, tests and agent tooling can produce images without any UI framework, and an
   editor-only application does not carry a drawing library it does not use. CanvasNet was chosen because it is a pure
-  managed, display-independent canvas (see _CanvasNet_ in the OTS design documents).
+  managed, display-independent canvas (see *CanvasNet* in the OTS design documents).
 - **The scene is the contract, not the pixels.** The renderer paints the same scene, layout and hit-test geometry as
   the editor and adds no layout of its own, which keeps the two painters consistent. Parity is visual, not
   pixel-identical, because the text engines and SVG renderers differ.
@@ -128,7 +128,7 @@ whole render).
 - **SVG subset parity.** CanvasNet.Svg and the editor's SVG library support overlapping but different parts of SVG;
   icons should stay within the common subset so both painters look alike.
 - **Fonts differ between machines.** Output differs slightly between machines with and without the theme's font family
-  installed (see _Design Constraints_); layout always matches the pixels on one machine, but stored reference images
+  installed (see *Design Constraints*); layout always matches the pixels on one machine, but stored reference images
   should be compared with a tolerance or on a controlled font set.
 - **Narrower target frameworks.** The package targets .NET 10 and .NET 11 only although CanvasNet supports the framework
   range of the core. Whether it should also target .NET 8 and .NET 9 like the core is an open question that depends on

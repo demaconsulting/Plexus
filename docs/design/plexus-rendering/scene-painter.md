@@ -14,12 +14,12 @@ primitive kind the core library defines.
 
 An instance is bound to one surface and holds immutable state set at construction:
 
-| Field   | Type      | Meaning                                                     |
-|---------|-----------|-------------------------------------------------------------|
-| surface | `Surface` | The pixel surface being painted; must not be null           |
-| canvas  | `Canvas`  | The CanvasNet drawing facade over the surface               |
-| origin  | `Point`   | The diagram point that maps to the surface's top-left pixel |
-| scale   | `double`  | Pixels per diagram unit; finite and greater than zero       |
+| Field | Type | Meaning |
+| --- | --- | --- |
+| surface | `Surface` | The pixel surface being painted; must not be null |
+| canvas | `Canvas` | The CanvasNet drawing facade over the surface |
+| origin | `Point` | The diagram point that maps to the surface's top-left pixel |
+| scale | `double` | Pixels per diagram unit; finite and greater than zero |
 
 The caller guarantees the scale. Device position = (diagram position - origin) x scale. The class is internal and an
 instance is not thread-safe.
@@ -41,8 +41,8 @@ instance is not thread-safe.
   - Text: skips empty text and non-positive or non-finite sizes; anchors the line at the left edge, center or right
     edge of its rectangle according to the style; centers the line box (ascent plus descent) vertically in the
     rectangle and rounds the baseline to a whole pixel; uses the same `FontProvider` lookup as `CanvasTextMeasurer`.
-  - Icon: converts the rectangle to a whole-pixel position and size, skips boxes smaller than one pixel or larger
-    than the maximum surface dimension, obtains the rasterized icon from `IconCache.Shared`, skips it when the cache reports
+  - Icon: converts the rectangle to a whole-pixel position and size, skips boxes smaller than one pixel or larger than
+    the maximum surface dimension, obtains the rasterized icon from `IconCache.Shared`, skips it when the cache reports
     it as missing, and composites it row by row with straight-alpha "over" blending, clipped to the surface. With a
     tint, each pixel the icon paints is replaced by the tint's color with coverage `icon alpha * tint alpha` (a
     silhouette, so multi-colored artwork becomes one flat color); the primitive's opacity is the extra coverage factor
@@ -65,7 +65,7 @@ Post-conditions: only pixels of the surface are modified; primitives extending b
 
 - Core scene primitives, `Point`, `Rect`, `Color` and text style types.
 - `IconCache` (through its shared instance) and `FontProvider` (part of the CanvasTextMeasurer unit) of this system.
-- CanvasNet (OTS) canvas, path, text-rendering and surface types; see _CanvasNet_ in the OTS design documents.
+- CanvasNet (OTS) canvas, path, text-rendering and surface types; see *CanvasNet* in the OTS design documents.
 
 ### Callers
 

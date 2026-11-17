@@ -20,15 +20,16 @@ including highlights, culling, group boxes with proxy ports and custom node visu
   `IconPrimitive` and `GridPrimitive` (dots at multiples of the spacing in diagram coordinates).
 - `WirePaths` (static): rounded polyline paths (with arrowhead clearance, end trim, S-curves for small jogs, square
   corners at junction points and crossing hops), arrowhead, last-segment length, end trimming and dashing.
-  `WireJunctions` (internal static): junction detection for one net. `WireCrossings` (internal static) with `WireRun` and
-  `WireHop`: crossings between wires of different nets. `CollapsedGroupInfo`: box, proxy ports and their edge and anchor
-  points. `GroupLayout` and `GroupProxyPortLayout`: the published group geometry.
+  `WireJunctions` (internal static): junction detection for one net. `WireCrossings` (internal static) with `WireRun`
+  and `WireHop`: crossings between wires of different nets. `CollapsedGroupInfo`: box, proxy ports and their edge and
+  anchor points. `GroupLayout` and `GroupProxyPortLayout`: the published group geometry.
 - `WireStyle` (public, immutable record) and `WireStylers` (public static helpers): the per-wire appearance a host's
   `Diagram.WireStyler` returns (color, thickness, dash pattern and arrowhead, each optional) and ready-made stylers (by
   source port type, by a source or target node property, by condition, `PerPage` and `Combine`).
 - `NodeStyle` (public, immutable record) and `NodeStylers` (public static helpers): the per-node appearance a host's
   `Diagram.NodeStyler` returns (fill, border, border thickness, title color, icon tint, glow and opacity, each optional)
-  and ready-made stylers (by a node property, by condition, `PerPage` and `Combine`); `NodeStyle.None` is the empty style.
+  and ready-made stylers (by a node property, by condition, `PerPage` and `Combine`); `NodeStyle.None` is the empty
+  style.
 - `INodeVisual`, `NodeVisualContext` and `StandardNodeVisual`: the node drawing extension point and the standard look.
   The context carries the resolved `Style` and the theme-fallback helpers `Fill`, `Border`, `BorderThickness`,
   `HeaderTextStyle` and `Faded(color)` that custom visuals use to honor it.
@@ -37,44 +38,43 @@ including highlights, culling, group boxes with proxy ports and custom node visu
 
 `Build(page, options)`: throws for a null page, then runs a new composer, whose `Compose` does the following in order:
 find collapsed groups and their crossing wires and size their boxes once all proxies are known; add expanded group
-frames outermost first; work out the displayed polyline and style of every visible wire (`PrepareWires`, page order, which
-also computes the transient display routes) and, from all of them together, the junctions of every net and the crossings
-between nets (`AnalyzeWires`); add all wires; add the junction dots; walk the page's elements in z-order adding nodes,
-annotations and collapsed groups; add the handles and top-priority hit targets of the selected wires; compute the
-content bounds as the union of the primitive bounds; insert the grid at the front when enabled and the grid size is
-positive.
+frames outermost first; work out the displayed polyline and style of every visible wire (`PrepareWires`, page order,
+which also computes the transient display routes) and, from all of them together, the junctions of every net and the
+crossings between nets (`AnalyzeWires`); add all wires; add the junction dots; walk the page's elements in z-order
+adding nodes, annotations and collapsed groups; add the handles and top-priority hit targets of the selected wires;
+compute the content bounds as the union of the primitive bounds; insert the grid at the front when enabled and the grid
+size is positive.
 
-`AddNode`: computes the layout, skips the node when its bounds are outside the culling bounds, runs the node type's visual
-(or the standard visual) with a context that collects primitives, attributes primitives without an owner to the node,
-adds the selection or hover outline, and records hit targets for the body, then the name, then each port.
+`AddNode`: computes the layout, skips the node when its bounds are outside the culling bounds, runs the node type's
+visual (or the standard visual) with a context that collects primitives, attributes primitives without an owner to the
+node, adds the selection or hover outline, and records hit targets for the body, then the name, then each port.
 
 `AddWire`: takes the displayed polyline prepared by `PrepareWires` (the stored route for ordinary wires; a transient
-route from the diagram's
-router and the proxy anchors for wires crossing a collapsed group boundary, which also avoids the frame of every expanded
-visible group that contains neither end node when `DiagramTheme.GroupsAreObstacles` is on, via the shared internal
-`GroupObstacles`, and keeps clear of the other displayed wires: the request carries the net of the wire's source port,
-merged with the nets of other wires that end at the same fan-in input (`WireTraffic.NetOf`, the inner port for a wire
-leaving a collapsed group) and the segments of every wire drawn with its stored route plus the display routes computed
-before it, built once per scene in page order so the result is deterministic; none for wires inside a collapsed group),
-culls by the polyline's inflated box, resolves the wire's style (below), adds a wider underlay when selected or hovered,
-the stroked rounded path and the arrowhead, and records a polyline hit target with the styled wire thickness. The
-arrowhead must sit on a straight final segment: when the last segment is shorter than the arrowhead length the head
-(length and width) shrinks to the segment; `WirePaths.Rounded` is called on the full polyline with the arrowhead
-length as end clearance, which limits the radius of the last corner to the last segment length minus that clearance
-(a sharp corner when nothing is left, the full radius for the usual stub), and with three quarters of the arrowhead
-length as end trim, which stops the stroke inside the arrowhead by shortening the final line of the finished path
-instead of the polyline before rounding, so corners keep the same radius everywhere. When
+route from the diagram's router and the proxy anchors for wires crossing a collapsed group boundary, which also avoids
+the frame of every expanded visible group that contains neither end node when `DiagramTheme.GroupsAreObstacles` is on,
+via the shared internal `GroupObstacles`, and keeps clear of the other displayed wires: the request carries the net of
+the wire's source port, merged with the nets of other wires that end at the same fan-in input (`WireTraffic.NetOf`, the
+inner port for a wire leaving a collapsed group) and the segments of every wire drawn with its stored route plus the
+display routes computed before it, built once per scene in page order so the result is deterministic; none for wires
+inside a collapsed group), culls by the polyline's inflated box, resolves the wire's style (below), adds a wider
+underlay when selected or hovered, the stroked rounded path and the arrowhead, and records a polyline hit target with
+the styled wire thickness. The arrowhead must sit on a straight final segment: when the last segment is shorter than the
+arrowhead length the head (length and width) shrinks to the segment; `WirePaths.Rounded` is called on the full polyline
+with the arrowhead length as end clearance, which limits the radius of the last corner to the last segment length minus
+that clearance (a sharp corner when nothing is left, the full radius for the usual stub), and with three quarters of the
+arrowhead length as end trim, which stops the stroke inside the arrowhead by shortening the final line of the finished
+path instead of the polyline before rounding, so corners keep the same radius everywhere. When
 `DiagramTheme.WireSmoothSmallJogs` is on, `WirePaths.Rounded` replaces the two corners of a small jog (a step shorter
 than twice the corner radius between two runs heading the same way, perpendicular to the step) by one cubic whose
 control points are the two corners, which gives an S with tangents along the runs; it starts and ends half of
 `JogSpanFactor` (4) times the step before and after the step, limited to the run before the step (the whole run at the
 start of the wire, otherwise half of it), the run after it (half of it, or the run minus the arrowhead clearance at the
-tip), and is not used when that span would be shorter than the step or when either corner of the jog is a junction
-point (see below). Only the drawn path changes: the stored route, the
-displayed polyline, the hit target, the junction dots and the handles keep the square corners. The path is split into
-dashes when the style has a dash pattern (the S and the hops are flattened like a corner curve, so dashes follow them).
-The wire's junction points (its net's) are passed to `WirePaths.Rounded` as square corners, and the crossings it hops
-over as hops. A selected wire with a stored route (not a transient display route) is remembered for its handles.
+tip), and is not used when that span would be shorter than the step or when either corner of the jog is a junction point
+(see below). Only the drawn path changes: the stored route, the displayed polyline, the hit target, the junction dots
+and the handles keep the square corners. The path is split into dashes when the style has a dash pattern (the S and the
+hops are flattened like a corner curve, so dashes follow them). The wire's junction points (its net's) are passed to
+`WirePaths.Rounded` as square corners, and the crossings it hops over as hops. A selected wire with a stored route (not
+a transient display route) is remembered for its handles.
 
 `AnalyzeWires`: groups the prepared wires into nets (`FindNets`: all wires with the same source port, joined through
 inputs whose definition allows fan-in, so wires from different outputs that end at the same such input form one net;
@@ -94,37 +94,35 @@ than half of it, which keeps wires of one net that share a trunk drawn identical
 drawn as identical overlapping strokes, not once (a dashed net can show phase differences after a square corner).
 
 Crossing jumps (`WireCrossings.Find`, `WirePaths.Rounded`): a crossing exists where a horizontal segment of one wire and
-a vertical segment of a wire of a different net meet at a point strictly inside both segments, at least the corner radius
-from the ends of the vertical segment (so not on a corner curve), with no junction of the vertical wire's net exactly there
-and no junction of the horizontal wire's net within the hop radius plus the dot radius. The horizontal wire hops: the
-radius is the larger of `WireJumpRadius` times the hopping wire's thickness over `WireThickness` (at least one) and half
-the sum of both thicknesses plus one. `WirePaths.Rounded` walks the finished path and, on each horizontal line, puts the
-hops of that line in travel order and merges those whose spans overlap (crossings closer than the sum of their radii)
-into one hop with a flat top between two quarter circles of the largest radius in the group; each group is drawn as two
-cubic quarter arcs (control distance `0.5522847498` radius, rising toward negative Y), and is skipped, leaving the wires
-to cross, when its span plus a one unit margin does not fit inside the straight line (too near a corner curve, the wire
-start
-or the arrowhead clearance before the tip). The vertical wire, the polyline, the hit targets and the handles are not
-affected. Hops are cubics in the ordinary path commands, so both painters draw them the same and dashes follow them.
-Detection sorts the vertical segments of all wires by X once, so each horizontal segment visits only the verticals within
-its span instead of every segment of every wire; the candidates are then visited in wire and segment order, which keeps
-the result identical to a full scan.
+a vertical segment of a wire of a different net meet at a point strictly inside both segments, at least the corner
+radius from the ends of the vertical segment (so not on a corner curve), with no junction of the vertical wire's net
+exactly there and no junction of the horizontal wire's net within the hop radius plus the dot radius. The horizontal
+wire hops: the radius is the larger of `WireJumpRadius` times the hopping wire's thickness over `WireThickness` (at
+least one) and half the sum of both thicknesses plus one. `WirePaths.Rounded` walks the finished path and, on each
+horizontal line, puts the hops of that line in travel order and merges those whose spans overlap (crossings closer than
+the sum of their radii) into one hop with a flat top between two quarter circles of the largest radius in the group;
+each group is drawn as two cubic quarter arcs (control distance `0.5522847498` radius, rising toward negative Y), and is
+skipped, leaving the wires to cross, when its span plus a one unit margin does not fit inside the straight line (too
+near a corner curve, the wire start or the arrowhead clearance before the tip). The vertical wire, the polyline, the hit
+targets and the handles are not affected. Hops are cubics in the ordinary path commands, so both painters draw them the
+same and dashes follow them. Detection sorts the vertical segments of all wires by X once, so each horizontal segment
+visits only the verticals within its span instead of every segment of every wire; the candidates are then visited in
+wire and segment order, which keeps the result identical to a full scan.
 
-`AddJunctions`: draws, above the wires and below the nodes, a filled `RectPrimitive` circle at every junction point found
-by `AnalyzeWires`, in the color of the owner wire. `WireJunctions.Find` (internal static) collects every vertex of every
-wire as a candidate with
-the directions of its two neighbors, adds both directions of any segment that passes strictly through the candidate
-(a "T" where one wire bends on a trunk another runs along), and reports candidates whose direction set has at least three
-members; two wires that run together and turn together leave in two directions and make no dot, and neither does a wire
-that ends on another's trunk in line with it. A wire that ends on the side of a trunk, or a trunk that two wires leave in
-opposite directions, is a junction. Nothing is drawn when the
-theme sets `WireJunctionDots` to false or the radius to zero (the corners stay square).
+`AddJunctions`: draws, above the wires and below the nodes, a filled `RectPrimitive` circle at every junction point
+found by `AnalyzeWires`, in the color of the owner wire. `WireJunctions.Find` (internal static) collects every vertex of
+every wire as a candidate with the directions of its two neighbors, adds both directions of any segment that passes
+strictly through the candidate (a "T" where one wire bends on a trunk another runs along), and reports candidates whose
+direction set has at least three members; two wires that run together and turn together leave in two directions and make
+no dot, and neither does a wire that ends on another's trunk in line with it. A wire that ends on the side of a trunk,
+or a trunk that two wires leave in opposite directions, is a junction. Nothing is drawn when the theme sets
+`WireJunctionDots` to false or the radius to zero (the corners stay square).
 
-`AddWireHandles`: after all other elements, for each selected wire adds a second polyline hit target for its segments (so
-the segments of a selected wire win over nodes drawn later), then a square `RectPrimitive` and a rectangular hit target
-(inflated by 2) with the bend index for every bend, then a circular handle with a source or target handle target for each
-end. Handle size is the theme's `WireHandleSize`. The targets are appended last, so handles beat the wire's segments and
-the segments beat nodes; unselected wires keep their ordinary place below nodes.
+`AddWireHandles`: after all other elements, for each selected wire adds a second polyline hit target for its segments
+(so the segments of a selected wire win over nodes drawn later), then a square `RectPrimitive` and a rectangular hit
+target (inflated by 2) with the bend index for every bend, then a circular handle with a source or target handle target
+for each end. Handle size is the theme's `WireHandleSize`. The targets are appended last, so handles beat the wire's
+segments and the segments beat nodes; unselected wires keep their ordinary place below nodes.
 
 Wire styling resolution: the composer asks `Diagram.ResolveWireStyle(wire)` for each wire on every build, so the style
 always reflects the current model and host state; wires with collapsed-group display routes take the same path. Each
@@ -156,13 +154,13 @@ table of the styler and the `Diagram.Version` it was built at, with a failing fa
 meaning "style nothing"). Node palette prototypes are built from a private diagram without a styler, so they always
 show the node type's default look.
 
-Core-side dashing: `WirePaths.Dashed` flattens the rounded path (each corner curve into eight segments), then walks it from
-the source end alternating the "on" and "off" lengths of the pattern (an odd pattern is repeated once, as in SVG). Every
-"on" stretch becomes one open figure (`MoveTo` then `LineTo`s), and a dash that turns a corner stays a single figure.
-The dashed path is still one `PathPrimitive`, so painters need nothing beyond their existing support for multi-figure
-stroked paths, and every painter draws the same pattern. A pattern that would need more than 5,000 dashes leaves the
-wire solid. Painters choose their own line caps (butt in the PNG painter, round in the Avalonia painter), which makes
-the Avalonia dashes look about one wire thickness longer, with correspondingly shorter gaps.
+Core-side dashing: `WirePaths.Dashed` flattens the rounded path (each corner curve into eight segments), then walks it
+from the source end alternating the "on" and "off" lengths of the pattern (an odd pattern is repeated once, as in SVG).
+Every "on" stretch becomes one open figure (`MoveTo` then `LineTo`s), and a dash that turns a corner stays a single
+figure. The dashed path is still one `PathPrimitive`, so painters need nothing beyond their existing support for
+multi-figure stroked paths, and every painter draws the same pattern. A pattern that would need more than 5,000 dashes
+leaves the wire solid. Painters choose their own line caps (butt in the PNG painter, round in the Avalonia painter),
+which makes the Avalonia dashes look about one wire thickness longer, with correspondingly shorter gaps.
 
 `AddAnnotation`: draws the note box, wraps the text to the inner width and keeps the lines that fit the height, adds the
 highlight, and, only while selected, the resize handle with its hit target.
@@ -184,8 +182,8 @@ A null page throws `ArgumentNullException`. Elements are never rejected: hidden 
 A router that returns null for a display route is treated as a straight line. Exceptions from a host's custom visual or
 measurer propagate to the caller of `Build`, since they are host defects. A `Diagram.WireStyler` that throws is the one
 exception: the failure is swallowed for that wire (any exception except out-of-memory) and the wire is drawn from the
-theme, so a faulty styling callback never blanks the diagram; a `Diagram.NodeStyler` that throws is absorbed the same way
-by `ResolveNodeStyle`. `WireStyle` rejects non-positive or non-finite thickness and dash lengths when it is created;
+theme, so a faulty styling callback never blanks the diagram; a `Diagram.NodeStyler` that throws is absorbed the same
+way by `ResolveNodeStyle`. `WireStyle` rejects non-positive or non-finite thickness and dash lengths when it is created;
 `NodeStyle` rejects a non-positive or non-finite border thickness and an opacity outside 0 to 1, and `IconPrimitive`
 rejects an opacity outside 0 to 1.
 

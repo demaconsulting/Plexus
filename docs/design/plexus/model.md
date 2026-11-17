@@ -9,14 +9,14 @@ and change notification.
 
 The Model subsystem is the document model of Plexus. A `Diagram` is the root of a document; it owns the node-type
 registry supplied by the host, an ordered, observable `PageCollection`, one shared undo history and the diagram-wide
-settings. Each `DiagramPage` is a canvas holding nodes (with their ports), wires, annotations and nestable groups. The model
-is UI-free, single-threaded and the only place where document content is created, changed and removed. Every mutation
-is expressed as an undoable command that runs through the history of the diagram, and every applied change, including
-undo and redo, is announced by the diagram's `Changed` event.
+settings. Each `DiagramPage` is a canvas holding nodes (with their ports), wires, annotations and nestable groups. The
+model is UI-free, single-threaded and the only place where document content is created, changed and removed. Every
+mutation is expressed as an undoable command that runs through the history of the diagram, and every applied change,
+including undo and redo, is announced by the diagram's `Changed` event.
 
-The subsystem contains seven units: Diagram, PageCollection and DiagramPage (documented in their own designs) and the element
-units Node (with its ports), Wire, Annotation and Group. All elements derive from a common element base with an id, the
-page that holds it, the group that contains it, a bounds query and a property-changed event.
+The subsystem contains seven units: Diagram, PageCollection and DiagramPage (documented in their own designs) and the
+element units Node (with its ports), Wire, Annotation and Group. All elements derive from a common element base with an
+id, the page that holds it, the group that contains it, a bounds query and a property-changed event.
 
 ### Interfaces
 
@@ -25,14 +25,14 @@ page that holds it, the group that contains it, a bounds query and a property-ch
   another page; and the events `Changed`, `NodeRenaming` and `NodeRenamed`.
 - **PageCollection**: undoable add, insert, remove and move of pages, a read-only list view and collection-changed
   notifications.
-- **DiagramPage**: undoable creation of nodes, annotations and wires, connection checks, groups, move, remove and re-routing,
-  and the observable content lists.
+- **DiagramPage**: undoable creation of nodes, annotations and wires, connection checks, groups, move, remove and
+  re-routing, and the observable content lists.
 - **Elements**: nodes expose properties, ports and bounds; wires expose their ports and route; annotations expose text,
   fill and bounds; groups expose title, members, collapse state and bounds. Their property setters call back into the
   owning page or diagram so that the change is undoable and announced.
 - **Dependencies of the subsystem**: Types (node types and registry), Properties (node property bags), History (undo
-  history and commands), Geometry, ConnectionRules (host connection decision), Routing (wire router) and Scene (theme and
-  node geometry used for default sizes and port anchors). Two of these refer back to the Model by design: the
+  history and commands), Geometry, ConnectionRules (host connection decision), Routing (wire router) and Scene (theme
+  and node geometry used for default sizes and port anchors). Two of these refer back to the Model by design: the
   connection-rule contract receives Model ports, and node-type callbacks (port provider, tooltip, summary formatting,
   payload factory) receive a Model node. The Model owns the rule slot and calls both; neither side changes the model
   from such a call.

@@ -71,8 +71,8 @@ removed, leaving exactly the bend points a wire stores.
 cover a stub end point. Rather than failing, such an obstacle is shrunk just enough to leave the point on its edge:
 the real node box stays protected while the wire can get out.
 
-**Fallback.** When no path exists in either window (a port that is walled in), the orthogonal router returns the route of
-the simple router for the same request, so a wire is always produced. A wire through a node is preferable to an
+**Fallback.** When no path exists in either window (a port that is walled in), the orthogonal router returns the route
+of the simple router for the same request, so a wire is always produced. A wire through a node is preferable to an
 exception during interactive editing; the user then moves the nodes.
 
 **Simple routing.** The simple router computes a closed-form route from the stub end points: a single vertical run at
@@ -94,17 +94,16 @@ new route to the traffic of the next, so a wire never avoids the stale route of 
 the result of re-routing a page is repeatable. Penalties only add cost, so the search stays optimal for the combined
 cost and its estimate stays admissible.
 
-**Groups as obstacles.** Group frames are not part of the router's own logic: Routing only avoids the boxes it is
-given. The Model (the page, for stored routes) and the Scene (the scene builder, for display routes of collapsed
-groups) decide which group frames to supply and add them to `RouteRequest.Obstacles`, so routers need no group
-knowledge; each of those subsystems carries its own requirement for that responsibility.
-Per wire the frame of every visible group (an expanded group's bounds including the title bar, a collapsed group's box,
-each inflated by the obstacle margin) is added unless one of the wire's two end nodes lies inside that group at any
-depth; a group hidden inside a collapsed group is not drawn and not offered. The option
-`DiagramTheme.GroupsAreObstacles` (default on) switches this off. Routes are still computed only when a wire is created
-or reconnected, when one of its end nodes moves, and by `DiagramPage.RerouteAll`: moving a group does not re-route unrelated
-wires, so hosts call `RerouteAll` afterwards when those wires should avoid the new position. The existing fallback
-applies unchanged when no obstacle-free route exists.
+**Groups as obstacles.** Group frames are not part of the router's own logic: Routing only avoids the boxes it is given.
+The Model (the page, for stored routes) and the Scene (the scene builder, for display routes of collapsed groups) decide
+which group frames to supply and add them to `RouteRequest.Obstacles`, so routers need no group knowledge; each of those
+subsystems carries its own requirement for that responsibility. Per wire the frame of every visible group (an expanded
+group's bounds including the title bar, a collapsed group's box, each inflated by the obstacle margin) is added unless
+one of the wire's two end nodes lies inside that group at any depth; a group hidden inside a collapsed group is not
+drawn and not offered. The option `DiagramTheme.GroupsAreObstacles` (default on) switches this off. Routes are still
+computed only when a wire is created or reconnected, when one of its end nodes moves, and by `DiagramPage.RerouteAll`:
+moving a group does not re-route unrelated wires, so hosts call `RerouteAll` afterwards when those wires should avoid
+the new position. The existing fallback applies unchanged when no obstacle-free route exists.
 
 **Route cleaning and editing.** `RouteCleaner` normalizes a route (collinear bends and zero-length segments vanish,
 the drawn shape never changes) and every stored route passes through it. `RouteEditor` holds the pure geometry of manual

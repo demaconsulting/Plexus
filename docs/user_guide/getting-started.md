@@ -38,11 +38,11 @@ The types used in this guide live in the `DemaConsulting.Plexus` namespace unles
 
 The model separates three concerns, and each chapter of this guide belongs to one of them:
 
-| Concern       | Who owns it             | What it is                                                              |
-|---------------|-------------------------|-------------------------------------------------------------------------|
-| Vocabulary    | The host, once          | `NodeTypeRegistry`: port types, node types, properties, icons           |
-| Content       | The user, per document  | `Diagram`: pages, nodes, wires, annotations, groups, undo history       |
-| Configuration | The host, per diagram   | Theme, router, connection rules, wire and node stylers (never saved)    |
+| Concern | Who owns it | What it is |
+| --- | --- | --- |
+| Vocabulary | The host, once | `NodeTypeRegistry`: port types, node types, properties, icons |
+| Content | The user, per document | `Diagram`: pages, nodes, wires, annotations, groups, undo history |
+| Configuration | The host, per diagram | Theme, router, connection rules, wire and node stylers (never saved) |
 
 ## A First Diagram
 
@@ -125,13 +125,13 @@ thin window over it. When a chapter of this guide says "the demo does it like th
 The demo ships five small, original node domains, each with its own port type and color, so that a diagram can mix
 them freely:
 
-| Domain   | Node types                                              | Port type (color) |
-|----------|---------------------------------------------------------|-------------------|
-| Math     | Constant, Add, Multiply, Sine, Clamp, Scope             | `number` (orange) |
-| Plumbing | Pump, Valve, Tank, Junction, Flow Meter, Drain          | `fluid` (blue)    |
-| Logic    | Switch, AND, OR, NOT, XOR, Lamp                         | `bool` (green)    |
-| Audio    | Oscillator, Filter, Envelope, Amplifier, Mixer, Speaker | `audio` (violet)  |
-| Workflow | Start, Task, Decision, Approval, Notify, End            | `flow` (yellow)   |
+| Domain | Node types | Port type (color) |
+| --- | --- | --- |
+| Math | Constant, Add, Multiply, Sine, Clamp, Scope | `number` (orange) |
+| Plumbing | Pump, Valve, Tank, Junction, Flow Meter, Drain | `fluid` (blue) |
+| Logic | Switch, AND, OR, NOT, XOR, Lamp | `bool` (green) |
+| Audio | Oscillator, Filter, Envelope, Amplifier, Mixer, Speaker | `audio` (violet) |
+| Workflow | Start, Task, Decision, Approval, Notify, End | `flow` (yellow) |
 
 Each domain shows off a feature: plumbing has choice properties and pipes colored by the fluid, logic uses a custom node
 visual and live wire colors, workflow carries host data and fan-in inputs, and audio is a two-oscillator voice with a
@@ -181,7 +181,8 @@ The chapters build on each other in the order of the table of contents; pick the
 - **Create and change diagrams in code, with undo**: *Building and Editing Diagrams* and *Undo, Redo and Dirty Tracking*
 - **Save, load and copy diagrams**: *Saving, Loading and the Clipboard* and *Serialization and Custom File Formats*
 - **Produce pictures without a window**: *Rendering to PNG*
-- **Let users edit diagrams in a desktop application**: *The Avalonia Editor*, *The Node Palette* and *The Property Grid*
+- **Let users edit diagrams in a desktop application**: *The Avalonia Editor*, *The Node Palette* and *The Property
+  Grid*
 - **Change how nodes and wires look or are routed**: *Appearance: Themes and Styling* and *Wires, Routing and Connection
   Rules*
 - **Replace a default or add a hook**: *Extending Plexus*

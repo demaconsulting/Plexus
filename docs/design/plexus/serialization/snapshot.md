@@ -15,10 +15,10 @@ JSON reader and writer.
   `WireSnapshot` (`Id`, `SourceNodeId`, `SourcePort`, `TargetNodeId`, `TargetPort`, `Route`), `AnnotationSnapshot`,
   `GroupSnapshot` (`MemberIds`, `IsCollapsed`, `CollapsedPosition`), `PropertySnapshot` (kind and JSON value) and
   `RectSnapshot` and `PointSnapshot` (plain numbers).
-- `PlexusJson`: two shared contexts (indented and compact) built from source-generated metadata with camelCase names, null
-  omission, a maximum depth of 64 and relaxed escaping so non-ASCII text stays readable.
-- `PropertyCodec`: the seven portable kinds and their exact JSON forms; `NodeDataCodec`: payload serialization
-  through the declared `DataSerializer` or `DataType`; `RawJsonStringConverter` (embeds payload text as a JSON value) and
+- `PlexusJson`: two shared contexts (indented and compact) built from source-generated metadata with camelCase names,
+  null omission, a maximum depth of 64 and relaxed escaping so non-ASCII text stays readable.
+- `PropertyCodec`: the seven portable kinds and their exact JSON forms; `NodeDataCodec`: payload serialization through
+  the declared `DataSerializer` or `DataType`; `RawJsonStringConverter` (embeds payload text as a JSON value) and
   `PropertyKindJsonConverter` (short kind names).
 - `SnapshotWriter` (internal static): the capture half of the clone path. `SnapshotException`: message and the list of
   missing node type keys.
@@ -27,14 +27,15 @@ Invariants: the snapshot holds no type names; `Data` is valid JSON or null; a pr
 
 #### Key Methods
 
-`Diagram.ToSnapshot` / `DiagramPage.ToSnapshot`: capture each page through `SnapshotWriter.CapturePage`, which reads elements
-bottom-most first into lists by kind plus the z-order, serializing node payloads and properties and leaving the diagram
-unchanged.
+`Diagram.ToSnapshot` / `DiagramPage.ToSnapshot`: capture each page through `SnapshotWriter.CapturePage`, which reads
+elements bottom-most first into lists by kind plus the z-order, serializing node payloads and properties and leaving the
+diagram unchanged.
 
-`PlexusJson.Serialize(snapshot, indented)`: writes the snapshot with the indented or compact context. `Deserialize(json)`:
-parses with the compact context (depth-limited), rejects a null document and rejects any format version other than the
-current one with a `SnapshotException`; JSON syntax and shape problems surface as `JsonException`. A document without
-`formatVersion` reads as version 0 and is rejected the same way (see _Runtime Consistency_).
+`PlexusJson.Serialize(snapshot, indented)`: writes the snapshot with the indented or compact context.
+`Deserialize(json)`: parses with the compact context (depth-limited), rejects a null document and rejects any format
+version other than the current one with a `SnapshotException`; JSON syntax and shape problems surface as
+`JsonException`. A document without `formatVersion` reads as version 0 and is rejected the same way (see *Runtime
+Consistency*).
 
 `Diagram.FromSnapshot(snapshot, types)`: checks the version; collects every unknown node type across all pages and
 throws one `SnapshotException` listing them all; creates a diagram, loads each page with history suspended through the
@@ -57,10 +58,10 @@ convert every reader failure - a null result or any exception of the host serial
 
 Preconditions: nodes whose payload type is declared hold a payload of that type.
 
-`Diagram.ToTree` / `FromTree` (`DiagramTree`, internal): the format-neutral tree has the schema of the JSON format and is
-produced from it, so there is one schema. `ToTree` serializes the snapshot compactly, parses it with `JsonDocument` and
-converts objects to `Dictionary<string, object?>`, arrays to `List<object?>` and numbers to `long` (when integral) or
-`double`; the value of every property of kind `double` is then made a `double` so that formats that distinguish `2.0`
+`Diagram.ToTree` / `FromTree` (`DiagramTree`, internal): the format-neutral tree has the schema of the JSON format and
+is produced from it, so there is one schema. `ToTree` serializes the snapshot compactly, parses it with `JsonDocument`
+and converts objects to `Dictionary<string, object?>`, arrays to `List<object?>` and numbers to `long` (when integral)
+or `double`; the value of every property of kind `double` is then made a `double` so that formats that distinguish `2.0`
 from `2` keep the kind visible. `FromTree` writes the tree to JSON with a `Utf8JsonWriter` (accepting every CLR number
 type, `JsonElement`, any `IEnumerable<KeyValuePair<string, object?>>` or non-generic `IDictionary` as an object and any
 other `IEnumerable` as a list; refusing other types, non-finite numbers, non-string keys and nesting beyond the JSON

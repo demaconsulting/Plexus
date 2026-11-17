@@ -35,7 +35,7 @@ treat null as "no icon".
 ### Dependencies
 
 - Core icon source type (key and SVG text).
-- **Svg.Controls.Skia.Avalonia** (OTS) — SVG loading and the SVG image type; see _SvgSkia_ in the OTS design documents.
+- **Svg.Controls.Skia.Avalonia** (OTS) — SVG loading and the SVG image type; see *SvgSkia* in the OTS design documents.
 - **Avalonia** (OTS) — the image abstraction.
 
 ### Callers

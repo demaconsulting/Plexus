@@ -65,8 +65,9 @@ results. The headless platform itself is proven by every test running at all.
 
 - **`Plexus-OTS-Avalonia-Render`**: DiagramEditor_Render_SmallDiagram_PaintsNodesWiresAndText,
   DiagramEditor_Render_GroupsAndConnectPreview_SavesPicture
-- **`Plexus-OTS-Avalonia-Input`**: DiagramEditor_CtrlWheel_ZoomsAroundCursor, DiagramEditor_Wheel_WithoutModifiers_Scrolls,
-  DiagramEditor_MiddleDrag_PansView, DiagramEditor_CtrlZAndCtrlY_UndoAndRedo, DiagramEditor_F2_SelectedNode_StartsRename
+- **`Plexus-OTS-Avalonia-Input`**: DiagramEditor_CtrlWheel_ZoomsAroundCursor,
+  DiagramEditor_Wheel_WithoutModifiers_Scrolls, DiagramEditor_MiddleDrag_PansView,
+  DiagramEditor_CtrlZAndCtrlY_UndoAndRedo, DiagramEditor_F2_SelectedNode_StartsRename
 - **`Plexus-OTS-Avalonia-Text`**: AvaloniaTextMeasurer_Measure_LongerText_IsWider,
   AvaloniaTextMeasurer_Measure_FontSizeAndColor_AffectSizeCorrectly,
   AvaloniaTextMeasurer_Measure_EmptyText_HasLineHeightOnly

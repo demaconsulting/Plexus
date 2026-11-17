@@ -13,13 +13,13 @@ interchange, rendering to PNG, persistence - comes from the library.
 The demo ships five small, original node domains (namespaced keys such as `demo.math.Add`; each type has a
 `NodeType.Category`), each with its own port type and color:
 
-| Domain   | Node types                                                  | Port type (color)  |
-| -------- | ----------------------------------------------------------- | ------------------ |
-| Math     | Constant, Add, Multiply, Sine, Clamp, Scope                 | `number` (orange)  |
-| Plumbing | Pump, Valve, Tank, Junction, Flow Meter, Drain              | `fluid` (blue)     |
-| Logic    | Switch, AND, OR, NOT, XOR, Lamp                             | `bool` (green)     |
-| Audio    | Oscillator, Filter, Envelope, Amplifier, Mixer, Speaker     | `audio` (violet)   |
-| Workflow | Start, Task, Decision, Approval, Notify, End                | `flow` (yellow)    |
+| Domain | Node types | Port type (color) |
+| --- | --- | --- |
+| Math | Constant, Add, Multiply, Sine, Clamp, Scope | `number` (orange) |
+| Plumbing | Pump, Valve, Tank, Junction, Flow Meter, Drain | `fluid` (blue) |
+| Logic | Switch, AND, OR, NOT, XOR, Lamp | `bool` (green) |
+| Audio | Oscillator, Filter, Envelope, Amplifier, Mixer, Speaker | `audio` (violet) |
+| Workflow | Start, Task, Decision, Approval, Notify, End | `flow` (yellow) |
 
 Features each domain shows off:
 
@@ -46,16 +46,15 @@ Features each domain shows off:
 - Audio inspectors: the oscillator (under Oscillator: Waveform, Frequency, Amplitude 0 to 1, Phase in degrees and DC
   Offset), the envelope (under Envelope: Attack, Decay, Sustain and Release, in that order, through
   `PropertyDefinition.Order`) and the filter (under Filter: Type, then Cutoff) open a custom inspector: the library's
-  properties dialog with a live preview next
-  to the grid. The oscillator shows two cycles of its signal against time (ms) with amplitude grid lines, the envelope its
-  ADSR curve with the A, D, S and R phases (an illustrative 200 ms sustain hold), and the filter its magnitude response
-  (a second-order model) from 20 Hz to 20 kHz on a logarithmic axis with the cutoff marked and a dB axis. The previews
-  redraw on every committed edit, reset and cancel, before OK. The math is in the model (`AudioPreview`,
-  `OscillatorSettings`, `EnvelopeSettings`, `FilterSettings`) and the plots are drawn by a small theme-aware control
-  (`Inspectors/SignalPlot.cs`) that follows light and dark mode; its phase labels stay inside the plot area, clear of
-  the axis labels and of each other (a label with no room near its phase is left out), and the vertical axis title
-  starts at the plot's left edge so it never covers the top tick label. Files saved before the new oscillator properties
-  existed load with their defaults.
+  properties dialog with a live preview next to the grid. The oscillator shows two cycles of its signal against time
+  (ms) with amplitude grid lines, the envelope its ADSR curve with the A, D, S and R phases (an illustrative 200 ms
+  sustain hold), and the filter its magnitude response (a second-order model) from 20 Hz to 20 kHz on a logarithmic axis
+  with the cutoff marked and a dB axis. The previews redraw on every committed edit, reset and cancel, before OK. The
+  math is in the model (`AudioPreview`, `OscillatorSettings`, `EnvelopeSettings`, `FilterSettings`) and the plots are
+  drawn by a small theme-aware control (`Inspectors/SignalPlot.cs`) that follows light and dark mode; its phase labels
+  stay inside the plot area, clear of the axis labels and of each other (a label with no room near its phase is left
+  out), and the vertical axis title starts at the plot's left edge so it never covers the top tick label. Files saved
+  before the new oscillator properties existed load with their defaults.
 - Workflow: `Task` nodes carry a `TaskDetails` host data object whose annotations show off the property grid (see
   Host data and the property grid below), edited in the properties dialog and in the properties panel.
 - Samples: `math`, `plumbing` (a water circuit plus an oil and a steam circuit), `logic`, `audio`, `workflow`,
@@ -67,17 +66,19 @@ Features each domain shows off:
   hopping over the vertical wires of other nets (close crossings share one wider hop), different nets that touch (no
   dot, no hop), a dashed steam fan-out, and a collapsed group fanning out through display routes. Use it to check any
   change to wire drawing: `plexus-demo-render --sample wiring --out <dir> --scale 2`.
-- Connections: `DemoAppearance.Options` carries `ConnectionRules.All(ConnectionRules.Default, ConnectionRules.SameType)`,
-  so a wire joins ports of one type only (a number output cannot drive an audio input) and an input accepts a single
-  wire unless its port declaration opts into fan-in (`PortDefinition.AllowsMultipleWires`); such a connection is
-  refused, and the editor shows the reason (for example "Input 'Add1.a' already has a wire; it does not accept more
-  than one.") while the wire is dragged. The workflow step inputs and the Scope input opt into fan-in, because paths of
-  a workflow merge naturally and a scope overlays several traces; merging wires are drawn with a dot where they join.
+- Connections: `DemoAppearance.Options` carries
+  `ConnectionRules.All(ConnectionRules.Default, ConnectionRules.SameType)`, so a wire joins ports of one type only (a
+  number output cannot drive an audio input) and an input accepts a single wire unless its port declaration opts into
+  fan-in (`PortDefinition.AllowsMultipleWires`); such a connection is refused, and the editor shows the reason (for
+  example "Input 'Add1.a' already has a wire; it does not accept more than one.") while the wire is dragged. The
+  workflow step inputs and the Scope input opt into fan-in, because paths of a workflow merge naturally and a scope
+  overlays several traces; merging wires are drawn with a dot where they join.
 
 ## Wire appearance
 
-`DemoAppearance.Options` (in the Model project, so the GUI and the `plexus-demo-render` command-line tool
-draw the same wires) is the one `DiagramOptions` of the demo; it installs one `Diagram.WireStyler`, composed with `WireStylers.Combine`:
+`DemoAppearance.Options` (in the Model project, so the GUI and the `plexus-demo-render` command-line tool draw the same
+wires) is the one `DiagramOptions` of the demo; it installs one `Diagram.WireStyler`, composed with
+`WireStylers.Combine`:
 
 1. **By port type** (`WireStylers.ByPortType()`): every wire takes the color of its source port's type.
 2. **Fluid**: a fluid wire is colored by the fluid that flows in it - Water blue, Oil brown, Steam light gray and
@@ -161,13 +162,13 @@ paste in the basic one: nothing is pasted and the status bar reports
 - **Properties dialog** (double-click a node other than a switch, context menu > Properties, or Edit > Properties... /
   Alt+Enter with a single node selected; the menu item is disabled otherwise; Alt+Enter opens the dialog once Alt is
   released, so the window's access key handling sees the whole chord and the first key press after the dialog reaches
-  the editor): the library's `NodePropertiesDialog.ShowAsync(window, node)`, which is a staged `PropertyGrid`. It
-  lists the name (first, as `(Name)`), the declared properties (check box, drop-down for choices, text with validation
-  that accepts a unit, color editor, the slider for properties with the editor hint `slider`) and, for Task nodes, the
+  the editor): the library's `NodePropertiesDialog.ShowAsync(window, node)`, which is a staged `PropertyGrid`. It lists
+  the name (first, as `(Name)`), the declared properties (check box, drop-down for choices, text with validation that
+  accepts a unit, color editor, the slider for properties with the editor hint `slider`) and, for Task nodes, the
   annotated `TaskDetails` host data. OK applies everything as one undo entry; Cancel changes nothing; a rejected or
   vetoed rename keeps the dialog open with the reason. The whole integration is one line:
-  `Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(this, e.Node);` (the demo also
-  flips switches on double-click, hence `ActivateNodeAsync`). For oscillators, envelopes and filters `ShowPropertiesAsync`
+  `Editor.NodeDoubleClicked += async (_, e) => await NodePropertiesDialog.ShowAsync(this, e.Node);` (the demo also flips
+  switches on double-click, hence `ActivateNodeAsync`). For oscillators, envelopes and filters `ShowPropertiesAsync`
   passes `new NodePropertiesDialogOptions { Preview = ... }` from `Inspectors/AudioInspectors.cs`, which shows the live
   preview to the right of the grid in a wider dialog; the preview reads the staged values through `NodePreviewContext`
   and never writes, so OK and Cancel behave exactly as in the plain dialog.
@@ -308,7 +309,8 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
   `{id,name}`; the node becomes the selection.
 - `move-node` (`node`, `x`, `y` = top-left) -> the new bounds.
 - `set-property` (`node`, `name`, `value`) -> the stored value, parsed against the property definition.
-- `toggle-switch` (`node`) -> `{name,on}`; flips a Switch's `On` like a double-click (undoable); other nodes are refused.
+- `toggle-switch` (`node`) -> `{name,on}`; flips a Switch's `On` like a double-click (undoable); other nodes are
+  refused.
 - `rename` (`node`, `name`) -> `{name}`; when refused, the error is the rename pipeline's reason.
 - `connect` (`from`, `to`, `fromDirection?`, `toDirection?`) -> the wire.
 - `delete` (`ids` or `names`) -> `{deleted}`; deletes the elements directly (`DiagramEditor.Delete`) and leaves the
@@ -331,8 +333,8 @@ Commands (arguments in parentheses, `?` = optional; result keys after the arrow)
 - `zoom-to` (`ids` or `names`, `margin?` default 30) -> `{page,zoom,offsetX,offsetY}`; `DiagramEditor.ZoomToFit` of
   the elements (the first element's page is shown).
 - `tooltip` (`element` or `node`, or `port` + optional `direction`) -> `{text,preview}`: the tooltip the editor would
-  show (`DiagramEditor.GetToolTipContent`), or a null `text` when there is none. When the tooltip is a control (the
-  plot thumbnail of an oscillator, envelope or filter), `text` is the texts of its text blocks, one per line (for example
+  show (`DiagramEditor.GetToolTipContent`), or a null `text` when there is none. When the tooltip is a control (the plot
+  thumbnail of an oscillator, envelope or filter), `text` is the texts of its text blocks, one per line (for example
   `Osc1\nSaw, 220 Hz` or `Tone\nLow-pass, 900 Hz`), and `preview` is true; for text tooltips `preview` is false.
 - `save` (`path?`, default the current file) -> `{path}`; `open` (`path`) -> like `info`, without an unsaved-changes
   prompt; `new` -> like `info`.

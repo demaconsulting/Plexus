@@ -4,8 +4,8 @@
 
 #### Purpose
 
-Is the built scene: it exposes the primitives, answers hit tests and region queries from the geometry that was drawn, and
-publishes node, group and wire layouts.
+Is the built scene: it exposes the primitives, answers hit tests and region queries from the geometry that was drawn,
+and publishes node, group and wire layouts.
 
 #### Data Model
 
@@ -17,8 +17,8 @@ publishes node, group and wire layouts.
   port, wire segment index, bend index, plus `Node`, `IsHit` and `GetWireSegment`). Segment `i` joins points `i` and
   `i + 1` of the full polyline, source anchor to target anchor; bend `i` is the route point `i`, polyline point `i + 1`.
   The end handles carry the wire's port in `Port`.
-- `HitTarget` (internal): a kind, element, optional port, optional bend index and area, either a rectangle, a border band
-  or a polyline with a half thickness.
+- `HitTarget` (internal): a kind, element, optional port, optional bend index and area, either a rectangle, a border
+  band or a polyline with a half thickness.
 - `SpatialIndex<T>` (internal): items and bounds lists in insertion order, a dictionary from cell key to item indexes
   (128-unit cells by default), and a list of large items (more than 64 cells).
 
@@ -36,9 +36,9 @@ segment is at most the tolerance plus half the wire thickness and reports the ne
 Handle priority: the composer appends the targets of selected wires last, in the order segments, bend handles, end
 handles, so the backwards walk meets handles first, then the selected wire's segments, then everything drawn earlier
 (nodes, annotations, unselected wires). A rectangle handle target reports its kind with the bend index or the port.
-Handle targets (wire bends, wire ends, the annotation resize handle) exist only for elements in `SceneOptions.Selection`,
-so a wire that is not selected is hit as `Wire` even directly on a bend; this is documented on `DiagramScene.HitTest`,
-`HitKind` and `SceneOptions.Selection`.
+Handle targets (wire bends, wire ends, the annotation resize handle) exist only for elements in
+`SceneOptions.Selection`, so a wire that is not selected is hit as `Wire` even directly on a bend; this is documented on
+`DiagramScene.HitTest`, `HitKind` and `SceneOptions.Selection`.
 
 `Query(region)`: returns the primitives whose bounds intersect the region, in painting order.
 

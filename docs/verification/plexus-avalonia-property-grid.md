@@ -6,16 +6,16 @@ editor registry.
 
 ## Verification Approach
 
-System verification is end to end through the public API: small original test objects (a mixer with levels and
-channels, a person with every supported annotation) are shown through `ReflectionPropertySource`, ordered with
-`PropertyOrdering`, and edited through `PropertyEditSession`, and the results are checked on the objects themselves.
-There are no mocks; all ten units are real. The tests are xUnit tests in `PlexusAvaloniaPropertyGridTests.cs` in the
-PlexusAvaloniaPropertyGrid test project, sharing the fixtures in `TestModels.cs` and `TestHelpers.cs`. Unit-level
-behavior is verified separately (see the unit verification designs). The shared `TestApp.cs` and `UiTest.cs` start the
-Avalonia headless platform (Fluent theme, Skia drawing) on which the control scenarios run; `GridHarness.cs` hosts
-controls in a window, finds them by automation id, presses keys and captures screenshots, and `SampleModels.cs` holds the
-original sample object. The control scenarios drive the real controls and check the objects they edit; the screenshot
-tests (`PropertyGridScreenshotTests.cs`) render the grid, the dialog and the collection editor to PNG files in the
+System verification is end to end through the public API: small original test objects (a mixer with levels and channels,
+a person with every supported annotation) are shown through `ReflectionPropertySource`, ordered with `PropertyOrdering`,
+and edited through `PropertyEditSession`, and the results are checked on the objects themselves. There are no mocks; all
+ten units are real. The tests are xUnit tests in `PlexusAvaloniaPropertyGridTests.cs` in the PlexusAvaloniaPropertyGrid
+test project, sharing the fixtures in `TestModels.cs` and `TestHelpers.cs`. Unit-level behavior is verified separately
+(see the unit verification designs). The shared `TestApp.cs` and `UiTest.cs` start the Avalonia headless platform
+(Fluent theme, Skia drawing) on which the control scenarios run; `GridHarness.cs` hosts controls in a window, finds them
+by automation id, presses keys and captures screenshots, and `SampleModels.cs` holds the original sample object. The
+control scenarios drive the real controls and check the objects they edit; the screenshot tests
+(`PropertyGridScreenshotTests.cs`) render the grid, the dialog and the collection editor to PNG files in the
 `plexus-pg-net{major}` folder of the temp path (one per .NET runtime), which are reviewed by eye for a clean,
 professional look.
 
@@ -37,9 +37,9 @@ All system tests must pass on every supported platform for the platform requirem
 
 ## Test Scenarios
 
-- **PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject**: a mixer object is shown in categories
-  (Channels, Levels) with labels, a description, the text of a value, the changed state of a property with a default,
-  without its hidden property, and a collection as `(Collection)`. Also the platform-evidence scenario for every platform
+- **PlexusAvaloniaPropertyGrid_ReflectionSource_ShowsAnnotatedObject**: a mixer object is shown in categories (Channels,
+  Levels) with labels, a description, the text of a value, the changed state of a property with a default, without its
+  hidden property, and a collection as `(Collection)`. Also the platform-evidence scenario for every platform
   requirement.
 - **PlexusAvaloniaPropertyGrid_StagedSession_EditsAndCommitsAnObject**: in a staged session a text edit is buffered, an
   invalid text is reported as an error, a channel is added through a collection editor, the object is untouched until
@@ -48,11 +48,11 @@ All system tests must pass on every supported platform for the platform requirem
   host-supplied item and a reflection source writes through both and lists the host item first.
 - **PlexusAvaloniaPropertyGrid_EditorRegistry_ResolvesEditorsForAnnotatedProperties**: an annotated property resolves
   to its registered editor key, an enumeration to the registration for `Enum`, and other properties to the fallback.
-- **PlexusAvaloniaPropertyGrid_PropertyGrid_ShowsAndEditsAnAnnotatedObject**: the grid shows the categories of the sample
-  object, a typed caption is written and shown in bold, and an out-of-range timeout is refused with the red error border
-  (error path).
-- **PlexusAvaloniaPropertyGrid_PropertyGridDialog_CommitsOrDiscardsTheEdits**: the dialog helper commits on OK inside the
-  host scope (one call) and returns true; a second dialog discards its edit on Cancel and returns false.
+- **PlexusAvaloniaPropertyGrid_PropertyGrid_ShowsAndEditsAnAnnotatedObject**: the grid shows the categories of the
+  sample object, a typed caption is written and shown in bold, and an out-of-range timeout is refused with the red error
+  border (error path).
+- **PlexusAvaloniaPropertyGrid_PropertyGridDialog_CommitsOrDiscardsTheEdits**: the dialog helper commits on OK inside
+  the host scope (one call) and returns true; a second dialog discards its edit on Cancel and returns false.
 - **PlexusAvaloniaPropertyGrid_CollectionEditor_EditsCollectionThroughWorkingCopy**: in a staged session the collection
   editor adds, moves and renames a member on its working list; OK records a pending edit that the commit applies.
 - **PlexusAvaloniaPropertyGrid_CustomEditor_IsUsedForAnnotatedProperty**: a slider registered under the key of an
@@ -60,22 +60,22 @@ All system tests must pass on every supported platform for the platform requirem
 - **PlexusAvaloniaPropertyGrid_CustomSource_OrdersCategoryItemsByRank**: the grid control shows custom items supplied
   out of order in the order of their ranks within their category (Attack, Decay, Sustain, Release), and an equal-rank
   pair declared out of alphabetical order (Level before Balance) alphabetically, then the next category.
-- **PlexusAvaloniaPropertyGrid_AlphabeticalView_IgnoresItemRank**: the same ranked items in the alphabetical view are one
-  flat alphabetical list whatever their ranks and categories.
+- **PlexusAvaloniaPropertyGrid_AlphabeticalView_IgnoresItemRank**: the same ranked items in the alphabetical view are
+  one flat alphabetical list whatever their ranks and categories.
 - **PlexusAvaloniaPropertyGrid_PlexusNode_IsShownAndEditedAsOneUndoEntry**: a node given to the factory is shown
   by the node source; a staged commit of a rename, a property and a data edit is one undo entry; two live edits are
   two entries; the previous data object is never mutated.
 - **PlexusAvaloniaPropertyGrid_PlexusNode_ListsPropertiesInDefinitionOrder**: the grid control given a node whose
   properties declare a display order lists the name and the ranked General rows, then the Envelope rows in declared
   order rather than alphabetically.
-- **PlexusAvaloniaPropertyGrid_PlexusNode_EqualOrders_ListAlphabetically**: properties that declare the same display order
-  (declared Zeta, Idle, alpha, ice, Hue) are listed alphabetically ignoring case after a property with a negative order
-  (boundary).
+- **PlexusAvaloniaPropertyGrid_PlexusNode_EqualOrders_ListAlphabetically**: properties that declare the same display
+  order (declared Zeta, Idle, alpha, ice, Hue) are listed alphabetically ignoring case after a property with a negative
+  order (boundary).
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_CommitsOrDiscardsAsOneUndoEntry**: a node dialog cancelled changes
   nothing; a second one commits a rename and a data edit with OK as one undo entry.
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewFollowsStagedEditsAndCommitsOnce**: a node dialog with a live
-  preview shows a staged frequency in the preview before OK, Cancel leaves the node unchanged, and a second dialog commits
-  a frequency and a rename with OK as one undo entry.
+  preview shows a staged frequency in the preview before OK, Cancel leaves the node unchanged, and a second dialog
+  commits a frequency and a rename with OK as one undo entry.
 - **PlexusAvaloniaPropertyGrid_NodePropertiesDialog_PreviewNotifiedOnEditResetAndSessionCancel**: the preview of a node
   dialog is notified once for a staged edit (880), once for a reset (the default, 440) and once for
   `Session.Cancel()` (the node's value); the dialog's Cancel button raises no notification; in a second dialog OK
@@ -87,5 +87,5 @@ All system tests must pass on every supported platform for the platform requirem
   undo history are untouched throughout.
 - **PlexusAvaloniaPropertyGrid_Dependencies_GenericLayers_UseNoPlexusTypes**: no type outside the Plexus adapter
   namespace has a field, property, method, constructor or base type from a Plexus namespace.
-- **PlexusAvaloniaPropertyGrid_HeadlessHost_RunsOnTheUiThread**: the headless Avalonia host used by the control tests starts
-  and runs a body on the UI thread (support check; no requirement depends on it).
+- **PlexusAvaloniaPropertyGrid_HeadlessHost_RunsOnTheUiThread**: the headless Avalonia host used by the control tests
+  starts and runs a body on the UI thread (support check; no requirement depends on it).

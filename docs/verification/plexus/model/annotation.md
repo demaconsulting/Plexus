@@ -4,10 +4,10 @@ Scope: Sticky-note and text-box element with resizable bounds and optional fill.
 
 #### Verification Approach
 
-The unit is verified with unit tests that use the real Model classes through the public API (no mocks): annotations
-are created with the page API on a diagram with the shared test node types. Undo and redo are checked with the shared
-round-trip helper, which compares a full-state dump of the diagram after each step. Tests live in
-`AnnotationTests.cs`, `PageCollectionTests.cs`, `DiagramPageMoveTests.cs`, `DiagramPageCreationTests.cs` and `DiagramPageRemoveTests.cs`.
+The unit is verified with unit tests that use the real Model classes through the public API (no mocks): annotations are
+created with the page API on a diagram with the shared test node types. Undo and redo are checked with the shared
+round-trip helper, which compares a full-state dump of the diagram after each step. Tests live in `AnnotationTests.cs`,
+`PageCollectionTests.cs`, `DiagramPageMoveTests.cs`, `DiagramPageCreationTests.cs` and `DiagramPageRemoveTests.cs`.
 
 #### Test Environment
 

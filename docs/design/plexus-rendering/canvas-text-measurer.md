@@ -42,7 +42,7 @@ at the requested size, capped at 1.25 times the size.
 ### Dependencies
 
 - Core `ITextMeasurer`, `TextStyle` and `Size`.
-- CanvasNet (OTS) font catalog, font loading and text measurement; see _CanvasNet_ in the OTS design documents.
+- CanvasNet (OTS) font catalog, font loading and text measurement; see *CanvasNet* in the OTS design documents.
 
 ### Callers
 

@@ -6,15 +6,16 @@ and change notification.
 ### Verification Approach
 
 The Model subsystem is verified with integration tests that use the public API only and exercise the Diagram,
-PageCollection, DiagramPage and the element units together, with the real undo history, router, connection rules and theme.
-Nothing is mocked because every collaborator is in-memory and deterministic. Each scenario is a short editing session
-on a diagram built from the shared test node types; it asserts on the resulting model, on error behavior, and, where
-undo is part of the requirement, on the model after undo and redo. Unit-level behavior is verified by the unit tests
-of each unit and is not reused as subsystem evidence.
+PageCollection, DiagramPage and the element units together, with the real undo history, router, connection rules and
+theme. Nothing is mocked because every collaborator is in-memory and deterministic. Each scenario is a short editing
+session on a diagram built from the shared test node types; it asserts on the resulting model, on error behavior, and,
+where undo is part of the requirement, on the model after undo and redo. Unit-level behavior is verified by the unit
+tests of each unit and is not reused as subsystem evidence.
 
 ### Test Environment
 
-Standard xUnit v3 test runner on .NET (net8.0, net9.0, net10.0 and net11.0). No external services, files or configuration.
+Standard xUnit v3 test runner on .NET (net8.0, net9.0, net10.0 and net11.0). No external services, files or
+configuration.
 
 ### Acceptance Criteria
 
@@ -75,8 +76,8 @@ the ReqStream trace matrix.
 
 #### Undo and redo (`Plexus-Model-UndoRedo`)
 
-- **Model_UndoRedo_MixedEditingSession_RestoresEveryStateExactly**: ten different operations are applied, undo walks back
-  through every recorded state exactly, and redo replays them exactly.
+- **Model_UndoRedo_MixedEditingSession_RestoresEveryStateExactly**: ten different operations are applied, undo walks
+  back through every recorded state exactly, and redo replays them exactly.
 
 #### Wire styler (`Plexus-Model-WireStyler`)
 
@@ -90,8 +91,8 @@ the ReqStream trace matrix.
 
 #### Change notification (`Plexus-Model-ChangeNotification`)
 
-- **Model_ChangeNotification_EditsUndoAndRedo_RaiseChangedForEveryChange**: page, element, rename, settings, undo and redo
-  changes raise the expected sequence of change kinds.
+- **Model_ChangeNotification_EditsUndoAndRedo_RaiseChangedForEveryChange**: page, element, rename, settings, undo and
+  redo changes raise the expected sequence of change kinds.
 - **Model_ChangeNotification_ObservableCollections_ReportAddMoveRemove**: the page collection and a page's node list
   report add, move and remove.
 

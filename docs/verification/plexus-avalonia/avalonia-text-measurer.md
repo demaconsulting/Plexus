@@ -23,8 +23,8 @@ A test passes when the measured sizes stand in the specified relation to each ot
 
 - **AvaloniaTextMeasurer_Measure_LongerText_IsWider**: a long text is more than three times as wide as a short one and
   both have the same, positive height.
-- **AvaloniaTextMeasurer_Measure_FontSizeAndColor_AffectSizeCorrectly**: doubling the font size nearly doubles the width;
-  changing only the color gives an equal size.
+- **AvaloniaTextMeasurer_Measure_FontSizeAndColor_AffectSizeCorrectly**: doubling the font size nearly doubles the
+  width; changing only the color gives an equal size.
 - **AvaloniaTextMeasurer_Measure_EmptyText_HasLineHeightOnly**: the empty string has zero width and a positive height
   (boundary: empty input).
 - **AvaloniaTextMeasurer_Measure_NullArguments_Throw**: a null text and a null style are rejected (error path).

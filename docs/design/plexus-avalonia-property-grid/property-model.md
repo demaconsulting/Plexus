@@ -19,9 +19,9 @@ belongs to this unit because nested items are built from it.
 - **Item state**: an item holds its parent (for nested items), and caches its child items together with the value
   instance (reference types) or runtime type (value types) they were built for. Everything else is derived on demand
   from the descriptor or from the subclass, so an item is always consistent with the target.
-- **Path**: the item's root path for a top-level item (its name, unless the source prefixes it, as the Plexus node source
-  does with `Node.`, `Property.` and `Data.`), `Parent.Name` for a nested property and `Parent[index]` for a collection
-  element. The path is the key of edits and errors in the edit session.
+- **Path**: the item's root path for a top-level item (its name, unless the source prefixes it, as the Plexus node
+  source does with `Node.`, `Property.` and `Data.`), `Parent.Name` for a nested property and `Parent[index]` for a
+  collection element. The path is the key of edits and errors in the edit session.
 - **PropertyResult**: a success flag with an error message; all `Try...` members return it.
 - **StandardValue**: a value with its display text.
 - **Descriptor-backed item**: caches the default value, display, editor annotations and whether the owner declares a
@@ -32,18 +32,17 @@ belongs to this unit because nested items are built from it.
 
 ### Key Methods
 
-- **Metadata members** (`DisplayName`, `Category`, `CategoryOrder` (the rank of the category when sorting by
-  category, default 0), `Order` (the rank of the item within its category when sorting by category, default 0; the
-  reflection item keeps 0, a custom item takes `CustomPropertyOptions.Order`), `Description`, `IsReadOnly`,
-  `IsBrowsable`, `IsPasswordText`, `IsParenthesized`, `RefreshMode`, `EditorKey`, `EditorType`, `Label`) — read the `System.ComponentModel`
-  annotations (`DisplayName`, `Category` with the default "Misc", `Description`, `ReadOnly`, `Browsable`,
-  `PasswordPropertyText`, `ParenthesizePropertyName`, `RefreshProperties`, `PropertyEditor`) and, when those are
-  absent, the data annotations `Display` and `Editable`. The editor key comes from a `PropertyEditor` annotation of the
-  property; when the property has none, from a `UIHint` data annotation (the hint for the `Avalonia` presentation layer
-  preferred over a layer-less one, hints for other layers ignored), so that a model can name a custom editor without
-  referencing the Avalonia assembly; and only then from a `PropertyEditor` annotation of the property type. A property
-  without a setter is read-only; the children of a
-  read-only value-type property are read-only.
+- **Metadata members** (`DisplayName`, `Category`, `CategoryOrder` (the rank of the category when sorting by category,
+  default 0), `Order` (the rank of the item within its category when sorting by category, default 0; the reflection item
+  keeps 0, a custom item takes `CustomPropertyOptions.Order`), `Description`, `IsReadOnly`, `IsBrowsable`,
+  `IsPasswordText`, `IsParenthesized`, `RefreshMode`, `EditorKey`, `EditorType`, `Label`) — read the
+  `System.ComponentModel` annotations (`DisplayName`, `Category` with the default "Misc", `Description`, `ReadOnly`,
+  `Browsable`, `PasswordPropertyText`, `ParenthesizePropertyName`, `RefreshProperties`, `PropertyEditor`) and, when
+  those are absent, the data annotations `Display` and `Editable`. The editor key comes from a `PropertyEditor`
+  annotation of the property; when the property has none, from a `UIHint` data annotation (the hint for the `Avalonia`
+  presentation layer preferred over a layer-less one, hints for other layers ignored), so that a model can name a custom
+  editor without referencing the Avalonia assembly; and only then from a `PropertyEditor` annotation of the property
+  type. A property without a setter is read-only; the children of a read-only value-type property are read-only.
 - **`HasDefault`, `IsDefaultValueKnown`, `DefaultValue`, `IsChanged`, `CanReset`, `Reset`** — `HasDefault` is true for a
   `DefaultValue` annotation or a `ShouldSerialize<Name>` method; `IsChanged` asks the descriptor
   (`ShouldSerializeValue`) and so follows the WinForms rule; `CanReset` and reset use the descriptor (`CanResetValue`,
@@ -62,8 +61,8 @@ belongs to this unit because nested items are built from it.
   report a `NotSupportedException` or a failed result. `SupportsTextEditing` asks the converter
   (`CanConvertFrom(string)`), which is user code: a non-fatal exception from that probe is treated as "no text editing"
   (false) instead of escaping into the grid, which asks every item while it builds its rows.
-- **`HasStandardValues`, `StandardValuesExclusive`, `GetStandardValues`** — expose the converter's standard values (enums,
-  `bool`, custom lists that may depend on the owner instance) with their text.
+- **`HasStandardValues`, `StandardValuesExclusive`, `GetStandardValues`** — expose the converter's standard values
+  (enums, `bool`, custom lists that may depend on the owner instance) with their text.
 - **`IsExpandable`, `Children`** — a converter that supports properties (such as `ExpandableObjectConverter`) makes the
   item expandable; the children are the browsable properties of the current value, using the converter of the value's
   runtime type for object-typed properties.
@@ -71,14 +70,14 @@ belongs to this unit because nested items are built from it.
   `ICollection<T>` and `IReadOnlyCollection<T>` types are collections; strings and dictionaries are not. Taking the
   snapshot of the elements is guarded: a collection whose enumeration throws a non-fatal exception reads as empty.
 
-The converter receives an `ITypeDescriptorContext` whose `Instance` is the owner object and whose `PropertyDescriptor` is
-the item's descriptor, so context-sensitive converters work as in the WinForms grid.
+The converter receives an `ITypeDescriptorContext` whose `Instance` is the owner object and whose `PropertyDescriptor`
+is the item's descriptor, so context-sensitive converters work as in the WinForms grid.
 
 ### Error Handling
 
 User code is called only through guarded members: exceptions from getters, setters, converters, validation attributes
-and reset methods become `PropertyResult` failures with the innermost (reflection-unwrapped) message. Out-of-memory
-and similar process-level failures are not caught. The raw members (`GetValue`, `SetValue`, `ConvertFromString`) document
+and reset methods become `PropertyResult` failures with the innermost (reflection-unwrapped) message. Out-of-memory and
+similar process-level failures are not caught. The raw members (`GetValue`, `SetValue`, `ConvertFromString`) document
 that they can throw.
 
 ### Dependencies

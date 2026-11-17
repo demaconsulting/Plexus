@@ -81,8 +81,8 @@ Requirements: `Plexus-Properties-Validation`, `Plexus-Properties-NumericConversi
 
 #### Access, enumeration and reset (`Plexus-Properties-Access`, `Plexus-Properties-Enumeration`, `Plexus-Properties-Reset`)
 
-- **Properties_Access_ReadEnumerateAndReset_BehaveAsDocumented**: typed reads convert or fail, enumeration lists declared
-  then ad-hoc properties in order, and reset restores a default or removes an ad-hoc property.
+- **Properties_Access_ReadEnumerateAndReset_BehaveAsDocumented**: typed reads convert or fail, enumeration lists
+  declared then ad-hoc properties in order, and reset restores a default or removes an ad-hoc property.
 
 #### Undo and notification
 

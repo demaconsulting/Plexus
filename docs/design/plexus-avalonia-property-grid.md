@@ -24,9 +24,9 @@ when the package loads.
   and changed state, value access, text conversion and standard values through the type converter, the properties of
   expandable objects, collection elements, and validation. Failures are returned as `PropertyResult`. The
   descriptor-backed implementation of an item belongs to this unit.
-- **PropertySources** (unit, public) — `IPropertySource` and its implementations: `ReflectionPropertySource` (any object,
-  through `TypeDescriptor`), `CustomPropertySource` with `CustomPropertyItem` (host-supplied items without reflection),
-  `CompositePropertySource` (merge), `PropertySourceFactory` (pick a source for an object, with registrable
+- **PropertySources** (unit, public) — `IPropertySource` and its implementations: `ReflectionPropertySource` (any
+  object, through `TypeDescriptor`), `CustomPropertySource` with `CustomPropertyItem` (host-supplied items without
+  reflection), `CompositePropertySource` (merge), `PropertySourceFactory` (pick a source for an object, with registrable
   adapters), `IPropertyCommitScope` (a source that brackets the commits of its session) and `PropertyOrdering`
   (categorized and alphabetical order and grouping, with a category rank and an item rank within a category).
 - **EditSession** (unit, public) — `PropertyEditSession` applies edits live or staged until commit, with per-property
@@ -38,10 +38,10 @@ when the package loads.
 - **PropertyGridControl** (unit, public) — the `PropertyGrid` control: two-column layout, categories, sorting, search,
   expansion, selection, description pane and keyboard handling over a source and an edit session.
 - **PropertyEditors** (unit, public) — the editors of the value column (text, password, check box, drop-downs, flags,
-  color, nested, collection), the `PropertyEditorContext` they use to read and write through the session, and the default
-  editor registry; hosts register their own editors.
-- **CollectionEditorUi** (unit, public) — `CollectionEditorView` (embeddable) and `CollectionEditorDialog`: a members list
-  with Add, Remove and Move and a nested grid for the selected member, applying through the session on OK.
+  color, nested, collection), the `PropertyEditorContext` they use to read and write through the session, and the
+  default editor registry; hosts register their own editors.
+- **CollectionEditorUi** (unit, public) — `CollectionEditorView` (embeddable) and `CollectionEditorDialog`: a members
+  list with Add, Remove and Move and a nested grid for the selected member, applying through the session on OK.
 - **PropertyGridDialog** (unit, public) — a one-call modal dialog that edits an object in a staged grid.
 - **PlexusNodeSource** (unit, public) — `NodePropertySource`, `AnnotationPropertySource` and `GroupPropertySource`: the
   sources that show a Plexus node (name, declared properties, host data on a working copy), annotation or group, each
@@ -119,25 +119,25 @@ sequenceDiagram
 
 ## External Interfaces
 
-| Interface                          | Direction | Format                          | Constraints                  |
-|------------------------------------|-----------|---------------------------------|------------------------------|
-| `ReflectionPropertySource(object)` | In        | Annotated .NET object           | Not null                     |
-| `IPropertySource`                  | In / Out  | Items, change notifications     | Changes on any thread        |
-| `PropertyItem` members             | Out       | Metadata, values, text, results | `Try...` members never throw |
-| `PropertyEditSession`              | In / Out  | Edits in; pending edits, errors | UI thread only               |
-| Commit scope (`Action<Action>`)    | Out       | Host hook that runs the writes  | Runs the action exactly once |
-| `PropertyEditorAttribute`          | In        | Annotation: editor key or type  | Key not empty                |
-| `PropertyEditorRegistry<TEditor>`  | In / Out  | Editors by key or property type | Thread-safe                  |
-| `PropertyGrid` control             | In / Out  | Object or source in; session    | UI thread only               |
-| Editor factory                     | In        | Creates the editor control      | Writes through the context   |
-| `CollectionEditorDialog` / view    | In / Out  | Session, collection item; list  | UI thread only               |
-| `PropertyGridDialog.ShowAsync`     | In / Out  | Owner, object, title, scope     | Not null; UI thread only     |
-| `NodePropertySource(Node)`         | In / Out  | Node; rows, commits, changes    | Node attached; UI thread     |
-| `PropertyDefinition.Order` mapping | In        | Rank of a declared property     | Categorized view only        |
-| `NodePropertiesDialog.ShowAsync`   | In / Out  | Owner, node; true on OK         | Node attached; UI thread     |
-| `NodePropertiesDialogOptions`      | In        | Preview, placement, title, size | Size positive and finite     |
-| `NodePreviewContext`               | Out       | Staged values; change events    | Read-only; UI thread only    |
-| `IPropertyCommitScope.RunCommit`   | Out       | Source hook around each commit  | Runs the action exactly once |
+| Interface | Direction | Format | Constraints |
+| --- | --- | --- | --- |
+| `ReflectionPropertySource(object)` | In | Annotated .NET object | Not null |
+| `IPropertySource` | In / Out | Items, change notifications | Changes on any thread |
+| `PropertyItem` members | Out | Metadata, values, text, results | `Try...` members never throw |
+| `PropertyEditSession` | In / Out | Edits in; pending edits, errors | UI thread only |
+| Commit scope (`Action<Action>`) | Out | Host hook that runs the writes | Runs the action exactly once |
+| `PropertyEditorAttribute` | In | Annotation: editor key or type | Key not empty |
+| `PropertyEditorRegistry<TEditor>` | In / Out | Editors by key or property type | Thread-safe |
+| `PropertyGrid` control | In / Out | Object or source in; session | UI thread only |
+| Editor factory | In | Creates the editor control | Writes through the context |
+| `CollectionEditorDialog` / view | In / Out | Session, collection item; list | UI thread only |
+| `PropertyGridDialog.ShowAsync` | In / Out | Owner, object, title, scope | Not null; UI thread only |
+| `NodePropertySource(Node)` | In / Out | Node; rows, commits, changes | Node attached; UI thread |
+| `PropertyDefinition.Order` mapping | In | Rank of a declared property | Categorized view only |
+| `NodePropertiesDialog.ShowAsync` | In / Out | Owner, node; true on OK | Node attached; UI thread |
+| `NodePropertiesDialogOptions` | In | Preview, placement, title, size | Size positive and finite |
+| `NodePreviewContext` | Out | Staged values; change events | Read-only; UI thread only |
+| `IPropertyCommitScope.RunCommit` | Out | Source hook around each commit | Runs the action exactly once |
 
 Errors from user code (accessors, converters, validation attributes) are reported as `PropertyResult` values, never as
 exceptions. Argument errors (null arguments) are reported as `ArgumentNullException` or `ArgumentException`. The node
@@ -149,11 +149,11 @@ dialog does as soon as its close is confirmed. Equal display orders are listed a
 
 - **Avalonia** (OTS) — the controls (grid, editors, collection editor, dialogs) are Avalonia controls that take their
   colors from the Fluent theme resources; the UI-free layers use only the .NET base class library. The controls are
-  tested on the headless Avalonia host (Skia drawing). See _Avalonia_ in the OTS design documents.
+  tested on the headless Avalonia host (Skia drawing). See *Avalonia* in the OTS design documents.
 
-- **DemaConsulting.Plexus** (the core package) — used only by the Plexus adapter layer (nodes, the property bag, the rename
-  pipeline, `UndoHistory.Transact`, `Node.CloneData`). The generic layers use no Plexus type (verified by a system
-  test); the package has no dependency on the Rendering or Avalonia editor packages.
+- **DemaConsulting.Plexus** (the core package) — used only by the Plexus adapter layer (nodes, the property bag, the
+  rename pipeline, `UndoHistory.Transact`, `Node.CloneData`). The generic layers use no Plexus type (verified by a
+  system test); the package has no dependency on the Rendering or Avalonia editor packages.
 
 ## Risk Control Measures
 
@@ -169,15 +169,16 @@ the user commits.
 2. The grid asks the source for its items and `PropertyOrdering` orders and groups them. Each row shows the item's
    label, its text (`GetText`, current culture), a bold style when `IsChanged`, and the editor chosen by
    `PropertyEditorRegistry` from the item's editor key, type and standard values.
-3. The user edits. The UI calls `PropertyEditSession.SetText` or `SetValue`. In live mode the item is written at once; in
-   staged mode a pending edit is recorded and shown instead of the target value. Errors are recorded per property path.
+3. The user edits. The UI calls `PropertyEditSession.SetText` or `SetValue`. In live mode the item is written at once;
+   in staged mode a pending edit is recorded and shown instead of the target value. Errors are recorded per property
+   path.
 4. Collection properties are edited with a `CollectionEditor` working copy. In staged mode it is one pending edit.
 5. `Commit` applies the pending edits in order inside the host's commit scope (for example an undo transaction); failed
    edits stay pending with their error. `Cancel` discards them.
 6. A change of the target (`INotifyPropertyChanged`) or of a property annotated to refresh everything tells the grid to
    re-read values.
-7. The grid (`PropertyGrid`) performs steps 1 to 6 for its user: it creates the source and the session, builds one row per
-   category band or item (reusing the row views of unchanged rows), creates the editor of each row from the editor
+7. The grid (`PropertyGrid`) performs steps 1 to 6 for its user: it creates the source and the session, builds one row
+   per category band or item (reusing the row views of unchanged rows), creates the editor of each row from the editor
    registry, and refreshes the rows on every session or source change. A collection row opens the collection editor,
    which edits a working list and applies it to the session on OK; `PropertyGridDialog` wraps a staged grid with OK
    (commit) and Cancel (discard).

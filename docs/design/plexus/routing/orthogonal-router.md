@@ -25,12 +25,12 @@ class `OrthogonalSearch` that implements the path search.
   reversals are kept; idempotent and deterministic. It is built as an incremental stack (push a point, pop the middle of
   the last three while it is redundant).
 - `RouteEditor` (public static): pure editing operations on (start, route, end) that return the new cleaned route or
-  null: `MoveSegment` (perpendicular move, neighbors stretch), `MoveBend` (moves the bend's horizontal segment to the new
-  Y and its vertical segment to the new X) and `InsertJog` (a bump of four bends, one step deep and at most two steps
-  wide, kept clear of the segment ends). The ports are fixed: moving a segment next to a port inserts a jog of at most
-  one stub length beside the port (the first stub always leaves to the right, the last always arrives from the left; a
-  wire without bends gets a jog at both ends), and a vertical segment right behind a stub is kept one stub length from
-  the port. Routes with a diagonal or zero-length segment, and indexes outside the route, give null.
+  null: `MoveSegment` (perpendicular move, neighbors stretch), `MoveBend` (moves the bend's horizontal segment to the
+  new Y and its vertical segment to the new X) and `InsertJog` (a bump of four bends, one step deep and at most two
+  steps wide, kept clear of the segment ends). The ports are fixed: moving a segment next to a port inserts a jog of at
+  most one stub length beside the port (the first stub always leaves to the right, the last always arrives from the
+  left; a wire without bends gets a jog at both ends), and a vertical segment right behind a stub is kept one stub
+  length from the port. Routes with a diagonal or zero-length segment, and indexes outside the route, give null.
 - `PortSide`: `Left`, `Right`, `Top`, `Bottom`, mapped internally to direction indexes 0 right, 1 left, 2 down, 3 up so
   the opposite direction is `index ^ 1`.
 - `OrthogonalSearch` (single use per attempt): sorted de-duplicated line coordinates `_xs` and `_ys`, the obstacle boxes
@@ -90,6 +90,7 @@ lower cost and the grid is finite.
 
 #### Callers
 
-- Model subsystem: `DiagramPage` connects, moves and re-routes wires through `Diagram.Router`, which defaults to this router.
+- Model subsystem: `DiagramPage` connects, moves and re-routes wires through `Diagram.Router`, which defaults to this
+  router.
 - Scene subsystem: `SceneBuilder` routes transient display routes for wires that attach to collapsed groups.
 - Hosts that call `IWireRouter` directly.

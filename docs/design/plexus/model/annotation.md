@@ -40,5 +40,5 @@ Design).
 
 #### Callers
 
-DiagramPage creates, moves and removes annotations; Group measures them as members; the Scene builder draws them; hit testing,
-serialization and the Avalonia editor read and edit them through the public members.
+DiagramPage creates, moves and removes annotations; Group measures them as members; the Scene builder draws them; hit
+testing, serialization and the Avalonia editor read and edit them through the public members.

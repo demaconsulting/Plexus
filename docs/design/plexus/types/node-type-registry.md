@@ -29,8 +29,8 @@ visual. The unit covers the files `NodeType`, `NodeTypeRegistry`, `PortDefinitio
   is decided by which list of the node type holds the definition. `PortDirection` names the two directions (input on
   the left edge, output on the right edge).
 - **PortType**: a non-blank `Key` and the `Color` that ports of this type are drawn with.
-- **PortTypeRegistry**: a dictionary of port types by ordinal key plus an ordered list; unknown keys resolve to a neutral
-  gray (`#9A9A9A`) type.
+- **PortTypeRegistry**: a dictionary of port types by ordinal key plus an ordered list; unknown keys resolve to a
+  neutral gray (`#9A9A9A`) type.
 - **FreezableList of T**: an internal list of non-null elements with a frozen flag; once frozen every mutating
   operation throws and `IsReadOnly` is true.
 
@@ -39,9 +39,9 @@ output names and no duplicate property names; a registered node type's lists nev
 
 Per-node ports and descriptions:
 
-- `NodeType.PortProvider` (`Func<Node, PortSet>?`, init-only): computes each node's ports from its properties and payload;
-  null keeps the declared `Inputs` and `Outputs` for every node. The declared lists stay the type's defaults (palettes,
-  drop previews and `NodeGeometry.RoutingObstacles(Rect, NodeType, DiagramTheme)` use them).
+- `NodeType.PortProvider` (`Func<Node, PortSet>?`, init-only): computes each node's ports from its properties and
+  payload; null keeps the declared `Inputs` and `Outputs` for every node. The declared lists stay the type's defaults
+  (palettes, drop previews and `NodeGeometry.RoutingObstacles(Rect, NodeType, DiagramTheme)` use them).
 - `PortSet` (sealed, immutable): the copied `Inputs` and `Outputs` declaration lists a provider returns, exposed as
   read-only wrappers. Invariant: no null entry and no repeated name within one direction (the name is the port's
   identity when ports are recomputed). Either list, or both, may be empty: the node then has no ports in that direction.

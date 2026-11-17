@@ -29,8 +29,8 @@ The multi-column layout is verified by resizing the palette column of the host f
 splitter drag does) to widths computed from the measured cell width, so that exactly k cells fit and one pixel less fits
 k - 1; the number of columns is read from the palette and cross-checked against the distinct left edges of the items,
 and box centers and tops are read from the items' translated box origins. Keyboard tests send real key events to the
-window. Scrolling tests use a plain list of 48 simple types in four categories at a zoom that makes the content far taller
-than the view.
+window. Scrolling tests use a plain list of 48 simple types in four categories at a zoom that makes the content far
+taller than the view.
 
 #### Test Environment
 
@@ -81,8 +81,8 @@ agree.
 
 **Columns** (`NodePaletteColumnTests.cs`)
 
-- **NodePalette_Columns_FollowThePaletteWidth**: widths that hold exactly one to four cells give one to four columns, one
-  pixel less gives one fewer, and the items' distinct left edges agree with the count.
+- **NodePalette_Columns_FollowThePaletteWidth**: widths that hold exactly one to four cells give one to four columns,
+  one pixel less gives one fewer, and the items' distinct left edges agree with the count.
 - **NodePalette_Columns_CellsAreEqualAndInsideThePalette**: all cells have the same width, lie inside the palette's
   margins, do not overlap and keep the minimum spacing.
 - **NodePalette_Columns_BoxesAlignInAGrid**: in three columns the box centers are equal down each column and a cell
@@ -99,8 +99,8 @@ agree.
   the last row and the third column into view without horizontal scrolling.
 - **NodePalette_Columns_ScrollHorizontallyOnlyWhenOneCellDoesNotFit**: the content is as wide as the viewport while
   cells fit, and wider only when the palette is narrower than one cell.
-- **NodePalette_Columns_LayOutAgainOnFilterZoomAndTypes**: a filter, a smaller zoom and a longer type list each change the
-  rows and columns at the next layout.
+- **NodePalette_Columns_LayOutAgainOnFilterZoomAndTypes**: a filter, a smaller zoom and a longer type list each change
+  the rows and columns at the next layout.
 - **NodePalette_Columns_MaxColumnsAndMinColumnSpacing**: `MaxColumns` caps the count (zero or negative: no cap) and a
   larger `MinColumnSpacing` reduces it and is kept between cells; a negative spacing counts as zero.
 - **NodePalette_Columns_EmptyPaletteHasOneColumn**: a filter that matches nothing leaves no items and one column.

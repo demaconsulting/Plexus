@@ -22,7 +22,7 @@ cached as null so a broken icon is parsed only once; the number of entries is bo
 cannot accumulate one bitmap per zoom step. The `Count` and `Capacity` properties expose the number of entries and the
 bound for verification.
 
-The eviction rule is _clear when full_: a request for a key that is not cached, made while the cache holds `Capacity`
+The eviction rule is *clear when full*: a request for a key that is not cached, made while the cache holds `Capacity`
 entries, first discards every cached rasterization and then adds the new one. The lookup, the discard and the insertion
 run under the instance's lock, so the cache never holds more than `Capacity` entries, also under concurrent requests;
 an icon requested after a discard is rasterized again (a new surface). Failed rasterizations count as entries.
@@ -51,7 +51,7 @@ an icon requested after a discard is rasterized again (a new surface). Failed ra
 ### Dependencies
 
 - Core `IconSource` (icon key and SVG text).
-- CanvasNet (OTS) SVG codec and surface; see _CanvasNet_ in the OTS design documents.
+- CanvasNet (OTS) SVG codec and surface; see *CanvasNet* in the OTS design documents.
 
 ### Callers
 

@@ -61,9 +61,9 @@ Net separation (`NetSeparationTests.cs`, `Plexus-Routing-OrthogonalRouter-NetSep
 - **Other net**
   (`OrthogonalRouter_Route_ExistingOtherNet_DoesNotRunAlongIt`): with the first wire's segments in the request the
   second wire is orthogonal and shares no collinear stretch with it.
-- **Same net**
-  (`OrthogonalRouter_Route_ExistingSameNet_MayShareTrunk`, `OrthogonalRouter_Route_RunLiningUpWithSameNet_KeepsMiddleChannel`):
-  wires of one net still share the trunk and may line up.
+- **Same net** (`OrthogonalRouter_Route_ExistingSameNet_MayShareTrunk`,
+  `OrthogonalRouter_Route_RunLiningUpWithSameNet_KeepsMiddleChannel`): wires of one net still share the trunk and may
+  line up.
 - **Lining up**
   (`OrthogonalRouter_Route_RunLiningUpWithOtherNet_MovesToItsOwnTrack`): a vertical run that would sit on the middle
   channel one port pitch (15) beyond the end of another net's run there moves to another track, while one 105 beyond it
@@ -88,8 +88,9 @@ idempotence (`RouteCleaner_Clean_AlreadyCleanRoute_IsUnchangedAndStable`) and a 
 
 Route editing (`RouteEditorTests.cs`, `Plexus-Routing-OrthogonalRouter-RouteEditing`): interior segment move
 (`RouteEditor_MoveSegment_InteriorSegment_MovesAndNeighborsStretch`), first and last stub jogs
-(`RouteEditor_MoveSegment_FirstStub_InsertsJogNextToSourcePort`, `RouteEditor_MoveSegment_LastStub_InsertsJogNextToTargetPort`),
-a straight wire (`RouteEditor_MoveSegment_StraightWire_InsertsJogAtBothEnds`), a stub moved onto its own line
+(`RouteEditor_MoveSegment_FirstStub_InsertsJogNextToSourcePort`,
+`RouteEditor_MoveSegment_LastStub_InsertsJogNextToTargetPort`), a straight wire
+(`RouteEditor_MoveSegment_StraightWire_InsertsJogAtBothEnds`), a stub moved onto its own line
 (`RouteEditor_MoveSegment_StubToItsOwnLine_LeavesRouteUnchanged`), flattening a bump
 (`RouteEditor_MoveSegment_OntoNeighborLine_MergesCollinearBends`), corner moves
 (`RouteEditor_MoveBend_Corner_MovesBothAdjacentSegments`, `RouteEditor_MoveBend_NextToStub_InsertsJog`,

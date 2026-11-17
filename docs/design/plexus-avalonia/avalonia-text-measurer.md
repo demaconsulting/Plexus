@@ -34,7 +34,7 @@ locally.
 
 - **DiagramClipboard** — the shared text formatting helper.
 - Core text style, size and measurement interface types.
-- **Avalonia** (OTS) — formatted text; see _Avalonia_ in the OTS design documents.
+- **Avalonia** (OTS) — formatted text; see *Avalonia* in the OTS design documents.
 
 ### Callers
 

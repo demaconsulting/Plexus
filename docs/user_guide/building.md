@@ -47,10 +47,10 @@ var wire = page.Connect("C.value", "Scope.signal");          // paths; the wire 
 var other = b.Port("value").ConnectTo(sum.Port("b"));        // or with the port objects
 ```
 
-A connection is validated against the structural rules (output to input, same page, different nodes, no duplicate
-wire) and the diagram's connection rules (see *Wires, Routing and Connection Rules*). `Connect` throws
-`InvalidOperationException` with the reason; to ask first, use `CanConnect`, which is what the editor does while the user
-drags a wire:
+A connection is validated against the structural rules (output to input, same page, different nodes, no duplicate wire)
+and the diagram's connection rules (see *Wires, Routing and Connection Rules*). `Connect` throws
+`InvalidOperationException` with the reason; to ask first, use `CanConnect`, which is what the editor does while the
+user drags a wire:
 
 ```csharp
 ConnectionCheck check = page.CanConnect(b.Output("value"), sum.Input("b"));
@@ -124,8 +124,8 @@ DiagramElement? element = diagram.FindElement(wire.Id);
 int nodeCount = page.Nodes.Count;                     // page.Nodes, Wires, Annotations, Groups: observable lists
 ```
 
-`page.Elements` lists everything in z-order (the first is the bottom-most). The lists are `ReadOnlyObservableCollection`s,
-so a host UI can bind to them directly.
+`page.Elements` lists everything in z-order (the first is the bottom-most). The lists are
+`ReadOnlyObservableCollection`s, so a host UI can bind to them directly.
 
 ## Listening to Changes
 

@@ -37,17 +37,17 @@ no transaction left open.
   connects output to input and selects the wire; the cursor is a cross.
 - **ConnectGesture_Complete_OverRejectedPort_ConnectsNothing**: with the same-type rule a mismatching port is rejected
   and no entry is recorded.
-- **ConnectGesture_SecondWireIntoInput_RejectedUnlessInputAllowsFanIn**: hovering an occupied plain input yields a denied
-  verdict with the "does not accept more than one" reason and a release connects nothing (no history entry), while an
-  occupied input that allows fan-in yields an allowed verdict and takes the wire. The pointer-level drag is covered by
-  `DiagramEditor_PortDrag_SecondWireIntoOccupiedInput_IsRejected`.
+- **ConnectGesture_SecondWireIntoInput_RejectedUnlessInputAllowsFanIn**: hovering an occupied plain input yields a
+  denied verdict with the "does not accept more than one" reason and a release connects nothing (no history entry),
+  while an occupied input that allows fan-in yields an allowed verdict and takes the wire. The pointer-level drag is
+  covered by `DiagramEditor_PortDrag_SecondWireIntoOccupiedInput_IsRejected`.
 - **ConnectGesture_Complete_OverOwnPortOrCanvas_ConnectsNothing**: releasing on the start port or on the canvas
   connects nothing.
 - **ConnectGesture_Cancel_AfterHoveringTarget_ConnectsNothing**: a cancelled gesture forgets its candidate.
 - **ResizeGesture_Complete_AfterDrag_ResizesWithOneUndoEntry**: the corner snaps to the grid, the top-left corner stays,
   one entry, resize cursor.
-- **ResizeGesture_Move_PointerPastTopLeft_ClampsToMinimumSize**: the box never becomes smaller than the minimum (boundary
-  value).
+- **ResizeGesture_Move_PointerPastTopLeft_ClampsToMinimumSize**: the box never becomes smaller than the minimum
+  (boundary value).
 - **ResizeGesture_Cancel_AfterDrag_RestoresBoundsAndHistory**: cancel restores the bounds.
 - **WireSegmentGesture_TryCreate_PortStubOrOutOfRangeSegment_StubsDraggableOutOfRangeNull**: the first and last stubs
   are draggable (they get a jog), a missing segment is not.

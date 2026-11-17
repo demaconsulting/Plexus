@@ -30,9 +30,9 @@ Diagram opened = Diagram.FromJson(input, types, options);
 The snapshot holds the pages, nodes, wires with their routes, annotations, groups, property values and host data of the
 node types that declare a `DataType`. It is versioned (`DiagramSnapshot.FormatVersion`) and uses only safe value types.
 What it does not hold is *configuration*: the theme, router, connection rules and stylers are the host's, so they are
-not in the file and a loaded diagram gets them from the `DiagramOptions` you pass (see *Configuration*). The undo history
-is not saved either: a loaded diagram starts clean with an empty history. Neither are port lists: a wire stores the
-names of its ports, and loading, pasting and duplicating recompute every node's ports from its stored properties and
+not in the file and a loaded diagram gets them from the `DiagramOptions` you pass (see *Configuration*). The undo
+history is not saved either: a loaded diagram starts clean with an empty history. Neither are port lists: a wire stores
+the names of its ports, and loading, pasting and duplicating recompute every node's ports from its stored properties and
 data (with the type's `PortProvider`, if it has one) before the wires are connected (see *Ports That Vary per Node*).
 
 Failures are reported with ordinary exceptions that a host catches around its Open command:
@@ -73,14 +73,13 @@ var opened = Diagram.FromJson(File.ReadAllText("diagram.json"), types, options);
 existing.Apply(options);                                                          // a diagram that already exists
 ```
 
-Members you leave out keep their defaults (or, for `Apply`, the current value). `options with { ... }` derives a variant.
-The demo has one such object, `DemoAppearance.Options`, which its samples, `New`, `Open` and the command-line renderer
-all use.
+Members you leave out keep their defaults (or, for `Apply`, the current value). `options with { ... }` derives a
+variant. The demo has one such object, `DemoAppearance.Options`, which its samples, `New`, `Open` and the command-line
+renderer all use.
 
-Event handlers belong to one diagram instance and are not part of a file, so they are attached after each diagram is made.
-`DiagramOptions.Initialize` does that in the same place: it is called with every diagram the options create or load,
-once the
-diagram is complete (a loaded diagram has its content and a clean undo history by then):
+Event handlers belong to one diagram instance and are not part of a file, so they are attached after each diagram is
+made. `DiagramOptions.Initialize` does that in the same place: it is called with every diagram the options create or
+load, once the diagram is complete (a loaded diagram has its content and a clean undo history by then):
 
 ```csharp
 var options = new DiagramOptions
@@ -143,10 +142,10 @@ different products:
 ShowMessage(result.Message);      // "Pasted 4 element(s)." or "Paste failed: this application does not know ..."
 ```
 
-`Message` is ready to show: it summarizes a success (appending any warnings, which are non-fatal findings such as a value
-that did not fit and was reset to its default), names the missing node types of a refused paste, and gives the reason
-for any other failure. `result.MissingNodeTypes`, `result.Warnings` and `result.Error` stay available for a host that
-wants to treat them differently.
+`Message` is ready to show: it summarizes a success (appending any warnings, which are non-fatal findings such as a
+value that did not fit and was reset to its default), names the missing node types of a refused paste, and gives the
+reason for any other failure. `result.MissingNodeTypes`, `result.Warnings` and `result.Error` stay available for a host
+that wants to treat them differently.
 
 The demo shows the whole path with two instances: start one with the full type set and one with `--types basic`, copy a
 Mixer in the first and paste in the second. Nothing is pasted and the status bar reports

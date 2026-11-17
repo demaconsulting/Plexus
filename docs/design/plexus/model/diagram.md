@@ -17,26 +17,26 @@ data classes. JSON snapshots are further partial members of the same class that 
 
 #### Data Model
 
-- **Types, Pages, History**: read-only properties set by the constructor; `Pages` is created with a reference back to the
-  diagram and `History` is a new undo history.
+- **Types, Pages, History**: read-only properties set by the constructor; `Pages` is created with a reference back to
+  the diagram and `History` is a new undo history.
 - **Settings**: `Theme` (default classic theme), `Router` (default orthogonal router), `ConnectionRules` (default
   `ConnectionRules.Default`, which refuses a second wire into an input whose port does not allow multiple wires and
   allows every other structurally valid connection; a host composes it with its own rule through
   `ConnectionRules.All` to keep that behavior, or replaces it to allow fan-in everywhere) and `RequireUniqueNodeNames`
   (default true). They are plain fields, not part of the history.
-- **Wire styler**: `WireStyler`, an optional `Func<Wire, WireStyle?>` (default null, theme-only wires) in the partial file
-  `Diagram.Appearance.cs`. It is configuration like the settings: not undoable, not serialized.
+- **Wire styler**: `WireStyler`, an optional `Func<Wire, WireStyle?>` (default null, theme-only wires) in the partial
+  file `Diagram.Appearance.cs`. It is configuration like the settings: not undoable, not serialized.
 - **Node styler**: `NodeStyler`, the node equivalent, an optional `Func<Node, NodeStyle?>` (default null, theme-only
   nodes) in the same partial file, with the same rules.
 - **Version**: `Version`, a `long` that starts at zero and is incremented by `RaiseChanged`, before `Changed` is raised.
-  Every change notification (edits, undo, redo, settings, `RefreshAppearance`) therefore advances it, handlers already see
-  the new value, and reads or scene builds never touch it. It is a cache key for values a host derives from the diagram;
-  `WireStylers.PerPage` and `NodeStylers.PerPage` build on it.
+  Every change notification (edits, undo, redo, settings, `RefreshAppearance`) therefore advances it, handlers already
+  see the new value, and reads or scene builds never touch it. It is a cache key for values a host derives from the
+  diagram; `WireStylers.PerPage` and `NodeStylers.PerPage` build on it.
 - **Element index**: a dictionary from element id to element containing exactly the elements attached to pages of the
   diagram. Pages register and unregister elements as they attach and detach.
-- **Events**: `Changed` carries a change kind (page added, removed, moved or renamed; element added, removed or
-  changed; settings changed), the affected page and element, and the property name. `NodeRenaming` carries the node, the
-  old name, the proposed name, a settable new name and a cancel flag with reason. `NodeRenamed` carries the node, the old
+- **Events**: `Changed` carries a change kind (page added, removed, moved or renamed; element added, removed or changed;
+  settings changed), the affected page and element, and the property name. `NodeRenaming` carries the node, the old
+  name, the proposed name, a settable new name and a cancel flag with reason. `NodeRenamed` carries the node, the old
   name and the new name.
 - **Single-threaded**: the model is not thread-safe and all calls must come from the owning thread.
 
@@ -48,9 +48,9 @@ data classes. JSON snapshots are further partial members of the same class that 
 - **WireStyler setter**: stores the callback (null allowed) and raises `Changed` with the settings kind and the name
   `WireStyler`. **RefreshAppearance()**: raises `Changed` with the settings kind and the name `Appearance`, so editors
   and painters rebuild when the styler depends on host state outside the diagram; nothing is recorded in the history.
-  **ResolveWireStyle(wire)** (internal): called by the scene builder for each wire on every build; returns null
-  without a styler and also when the styler throws (any exception except out-of-memory), so a faulty styler never
-  breaks rendering. **NodeStyler setter** and **ResolveNodeStyle(node)** (internal) behave the same way for nodes (settings
+  **ResolveWireStyle(wire)** (internal): called by the scene builder for each wire on every build; returns null without
+  a styler and also when the styler throws (any exception except out-of-memory), so a faulty styler never breaks
+  rendering. **NodeStyler setter** and **ResolveNodeStyle(node)** (internal) behave the same way for nodes (settings
   change named `NodeStyler`; null without a styler and when the styler throws). **RefreshAppearance()** serves both
   stylers.
 - **FindElement(id)**: dictionary lookup returning null for unknown ids. **FindNode(name)**: first node in page order
@@ -127,6 +127,6 @@ invoked synchronously on the calling thread:
 
 #### Callers
 
-Host applications create and configure the diagram and call its lookup, rename and move-to-page operations. Pages and the
-page collection call the internal helpers. Painters, the scene builder and the editor control subscribe to `Changed`,
-`NodeRenaming` and `NodeRenamed`; the Snapshot unit reads and fills the diagram through its public members.
+Host applications create and configure the diagram and call its lookup, rename and move-to-page operations. Pages and
+the page collection call the internal helpers. Painters, the scene builder and the editor control subscribe to
+`Changed`, `NodeRenaming` and `NodeRenamed`; the Snapshot unit reads and fills the diagram through its public members.

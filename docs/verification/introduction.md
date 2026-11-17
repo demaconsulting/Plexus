@@ -27,7 +27,8 @@ constituent software items, specifically:
   Serialization subsystems and the Geometry and ConnectionRules units
 - **PlexusRendering (System)** — the headless PNG renderer
 - **PlexusAvalonia (System)** — the Avalonia editor control, with the Editor subsystem
-- **PlexusAvaloniaPropertyGrid (System)** — the generic annotation-driven property grid (UI-free layers and Avalonia controls)
+- **PlexusAvaloniaPropertyGrid (System)** — the generic annotation-driven property grid (UI-free layers and Avalonia
+  controls)
 
 The software item hierarchy is defined in the design introduction (`docs/design/introduction.md`) and in the SysML2
 model under `docs/sysml2/`.

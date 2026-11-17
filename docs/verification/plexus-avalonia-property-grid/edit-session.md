@@ -43,7 +43,8 @@ Values, modes, scope and errors (`EditSessionTests.cs`):
 - **PropertyEditSession_Staged_ValidationErrorsAreNotBuffered**: invalid edits are not buffered (error paths).
 - **PropertyEditSession_Staged_CommitFailureKeepsTheFailedEditPending**: a failing edit stays pending, others apply, a
   retry fails again (error path).
-- **PropertyEditSession_Staged_CommitScopeIsCalledOnceForAllEdits**: one scope call per commit, none when nothing pending.
+- **PropertyEditSession_Staged_CommitScopeIsCalledOnceForAllEdits**: one scope call per commit, none when nothing
+  pending.
 - **PropertyEditSession_Staged_CommitScopeFailureKeepsAllEditsPending**: a throwing or skipping scope commits nothing
   (error path).
 - **PropertyEditSession_Staged_NestedPropertyPathsAreBuffered**: nested and struct child edits are buffered and applied.
@@ -59,8 +60,8 @@ Collection editing (`EditSessionCollectionTests.cs`):
 
 - **CollectionEditor_Staged_ListEditsApplyInPlaceOnCommit**: add, remove, move and replace in a working copy, target
   untouched until commit, then the same list instance refilled.
-- **CollectionEditor_Staged_SameEditorWhilePendingAndInactiveAfterCommit**: the same editor while pending; inactive after
-  commit (error path).
+- **CollectionEditor_Staged_SameEditorWhilePendingAndInactiveAfterCommit**: the same editor while pending; inactive
+  after commit (error path).
 - **CollectionEditor_Staged_CancelEndsTheEditor**: cancel ends the editor (error path).
 - **CollectionEditor_Staged_BackToTheTargetRemovesThePendingEdit**: an unchanged working copy is not pending.
 - **CollectionEditor_Add_CreatesDefaultElements**: default elements for classes, strings and value types.
@@ -73,13 +74,15 @@ Collection editing (`EditSessionCollectionTests.cs`):
 - **CollectionEditor_NullCollection_IsReplacedByANewList**: a null collection gets a new list.
 - **CollectionEditor_InvalidArguments_AreRejected**: bad indices, null and wrongly typed elements (error paths).
 - **CollectionEditor_Staged_ValueEditReplacesThePendingCollectionEdit**: a value edit replaces the collection edit.
-- **CollectionEditor_Staged_ElementEditsAndStructuralEditsCommitTogether**: element and structural edits commit together.
+- **CollectionEditor_Staged_ElementEditsAndStructuralEditsCommitTogether**: element and structural edits commit
+  together.
 - **CollectionEditor_Live_ChangesApplyImmediately**: live changes write at once.
 - **CollectionEditor_Live_FailureRestoresTheWorkingCopy**: a failed live write restores the working copy (error path).
-- **CollectionEditor_SetItems_Live_WritesOnceInsideScope** / **CollectionEditor_SetItems_Staged_RecordsPendingEdit**: the
-  whole working copy is replaced in one live write inside one scope call, or recorded as one pending edit.
+- **CollectionEditor_SetItems_Live_WritesOnceInsideScope** / **CollectionEditor_SetItems_Staged_RecordsPendingEdit**:
+  the whole working copy is replaced in one live write inside one scope call, or recorded as one pending edit.
 - **CollectionEditor_SetItems_ValidatesSizeAndElementType**: a fixed-size array refuses another length but reorders, an
-  element of the wrong type and a null list are rejected (error paths). These tests are in `EditSessionUiSupportTests.cs`.
+  element of the wrong type and a null list are rejected (error paths). These tests are in
+  `EditSessionUiSupportTests.cs`.
 - **PropertyEditSession_ReportError_RecordsAndClearsError**: an editor's own rejection is recorded, raises the error
   change and clears on discard; null arguments are rejected (error paths).
 
@@ -87,8 +90,8 @@ Source commit scope and refusals (`CommitScopeTests.cs`; a test source records t
 
 - **PropertyEditSession_Commit_SourceScopeIsOutsideTheHostScope**: a staged commit runs the source's scope once around
   the host's scope around the write.
-- **PropertyEditSession_LiveEdit_RunsTheSourceScopePerEdit**: each live edit runs the source's scope once, without a host
-  scope.
+- **PropertyEditSession_LiveEdit_RunsTheSourceScopePerEdit**: each live edit runs the source's scope once, without a
+  host scope.
 - **PropertyEditSession_Commit_RefusedExceptionMarksTheNamedProperty** /
   **PropertyEditSession_LiveEdit_RefusedExceptionIsAnInlineError**: a `PropertyCommitRefusedException` records the
   reason as the named property's error, commits nothing and keeps the edit pending (error paths).

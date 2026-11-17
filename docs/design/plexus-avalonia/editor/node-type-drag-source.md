@@ -12,13 +12,13 @@ type key, which the editor accepts as a drop. It is created through `DiagramEdit
 
 #### Data Model
 
-| Field            | Meaning                                                                          |
-|------------------|----------------------------------------------------------------------------------|
-| source           | The control being observed                                                       |
-| type key         | The node type key carried by the drag                                            |
-| pending press    | The left-button press waiting to become a drag, or null                          |
-| press position   | Where the pending press happened, relative to the control                        |
-| drag threshold   | 4 device-independent pixels in either direction                                  |
+| Field | Meaning |
+| --- | --- |
+| source | The control being observed |
+| type key | The node type key carried by the drag |
+| pending press | The left-button press waiting to become a drag, or null |
+| press position | Where the pending press happened, relative to the control |
+| drag threshold | 4 device-independent pixels in either direction |
 
 The helper listens to press, move and release on the control with a handler that also receives events other handlers
 already marked as handled, because list items and buttons mark their presses as handled.

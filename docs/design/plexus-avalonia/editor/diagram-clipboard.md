@@ -13,11 +13,11 @@ formatted text used both for painting and for measuring.
 
 #### Data Model
 
-| Type                     | Members and invariants                                               |
-|--------------------------|----------------------------------------------------------------------|
-| `IDiagramClipboard`      | `SetAsync(json)` and `GetAsync()`; carries text only (Plexus JSON)   |
-| `SystemDiagramClipboard` | The Avalonia clipboard it wraps and the Plexus application format    |
-| `TextFormats`            | A cache of typefaces by font family and weight; UI thread only       |
+| Type | Members and invariants |
+| --- | --- |
+| `IDiagramClipboard` | `SetAsync(json)` and `GetAsync()`; carries text only (Plexus JSON) |
+| `SystemDiagramClipboard` | The Avalonia clipboard it wraps and the Plexus application format |
+| `TextFormats` | A cache of typefaces by font family and weight; UI thread only |
 
 The Plexus application format is named by the format identifier of the core clipboard serialization.
 
@@ -42,7 +42,7 @@ serialization, not of this unit.
 #### Dependencies
 
 - **Core model** — the clipboard format identifier, and the text style and color types.
-- **Avalonia** (OTS) — the clipboard, data transfer, data format, and text formatting and typeface types; see _Avalonia_
+- **Avalonia** (OTS) — the clipboard, data transfer, data format, and text formatting and typeface types; see *Avalonia*
   in the OTS design documents.
 
 #### Callers

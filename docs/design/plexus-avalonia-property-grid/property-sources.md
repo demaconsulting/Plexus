@@ -42,18 +42,17 @@ data). `PropertySourceFactory` chooses the source for an object and lets adapter
   change.
 - **`PropertySourceFactory.Create`** — the newest registered factory that returns a source wins, then the object itself
   when it is an `IPropertySource`, then `IPropertySourceProvider`, otherwise a `ReflectionPropertySource`.
-- **`CompositePropertySource.RunCommit`** — chains the `IPropertyCommitScope.RunCommit` of the sources that have one (the
-  first source outermost) around the writes and runs them once; **`IPropertyCommitScope`** is the interface a source
-  implements to bracket the commits of its session (for example in an undo transaction).
-- **`PropertyOrdering.Order`** — orders by category rank (the lowest `PropertyItem.CategoryOrder` of a category), then by
-  category (categorized mode) and then by parenthesized names first, the item rank (`PropertyItem.Order`, lower first;
-  categorized mode only, so the alphabetical view ignores it) and display
-  name, comparing with the invariant culture and ignoring case (so items of equal rank are alphabetical); the sort is
-  stable. Every item ranks 0 unless its source
-  sets a rank (`CustomPropertyOptions.Order`, or `PropertyDefinition.Order` through the node source: see the
-  display-order chain in the PlexusAvaloniaPropertyGrid system design), so sources that set
-  none keep the alphabetical order. **`Group`** splits the ordered items
-  into category groups (a single group without a category in alphabetical mode).
+- **`CompositePropertySource.RunCommit`** — chains the `IPropertyCommitScope.RunCommit` of the sources that have one
+  (the first source outermost) around the writes and runs them once; **`IPropertyCommitScope`** is the interface a
+  source implements to bracket the commits of its session (for example in an undo transaction).
+- **`PropertyOrdering.Order`** — orders by category rank (the lowest `PropertyItem.CategoryOrder` of a category), then
+  by category (categorized mode) and then by parenthesized names first, the item rank (`PropertyItem.Order`, lower
+  first; categorized mode only, so the alphabetical view ignores it) and display name, comparing with the invariant
+  culture and ignoring case (so items of equal rank are alphabetical); the sort is stable. Every item ranks 0 unless its
+  source sets a rank (`CustomPropertyOptions.Order`, or `PropertyDefinition.Order` through the node source: see the
+  display-order chain in the PlexusAvaloniaPropertyGrid system design), so sources that set none keep the alphabetical
+  order. **`Group`** splits the ordered items into category groups (a single group without a category in alphabetical
+  mode).
 
 ### Error Handling
 
