@@ -21,8 +21,8 @@ commits the edits (inside the host's commit scope, so the dialog is one undo ste
 
 ### Key Methods
 
-- **`ShowAsync`** — creates the dialog and shows it modally; the task completes with true after a successful OK and false
-  after Cancel. A null owner or target is rejected before any window is created.
+- **`ShowAsync`** — creates the dialog and shows it modally; the task completes with true after a successful OK and
+  false after Cancel. A null owner or target is rejected before any window is created.
 - **`Accept` (OK)** — refuses while the session has errors: it selects the first row with an error and shows the
   reason in the status line. Otherwise it commits; when the commit reports a failure the dialog stays open with the
   reason and the failed edits stay pending with their errors. On success it closes with true.
@@ -35,19 +35,20 @@ commits the edits (inside the host's commit scope, so the dialog is one undo ste
 - **`SetPreview(control, dock, size)`** (internal) — shows a control next to the grid: it wraps it in a border with the
   automation id `PropertyGridDialog_Preview`, the automation name "Preview" (exposed to UI Automation as a content
   group) and a themed separator line, docks it at the given side (the size is its width for left or right and its height
-  for top or bottom) and inserts it before the grid; a second call replaces the first preview. It uses only Avalonia types
-  so the generic layer stays free of Plexus types.
+  for top or bottom) and inserts it before the grid; a second call replaces the first preview. It uses only Avalonia
+  types so the generic layer stays free of Plexus types.
 
 ### Error Handling
 
 Invalid input and failed commits are shown, never thrown; a null owner or target raises `ArgumentNullException`, from
-`ShowAsync` before a window is created and from the constructor. The internal `SetPreview` raises `ArgumentNullException`
-for a null preview and `ArgumentOutOfRangeException` for a size that is not a positive finite number, before it changes
-the dialog.
+`ShowAsync` before a window is created and from the constructor. The internal `SetPreview` raises
+`ArgumentNullException` for a null preview and `ArgumentOutOfRangeException` for a size that is not a positive finite
+number, before it changes the dialog.
 
 ### Dependencies
 
-The PropertyGridControl unit (the grid) and the EditSession unit (commit and errors); Avalonia (OTS) windows and buttons.
+The PropertyGridControl unit (the grid) and the EditSession unit (commit and errors); Avalonia (OTS) windows and
+buttons.
 
 ### Callers
 

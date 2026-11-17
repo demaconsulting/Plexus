@@ -24,23 +24,23 @@ third-party libraries, but they are not shipped and are outside the scope of thi
 
 ## OTS Items
 
-| OTS Item    | Kind    | Purpose                                                                         |
-|-------------|---------|---------------------------------------------------------------------------------|
-| ApiMark     | Tool    | Generates the Markdown API reference shipped in each NuGet package              |
-| Avalonia    | Runtime | UI framework for the PlexusAvalonia and PlexusAvaloniaPropertyGrid controls     |
-| BuildMark   | Tool    | Generates build-notes documentation from GitHub Actions metadata                |
-| CanvasNet   | Runtime | Drawing, text, SVG rasterization and PNG encoding for PlexusRendering           |
-| FileAssert  | Tool    | Validates generated documents (HTML/PDF) against acceptance criteria            |
-| Pandoc      | Tool    | Converts Markdown documentation to HTML                                         |
-| ReqStream   | Tool    | Enforces requirements-to-test traceability                                      |
-| ReviewMark  | Tool    | Enforces file review coverage and currency                                      |
-| SarifMark   | Tool    | Converts CodeQL SARIF results into a markdown report                            |
-| SonarMark   | Tool    | Generates a SonarCloud quality report                                           |
-| SvgSkia     | Runtime | Converts SVG icons to Avalonia images for PlexusAvalonia                        |
-| SysML2Tools | Tool    | Validates the SysML2 architecture model and renders its views to SVG            |
-| VersionMark | Tool    | Captures and publishes tool-version information                                 |
-| WeasyPrint  | Tool    | Converts HTML documentation to PDF                                              |
-| xUnit       | Tool    | Discovers and executes unit and integration tests                               |
+| OTS Item | Kind | Purpose |
+| --- | --- | --- |
+| ApiMark | Tool | Generates the Markdown API reference shipped in each NuGet package |
+| Avalonia | Runtime | UI framework for the PlexusAvalonia and PlexusAvaloniaPropertyGrid controls |
+| BuildMark | Tool | Generates build-notes documentation from GitHub Actions metadata |
+| CanvasNet | Runtime | Drawing, text, SVG rasterization and PNG encoding for PlexusRendering |
+| FileAssert | Tool | Validates generated documents (HTML/PDF) against acceptance criteria |
+| Pandoc | Tool | Converts Markdown documentation to HTML |
+| ReqStream | Tool | Enforces requirements-to-test traceability |
+| ReviewMark | Tool | Enforces file review coverage and currency |
+| SarifMark | Tool | Converts CodeQL SARIF results into a markdown report |
+| SonarMark | Tool | Generates a SonarCloud quality report |
+| SvgSkia | Runtime | Converts SVG icons to Avalonia images for PlexusAvalonia |
+| SysML2Tools | Tool | Validates the SysML2 architecture model and renders its views to SVG |
+| VersionMark | Tool | Captures and publishes tool-version information |
+| WeasyPrint | Tool | Converts HTML documentation to PDF |
+| xUnit | Tool | Discovers and executes unit and integration tests |
 
 Each item's individual design document (`docs/design/ots/{ots-name}.md`) records its Purpose,
 Features Used, and Integration Pattern. Each item's requirements and verification evidence are

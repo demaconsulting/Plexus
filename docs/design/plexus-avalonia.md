@@ -70,26 +70,26 @@ only view state.
 
 ## External Interfaces
 
-| Interface                         | Dir.     | Format                             | Constraints                 |
-|-----------------------------------|----------|------------------------------------|-----------------------------|
-| `DiagramEditor` properties        | In / Out | Avalonia styled properties         | UI thread only              |
-| `ShowToolTips`                    | In / Out | Styled property, default true      | Off: no tooltip, no request |
-| `ToolTipRequested` event          | Out      | Event; pre-filled content          | Cancel, null, empty: none   |
-| `GetToolTipContent`               | In / Out | Method returning the content       | Ignores `ShowToolTips`      |
-| `BringIntoView(element)`          | In       | Method; any page of the diagram    | Waits for the first layout  |
-| `ZoomToFit` (page or elements)    | In       | Method; margin in DIP, 30 default  | Bad margin: range exception |
-| `DiagramEditor` commands          | In       | Public methods                     | UI thread only              |
-| `DiagramEditor` events            | Out      | .NET events with argument classes  | Raised on the UI thread     |
-| Pointer, wheel and keyboard input | In       | Avalonia routed input events       | Control must be focusable   |
-| `IDiagramClipboard`               | In / Out | Text (Plexus clipboard JSON)       | Host may substitute its own |
-| Operating-system clipboard        | In / Out | Plexus format and plain text       | Failures reported as events |
-| Node type drag payload            | In       | Node type key (application format) | Unknown keys ignored        |
-| `NodeTypeDragSource` helper       | In       | A control and a node type key      | Detach by disposing         |
-| `NodePalette` properties, event   | In / Out | Avalonia styled properties, event  | UI thread only              |
-| `AvaloniaTextMeasurer`            | Out      | Core `ITextMeasurer`               | UI thread only              |
-| `PlexusIcons.GetImage`            | Out      | Avalonia image, or null if broken  | Thread-safe cache           |
-| `PlexusAvaloniaExtensions`        | Out      | Avalonia point, size, rect, color  | Pure, lossless conversions  |
-| Automation                        | Out      | Avalonia automation peer (pane)    | Default id `DiagramEditor`  |
+| Interface | Dir. | Format | Constraints |
+| --- | --- | --- | --- |
+| `DiagramEditor` properties | In / Out | Avalonia styled properties | UI thread only |
+| `ShowToolTips` | In / Out | Styled property, default true | Off: no tooltip, no request |
+| `ToolTipRequested` event | Out | Event; pre-filled content | Cancel, null, empty: none |
+| `GetToolTipContent` | In / Out | Method returning the content | Ignores `ShowToolTips` |
+| `BringIntoView(element)` | In | Method; any page of the diagram | Waits for the first layout |
+| `ZoomToFit` (page or elements) | In | Method; margin in DIP, 30 default | Bad margin: range exception |
+| `DiagramEditor` commands | In | Public methods | UI thread only |
+| `DiagramEditor` events | Out | .NET events with argument classes | Raised on the UI thread |
+| Pointer, wheel and keyboard input | In | Avalonia routed input events | Control must be focusable |
+| `IDiagramClipboard` | In / Out | Text (Plexus clipboard JSON) | Host may substitute its own |
+| Operating-system clipboard | In / Out | Plexus format and plain text | Failures reported as events |
+| Node type drag payload | In | Node type key (application format) | Unknown keys ignored |
+| `NodeTypeDragSource` helper | In | A control and a node type key | Detach by disposing |
+| `NodePalette` properties, event | In / Out | Avalonia styled properties, event | UI thread only |
+| `AvaloniaTextMeasurer` | Out | Core `ITextMeasurer` | UI thread only |
+| `PlexusIcons.GetImage` | Out | Avalonia image, or null if broken | Thread-safe cache |
+| `PlexusAvaloniaExtensions` | Out | Avalonia point, size, rect, color | Pure, lossless conversions |
+| Automation | Out | Avalonia automation peer (pane) | Default id `DiagramEditor` |
 
 The properties are the page, theme, zoom, offset, grid, snapping, read-only mode, clipboard and `ShowToolTips`. The
 commands are selection, delete, duplicate, undo, redo, copy, cut, paste, rename, annotation edit, zoom, hit testing,
@@ -112,10 +112,10 @@ state, return values or events.
 
 - **Plexus core system** — page model and its edit API, the undo history and its transactions, the scene builder and
   hit testing, the connection rules, the clipboard serialization, the rename pipeline, the theme and the
-  text-measurement interface. See _Plexus System Design_.
+  text-measurement interface. See *Plexus System Design*.
 - **Avalonia** (OTS) — control base classes, drawing context, input, text formatting, drag-and-drop, clipboard,
-  automation and, for tests, the headless platform. See _Avalonia_ in the OTS design documents.
-- **Svg.Controls.Skia.Avalonia** (OTS) — conversion of SVG text to drawable images. See _SvgSkia_ in the OTS design
+  automation and, for tests, the headless platform. See *Avalonia* in the OTS design documents.
+- **Svg.Controls.Skia.Avalonia** (OTS) — conversion of SVG text to drawable images. See *SvgSkia* in the OTS design
   documents.
 
 The package does not depend on the rendering package.
@@ -177,15 +177,15 @@ change never reaches the history.
 - **Undo and Redo during a gesture only cancel it.** While a drag or an inline edit is in flight, Undo or Redo
   abandons the gesture and rolls back its transaction; only a second press changes the history. A half-made change
   therefore never becomes a history entry and the user cannot undo an earlier step by accident while still dragging.
-- **Tooltips through Avalonia's tooltip service; the host decides the text.** The editor sets its own `ToolTip.Tip`
-  for the element under the pointer instead of drawing tooltips itself, so delay, placement and look match the rest of
-  the host application. The default text of a port is its label and the display name of its port type (the key when the
-  type is not registered) with its description on a new line, that of a node is the node type's tooltip text (null or
-  empty: none), and that of a wire is `"A.out → B.in"`; annotations and groups have none unless a handler supplies
-  content. The `ToolTipRequested` event lets the host replace the content (live values, validation messages) or
-  suppress it (cancel, null or empty content); `ShowToolTips` turns the feature off, after which hovering sets no tooltip
-  and raises no event, while `GetToolTipContent` still works. A press clears the tooltip for the pressed element until
-  the pointer moves elsewhere, and a gesture, inline edit or pointer exit hides it.
+- **Tooltips through Avalonia's tooltip service; the host decides the text.** The editor sets its own `ToolTip.Tip` for
+  the element under the pointer instead of drawing tooltips itself, so delay, placement and look match the rest of the
+  host application. The default text of a port is its label and the display name of its port type (the key when the type
+  is not registered) with its description on a new line, that of a node is the node type's tooltip text (null or empty:
+  none), and that of a wire is `"A.out → B.in"`; annotations and groups have none unless a handler supplies content. The
+  `ToolTipRequested` event lets the host replace the content (live values, validation messages) or suppress it (cancel,
+  null or empty content); `ShowToolTips` turns the feature off, after which hovering sets no tooltip and raises no
+  event, while `GetToolTipContent` still works. A press clears the tooltip for the pressed element until the pointer
+  moves elsewhere, and a gesture, inline edit or pointer exit hides it.
 - **Navigation switches pages and respects the user's zoom.** `BringIntoView` accepts any element on an attached page of
   the editor's diagram (of any diagram when no page is shown), changes the shown page when needed and only scrolls,
   zooming out only when the element does not fit with a margin of 30 device-independent pixels, never in. A set of
@@ -204,9 +204,9 @@ change never reaches the history.
   collapsed group; the user expands the group first.
 - **SVG subset parity.** Icons render through a different SVG engine than in PlexusRendering, so an icon that uses
   features outside the subset both engines support can look different or be missing in one of them; a malformed icon is
-  shown as missing. Hosts should keep icons within the common subset (see _SvgSkia_ in the OTS design documents).
+  shown as missing. Hosts should keep icons within the common subset (see *SvgSkia* in the OTS design documents).
 - **Headless test attribute.** The editor tests use a small helper instead of the Avalonia headless xUnit attribute
   (`[AvaloniaFact]`), because the adapter does not yet support the xUnit v3 generation used by the repository. The tests
   should switch to the attribute once an adapter release supports it.
 - **Windows-only automation tooling.** The demo applications that exercise the editor against the real operating
-  system are driven by a Windows-only tool (see _Introduction_); the control itself is tested on all three platforms.
+  system are driven by a Windows-only tool (see *Introduction*); the control itself is tested on all three platforms.

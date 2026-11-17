@@ -23,14 +23,15 @@ exits with a documented code. All state lives in the demo process.
 dotnet build Plexus.slnx -c Release
 ```
 
-The Puppet is `tools\DemaConsulting.Plexus.Puppet\bin\Release\net10.0-windows\plexus-puppet.exe`. `launch` finds the newest
-`plexus-demo.exe` under `demo\DemaConsulting.Plexus.Demo.Gui\bin\{Release,Debug}\net10.0` of the repository (or beside the
-Puppet); pass `--exe <path>` for any other build.
+The Puppet is `tools\DemaConsulting.Plexus.Puppet\bin\Release\net10.0-windows\plexus-puppet.exe`. `launch` finds the
+newest `plexus-demo.exe` under `demo\DemaConsulting.Plexus.Demo.Gui\bin\{Release,Debug}\net10.0` of the repository (or
+beside the Puppet); pass `--exe <path>` for any other build.
 
 ## Instances
 
 Every command takes `--instance <alias>` (default `main`). An alias names the demo's automation pipe
-`\\.\pipe\plexus-demo-<alias>`, so any number of instances can run side by side. Aliases use letters, digits, `-` and `_`.
+`\\.\pipe\plexus-demo-<alias>`, so any number of instances can run side by side. Aliases use letters, digits, `-` and
+`_`.
 
 ```text
 plexus-puppet launch [--instance <alias>] [--sample <name> | --open <file>] [--types full|basic] [--exe <path>] [--allow-existing]
@@ -38,12 +39,13 @@ plexus-puppet instances
 plexus-puppet quit [--instance <alias>] [--kill]
 ```
 
-- `launch` starts `plexus-demo --automation <alias>` (passing `--sample`/`--open`/`--types` through), waits until the pipe
-  answers `ping` and the window is visible, then prints `OK instance=<alias> pid=<pid> ...`. It refuses (exit 4) when the
-  alias already answers, unless `--allow-existing`. A launch that never becomes ready is killed.
-- `instances` lists the live aliases by probing the pipes: `INSTANCE alias=a pid=... title=... file=... dirty=... types=...`.
-- `quit` asks the instance to exit through the pipe (no unsaved-changes prompt) and waits for the process to end; `--kill`
-  ends it if it does not.
+- `launch` starts `plexus-demo --automation <alias>` (passing `--sample`/`--open`/`--types` through), waits until the
+  pipe answers `ping` and the window is visible, then prints `OK instance=<alias> pid=<pid> ...`. It refuses (exit 4)
+  when the alias already answers, unless `--allow-existing`. A launch that never becomes ready is killed.
+- `instances` lists the live aliases by probing the pipes:
+  `INSTANCE alias=a pid=... title=... file=... dirty=... types=...`.
+- `quit` asks the instance to exit through the pipe (no unsaved-changes prompt) and waits for the process to end;
+  `--kill` ends it if it does not.
 
 ## UI Automation commands
 
@@ -63,8 +65,8 @@ plexus-puppet place [--instance <alias>] --x <px> --y <px> --width <px> --height
 plexus-puppet place [--instance <alias>] --work-area [--left-gap <px>] [--margin <px>]
 ```
 
-- Elements are found by AutomationId (see the demo README for the scheme) in the main window, dialogs and pop-ups. A miss
-  prints the closest ids ("Did you mean ...").
+- Elements are found by AutomationId (see the demo README for the scheme) in the main window, dialogs and pop-ups. A
+  miss prints the closest ids ("Did you mean ...").
 - `click` invokes through UI Automation patterns (invoke, select, toggle), so it works on menus, buttons and check boxes
   without moving the cursor. `type` sets the value through the Value pattern (falling back to typing);
   `choose` expands a combo box and selects an item by its text.
@@ -85,10 +87,10 @@ plexus-puppet place [--instance <alias>] --work-area [--left-gap <px>] [--margin
   first; when two instances overlap and the other keeps the foreground, place them apart or quit it). `PrintWindow`
   can lag one frame behind a change: wait a second after a pipe command before a plain `shot`, or use `--screen`.
 - `place` restores the main window from the maximized state and puts its **visible** frame (the invisible resize borders
-  are compensated for) at the given physical pixels, without activating it. `--work-area` computes the rectangle from the
-  primary screen's work area (the screen minus the taskbar): it keeps `--left-gap` pixels free on the left (default 0, for
-  example a column of desktop icons) and `--margin` pixels (default 8) on the other three sides. It prints the resulting
-  bounds and the work area. Use it before `shot` for screenshots with a predictable size and position.
+  are compensated for) at the given physical pixels, without activating it. `--work-area` computes the rectangle from
+  the primary screen's work area (the screen minus the taskbar): it keeps `--left-gap` pixels free on the left (default
+  0, for example a column of desktop icons) and `--margin` pixels (default 8) on the other three sides. It prints the
+  resulting bounds and the work area. Use it before `shot` for screenshots with a predictable size and position.
 
 ## Pipe commands
 
@@ -187,10 +189,10 @@ cursor, which is the better check when no real hover is needed.
 
 ### Safety checks
 
-Before any real input the Puppet checks that the topmost window at the target pixel belongs to the instance. If not (another
-window covers it, it is off screen or scrolled out of the editor, the session is locked) **nothing is sent** and the command
-exits with code 11. `key` likewise exits with 7 unless an element of the instance holds keyboard focus. This also protects
-the user's other windows.
+Before any real input the Puppet checks that the topmost window at the target pixel belongs to the instance. If not
+(another window covers it, it is off screen or scrolled out of the editor, the session is locked) **nothing is sent**
+and the command exits with code 11. `key` likewise exits with 7 unless an element of the instance holds keyboard focus.
+This also protects the user's other windows.
 
 ## Exit codes
 

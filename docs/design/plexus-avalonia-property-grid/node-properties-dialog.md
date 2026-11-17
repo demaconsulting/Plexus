@@ -23,10 +23,10 @@ build their own window create the same context over their own staged grid or ses
 
 - `NodePropertiesDialog` has no state of its own: a static class that creates a `PropertyGridDialog` titled
   "<name> - Properties" (480 by 640 device-independent pixels) for the node.
-- `NodePropertiesDialogOptions` is an immutable record: `Preview` (the factory, `Func<NodePreviewContext, Control>`, null
-  for the plain dialog), `PreviewPlacement` (`Side`, the default, or `Top`), `Title` (null for the default title) and
-  `Width` and `Height` (null for the defaults). The default sizes are 480 by 640 without a preview, 880 by 640 with a
-  side preview (the grid keeps 480; the preview is 400 pixels wide) and 480 by 860 with a top preview (the preview is
+- `NodePropertiesDialogOptions` is an immutable record: `Preview` (the factory, `Func<NodePreviewContext, Control>`,
+  null for the plain dialog), `PreviewPlacement` (`Side`, the default, or `Top`), `Title` (null for the default title)
+  and `Width` and `Height` (null for the defaults). The default sizes are 480 by 640 without a preview, 880 by 640 with
+  a side preview (the grid keeps 480; the preview is 400 pixels wide) and 480 by 860 with a top preview (the preview is
   220 pixels high). `Width` and `Height` override each dimension independently and must be finite and greater than zero.
 - `NodePreviewContext` holds the grid it follows (or none, for a context over a fixed session), the last node shown, the
   current session (subscribed to its `Changed` event; null while the grid's session does not edit a node) and a
@@ -84,8 +84,8 @@ sequenceDiagram
 
 A null owner or node raises `ArgumentNullException`; a node that is not attached to a diagram raises `ArgumentException`
 (from `ShowAsync` with and without options and from `Create` with and without options, because the node source refuses
-it). A `Width` or `Height` that is not a positive finite number raises `ArgumentOutOfRangeException` before any window is
-built, and a factory that returns null raises `InvalidOperationException`. When the factory throws, returns null or
+it). A `Width` or `Height` that is not a positive finite number raises `ArgumentOutOfRangeException` before any window
+is built, and a factory that returns null raises `InvalidOperationException`. When the factory throws, returns null or
 returns a control that cannot be shown (for example one that already has a parent), the context is disposed, the
 dialog's grid releases its property source and session (`Grid.SelectedObject = null`, which unsubscribes the source from
 the node) and the exception propagates. The context rejects a null grid, session, path or property name

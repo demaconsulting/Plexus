@@ -69,8 +69,8 @@ All NodeTypeRegistry unit tests pass. Lookups return the registered objects, rej
 
 - **Port_AllowsMultipleWires_DefaultsToFalseForInputsAndTrueForOutputs**: the definition and input ports default to one
   wire, outputs always report that they accept several.
-- **DiagramPage_Connect_InputAllowsMultipleWires_AcceptsSeveralWires**: a declaration that opts in is reported on the node's
-  port and accepts several wires.
+- **DiagramPage_Connect_InputAllowsMultipleWires_AcceptsSeveralWires**: a declaration that opts in is reported on the
+  node's port and accepts several wires.
 
 ##### Presentation Hints (`Plexus-Types-NodeTypeRegistry-PresentationHints`)
 
@@ -97,12 +97,13 @@ All NodeTypeRegistry unit tests pass. Lookups return the registered objects, rej
 
 - **NodeType_CreateData_AddNode_GivesEveryNodeFreshData**: each added node gets its own payload; other types are
   untouched.
-- **NodeType_CreateData_UndoRedoAdd_KeepsThePayload**: redo restores the same payload instance without calling the factory.
+- **NodeType_CreateData_UndoRedoAdd_KeepsThePayload**: redo restores the same payload instance without calling the
+  factory.
 - **NodeType_CreateData_WrongTypeFromFactory_ThrowsInvalidOperation** and
-  **NodeType_CreateData_ReturningNull_StartsWithoutData**: a factory result of the wrong type is refused and adds nothing
-  (error path); null means no data.
-- **NodeType_CreateData_PasteAndDuplicate_FillOnlyMissingData**: pasted and duplicated nodes without data get fresh data,
-  those with data get a copy.
+  **NodeType_CreateData_ReturningNull_StartsWithoutData**: a factory result of the wrong type is refused and adds
+  nothing (error path); null means no data.
+- **NodeType_CreateData_PasteAndDuplicate_FillOnlyMissingData**: pasted and duplicated nodes without data get fresh
+  data, those with data get a copy.
 - **NodeType_CreateData_Load_KeepsStoredDataIncludingNone**: loading never calls the factory.
 
 ##### Port provider (`Plexus-Types-NodeTypeRegistry-PortProvider`, `Plexus-Types-NodeTypeRegistry-PortProviderDefaults`)

@@ -21,11 +21,11 @@ one write (live) or one pending edit (staged).
   `ToString()`, else the default property value, the `DisplayName` annotation of the type or the type name; `null` is
   `(null)` and an empty string `(empty)`.
 - **Member grid**: a nested `PropertyGrid` (live, alphabetical, no search). A member that is an object with properties
-  (a reference type that is not a string, not a collection and has no text converter) is shown through the grid's
-  object path; any other member is shown as a single `Value` row over a custom item that reads and writes the working list,
+  (a reference type that is not a string, not a collection and has no text converter) is shown through the grid's object
+  path; any other member is shown as a single `Value` row over a custom item that reads and writes the working list,
   which lets structures expand and nested collections open their own editor.
-- **Capabilities**: `CanResize` and `CanReorder` come from the same rules that apply the collection, so the buttons enable
-  accordingly.
+- **Capabilities**: `CanResize` and `CanReorder` come from the same rules that apply the collection, so the buttons
+  enable accordingly.
 
 ### Key Methods
 
@@ -48,7 +48,8 @@ the objects themselves (as in the WinForms editor) and are not undone by Cancel;
 ### Dependencies
 
 - The EditSession unit (`PropertyEditSession`, `CollectionEditor.SetItems`, element creation), the PropertyModel unit,
-  the PropertySources unit (`CustomPropertySource` for value members) and the PropertyGridControl unit (the nested grid).
+  the PropertySources unit (`CustomPropertySource` for value members) and the PropertyGridControl unit (the nested
+  grid).
 - Avalonia (OTS): list box, buttons, window.
 
 ### Callers

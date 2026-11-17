@@ -195,14 +195,14 @@ Properties are the typed values a user edits on a node. The kind of a property i
 string property with `Choices` becomes a choice property (the list must be non-empty, without duplicates or null
 entries, and contain the default).
 
-| Default value          | Kind      | A host editor typically uses |
-|------------------------|-----------|------------------------------|
-| `true`                 | boolean   | a check box                  |
-| `3`, `3L`              | integer   | a numeric box                |
-| `1.5`                  | double    | a numeric box                |
-| `"text"`               | string    | a text box                   |
-| `"Fast"` with `Choices`| choice    | a combo box                  |
-| `Color.Red`            | color     | a color picker               |
+| Default value | Kind | A host editor typically uses |
+| --- | --- | --- |
+| `true` | boolean | a check box |
+| `3`, `3L` | integer | a numeric box |
+| `1.5` | double | a numeric box |
+| `"text"` | string | a text box |
+| `"Fast"` with `Choices` | choice | a combo box |
+| `Color.Red` | color | a color picker |
 
 ```csharp
 types.Add(new NodeType("math.Clamp")
@@ -336,8 +336,8 @@ var task = page.AddNode("flow.Task", 0, 300);       // task.Data is already a Ta
 ```
 
 The factory is used for nodes added from code, dropped from the palette, added with the editor's commands and for pasted
-or duplicated nodes whose source carried no data. Nodes loaded from a file keep exactly what was saved, including no data,
-and undo and redo of the add keep the same payload object. A factory result that does not fit `DataType` throws
+or duplicated nodes whose source carried no data. Nodes loaded from a file keep exactly what was saved, including no
+data, and undo and redo of the add keep the same payload object. A factory result that does not fit `DataType` throws
 `InvalidOperationException` when the node is added.
 
 ![The workflow sample: tasks, decisions and approvals joined by flow wires](images/workflow.png)

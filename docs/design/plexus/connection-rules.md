@@ -76,9 +76,9 @@ ports it is given and never changes the model.
 ### Callers
 
 The Model subsystem owns the rule slot: `Diagram.ConnectionRules` stores the active validator (initially `Default`) and
-`DiagramPage.CanConnect` calls it, with the output port first and the input port second, after the structural checks; `Connect`
-uses `CanConnect` and throws an `InvalidOperationException` with the reason when the connection is denied. The Avalonia
-connect gesture calls `DiagramPage.CanConnect` to preview drop targets while the user drags a wire. Host applications assign
-`Diagram.ConnectionRules`, typically with `ConnectionRules.All(ConnectionRules.Default, ...)`, and may call the
-ready-made rules directly. `PreparedImport` (paste) asks `CanConnect` for every wire and skips refused ones with a
-warning, while snapshot loading does not consult the rules, so a saved diagram is restored as written.
+`DiagramPage.CanConnect` calls it, with the output port first and the input port second, after the structural checks;
+`Connect` uses `CanConnect` and throws an `InvalidOperationException` with the reason when the connection is denied. The
+Avalonia connect gesture calls `DiagramPage.CanConnect` to preview drop targets while the user drags a wire. Host
+applications assign `Diagram.ConnectionRules`, typically with `ConnectionRules.All(ConnectionRules.Default, ...)`, and
+may call the ready-made rules directly. `PreparedImport` (paste) asks `CanConnect` for every wire and skips refused ones
+with a warning, while snapshot loading does not consult the rules, so a saved diagram is restored as written.

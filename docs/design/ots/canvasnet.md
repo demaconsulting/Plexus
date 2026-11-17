@@ -31,6 +31,6 @@ exact package version in the project file.
 ### Known Limitations
 
 - CanvasNet.Svg supports a subset of SVG that overlaps, but does not equal, the subset of the editor's SVG library
-  (see _SvgSkia_); host icons should stay within the common subset so the two painters look alike.
+  (see *SvgSkia*); host icons should stay within the common subset so the two painters look alike.
 - Text is drawn with an installed font of the theme's family when one exists and a bundled fallback otherwise, so
   rendered images can differ slightly between machines.

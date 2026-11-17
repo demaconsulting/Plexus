@@ -15,14 +15,14 @@ the editor runs at most one at a time.
 
 `EditorGesture` (abstract base) holds the editor and the control-relative position of the press, and defines:
 
-| Member                   | Meaning                                                               |
-|--------------------------|-----------------------------------------------------------------------|
-| `Cursor`                 | The cursor to show while the gesture runs; null for the default arrow |
-| `Move(screen, mods)`     | Handle pointer movement                                               |
-| `Complete(screen, mods)` | Handle the release that finishes the gesture, committing its edits    |
-| `Cancel()`               | Abandon the gesture, undoing what it did                              |
-| `Draw(...)`              | Draw transient feedback in diagram coordinates                        |
-| drag threshold           | 3 device-independent pixels before a press becomes a drag             |
+| Member | Meaning |
+| --- | --- |
+| `Cursor` | The cursor to show while the gesture runs; null for the default arrow |
+| `Move(screen, mods)` | Handle pointer movement |
+| `Complete(screen, mods)` | Handle the release that finishes the gesture, committing its edits |
+| `Cancel()` | Abandon the gesture, undoing what it did |
+| `Draw(...)` | Draw transient feedback in diagram coordinates |
+| drag threshold | 3 device-independent pixels before a press becomes a drag |
 
 Concrete gestures and their state:
 

@@ -17,12 +17,12 @@ Avalonia values and back.
 The painter is an internal class, used on the UI thread only. One instance is owned by each editor and also lent to the
 gestures for their feedback. It holds caches only:
 
-| Cache          | Key                 | Value                                    | Lifetime                      |
-|----------------|---------------------|------------------------------------------|-------------------------------|
-| Brushes        | color               | immutable solid brush                    | life of the painter           |
-| Pens           | color and thickness | immutable pen, flat caps and round joins | life of the painter           |
-| Geometries     | path primitive      | stream geometry                          | life of the (immutable) path  |
-| Formatted text | text and style      | formatted text                           | emptied at 4096 entries       |
+| Cache | Key | Value | Lifetime |
+| --- | --- | --- | --- |
+| Brushes | color | immutable solid brush | life of the painter |
+| Pens | color and thickness | immutable pen, flat caps and round joins | life of the painter |
+| Geometries | path primitive | stream geometry | life of the (immutable) path |
+| Formatted text | text and style | formatted text | emptied at 4096 entries |
 
 Pens use flat caps to match the headless painter's butt caps: dashed wires arrive as separate figures cut by the
 scene, and round caps would lengthen every dash by one wire thickness.
@@ -68,7 +68,7 @@ by the editor, which is the only caller that passes arguments from outside.
 - Core scene primitives and the diagram theme types; Plexus geometry types.
 - **DiagramClipboard** — the text formatting helper.
 - **PlexusIcons** — icon images.
-- **Avalonia** (OTS) — drawing context, brushes, pens, geometry and formatted text; see _Avalonia_ in the OTS design
+- **Avalonia** (OTS) — drawing context, brushes, pens, geometry and formatted text; see *Avalonia* in the OTS design
   documents.
 
 ### Callers

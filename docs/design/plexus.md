@@ -26,17 +26,17 @@ both sides:
 - *Types and Scene.* A node type can carry a Scene `INodeVisual` (`NodeType.Visual`). Scene owns that contract and the
   standard visual and reads the types for layout; Types only stores the reference.
 
-| Item            | Kind      | Responsibility                                                                   |
-|-----------------|-----------|----------------------------------------------------------------------------------|
-| Geometry        | Unit      | Immutable `Point`, `Size`, `Rect` and RGBA `Color` value types                   |
-| ConnectionRules | Unit      | Host connection decision (`ConnectionValidator`) and the stock rules             |
-| History         | Subsystem | Undo history: commands, transactions, suspension, dirty tracking                 |
-| Properties      | Subsystem | Property definitions (kinds, choices, presentation) and per-node property bags   |
-| Types           | Subsystem | Node types, ports, port types, icons and the registry the host declares          |
-| Model           | Subsystem | Diagram, pages, nodes, ports, wires, annotations and groups with undoable edits  |
-| Routing         | Subsystem | `IWireRouter`, the obstacle-avoiding orthogonal router and the simple router     |
-| Scene           | Subsystem | Theme, node layout, text measurement contract, scene building, hit testing       |
-| Serialization   | Subsystem | JSON snapshot of a diagram, clipboard copy/paste and duplicate                   |
+| Item | Kind | Responsibility |
+| --- | --- | --- |
+| Geometry | Unit | Immutable `Point`, `Size`, `Rect` and RGBA `Color` value types |
+| ConnectionRules | Unit | Host connection decision (`ConnectionValidator`) and the stock rules |
+| History | Subsystem | Undo history: commands, transactions, suspension, dirty tracking |
+| Properties | Subsystem | Property definitions (kinds, choices, presentation) and per-node property bags |
+| Types | Subsystem | Node types, ports, port types, icons and the registry the host declares |
+| Model | Subsystem | Diagram, pages, nodes, ports, wires, annotations and groups with undoable edits |
+| Routing | Subsystem | `IWireRouter`, the obstacle-avoiding orthogonal router and the simple router |
+| Scene | Subsystem | Theme, node layout, text measurement contract, scene building, hit testing |
+| Serialization | Subsystem | JSON snapshot of a diagram, clipboard copy/paste and duplicate |
 
 **Collaboration.** The host declares a `NodeTypeRegistry` (Types, using Properties and Geometry) and creates a
 `Diagram` (Model) with it. The diagram owns one `UndoHistory` (History); every public mutation of pages and elements is
@@ -67,8 +67,8 @@ The interfaces of the library are its public .NET API. Hosts interact with the s
 
 - **Registry declarations** (`NodeTypeRegistry`, `NodeType`, `PortType`): in; .NET objects declared by the host before
   diagrams are built; registered node types are frozen.
-- **Model operations** (`Diagram`, `DiagramPage` and the elements): in and out; method and property calls, with exceptions
-  for invalid arguments; single-threaded, and every mutation is undoable.
+- **Model operations** (`Diagram`, `DiagramPage` and the elements): in and out; method and property calls, with
+  exceptions for invalid arguments; single-threaded, and every mutation is undoable.
 - **Change notification** (`Diagram.Changed`, observable collections): out; .NET events carrying the kind of change,
   the page and the element; raised on the calling thread after the change has been applied. During an undoable change
   (edit, undo, redo, rollback) a handler exception does not interrupt the change: the change is completed and recorded
@@ -160,8 +160,8 @@ the host application from the library's one exposure to untrusted data and from 
 
 ## Design Constraints
 
-- **Platforms.** Targets net8.0, net9.0, net10.0 and net11.0; builds and runs on Windows, Linux and macOS (see the platform
-  requirements). No platform-specific APIs are used.
+- **Platforms.** Targets net8.0, net9.0, net10.0 and net11.0; builds and runs on Windows, Linux and macOS (see the
+  platform requirements). No platform-specific APIs are used.
 - **No UI or drawing dependency.** The library must be usable in servers, tests and command-line tools; it contains no
   reference to a UI framework, drawing library, file or clipboard API.
 - **Threading.** The model, history and scene are not thread-safe; all use is from one thread. A built scene is

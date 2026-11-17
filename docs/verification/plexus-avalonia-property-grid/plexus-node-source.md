@@ -6,12 +6,12 @@ commit as one undo entry of the diagram.
 ### Verification Approach
 
 The tests build a real diagram (a node type with a double with a unit, a choice, a boolean, a color, an uncategorized
-string, a read-only string and a hinted integer, and an annotated host data class), create the source for a node, and drive
-it through a real `PropertyEditSession` in staged and live mode. The results are checked on the node itself (name,
+string, a read-only string and a hinted integer, and an annotated host data class), create the source for a node, and
+drive it through a real `PropertyEditSession` in staged and live mode. The results are checked on the node itself (name,
 properties, data object identity and content) and on the diagram's undo history (`UndoCount`, `Undo`). A handler of
 `NodeRenaming` provides the host veto. No mocks. The tests are in `NodePropertySourceTests.cs`; the grid-level test
-(`PropertyGrid_SelectedObjectNode_LiveEditsAreUndoEntriesAndFollowUndo`) is in `NodePropertiesDialogTests.cs` and runs in
-the headless Avalonia platform. The fixtures `NodeFixture.cs` hold the node type and the host data class.
+(`PropertyGrid_SelectedObjectNode_LiveEditsAreUndoEntriesAndFollowUndo`) is in `NodePropertiesDialogTests.cs` and runs
+in the headless Avalonia platform. The fixtures `NodeFixture.cs` hold the node type and the host data class.
 
 ### Test Environment
 
@@ -21,8 +21,8 @@ verification design).
 ### Acceptance Criteria
 
 A test passes when the rows match the definitions and annotations, typed text is validated with the documented messages,
-a staged commit changes the node exactly once in the undo history and leaves the previous data object untouched, a cancel
-or a refused commit changes nothing, live edits are one entry each, and outside changes are followed.
+a staged commit changes the node exactly once in the undo history and leaves the previous data object untouched, a
+cancel or a refused commit changes nothing, live edits are one entry each, and outside changes are followed.
 
 ### Test Scenarios
 
@@ -30,8 +30,9 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
   first), the display name with the unit, the description, read-only, the editor key and the type of each row.
 - **NodePropertySource_GetItems_ChoiceAndColorRowsUseTheMatchingEditorTypes**: a choice is an exclusive list and a
   color is an Avalonia color that is not bold at its default.
-- **NodePropertySource_GetItems_ListsHostDataProperties** / **NodePropertySource_GetItems_NodeWithoutDataHasNoDataRows**:
-  data rows with their annotations (hidden ones left out), and none for a node without data.
+- **NodePropertySource_GetItems_ListsHostDataProperties** /
+  **NodePropertySource_GetItems_NodeWithoutDataHasNoDataRows**: data rows with their annotations (hidden ones left out),
+  and none for a node without data.
 - **NodePropertySource_Constructor_DetachedNode_Throws**: a detached node and a null node are refused (error paths).
 - **NodePropertySource_GetItems_DefinitionOrder_ListsRowsInThatOrder**
   (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-PropertyOrder`): properties declared out of alphabetical order with
@@ -59,18 +60,19 @@ or a refused commit changes nothing, live edits are one entry each, and outside 
 - **NodePropertySource_LiveEdits_EachEditIsItsOwnUndoEntry**: four live edits are four entries and a data edit
   publishes a copy; undo steps back one edit.
 - **NodePropertySource_ExternalChange_RaisesChangedAndRereads** /
-  **NodePropertySource_ExternalChange_DataRemovedDropsTheDataRows**: a property change and an undo raise `Changed`; removing
-  the data drops the data rows.
+  **NodePropertySource_ExternalChange_DataRemovedDropsTheDataRows**: a property change and an undo raise `Changed`;
+  removing the data drops the data rows.
 - **PropertySourceFactory_Create_PlexusElements_UsesThePlexusSources**: the factory chooses the three sources.
-- **AnnotationPropertySource_StagedCommit_IsOneUndoEntry** / **GroupPropertySource_StagedCommit_IsOneUndoEntry**: text and
-  fill (and clearing the fill), title and collapsed state, each commit one undo entry.
+- **AnnotationPropertySource_StagedCommit_IsOneUndoEntry** / **GroupPropertySource_StagedCommit_IsOneUndoEntry**: text
+  and fill (and clearing the fill), title and collapsed state, each commit one undo entry.
 - **PropertyGrid_SelectedObjectNode_LiveEditsAreUndoEntriesAndFollowUndo**: a live grid given a node makes each edit one
   entry and shows the old value after undo.
 - **NodePropertySource_Paths_NameDeclaredAndDataRowsNeverCollide** and
-  **NodePropertySource_Paths_PropertyNamedNameDoesNotTouchTheNodeName** (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-RowPaths`):
-  `Node.Name`, `Property.<name>` and `Data.<path>` are unique even when the fixture's declared `Label` and data `Label`
-  or a property called `Name` repeat a name, every row is found again by its path (including `Data.Tags[1]`), and
-  editing `Property.Name` or `Data.Name` leaves the node name alone.
+  **NodePropertySource_Paths_PropertyNamedNameDoesNotTouchTheNodeName**
+  (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-RowPaths`): `Node.Name`, `Property.<name>` and `Data.<path>` are unique
+  even when the fixture's declared `Label` and data `Label` or a property called `Name` repeat a name, every row is
+  found again by its path (including `Data.Tags[1]`), and editing `Property.Name` or `Data.Name` leaves the node name
+  alone.
 - **NodePropertySource_StagedCommit_RefusedRowIsListedWithItsPathAndNothingIsApplied**
   (`PlexusAvaloniaPropertyGrid-PlexusNodeSource-AtomicRefusal`): a handler's veto at commit leaves the node, the undo
   history and both pending edits as they were, and `CommitResult.Failed` names `Node.Name` with the reason (error path).

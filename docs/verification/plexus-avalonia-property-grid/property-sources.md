@@ -23,8 +23,8 @@ arguments rejected.
 
 ### Test Scenarios
 
-- **ReflectionPropertySource_GetItems_HidesNonBrowsableByDefault**: a hidden property is omitted by default and included,
-  flagged, on request.
+- **ReflectionPropertySource_GetItems_HidesNonBrowsableByDefault**: a hidden property is omitted by default and
+  included, flagged, on request.
 - **ReflectionPropertySource_CustomTypeDescriptor_ExposesDynamicProperties**: dynamic properties are listed with their
   category and description, are editable, and a refresh picks up a new one.
 - **ReflectionPropertySource_TypeDescriptionProvider_AddsProperties**: a provider-added read-only property is listed.
@@ -60,18 +60,18 @@ arguments rejected.
 - **PropertyOrdering_Order_CategorizedSortsByCategoryThenLabel**: category, then label, parenthesized names first.
 - **PropertyOrdering_Order_AlphabeticalIgnoresCategories**: label order with parenthesized names first; null rejected
   (error path).
-- **PropertyOrdering_Group_ProducesCategoryGroupsOrOneFlatGroup**: groups ignore case, a flat group has no category, empty
-  input gives no groups.
+- **PropertyOrdering_Group_ProducesCategoryGroupsOrOneFlatGroup**: groups ignore case, a flat group has no category,
+  empty input gives no groups.
 - **PropertyOrdering_Group_OrdersCategoriesByRankThenAlphabetically**
   (`PlexusAvaloniaPropertyGrid-PropertySources-CategoryOrder`): a category with a lower
   `CategoryOrder` is first, a category ranks as its lowest item, equal ranks are alphabetical.
-- **PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel** (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`):
-  within a category a parenthesized item comes first whatever its rank, then the items by ascending `Order` (the
-  default 0 before 1), equal ranks alphabetical.
+- **PropertyOrdering_Order_CategorizedSortsByItemOrderThenLabel**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrder`): within a category a parenthesized item comes first whatever
+  its rank, then the items by ascending `Order` (the default 0 before 1), equal ranks alphabetical.
 - **PropertyOrdering_Order_AlphabeticalIgnoresItemOrder**
   (`PlexusAvaloniaPropertyGrid-PropertySources-ItemOrderAlphabetical`): the
   alphabetical view sorts by label even when the ranks say otherwise.
-- **CompositePropertySource_RunCommit_ChainsTheSourceScopes** (`PlexusAvaloniaPropertyGrid-PropertySources-CommitScope`):
-  the scopes of the sources that
-  have one are chained, the first outermost, and the action runs once; a null action is rejected (error path). The test
-  uses its own recording source in `PropertySourceTests.cs`.
+- **CompositePropertySource_RunCommit_ChainsTheSourceScopes**
+  (`PlexusAvaloniaPropertyGrid-PropertySources-CommitScope`): the scopes of the sources that have one are chained, the
+  first outermost, and the action runs once; a null action is rejected (error path). The test uses its own recording
+  source in `PropertySourceTests.cs`.

@@ -20,11 +20,11 @@ host's undo scope apply uniformly.
   `RejectText` and `Cancel`, and the events `Refreshed`, `CommitRequested` and `CancelRequested` that the grid raises.
 - **Editor registry**: a `PropertyEditorRegistry<Func<PropertyEditorContext, Control>>`. The shared default registry
   holds the built-in editors; `CreateEditorRegistry` creates a fresh copy to customize one grid.
-- **Built-in editors** (`BuiltInEditors`): text box (masked for password text), read-only text, check box (three-state for
-  nullable booleans), drop-down over the standard values, editable drop-down (an auto-complete box), multi-select
-  drop-down for `[Flags]` enumerations, color (swatch and hex text for Avalonia and System.Drawing colors, `ColorSupport`)
-  and the collection summary with its "…" button. Registered by type: `bool`, `Enum`, both color types; the fallback
-  chooses between drop-down, text box and read-only text from the item's converter.
+- **Built-in editors** (`BuiltInEditors`): text box (masked for password text), read-only text, check box (three-state
+  for nullable booleans), drop-down over the standard values, editable drop-down (an auto-complete box), multi-select
+  drop-down for `[Flags]` enumerations, color (swatch and hex text for Avalonia and System.Drawing colors,
+  `ColorSupport`) and the collection summary with its "…" button. Registered by type: `bool`, `Enum`, both color types;
+  the fallback chooses between drop-down, text box and read-only text from the item's converter.
 
 ### Key Methods
 

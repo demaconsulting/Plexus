@@ -34,23 +34,22 @@ an OK / Cancel dialog needs. A host-supplied commit scope wraps the writes, typi
 - **`FindItem(path)`** — resolves a path through the source's items, children and collection elements: first the
   top-level item whose `Path` is the longest prefix of the path that ends at a segment boundary (a root path may contain
   dots, as `Property.Gain` of the node source does), then `.Child` and `[index]` segments.
-- **Commit scope** — the writes of a commit (staged) or of one edit (live) run inside the commit scope of the source when
-  the source implements `IPropertyCommitScope` (outermost), and then inside the host's commit scope. A
+- **Commit scope** — the writes of a commit (staged) or of one edit (live) run inside the commit scope of the source
+  when the source implements `IPropertyCommitScope` (outermost), and then inside the host's commit scope. A
   `PropertyCommitRefusedException` thrown by a scope names the refused property: the session records the message as that
-  property's error, commits nothing (the commit is atomic: no edit is applied and, for the Plexus sources, no undo
-  entry is
-  recorded), lists the refused property in `CommitResult.Failed` and reports the reason in `CommitResult.Error`. The
+  property's error, commits nothing (the commit is atomic: no edit is applied and, for the Plexus sources, no undo entry
+  is recorded), lists the refused property in `CommitResult.Failed` and reports the reason in `CommitResult.Error`. The
   session does not rely on the scope for that: before each write it snapshots what the item holds (a copy of the
   elements for a collection edit) and, when the scope refuses or fails after the writes ran, writes the snapshots back,
   newest first, skipping every item that already holds its snapshot (a scope that rolled back by itself needs no
   restore, and no spurious write or undo entry results). Every attempted write is remembered, also one whose setter or
   applier changed the target and then threw, so a refusal puts that partial write back too. A value that cannot be put
   back, including a failed edit whose previous value could not be read before its write, is named in
-  `CommitResult.Error`. When the scope does not refuse, a failed edit is not restored: it stays pending
-  with its error and the other edits are still applied.
-- **`Commit`** — snapshots the pending edits and applies them in order inside the commit scope. Failed edits stay pending
-  with their error; the others are removed and their collection editors end. If the scope throws or does not run the
-  action, nothing counts as committed and the scope error is reported; `Failed` then lists the edits that failed by
+  `CommitResult.Error`. When the scope does not refuse, a failed edit is not restored: it stays pending with its error
+  and the other edits are still applied.
+- **`Commit`** — snapshots the pending edits and applies them in order inside the commit scope. Failed edits stay
+  pending with their error; the others are removed and their collection editors end. If the scope throws or does not run
+  the action, nothing counts as committed and the scope error is reported; `Failed` then lists the edits that failed by
   themselves and the edit the refusal named (a transient edit of its item when that row was not edited). Commit with
   nothing pending does not call the scope.
 - **Error messages** — `PropertyErrors.Message` unwraps reflection exceptions and removes the framework's
@@ -61,8 +60,8 @@ an OK / Cancel dialog needs. A host-supplied commit scope wraps the writes, typi
   staged mode records or removes one `Collection` edit; live mode applies it through the commit scope and re-reads the
   working copy from the target.
 - **`CollectionEditor.SetItems`** — replaces the whole working copy in one mutation (one live write, one staged pending
-  edit); a different element count needs a resizable collection, and every element must be an instance of the element type.
-  A dialog arranges a list of its own and applies it with this call.
+  edit); a different element count needs a resizable collection, and every element must be an instance of the element
+  type. A dialog arranges a list of its own and applies it with this call.
 - **`ReportError`** — records an error for an item without changing its value, for an editor that rejects its own input;
   it lasts until the item is edited successfully, discarded or cancelled.
 - **Collection application** — applies a working copy to the target: an array of the same length (and a writable list of

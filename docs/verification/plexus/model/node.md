@@ -79,7 +79,8 @@ history entry exists per change, no entry exists for a no-op, and undo and redo 
 
 **Data copy** (`Plexus-Model-Node-CloneData`, `PropertyEditingTests.cs`)
 
-- `Node_CloneData_ReturnsIndependentCopy`: typed and custom payloads are equal but not the same object; no data gives null.
+- `Node_CloneData_ReturnsIndependentCopy`: typed and custom payloads are equal but not the same object; no data gives
+  null.
 - `Node_CloneData_TypeWithoutSerializer_Throws`: the message names the node type.
 - `Node_CloneData_CommittedWithPropertiesInOneTransaction_IsOneUndoEntry`: the documented pattern is one undo entry that
   restores both the data and the property.
@@ -188,8 +189,9 @@ history entry exists per change, no entry exists for a no-op, and undo and redo 
   and history are unchanged (error path).
 - `Node_Ports_ProviderThrows_RevertsAssignmentAndPropagates`: the provider's own exception (same instance, an
   unusual exception type) reaches the caller; the model dump and the history are unchanged (error path).
-- `Node_Ports_RuleThrowsDuringRevalidation_RollsBackEverything`: a connection rule that throws while a wire is re-checked
-  makes the edit throw; the model dump and the history are unchanged and no `Ports` change is reported (error path).
+- `Node_Ports_RuleThrowsDuringRevalidation_RollsBackEverything`: a connection rule that throws while a wire is
+  re-checked makes the edit throw; the model dump and the history are unchanged and no `Ports` change is reported (error
+  path).
 
 **Null provider result** (`Plexus-Model-Node-ProviderNull`, `NodePortsTests.cs`)
 

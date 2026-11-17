@@ -68,8 +68,8 @@ reflection resolves a type by name from the text. Node payloads are read as exac
 therefore never select what is instantiated.
 
 **Resource limits for untrusted input.** Paste rejects text above 8 MiB (a character-count check first as a cheap lower
-bound, then the UTF-8 byte count), more than 10,000 elements, JSON nesting above 64 levels (reader depth, also applied to
-embedded payloads and to custom serializer output) and group nesting above 64 levels (which also breaks membership
+bound, then the UTF-8 byte count), more than 10,000 elements, JSON nesting above 64 levels (reader depth, also applied
+to embedded payloads and to custom serializer output) and group nesting above 64 levels (which also breaks membership
 cycles). Every coordinate must be finite and within 1e9, sizes non-negative, offsets within 1e9. The limits bound
 memory, time and stack for hostile input while leaving ample room for real diagrams; they are applied before per-element
 work where possible.
@@ -80,15 +80,15 @@ result is returned in the page's z-order so pasted content stacks as it did. The
 `plexus.clipboard` and a version.
 
 **Paste placement and names.** With a target position, the translation moves the top-left corner of the union of the
-pasted node, annotation and collapsed-group boxes to that point (names, labels and routes do not count), keeping relative
-layout; without one, the content is offset by one grid step. Wire routes are translated with their nodes and the router
-is not consulted. When the diagram requires unique node names, a clashing name gets the next free numeric suffix
-(`Axis`, `Axis1`, `Axis2`), computed against all nodes of all pages.
+pasted node, annotation and collapsed-group boxes to that point (names, labels and routes do not count), keeping
+relative layout; without one, the content is offset by one grid step. Wire routes are translated with their nodes and
+the router is not consulted. When the diagram requires unique node names, a clashing name gets the next free numeric
+suffix (`Axis`, `Axis1`, `Axis2`), computed against all nodes of all pages.
 
 **Degrading gracefully.** Property values whose kind does not fit the target definition fall back to the default with a
 warning (compatible numeric kinds convert silently); a payload that cannot be read becomes a warning and a node without
-data; a wire that the connection rules reject is skipped with a warning. While restoring, the same conditions are errors,
-because a snapshot of this diagram must reproduce it exactly.
+data; a wire that the connection rules reject is skipped with a warning. While restoring, the same conditions are
+errors, because a snapshot of this diagram must reproduce it exactly.
 
 **Loading a diagram.** `FromSnapshot` checks the version, reports every missing node type at once before building
 anything, then loads each page with history suspended and finally clears the history, so a freshly loaded diagram has an

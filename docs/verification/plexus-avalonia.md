@@ -13,8 +13,8 @@ except where a failure has to be provoked (a clipboard that always fails). The t
 model with three node types, a window holding the editor, and helpers that move, click, drag and type like a user),
 `TestApp.cs` (the minimal Avalonia application) and `UiTest.cs` (runs each test body on the UI thread of one headless
 session for the whole run). Subsystem and unit behavior is verified separately (see the subsystem and unit verification
-designs), and Avalonia and Svg.Controls.Skia.Avalonia are verified as OTS items through these tests (see _Avalonia
-Verification_ and _SvgSkia Verification_).
+designs), and Avalonia and Svg.Controls.Skia.Avalonia are verified as OTS items through these tests (see *Avalonia
+Verification* and *SvgSkia Verification*).
 
 ## Test Environment
 
@@ -37,8 +37,8 @@ must pass on every supported platform for the platform requirements to be satisf
 
 - **PlexusAvalonia_Display_ConnectedPage_ShowsSceneAndFollowsModelChanges**: a connected pair is shown; moving a node
   and adding another through the model changes the scene (rebuilt, wire route follows, new node known).
-- **PlexusAvalonia_Selection_ClickBandAndSelectAll_SelectElements**: click, Shift-click, click on canvas, rubber band and
-  Ctrl+A select the expected elements, and no history is recorded.
+- **PlexusAvalonia_Selection_ClickBandAndSelectAll_SelectElements**: click, Shift-click, click on canvas, rubber band
+  and Ctrl+A select the expected elements, and no history is recorded.
 - **PlexusAvalonia_DragMove_SnapsAndRecordsOneUndoEntry**: a drag of an off-grid distance lands on the grid, one undo
   entry is recorded, and one Ctrl+Z restores the position.
 - **PlexusAvalonia_CtrlDrag_DuplicatesSelection**: a Ctrl-drag leaves the original and moves a uniquely named, selected
@@ -48,9 +48,9 @@ must pass on every supported platform for the platform requirements to be satisf
   output-to-input order.
 - **PlexusAvalonia_WireSegmentDrag_MovesInteriorSegmentWithOneUndoEntry**: an interior segment moves sideways, the port
   ends stay, one history entry is recorded, and undo restores the route.
-- **PlexusAvalonia_WireEditing_BendStubJogAndEndpoint_AreSingleUndoEntries**: on a selected wire, dragging a bend handle,
-  pulling the port stub, double-clicking a segment (jog) and dragging the target end handle onto another input each
-  record exactly one history entry; the wire keeps its identity and four Ctrl+Z presses restore the original route
+- **PlexusAvalonia_WireEditing_BendStubJogAndEndpoint_AreSingleUndoEntries**: on a selected wire, dragging a bend
+  handle, pulling the port stub, double-clicking a segment (jog) and dragging the target end handle onto another input
+  each record exactly one history entry; the wire keeps its identity and four Ctrl+Z presses restore the original route
   and target.
 - **PlexusAvalonia_Annotation_ResizeAndInlineEdit_AreUndoable**: the corner handle resizes (one entry), a double-click
   opens the text editor, Ctrl+Enter commits (one entry) and undo restores the text.
@@ -62,9 +62,9 @@ must pass on every supported platform for the platform requirements to be satisf
   Ctrl+Z restores both, Ctrl+Y and Ctrl+Shift+Z redo, Ctrl+A and Ctrl+D duplicate everything, F2 opens the rename box.
 - **PlexusAvalonia_Undo_DuringDrag_CancelsOnlyTheGesture**: Ctrl+Z mid-drag restores the position without touching the
   history; a second Ctrl+Z removes the node added before.
-- **PlexusAvalonia_Rename_DuplicateThenValidName_RejectsThenCommits**: double-clicking the name opens the editor; a taken
-  name and a name vetoed by a host handler are rejected with reasons and the editor stays open; a valid name commits and
-  undo restores the old name.
+- **PlexusAvalonia_Rename_DuplicateThenValidName_RejectsThenCommits**: double-clicking the name opens the editor; a
+  taken name and a name vetoed by a host handler are rejected with reasons and the editor stays open; a valid name
+  commits and undo restores the old name.
 - **PlexusAvalonia_Clipboard_SystemClipboard_CarriesPlexusFormatAndTextFallback**: copy writes the Plexus format and an
   equal plain-text copy to the window's clipboard and paste adds the node again.
 - **PlexusAvalonia_Clipboard_Failures_RaiseHostEvents**: pasting plain words raises `PasteFailed` and a failing
@@ -103,8 +103,8 @@ must pass on every supported platform for the platform requirements to be satisf
   handler that cancels node tooltips leaves the node without a tooltip while a port still has one; once tooltips are
   turned off, hovering both shows none and raises no further request.
 - **PlexusAvalonia_ToolTips_PressAndPointerExit_HideTip** (`PlexusAvalonia-ToolTipHiding`): a drag that starts with a
-  press clears the shown tooltip; hovering the node again after moving away shows it again, and moving the pointer out of
-  the editor clears it.
+  press clears the shown tooltip; hovering the node again after moving away shows it again, and moving the pointer out
+  of the editor clears it.
 - **PlexusAvalonia_ElementNavigation_FindAndFit_ShowElements** (`PlexusAvalonia-ElementNavigation`, `-FitElements`): a
   node found by name on another page is brought into view (the page switches and the node is visible), and fitting two
   far-apart nodes of the first page shows both.

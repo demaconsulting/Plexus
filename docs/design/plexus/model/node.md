@@ -37,8 +37,8 @@ through the page API (see DiagramPage Design), so none of the classes has a publ
 
 #### Key Methods
 
-- `Node.Bounds` setter and `Node.MoveTo(x, y)`: delegate to the page layout pipeline, which validates the box,
-  ignores an unchanged box, and records one undoable layout command that also updates attached wire routes (see DiagramPage
+- `Node.Bounds` setter and `Node.MoveTo(x, y)`: delegate to the page layout pipeline, which validates the box, ignores
+  an unchanged box, and records one undoable layout command that also updates attached wire routes (see DiagramPage
   Design). The stored box changes only inside that command.
 - `Node.Data` setter: checks the value against `NodeType.DataType` first (an instance of an incompatible type throws
   `ArgumentException`; a derived type, null and any value for a type without `DataType` pass), then replaces the payload

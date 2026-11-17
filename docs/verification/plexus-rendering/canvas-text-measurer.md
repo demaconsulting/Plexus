@@ -22,8 +22,8 @@ measures zero width, zero, negative, NaN and infinite font sizes measure as an e
 
 ### Test Scenarios
 
-- **CanvasTextMeasurer_Measure_LongerText_IsWider**: longer text is more than three times as wide, and the line height is
-  between one and 1.25 times the font size and equal for both texts.
+- **CanvasTextMeasurer_Measure_LongerText_IsWider**: longer text is more than three times as wide, and the line height
+  is between one and 1.25 times the font size and equal for both texts.
 - **CanvasTextMeasurer_Measure_DoubleFontSize_DoublesWidth**: doubling the font size doubles the width.
 - **CanvasTextMeasurer_Measure_Bold_IsAtLeastAsWide**: bold text is at least as wide as regular text.
 - **CanvasTextMeasurer_Measure_DifferentTexts_ShareLineHeight**: four texts of different length and glyphs have the same

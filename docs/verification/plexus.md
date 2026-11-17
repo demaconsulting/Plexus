@@ -25,8 +25,8 @@ scenarios below by test method name; ReqStream matches the names in the TRX resu
 
 ## Test Environment
 
-- The standard xUnit v3 runner (`dotnet test`) on .NET 8, .NET 9, .NET 10 and .NET 11; the test project multi-targets these
-  runtimes, and each scenario runs once per runtime.
+- The standard xUnit v3 runner (`dotnet test`) on .NET 8, .NET 9, .NET 10 and .NET 11; the test project multi-targets
+  these runtimes, and each scenario runs once per runtime.
 - CI runs the suite on Windows, Linux (Ubuntu) and macOS, producing one TRX file per platform and runtime.
 - No external services, network access, files, fonts or UI framework are required. Every scenario builds its own
   diagram in memory from the shared test registry (`TestModel.CreateTypes`: port types `f32` and `i32` and node types
@@ -183,8 +183,8 @@ Each heading names a requirement; the bullets name the test methods and what the
 
 ### Plexus-Core-HitTest
 
-- **Plexus_HitTest_NodePortWireAndCanvas_AreIdentified**: points on a node body, on a port anchor, on a wire and on empty
-  canvas are identified as node, port, wire and canvas with the right model objects.
+- **Plexus_HitTest_NodePortWireAndCanvas_AreIdentified**: points on a node body, on a port anchor, on a wire and on
+  empty canvas are identified as node, port, wire and canvas with the right model objects.
 
 ### Plexus-Core-Snapshot
 
@@ -205,9 +205,9 @@ Each heading names a requirement; the bullets name the test methods and what the
 
 ### Plexus-Core-ClipboardSafety
 
-- **Plexus_ClipboardSafety_HostileAndMalformedText_IsRejectedWithoutChange**: non-JSON text, foreign formats, an oversize
-  payload and excessive nesting are each rejected with an error and no elements; the page and history are unchanged and
-  a valid payload still pastes afterwards.
+- **Plexus_ClipboardSafety_HostileAndMalformedText_IsRejectedWithoutChange**: non-JSON text, foreign formats, an
+  oversize payload and excessive nesting are each rejected with an error and no elements; the page and history are
+  unchanged and a valid payload still pastes afterwards.
 
 ### Plexus-Core-DynamicPorts
 

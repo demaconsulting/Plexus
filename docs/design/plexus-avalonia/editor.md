@@ -69,22 +69,22 @@ the PlexusAvalonia system outside this subsystem.
 The control receives every input event. It first lets an open inline editor keep events that originate inside it, then
 asks the cached scene what is under the pointer and creates the matching gesture:
 
-| Press on                       | Result                                                            |
-|--------------------------------|-------------------------------------------------------------------|
-| Port                           | connect gesture                                                   |
-| Annotation resize handle       | resize gesture                                                    |
-| Group collapse toggle          | immediate collapse or expand (one undo entry)                     |
-| Wire bend handle (selected)    | wire bend gesture (corner drag)                                   |
-| Wire end handle (selected)     | wire end gesture (reconnect to another port)                      |
-| Wire segment                   | wire segment gesture (stubs included), otherwise only a selection |
-| Any other element              | selection rules, then move gesture (duplicates with Ctrl held)    |
-| Empty canvas                   | clear selection (unless additive), then rubber band gesture       |
-| Middle button, or Space + left | pan gesture                                                       |
-| Right button                   | select the element, then raise the context event on release       |
-| Double-click on a node name    | inline rename                                                     |
-| Double-click on a node body    | `NodeDoubleClicked` event                                         |
-| Double-click on an annotation  | inline annotation edit (editable editors only)                    |
-| Double-click on a wire segment | add a jog to the wire and select it (editable editors only)       |
+| Press on | Result |
+| --- | --- |
+| Port | connect gesture |
+| Annotation resize handle | resize gesture |
+| Group collapse toggle | immediate collapse or expand (one undo entry) |
+| Wire bend handle (selected) | wire bend gesture (corner drag) |
+| Wire end handle (selected) | wire end gesture (reconnect to another port) |
+| Wire segment | wire segment gesture (stubs included), otherwise only a selection |
+| Any other element | selection rules, then move gesture (duplicates with Ctrl held) |
+| Empty canvas | clear selection (unless additive), then rubber band gesture |
+| Middle button, or Space + left | pan gesture |
+| Right button | select the element, then raise the context event on release |
+| Double-click on a node name | inline rename |
+| Double-click on a node body | `NodeDoubleClicked` event |
+| Double-click on an annotation | inline annotation edit (editable editors only) |
+| Double-click on a wire segment | add a jog to the wire and select it (editable editors only) |
 
 While a gesture runs it owns the pointer: movement and release are forwarded to it, and it draws its own feedback
 (rubber band, connection preview) after the scene. A gesture that edits the model does so inside one history
@@ -106,8 +106,8 @@ that the core classifies (not Plexus data, unknown types, too large) are reporte
 
 Dropping the node type payload creates a node at the drop point, centered and snapped; `NodeTypeDragSource` is the
 matching helper for the drag side. While a node type drag is over the editor it draws a translucent ghost of the node
-(built by the same `NodePrototype` the palette uses) at the position the drop would use, so the palette item, the
-ghost and the created node all come from one drawing pipeline and one position computation. `NodePalette` is the ready-made
+(built by the same `NodePrototype` the palette uses) at the position the drop would use, so the palette item, the ghost
+and the created node all come from one drawing pipeline and one position computation. `NodePalette` is the ready-made
 drag side: it draws every node type with the editor's scene builder and painter and starts the node type drag from its
 items.
 

@@ -24,15 +24,15 @@ This document is intended for:
 
 Plexus is delivered as four NuGet packages. Each package contains exactly one software system:
 
-| Package                                     | Software System            | Purpose                                |
-|---------------------------------------------|----------------------------|----------------------------------------|
-| DemaConsulting.Plexus                       | Plexus                     | UI-free core: model, history, routing  |
-| DemaConsulting.Plexus.Rendering             | PlexusRendering            | Headless PNG rendering using CanvasNet |
-| DemaConsulting.Plexus.Avalonia              | PlexusAvalonia             | Avalonia diagram editor control        |
+| Package | Software System | Purpose |
+| --- | --- | --- |
+| DemaConsulting.Plexus | Plexus | UI-free core: model, history, routing |
+| DemaConsulting.Plexus.Rendering | PlexusRendering | Headless PNG rendering using CanvasNet |
+| DemaConsulting.Plexus.Avalonia | PlexusAvalonia | Avalonia diagram editor control |
 | DemaConsulting.Plexus.Avalonia.PropertyGrid | PlexusAvaloniaPropertyGrid | Generic Avalonia property grid control |
 
-This document covers the detailed design of these four systems and their constituent software items (see _Software
-Structure_), and the following OTS items:
+This document covers the detailed design of these four systems and their constituent software items (see *Software
+Structure*), and the following OTS items:
 
 - **Avalonia** — UI framework hosting the editor control
 - **CanvasNet** — drawing, text, SVG and PNG library used by the headless renderer
@@ -207,14 +207,14 @@ These decisions apply across the packages; decisions specific to one system are 
 
 - **Four packages in one repository.** The core, the headless renderer, the editor control and the property grid are
   separate NuGet packages so that headless use needs no Avalonia, the core needs no drawing library, and the property
-  grid can edit any annotated object without the editor. Dependencies are one-directional (see _Software Structure_).
+  grid can edit any annotated object without the editor. Dependencies are one-directional (see *Software Structure*).
 - **The scene lives in the core.** The scene (layout, hit-testing, drag and drop geometry) contains geometry but no
   drawing dependency, so it belongs in the core; a package of its own would be one more reference for every consumer.
 - **One scene, two painters.** Layout, hit-testing and drop geometry exist once and both painters consume them, so what
   a user clicks is what the renderer draws. Visual parity between the painters is "close enough to look the same", not
   pixel-identical, because their text engines and SVG renderers are different OTS libraries.
 - **Text measurement is a core interface.** Each painter package implements it with its own text APIs; wire anchors
-  use a deterministic estimate instead, so routing never depends on a painter (see _Plexus System Design_).
+  use a deterministic estimate instead, so routing never depends on a painter (see *Plexus System Design*).
 - **Hosts supply the vocabulary.** Node types, port types, icons, connection rules and data payload serializers come
   from the host, with defaults for each; Plexus is aimed at many independent applications, not one product, and ships
   no node-type catalog.
@@ -222,7 +222,7 @@ These decisions apply across the packages; decisions specific to one system are 
   the renderer, the editor and the property grid target net10.0 and net11.0 only.
 - **API governance and reference.** Public API tracking follows the repository template's defaults, with no extra
   tracking tooling. The API reference is generated from the XML documentation by ApiMark and packed into each package
-  (see _ApiMark_ in the OTS design documents).
+  (see *ApiMark* in the OTS design documents).
 - **OTS libraries are verified through Plexus's own tests.** No dedicated OTS test project exists for CanvasNet or
   Avalonia; the unit tests of the packages that use them cover the functionality Plexus relies on.
 - **Demo and tooling are examples, not products.** The demo application (a reference host with node domains, a
@@ -237,14 +237,14 @@ These decisions apply across the packages; decisions specific to one system are 
   platform; gestures from real operating-system mouse input and the operating-system clipboard between processes need
   an interactive desktop and are not part of the automated verification. The packages themselves have no platform
   restriction.
-- **SVG subset parity.** The two painters use different SVG engines (see _SvgSkia_ and _CanvasNet_ in the OTS design
+- **SVG subset parity.** The two painters use different SVG engines (see *SvgSkia* and *CanvasNet* in the OTS design
   documents); hosts should keep icons within the common subset.
 - **Clipboard format evolution.** Negotiation of a future clipboard format version and of mismatched node-type
-  definitions that share a key is not yet designed (see _Plexus System Design_).
+  definitions that share a key is not yet designed (see *Plexus System Design*).
 - **Rendering framework range.** The renderer targets a single framework; multi-targeting it like the core is an open
-  question (see _PlexusRendering System Design_).
+  question (see *PlexusRendering System Design*).
 - **Headless test adapter.** The Avalonia-based test projects wait for an Avalonia headless xUnit adapter that supports
-  the xUnit v3 generation in use (see _PlexusAvalonia System Design_).
+  the xUnit v3 generation in use (see *PlexusAvalonia System Design*).
 
 ## Document Conventions
 

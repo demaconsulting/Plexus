@@ -87,7 +87,8 @@ JSON shape:
 
 Boundary values: extreme numeric values, nested groups, empty history. Error paths: all rejection scenarios.
 
-Format-neutral tree, streams and skipping unknown types (`DiagramTreeTests`, `DiagramStreamTests`, `UnknownNodeTypeTests`):
+Format-neutral tree, streams and skipping unknown types (`DiagramTreeTests`, `DiagramStreamTests`,
+`UnknownNodeTypeTests`):
 
 - **Tree** (`Plexus-Serialization-Snapshot-Tree`): `Diagram_ToTree_HoldsOnlyPlainValues` walks the whole tree and fails
   on any value outside the vocabulary; `Diagram_ToTree_UsesPlainKindsColorsAndNestedData` and
@@ -113,8 +114,8 @@ Format-neutral tree, streams and skipping unknown types (`DiagramTreeTests`, `Di
 - **Stored bounds kept** (`Plexus-Serialization-Snapshot-DynamicPortBounds`;
   `Snapshot_Load_DynamicPortNode_KeepsStoredBounds`): a bus the user made 300 units taller than its three ports need
   loads with exactly that size and still three inputs.
-- **No port lists** (`Plexus-Serialization-Snapshot-NoStoredPorts`; `Snapshot_ToJson_DynamicPortNode_StoresNoPortLists`):
-  no node entry of the JSON has a port, inputs or outputs member.
+- **No port lists** (`Plexus-Serialization-Snapshot-NoStoredPorts`;
+  `Snapshot_ToJson_DynamicPortNode_StoresNoPortLists`): no node entry of the JSON has a port, inputs or outputs member.
 - **Missing computed port** (`Plexus-Serialization-Snapshot-DynamicPortMissing`;
   `Snapshot_Load_WireToPortProviderDoesNotProduce_ThrowsSnapshotException`): a document whose wire names an input the
   loading registry's provider does not produce is refused, naming the port (error path).

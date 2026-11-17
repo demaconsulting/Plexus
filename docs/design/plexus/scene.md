@@ -34,12 +34,12 @@ Exposed to hosts and painters:
 - Extension points: `ITextMeasurer` and `INodeVisual` (with `NodeVisualContext` and the reusable
   `StandardNodeVisual`).
 - `NodeGeometry` and `NodeLayout.Compute` for text-independent geometry.
-- `NodeStyle` and `NodeStylers`: the per-node appearance (fill, border, title color, icon tint, glow, opacity) that a host's
-  `Diagram.NodeStyler` returns, honored by `StandardNodeVisual` and readable by custom visuals from
+- `NodeStyle` and `NodeStylers`: the per-node appearance (fill, border, title color, icon tint, glow, opacity) that a
+  host's `Diagram.NodeStyler` returns, honored by `StandardNodeVisual` and readable by custom visuals from
   `NodeVisualContext.Style`; `IconPrimitive` carries the icon tint and opacity to the painters.
 
-Consumed: the model types (`DiagramPage`, `Node`, `Wire`, `Annotation`, `Group`, `Port`, `NodeType`), the Routing subsystem
-(`IWireRouter` through `Diagram.Router`, for transient display routes) and the Geometry types.
+Consumed: the model types (`DiagramPage`, `Node`, `Wire`, `Annotation`, `Group`, `Port`, `NodeType`), the Routing
+subsystem (`IWireRouter` through `Diagram.Router`, for transient display routes) and the Geometry types.
 
 ### Design
 
@@ -66,8 +66,8 @@ wins. Targets are rectangles, polylines (wires) or border bands (expanded group 
 transparent to clicks so that members inside can be selected).
 
 **Hit-test tolerance.** `HitTest(point, tolerance)` queries a square of side twice the tolerance around the point
-against the spatial index. Rectangle targets must contain the point itself. A wire target is a hit when the distance from
-the point to the nearest segment is at most the tolerance plus half the wire thickness; the nearest segment's index
+against the spatial index. Rectangle targets must contain the point itself. A wire target is a hit when the distance
+from the point to the nearest segment is at most the tolerance plus half the wire thickness; the nearest segment's index
 is returned so editors know which segment was grabbed. A group border band is at least two units wide or the tolerance.
 The default tolerance of three units makes one- and two-unit wires reachable without making them grab nearby nodes,
 because nodes win by order.
@@ -103,8 +103,8 @@ horizontal wire crosses a wire of a different net it draws a small semicircular 
 line is
 cut back inside the arrowhead so its flat end does not poke past the tip.
 
-**Culling.** With visible bounds, elements whose drawn extent does not intersect them are not built; the grid then covers
-exactly the visible area. Without bounds the grid covers the content plus a margin.
+**Culling.** With visible bounds, elements whose drawn extent does not intersect them are not built; the grid then
+covers exactly the visible area. Without bounds the grid covers the content plus a margin.
 
 **Extension.** `ITextMeasurer` lets painters supply exact metrics. `INodeVisual` lets a node type replace or decorate
 the standard look; visuals only add primitives (attributed to the node), so a custom visual works in every painter.
@@ -116,11 +116,11 @@ metrics, so a custom theme changes layout, routing obstacles and painting consis
 
 **Geometry theme.** Each node has exactly one geometry theme: its own diagram's theme (`Diagram.Theme`, the classic
 theme for a detached node), the theme the model uses for `Port.Anchor`, stored routes, visual bounds and routing
-obstacles. `NodeLayout.Compute` uses it for port rows, anchors, triangles, label gaps and hit areas, and the scene's node
-routing obstacles for display routes use it too; the theme passed to the scene (a `SceneOptions.Theme`, render or editor
-override) supplies everything else (colors, fonts, text styles, header band, icon box, text gaps). A per-scene theme
-therefore changes the look but never where ports and wire ends are, so drawn wires stay attached. Collapsed-group proxy
-ports and their display routes exist only in the scene and are computed from the scene theme consistently.
+obstacles. `NodeLayout.Compute` uses it for port rows, anchors, triangles, label gaps and hit areas, and the scene's
+node routing obstacles for display routes use it too; the theme passed to the scene (a `SceneOptions.Theme`, render or
+editor override) supplies everything else (colors, fonts, text styles, header band, icon box, text gaps). A per-scene
+theme therefore changes the look but never where ports and wire ends are, so drawn wires stay attached. Collapsed-group
+proxy ports and their display routes exist only in the scene and are computed from the scene theme consistently.
 
 **Performance.** Building touches each element once, wire display routes are computed only for collapsed-group wires,
 and hit tests and queries visit only the cells near the point. Speed is assessed by profiling, not by timed tests; the

@@ -68,10 +68,10 @@ IDictionary<string, object?> tree = diagram.ToTree();         // a copy: changin
 Diagram loaded = Diagram.FromTree(tree, types, options);
 ```
 
-`FromTree` accepts what other libraries produce: any integer or floating-point type, `IDictionary`, `IReadOnlyDictionary`
-or any sequence of key/value pairs for objects (a TOML table, for example), any list type, and `JsonElement` values. A
-tree it cannot use (an unsupported value such as a date, a non-string key, nesting that is too deep or a wrong shape)
-throws `SnapshotException`, so a host needs no JSON knowledge to handle it.
+`FromTree` accepts what other libraries produce: any integer or floating-point type, `IDictionary`,
+`IReadOnlyDictionary` or any sequence of key/value pairs for objects (a TOML table, for example), any list type, and
+`JsonElement` values. A tree it cannot use (an unsupported value such as a date, a non-string key, nesting that is too
+deep or a wrong shape) throws `SnapshotException`, so a host needs no JSON knowledge to handle it.
 
 ## Writing Your Own Format
 
@@ -87,10 +87,11 @@ The example uses [Tomlyn](https://github.com/xoofx/Tomlyn), a TOML library for .
 dotnet add package Tomlyn
 ```
 
-Tomlyn reads a table of plain values into a `Dictionary<string, object?>`, which `FromTree` accepts as it is. Writing needs
-one small step, because Tomlyn writes only its own `TomlTable`, `TomlArray` and `TomlTableArray` for untyped values and
-not generic lists. The converter below makes them out of the tree (a list of dictionaries becomes the `[[sections]]` of
-TOML); it names no member of the snapshot, so it keeps working when a later version of Plexus adds members:
+Tomlyn reads a table of plain values into a `Dictionary<string, object?>`, which `FromTree` accepts as it is. Writing
+needs one small step, because Tomlyn writes only its own `TomlTable`, `TomlArray` and `TomlTableArray` for untyped
+values and not generic lists. The converter below makes them out of the tree (a list of dictionaries becomes the
+`[[sections]]` of TOML); it names no member of the snapshot, so it keeps working when a later version of Plexus adds
+members:
 
 ```csharp
 using Tomlyn.Model;
@@ -332,10 +333,10 @@ version, or by a build with a different set of plug-ins. By default loading is a
 in `diagram.LoadReport` (see *Files With Unknown Node Types* in *Saving, Loading and the Clipboard*). Either way, keep
 the keys of node types stable: they are written to files and to the clipboard.
 
-**Evolving your own objects.** Give every new member of a host record or class a default, so that files written
-before it existed still load, and never reuse the name of a removed member for something else. System.Text.Json and
-Tomlyn both ignore members they do not know by default, which is what lets an older application open a newer file
-(and, on saving, silently drop what it did not understand: keep the extra keys in a dictionary member when that matters).
+**Evolving your own objects.** Give every new member of a host record or class a default, so that files written before
+it existed still load, and never reuse the name of a removed member for something else. System.Text.Json and Tomlyn both
+ignore members they do not know by default, which is what lets an older application open a newer file (and, on saving,
+silently drop what it did not understand: keep the extra keys in a dictionary member when that matters).
 
 **Saving safely.** Write to a temporary file and replace the target when the write succeeded, so that a crash never
 leaves half a document, and call `diagram.History.MarkClean()` only after the replacement.

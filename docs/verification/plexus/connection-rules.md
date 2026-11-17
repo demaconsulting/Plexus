@@ -34,11 +34,11 @@ documented details, and argument errors raise the documented exceptions.
   reason text.
 - **ConnectionRules_DefaultAndSingleInputWire_OptedInInput_AllowAnotherWire**: an input whose definition allows fan-in
   passes both rules however many wires it has.
-- **DiagramPage_Connect_DefaultRules_RefuseFanInAndAllowFanOut**: through a page, `CanConnect` and the `Connect` exception
-  carry the same reason, the occupied input keeps its single wire and an output may feed several inputs.
+- **DiagramPage_Connect_DefaultRules_RefuseFanInAndAllowFanOut**: through a page, `CanConnect` and the `Connect`
+  exception carry the same reason, the occupied input keeps its single wire and an output may feed several inputs.
 - **DiagramPage_Connect_InputAllowsMultipleWires_AcceptsSeveralWires**: an opted-in input accepts a second wire.
-- **DiagramPage_Connect_HostRuleWithoutDefault_AllowsFanInEverywhere**: a host rule assigned without the default does not
-  restrict fan-in.
+- **DiagramPage_Connect_HostRuleWithoutDefault_AllowsFanInEverywhere**: a host rule assigned without the default does
+  not restrict fan-in.
 
 #### Ready-Made Rules (`Plexus-ConnectionRules-SameType`, `Plexus-ConnectionRules-SingleInputWire`)
 
@@ -84,6 +84,6 @@ documented details, and argument errors raise the documented exceptions.
 - **ConnectionRules_MaxOutgoingWires_ReconnectSourceOntoFullOutput_IsDenied**: moving a wire's source onto a full
   output is
   refused, onto a free output allowed.
-- **ConnectionRules_MaxIncomingWires_FullInput_DeniesButTheMovingWireIsNotCounted**: a full input refuses another wire and
-  a reconnect onto it, while a wire already on it may change its source.
+- **ConnectionRules_MaxIncomingWires_FullInput_DeniesButTheMovingWireIsNotCounted**: a full input refuses another wire
+  and a reconnect onto it, while a wire already on it may change its source.
 - **ConnectionRules_MaxWires_LimitBelowOne_ThrowsArgumentOutOfRange**: limits below one are refused (error path).

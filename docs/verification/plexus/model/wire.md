@@ -63,7 +63,8 @@ one undoable history entry exists per change, none for a no-op, and undo and red
 **Route normalization** (`Plexus-Model-Wire-RouteNormalization`)
 
 - `Wire_SetRoute_CollinearAndZeroLengthBends_AreNormalized`: a collinear, a duplicated and an end-point bend vanish.
-- `DiagramPage_Connect_RouteWithCollinearBend_StoresNormalizedRoute`: a route supplied when connecting is normalized too.
+- `DiagramPage_Connect_RouteWithCollinearBend_StoresNormalizedRoute`: a route supplied when connecting is normalized
+  too.
 - `Wire_SetRoute_SameShapeAfterNormalizing_RecordsNothing`: a route that normalizes to the current one records no entry.
 
 **Reconnect** (`Plexus-Model-Wire-Reconnect`)
@@ -74,8 +75,8 @@ one undoable history entry exists per change, none for a no-op, and undo and red
 - `Wire_Reconnect_SamePorts_RecordsNothing`: current ports (or two nulls) record nothing.
 - `Wire_Reconnect_InvalidMoves_ThrowWithReasonAndChangeNothing`: self-connection, wrong direction, duplicate and a host
   rule each throw with their reason; the wire and the history are untouched.
-- `DiagramPage_CanReconnect_ExcludesTheWireItselfFromDuplicateCheck`: the wire's own connection is allowed, a real duplicate
-  is denied with its reason.
+- `DiagramPage_CanReconnect_ExcludesTheWireItselfFromDuplicateCheck`: the wire's own connection is allowed, a real
+  duplicate is denied with its reason.
 - `Wire_Reconnect_RemovedWire_ThrowsInvalidOperationException`: a removed wire rejects the call.
 
 **Add jog** (`Plexus-Model-Wire-AddJog`)

@@ -4,7 +4,7 @@
 
 DemaConsulting.ApiMark.MSBuild (ApiMark) generates the API reference documentation of the four shipped
 packages from their compiled assemblies and XML documentation files. It was chosen because its output is
-organized for _gradual disclosure_ — an `api.md` index, then a page per namespace, per type and per member —
+organized for *gradual disclosure* — an `api.md` index, then a page per namespace, per type and per member —
 which matches the stated audience for the reference: a coding agent (or developer) assembling an application
 against Plexus, which reads a small targeted page rather than one large document. It also renders
 `<example><code>` blocks as fenced code, honors `NamespaceDoc` carrier classes for namespace-level overviews, and

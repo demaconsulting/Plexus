@@ -92,9 +92,9 @@ if (under.Kind == HitKind.Port)
 ```
 
 Text measurement goes through the `ITextMeasurer` interface. The core provides an approximate measurer (the default for
-`SceneOptions.TextMeasurer`), the rendering package measures with CanvasNet fonts (`CanvasTextMeasurer`) and the Avalonia
-package with Avalonia text APIs (`AvaloniaTextMeasurer`, which the editor uses). Port anchors and node boxes never
-depend on the measurer, but the name, label and summary rectangles do, so pass the painter's measurer in
+`SceneOptions.TextMeasurer`), the rendering package measures with CanvasNet fonts (`CanvasTextMeasurer`) and the
+Avalonia package with Avalonia text APIs (`AvaloniaTextMeasurer`, which the editor uses). Port anchors and node boxes
+never depend on the measurer, but the name, label and summary rectangles do, so pass the painter's measurer in
 `SceneOptions` when a hit test must agree with the pixels. Hosts that draw diagrams themselves can consume the scene
 directly: every primitive is plain data (`RectPrimitive`, `PathPrimitive`, `TextPrimitive`, `IconPrimitive`,
 `GridPrimitive`).

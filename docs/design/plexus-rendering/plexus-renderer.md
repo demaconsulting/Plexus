@@ -14,15 +14,15 @@ page is drawn, at which pixel size, with which theme and background, and orchest
 
 `PlexusRenderer` is a static class without state. `RenderOptions` is an immutable (init-only) options class:
 
-| Property     | Type                          | Default             | Invariant                       |
-|--------------|-------------------------------|---------------------|---------------------------------|
-| `Scale`      | `double`                      | 1                   | Finite and greater than zero    |
-| `Padding`    | `double`                      | 15                  | Finite, not negative            |
-| `Background` | `Color?`                      | null (theme canvas) | None                            |
-| `ShowGrid`   | `bool`                        | true                | None                            |
-| `Bounds`     | `Rect?`                       | null (fit content)  | Non-empty and finite if given   |
-| `Theme`      | `DiagramTheme?`               | null (diagram's)    | None; changes the look only     |
-| `Selection`  | `IEnumerable<DiagramElement>` | empty               | Copied at creation; not null    |
+| Property | Type | Default | Invariant |
+| --- | --- | --- | --- |
+| `Scale` | `double` | 1 | Finite and greater than zero |
+| `Padding` | `double` | 15 | Finite, not negative |
+| `Background` | `Color?` | null (theme canvas) | None |
+| `ShowGrid` | `bool` | true | None |
+| `Bounds` | `Rect?` | null (fit content) | Non-empty and finite if given |
+| `Theme` | `DiagramTheme?` | null (diagram's) | None; changes the look only |
+| `Selection` | `IEnumerable<DiagramElement>` | empty | Copied at creation; not null |
 
 `Padding` is ignored when `Bounds` is given. `Theme` changes the look only: the geometry of ports, port triangles and
 wire ends always follows the diagram's own theme, so wires stay attached to their ports.
@@ -36,7 +36,7 @@ is simply no longer drawn highlighted.
 ### Key Methods
 
 - **`Render(page, options)`** — returns a new `Surface` owned by the caller.
-  - Preconditions: `page` is not null; options are valid (see _Error Handling_).
+  - Preconditions: `page` is not null; options are valid (see *Error Handling*).
   - Algorithm: validate the options; choose the theme; build the scene through the core scene builder with a
     `CanvasTextMeasurer`, the selection and the options' bounds, with the grid disabled (the grid must cover the final
     image area, which is only known afterwards); compute the area as the requested bounds, or the scene bounds
@@ -73,9 +73,10 @@ The library translates no exception (see the exception policy of the system desi
 
 ### Dependencies
 
-- Core scene builder, scene options, `DiagramTheme`, `Rect`, `Point`, `Color` and `DiagramPage` from the Plexus core system.
+- Core scene builder, scene options, `DiagramTheme`, `Rect`, `Point`, `Color` and `DiagramPage` from the Plexus core
+  system.
 - `CanvasTextMeasurer` and `ScenePainter` units of this system.
-- CanvasNet (OTS) for the surface and the PNG codec; see _CanvasNet_ in the OTS design documents.
+- CanvasNet (OTS) for the surface and the PNG codec; see *CanvasNet* in the OTS design documents.
 
 ### Callers
 

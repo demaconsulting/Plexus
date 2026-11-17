@@ -11,10 +11,10 @@ input; the unit also owns the importer and the duplicate operation that share th
 
 - `PlexusClipboard` (static): constants `FormatId` (`plexus.clipboard`), `FormatVersion` (1), `MaxPayloadBytes` (8 MiB)
   and `MaxElements` (10,000).
-- `ClipboardEnvelope` (internal record): `Format`, `Version` and the element lists with the same shape as a page snapshot,
-  plus the optional z-order; the `Content` accessor presents them to the importer as `ElementContent`.
-- `ClipboardSelection` (internal static): selection expansion. `ImportOptions` (internal): `Restore`, `MaxElements`, `At`
-  and the default offset `Dx`/`Dy`. `ElementImporter` (internal static, with a private builder): validation and
+- `ClipboardEnvelope` (internal record): `Format`, `Version` and the element lists with the same shape as a page
+  snapshot, plus the optional z-order; the `Content` accessor presents them to the importer as `ElementContent`.
+- `ClipboardSelection` (internal static): selection expansion. `ImportOptions` (internal): `Restore`, `MaxElements`,
+  `At` and the default offset `Dx`/`Dy`. `ElementImporter` (internal static, with a private builder): validation and
   construction of detached elements, limits `MaxCoordinate` 1e9 and group depth 64. `PreparedImport` (internal): success
   flag, error, missing types, warnings and the elements in attach order. `PasteResult` (public): `Success`, `Elements`,
   `MissingNodeTypes`, `Warnings`, `Error`.
@@ -70,20 +70,20 @@ history are unchanged.
 
 #### Error Handling
 
-Bad clipboard text is never an exception: the paste returns `PasteResult` with `Success` false, an error message and, for
-unknown node types, the complete list of keys. Warnings (property kind mismatches, unavailable choices, rejected wires,
-unreadable payloads) accompany a successful result. Caller errors throw: `ArgumentNullException` and `ArgumentException`
-for null, detached or multi-page selections, `ArgumentOutOfRangeException` for non-finite or huge positions and offsets,
-and `InvalidOperationException` when the target page has been removed, a duplicate's own payload no longer
-serializes or a port provider fails for a copy ("The elements could not be duplicated: ..."). Exceptions of host
-payload serializers while reading are never propagated: any of them except `OutOfMemoryException` makes the payload
+Bad clipboard text is never an exception: the paste returns `PasteResult` with `Success` false, an error message and,
+for unknown node types, the complete list of keys. Warnings (property kind mismatches, unavailable choices, rejected
+wires, unreadable payloads) accompany a successful result. Caller errors throw: `ArgumentNullException` and
+`ArgumentException` for null, detached or multi-page selections, `ArgumentOutOfRangeException` for non-finite or huge
+positions and offsets, and `InvalidOperationException` when the target page has been removed, a duplicate's own payload
+no longer serializes or a port provider fails for a copy ("The elements could not be duplicated: ..."). Exceptions of
+host payload serializers while reading are never propagated: any of them except `OutOfMemoryException` makes the payload
 unreadable (a warning on paste, an error on restore).
 
 #### Dependencies
 
 - Snapshot unit (`SnapshotWriter`, codecs, `PlexusJson` compact context, snapshot records)
-- Model subsystem (`DiagramPage`, `Diagram.Perform`, elements, connection rules through `CanConnect`), Types and Properties
-  subsystems (registry, definitions, coercion), History subsystem (operation plans)
+- Model subsystem (`DiagramPage`, `Diagram.Perform`, elements, connection rules through `CanConnect`), Types and
+  Properties subsystems (registry, definitions, coercion), History subsystem (operation plans)
 - System.Text.Json (part of the .NET platform)
 
 #### Callers

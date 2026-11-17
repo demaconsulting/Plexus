@@ -3,8 +3,8 @@
 `DemaConsulting.Plexus.Avalonia.PropertyGrid` is an Avalonia property grid in the style of the WinForms one: give it any
 .NET object and it shows and edits the object's properties, honoring the `System.ComponentModel` annotations
 (`[Category]`, `[Description]`, `[DefaultValue]`, `[TypeConverter]`, ...). It is generic: nothing in the grid itself
-knows about Plexus. A small adapter layer in the same package shows Plexus nodes, annotations and groups, and makes every
-commit **one undo entry** of the diagram, so the properties dialog of a node is one line of host code.
+knows about Plexus. A small adapter layer in the same package shows Plexus nodes, annotations and groups, and makes
+every commit **one undo entry** of the diagram, so the properties dialog of a node is one line of host code.
 
 ![The properties dialog of a workflow Task node: categories, bold changed values, drop-downs, a slider, a nested object, a collection and a masked secret](images/property-grid-dialog.png)
 
@@ -75,26 +75,26 @@ context menu of such a row resets it.
 
 ### Supported Annotations
 
-| Annotation or type                   | Effect in the grid                                                    |
-|--------------------------------------|-----------------------------------------------------------------------|
-| `[Category]`                         | The category band the property is listed under (default "Misc").      |
-| `[DisplayName]`, `[Description]`     | The row label and the text of the description pane (`[Display]` too). |
-| `[ReadOnly(true)]`, no setter        | The row is dimmed and cannot be edited.                               |
-| `[Browsable(false)]`                 | The property is not listed.                                           |
-| `[DefaultValue]`                     | A different value is bold; the row can be reset.                      |
-| `[TypeConverter]`                    | Text conversion and standard values (a closed or editable list).      |
-| `ExpandableObjectConverter`          | A nested object whose properties are shown as child rows.             |
-| `enum`, `[Flags] enum`               | A drop-down, or a check list.                                         |
-| `bool`                               | A check box.                                                          |
-| Avalonia or `System.Drawing` `Color` | A swatch and a hex text (`#RRGGBB`).                                  |
-| `List<T>`, arrays, `ICollection<T>`  | The collection editor: add, remove, reorder, edit members.            |
-| `[PasswordPropertyText(true)]`       | The text is masked.                                                   |
-| `[ParenthesizePropertyName]`         | The label is shown as `(Name)` and sorted first.                      |
-| `[RefreshProperties(All)]`           | All rows are read again after it changes (also when hidden).          |
-| `[DefaultProperty]`                  | The row that is selected first.                                       |
-| `[PropertyEditor("key")]`            | A custom editor (see below).                                          |
-| `[UIHint("key")]`                    | The same, without referencing the grid assembly (see below).          |
-| `[Range]`, `[Required]`, ...         | The value is validated before it is written.                          |
+| Annotation or type | Effect in the grid |
+| --- | --- |
+| `[Category]` | The category band the property is listed under (default "Misc"). |
+| `[DisplayName]`, `[Description]` | The row label and the text of the description pane (`[Display]` too). |
+| `[ReadOnly(true)]`, no setter | The row is dimmed and cannot be edited. |
+| `[Browsable(false)]` | The property is not listed. |
+| `[DefaultValue]` | A different value is bold; the row can be reset. |
+| `[TypeConverter]` | Text conversion and standard values (a closed or editable list). |
+| `ExpandableObjectConverter` | A nested object whose properties are shown as child rows. |
+| `enum`, `[Flags] enum` | A drop-down, or a check list. |
+| `bool` | A check box. |
+| Avalonia or `System.Drawing` `Color` | A swatch and a hex text (`#RRGGBB`). |
+| `List<T>`, arrays, `ICollection<T>` | The collection editor: add, remove, reorder, edit members. |
+| `[PasswordPropertyText(true)]` | The text is masked. |
+| `[ParenthesizePropertyName]` | The label is shown as `(Name)` and sorted first. |
+| `[RefreshProperties(All)]` | All rows are read again after it changes (also when hidden). |
+| `[DefaultProperty]` | The row that is selected first. |
+| `[PropertyEditor("key")]` | A custom editor (see below). |
+| `[UIHint("key")]` | The same, without referencing the grid assembly (see below). |
+| `[Range]`, `[Required]`, ... | The value is validated before it is written. |
 
 Text is converted with the current culture, as in the WinForms grid. The properties of a type with a
 `ICustomTypeDescriptor` or a `TypeDescriptionProvider` are listed as the descriptors say.
@@ -102,8 +102,9 @@ Text is converted with the current culture, as in the WinForms grid. The propert
 ## Live and Staged Editing
 
 A grid edits through a `PropertyEditSession` (`grid.Session`). In `PropertyEditMode.Live` (the default) every edit is
-written to the object at once, which suits a docked panel. In `PropertyEditMode.Staged` edits are buffered and the object
-is untouched until the host calls `Commit`; `Cancel` throws them away, which is what an OK and Cancel dialog does:
+written to the object at once, which suits a docked panel. In `PropertyEditMode.Staged` edits are buffered and the
+object is untouched until the host calls `Commit`; `Cancel` throws them away, which is what an OK and Cancel dialog
+does:
 
 ```csharp
 var staged = new PropertyGrid { EditMode = PropertyEditMode.Staged, SelectedObject = mixer };
@@ -156,10 +157,9 @@ as not editable as text (`PropertyItem.SupportsTextEditing` is `false`); it does
 ## Custom Editors
 
 A property annotated with `[PropertyEditor("key")]` uses the editor registered under that key. An editor is a function
-from a `PropertyEditorContext` to a control; it reads the value from the context, writes through
-`context.SetValue` (never to the object directly, so staged mode, validation and undo all apply) and re-reads when
-`context.Refreshed` is raised. Register editors once in the shared registry, which every grid uses, or give a grid its own
-registry:
+from a `PropertyEditorContext` to a control; it reads the value from the context, writes through `context.SetValue`
+(never to the object directly, so staged mode, validation and undo all apply) and re-reads when `context.Refreshed` is
+raised. Register editors once in the shared registry, which every grid uses, or give a grid its own registry:
 
 ```csharp
 public class Playback
@@ -197,8 +197,8 @@ resolution as for keys: the key of the annotation first, then the type, then the
 
 `[PropertyEditor]` lives in the grid assembly. A model class that must not reference it (for example data shared with a
 headless tool) can use `[UIHint("slider")]` from `System.ComponentModel.DataAnnotations` instead; the grid uses the hint
-as the editor key of a property that has no `[PropertyEditor]` (`[PropertyEditor]` wins when both are present). Only hints
-without a presentation layer, or for the `"Avalonia"` layer, apply.
+as the editor key of a property that has no `[PropertyEditor]` (`[PropertyEditor]` wins when both are present). Only
+hints without a presentation layer, or for the `"Avalonia"` layer, apply.
 
 ## Collections and Nested Objects
 
@@ -258,10 +258,10 @@ public class EditorWindow : Window
 ![The demo with the docked properties panel showing the selected Task node](images/property-grid-panel.png)
 
 `NodePropertiesDialog.ShowAsync` opens a dialog titled "&lt;name&gt; - Properties" and completes with `true` after OK.
-OK applies the rename, the changed properties and the edited host data as **one undo entry**; Cancel changes nothing. The
-node must be attached to a diagram: a detached node throws `ArgumentException` from `ShowAsync` and `Create`.
-The panel is live: each edit is applied at once as its own undo entry, and undo, redo and changes from elsewhere show
-up in the panel. A wire is not an element the adapters know; show only nodes, annotations and groups as above.
+OK applies the rename, the changed properties and the edited host data as **one undo entry**; Cancel changes nothing.
+The node must be attached to a diagram: a detached node throws `ArgumentException` from `ShowAsync` and `Create`. The
+panel is live: each edit is applied at once as its own undo entry, and undo, redo and changes from elsewhere show up in
+the panel. A wire is not an element the adapters know; show only nodes, annotations and groups as above.
 
 ### What a Node Shows
 
@@ -269,14 +269,12 @@ up in the panel. A wire is not an element the adapters know; show only nodes, an
   `RequireUniqueNodeNames` is set) and goes through the rename pipeline on commit, so a `NodeRenaming` handler can still
   veto it; the reason appears on the name row and the dialog stays open.
 - **The declared properties** (paths `Property.<name>`), each from its `PropertyDefinition`: the category (properties
-  without one are listed under
-  "General", with the name), the position within the category (`Order`, lower first including negative values, equal
-  orders alphabetically by name, categorized view only), the display name
-  with the unit in parentheses, the description, read-only, a bold value
-  when it differs from the default (and a reset), a drop-down for `Choices`, a check box for booleans, a color editor for
-  colors, text for numbers and strings that is parsed with `definition.TryParse` (invariant culture, a trailing unit
-  such as `880 Hz` is accepted, a mistake is shown as `'abc' is not a number.`), and the custom editor named by
-  `EditorHint` (register it as shown above).
+  without one are listed under "General", with the name), the position within the category (`Order`, lower first
+  including negative values, equal orders alphabetically by name, categorized view only), the display name with the unit
+  in parentheses, the description, read-only, a bold value when it differs from the default (and a reset), a drop-down
+  for `Choices`, a check box for booleans, a color editor for colors, text for numbers and strings that is parsed with
+  `definition.TryParse` (invariant culture, a trailing unit such as `880 Hz` is accepted, a mistake is shown as
+  `'abc' is not a number.`), and the custom editor named by `EditorHint` (register it as shown above).
 - **The host data** (`Node.Data`, paths `Data.<path>`), when the node type declares a `DataType` or `DataSerializer`:
   its properties with all
   their annotations, as in the first section. The grid edits a copy made with `node.CloneData()`, so the live object is
@@ -322,9 +320,9 @@ changed.
 ### Undo, Cancel and Refused Edits
 
 Every commit through the Plexus sources is one undo entry (`UndoHistory.Transact`), whichever mode the grid is in and
-whichever host shows it, so no commit scope is needed. If anything in the commit is refused, for example a vetoed rename,
-the whole commit is atomic: nothing is applied, no undo entry is recorded, every edit stays pending and the reason is
-shown on the row:
+whichever host shows it, so no commit scope is needed. If anything in the commit is refused, for example a vetoed
+rename, the whole commit is atomic: nothing is applied, no undo entry is recorded, every edit stays pending and the
+reason is shown on the row:
 
 ```csharp
 diagram.NodeRenaming += (_, e) =>
@@ -390,13 +388,13 @@ public static class Inspectors
   `GetPropertyValue(name)` is the short form for a declared property. An unknown path returns `null`.
 - **Notifications.** `Changed` is raised once for each of these: an edit is staged, reset or discarded; the edit session
   is cancelled (`PropertyEditSession.Cancel()`, which discards every pending edit); the edits are committed; the grid
-  replaces its session. It is not raised for a validation error alone. Text fields stage their value on Enter or when they
-  lose focus. Drop-downs, check boxes and sliders stage at once. The preview therefore redraws when a field is committed,
-  not on every keystroke. The dialog's **Cancel** button and closing the window do not cancel the session: they raise no
-  notification, because the dialog disposes the context as soon as the close is confirmed. **OK** raises one
-  notification for its commit, after the node holds the committed values and before the dialog closes. If the grid comes
-  to show something that is not a node, the context reads nothing (`GetValue` returns `null`) and `Node` keeps returning
-  the last node shown, until the grid shows a node again.
+  replaces its session. It is not raised for a validation error alone. Text fields stage their value on Enter or when
+  they lose focus. Drop-downs, check boxes and sliders stage at once. The preview therefore redraws when a field is
+  committed, not on every keystroke. The dialog's **Cancel** button and closing the window do not cancel the session:
+  they raise no notification, because the dialog disposes the context as soon as the close is confirmed. **OK** raises
+  one notification for its commit, after the node holds the committed values and before the dialog closes. If the grid
+  comes to show something that is not a node, the context reads nothing (`GetValue` returns `null`) and `Node` keeps
+  returning the last node shown, until the grid shows a node again.
 - **OK and Cancel are unchanged.** The context has no write path, so the preview never changes the node: OK is still one
   undo entry and Cancel still changes nothing.
 - **Placement and size.** The preview is to the right of the grid (`NodePreviewPlacement.Side`, 400 pixels wide, the
@@ -443,9 +441,8 @@ frequency response change while you edit.
 
 A grid that is given `SelectedObject` creates the source itself (for a node a `NodePropertySource`, which listens to the
 node) and disposes it: when `SelectedObject` or `Source` changes, and while the grid is out of the visual tree (it
-creates the
-source again, keeping the expanded rows, when the grid returns). A source you assign to `Source` is yours: the grid never
-disposes it, so dispose it yourself when the grid no longer shows it.
+creates the source again, keeping the expanded rows, when the grid returns). A source you assign to `Source` is yours:
+the grid never disposes it, so dispose it yourself when the grid no longer shows it.
 
 ### Automation Ids
 
@@ -460,7 +457,7 @@ The path of a node row never collides with another row: the name row is `Node.Na
 collection members (`Data.Contact.Email`, `Data.Checklist[0].Text`). A property that is itself called `Name` is
 `Property.Name`, and a data property can never hide a declared one. The same paths are the keys of
 `PropertyEditSession.FindItem`, `GetErrors`, `CommitResult.Failed` and `PropertyCommitRefusedException.Path`; build them
-with `NodePropertySource.NamePath`, `NodePropertySource.PropertyPath("Gain")` and `NodePropertySource.DataPath("Priority")`.
-Annotation rows are `Text` and `Fill`, group rows `Title` and `IsCollapsed`.
+with `NodePropertySource.NamePath`, `NodePropertySource.PropertyPath("Gain")` and
+`NodePropertySource.DataPath("Priority")`. Annotation rows are `Text` and `Fill`, group rows `Title` and `IsCollapsed`.
 
 ![The collection editor of a Task's checklist: the members, and the properties of the selected member](images/property-grid-collection-editor.png)

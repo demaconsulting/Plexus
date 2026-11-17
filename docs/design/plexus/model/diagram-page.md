@@ -7,12 +7,13 @@ them (add, connect, group, move, remove, layout).
 
 #### Purpose
 
-DiagramPage is one canvas of a diagram. It holds the nodes, wires, annotations and groups placed on it and provides every
-undoable operation that creates, connects, groups, moves, re-routes and removes them; nodes and wires cannot be created
-or deleted any other way. The unit comprises the partial class files for the creation API (`DiagramPage.Elements.cs`), port
-lookup and connection by path (`DiagramPage.Ports.cs`), groups (`DiagramPage.Groups.cs`), removal
-(`DiagramPage.Removal.cs`) and layout (`DiagramPage.Layout.cs`), plus the three internal commands that perform the
-changes: element presence, group membership and layout. Duplicating elements is part of the Snapshot unit.
+DiagramPage is one canvas of a diagram. It holds the nodes, wires, annotations and groups placed on it and provides
+every undoable operation that creates, connects, groups, moves, re-routes and removes them; nodes and wires cannot be
+created or deleted any other way. The unit comprises the partial class files for the creation API
+(`DiagramPage.Elements.cs`), port lookup and connection by path (`DiagramPage.Ports.cs`), groups
+(`DiagramPage.Groups.cs`), removal (`DiagramPage.Removal.cs`) and layout (`DiagramPage.Layout.cs`), plus the three
+internal commands that perform the changes: element presence, group membership and layout. Duplicating elements is part
+of the Snapshot unit.
 
 #### Data Model
 
@@ -24,8 +25,8 @@ changes: element presence, group membership and layout. Duplicating elements is 
 - **Element positions**: element presence commands capture the index in the typed list and the z-order list the first
   time they run and reuse them, so undo and redo restore exact positions.
 - **Layout command**: one mergeable command holding old and new bounds of nodes and annotations, old and new collapsed
-  positions of groups and old and new routes of wires, stored in first-seen order. Merging two commands for the same page
-  keeps the first old and the last new value for every target, which makes a drag a single compact entry.
+  positions of groups and old and new routes of wires, stored in first-seen order. Merging two commands for the same
+  page keeps the first old and the last new value for every target, which makes a drag a single compact entry.
 - **Notifications**: the page raises a property change for its name; element additions and removals raise the diagram's
   `Changed` event after the element is fully attached or detached. The name change and the content lists (whose
   `Insert` and `RemoveAt` raise their collection changes) are performed through the history's notification gate
@@ -44,7 +45,8 @@ changes: element presence, group membership and layout. Duplicating elements is 
   `NodeGeometry.DefaultNodeSize`, so a declared size is authoritative and the palette ghost matches the dropped node. A
   provider that returns null (`InvalidOperationException`) or builds an invalid `PortSet` (`ArgumentException`) makes
   AddNode throw before anything is recorded. Finally it executes an element presence command "Add node".
-- **AddAnnotation(text, bounds, id)**: validates text and bounds (finite, non-negative size) and executes "Add annotation".
+- **AddAnnotation(text, bounds, id)**: validates text and bounds (finite, non-negative size) and executes "Add
+  annotation".
 - **CanConnect(a, b)**: returns a decision without changing anything. Denials, in order: page detached, a port not on a
   node of this page, equal directions, a port that a port provider took off its node (`Port.IsOnNode` false; a host may
   still hold it), same node, an existing wire between the same ports. Then it calls the
@@ -60,10 +62,9 @@ changes: element presence, group membership and layout. Duplicating elements is 
   wire onto an input that holds another wire is refused, keeping it on its own target is not.
 - **Connect(from, to, route, id)**: requires an allowed connection (else throws with the reason), orders the ports as
   output then input, computes the route with the diagram's router when none is given (a supplied route is normalized by
-  the route cleaner), and executes "Connect".
-  **Connect(path, path)**: resolves each path preferring an output for the first and an input for the second, then
-  delegates. **FindPort(path, direction)**: tries every dot as split point from the right, resolving the node by name and
-  then by id, and looks up the port; ambiguity without a direction throws.
+  the route cleaner), and executes "Connect". **Connect(path, path)**: resolves each path preferring an output for the
+  first and an input for the second, then delegates. **FindPort(path, direction)**: tries every dot as split point from
+  the right, resolving the node by name and then by id, and looks up the port; ambiguity without a direction throws.
 - **ComputeRoute / BuildObstacles / BuildTraffic** (internal): build a route request (anchors, sides, obstacle boxes
   from visible nodes, grid size, stub length, the net of the wire's source port and the segments of the other wires
   held in a `WireTraffic`) and ask the router; the result is normalized by the route cleaner and a router returning null
@@ -119,9 +120,9 @@ changes: element presence, group membership and layout. Duplicating elements is 
   members and records the collapsed position. **Ungroup / ReleaseGroup**: members take the frame's slot in the parent or
   become top-level, then the frame is removed. **SetGroupCollapsed / AddToGroup / RemoveFromGroup** (internal): back the
   group's collapse and membership members with undoable commands and the cycle and page checks.
-- **Remove / RemoveWithMembers(elements)**: resolves the full set (members of groups when requested, all wires of removed
-  nodes), then as one multi-step operation removes wires, releases nodes and annotations from their groups and removes
-  them, and dissolves group frames innermost first. Undo restores objects, positions and membership.
+- **Remove / RemoveWithMembers(elements)**: resolves the full set (members of groups when requested, all wires of
+  removed nodes), then as one multi-step operation removes wires, releases nodes and annotations from their groups and
+  removes them, and dissolves group frames innermost first. Undo restores objects, positions and membership.
 - **AttachCore / DetachCore** (internal): used by the presence command; update the typed list, the z-order list and the
   diagram's element index, and raise `Changed` only when the page is completely updated.
 

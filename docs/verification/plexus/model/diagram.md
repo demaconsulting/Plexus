@@ -13,12 +13,13 @@ everything), the undo history depth and the events received. JSON snapshot behav
 
 #### Test Environment
 
-Standard xUnit v3 test runner on .NET (net8.0, net9.0, net10.0 and net11.0). No external services, files or configuration.
+Standard xUnit v3 test runner on .NET (net8.0, net9.0, net10.0 and net11.0). No external services, files or
+configuration.
 
 #### Acceptance Criteria
 
-All scenarios below pass on every target framework, and every test method named here is matched to its requirement by the
-ReqStream trace matrix.
+All scenarios below pass on every target framework, and every test method named here is matched to its requirement by
+the ReqStream trace matrix.
 
 #### Test Scenarios
 
@@ -101,7 +102,8 @@ ReqStream trace matrix.
 
 - **Diagram_Version_AdvancesWithEveryChangeIncludingUndoRedoAndRefresh**: reads and scene builds leave the version
   alone; adding a page or a node, undo, redo, a property edit, a theme change and `RefreshAppearance` each increase it.
-- **Diagram_Version_IsCurrentInsideChangedHandlers**: a `Changed` handler already reads the new version (`DiagramVersionTests.cs`).
+- **Diagram_Version_IsCurrentInsideChangedHandlers**: a `Changed` handler already reads the new version
+  (`DiagramVersionTests.cs`).
 
 ##### Options (`Plexus-Model-Diagram-Options`)
 

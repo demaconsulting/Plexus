@@ -21,10 +21,10 @@ tolerance.
   (`NodeLayout_Compute_PortAnchors_MatchModelAndNodeGeometry`): every port anchor equals `Port.Anchor` and the
   geometry function, for a node with four inputs and one output.
 - **Geometry theme** (`Plexus-Scene-NodeLayout-GeometryTheme`, also evidence for
-  `Plexus-Scene-NodeLayout-PortAnchorsMatchModel`; `NodeLayout_Compute_OtherThemeWithChangedPortMetrics_KeepsModelAnchors`):
-  a layout computed with a theme whose port pitch, label gap, triangle length and hit radius differ from the classic
-  diagram theme keeps every anchor at `Port.Anchor`, and the triangles and hit areas have the diagram theme's sizes
-  and sit on the anchor rows.
+  `Plexus-Scene-NodeLayout-PortAnchorsMatchModel`;
+  `NodeLayout_Compute_OtherThemeWithChangedPortMetrics_KeepsModelAnchors`): a layout computed with a theme whose port
+  pitch, label gap, triangle length and hit radius differ from the classic diagram theme keeps every anchor at
+  `Port.Anchor`, and the triangles and hit areas have the diagram theme's sizes and sit on the anchor rows.
 - **Anchors are text independent**
   (`NodeLayout_Compute_PortAnchors_AreTextIndependent`): anchors are equal for different measurers.
 - **Label placement**
@@ -75,8 +75,9 @@ tolerance.
   `SceneBuilder_Build_LongTitleWithDefaultSize_DrawsTheTitleOnOneLine`): THERMOMETER widens the node to the smallest
   grid multiple at which the measured title fits the header margins, and the scene draws the whole title as one text
   primitive.
-- **Declared size** (`Plexus-Scene-NodeLayout-DeclaredSize`; `NodeGeometry_DefaultNodeSize_DeclaredSize_WinsOverTheTitle`):
-  a declared size is returned unchanged even for a long title.
+- **Declared size** (`Plexus-Scene-NodeLayout-DeclaredSize`;
+  `NodeGeometry_DefaultNodeSize_DeclaredSize_WinsOverTheTitle`): a declared size is returned unchanged even for a long
+  title.
 - **Text wrapping**
   (`TextWrapper_Wrap_BreaksAtWordsAndSplitsLongWords`): words wrap at a width of five characters, explicit line
   breaks are kept and a long word is split by character.
@@ -84,9 +85,9 @@ tolerance.
 - **Per-node ports** (`Plexus-Scene-NodeLayout-DynamicPorts`): `NodeLayout_Compute_DynamicPorts_LaysOutCurrentPorts`
   lays out the six current ports of a reconfigured node at the model's anchors.
 - **Per-node extent and obstacles** (`Plexus-Scene-NodeLayout-DynamicPortExtent`,
-  `Plexus-Scene-NodeLayout-DynamicPortObstacles`): `NodeGeometry_VisualBoundsAndRoutingObstacles_ProviderPorts_UseNodePorts`
-  shows that long computed output labels widen the node's visual bounds and add routing strips the type-based overload
-  does not have.
+  `Plexus-Scene-NodeLayout-DynamicPortObstacles`):
+  `NodeGeometry_VisualBoundsAndRoutingObstacles_ProviderPorts_UseNodePorts` shows that long computed output labels widen
+  the node's visual bounds and add routing strips the type-based overload does not have.
 - **Visual extent covers port labels** (`Plexus-Scene-NodeLayout-VisualExtent`):
   `NodeGeometry_VisualBounds_PortLabelLineHeight_IsContained` squeezes a four-input node so that its port rows stick out
   of the box and checks that the extent reaches half the label line height (7.5 units in the classic theme, more than

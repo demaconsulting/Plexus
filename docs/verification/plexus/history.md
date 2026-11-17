@@ -52,8 +52,8 @@ individual behaviors are verified in isolation by the UndoHistory unit tests (se
 
 #### Capacity (`Plexus-History-Capacity`)
 
-- **History_Capacity_LimitedHistory_DropsOldestAndRejectsInvalidValues**: only the newest entries stay undoable, the lost
-  clean state keeps the history dirty, shrinking applies at once and a capacity of zero is rejected.
+- **History_Capacity_LimitedHistory_DropsOldestAndRejectsInvalidValues**: only the newest entries stay undoable, the
+  lost clean state keeps the history dirty, shrinking applies at once and a capacity of zero is rejected.
 
 #### State notification (`Plexus-History-StateNotification`)
 

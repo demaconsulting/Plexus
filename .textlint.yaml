@@ -66,6 +66,7 @@ words:
   - HRESULT
   - ijlt
   - Labelled
+  - lintmark
   - LTRB
   - Namey
   - ncipollo
@@ -120,4 +121,3 @@ ignorePaths:
   - "**/bin/**"
   - "**/obj/**"
   - "src/**/api/**"
-  - package-lock.json

@@ -7,7 +7,7 @@ Scope: Converts host SVG icons to cached Avalonia images, tolerating malformed S
 The unit is tested directly with real SVG text and the real SVG library: the unit is a cache around the library's
 conversion, so the tests check what comes out for good and bad input and that the cache returns the same object. The
 tests are in `PlexusIconsTests.cs` and also provide the evidence for the Svg.Controls.Skia.Avalonia OTS requirements
-(see _SvgSkia Verification_).
+(see *SvgSkia Verification*).
 
 ### Test Environment
 

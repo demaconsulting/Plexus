@@ -9,7 +9,7 @@ System verification is end to end: real diagrams are built with the Plexus core 
 There are no mocks; the core library, CanvasNet and the unit collaborators are all real. The tests are xUnit tests in
 `PlexusRenderingTests.cs` in the PlexusRendering test project, sharing the fixtures in `RenderTestModel.cs` (a small
 node type registry and PNG/pixel helpers). Unit-level behavior is verified separately (see the unit verification
-designs) and CanvasNet is verified as an OTS item through the unit tests (see _CanvasNet Verification_).
+designs) and CanvasNet is verified as an OTS item through the unit tests (see *CanvasNet Verification*).
 
 ## Test Environment
 

@@ -56,13 +56,13 @@ members of a group.
 
 #### Dependencies
 
-- DiagramPage (route computation, connection check, removal, history access through the diagram) and the undo history value
-  command.
+- DiagramPage (route computation, connection check, removal, history access through the diagram) and the undo history
+  value command.
 - Port and Node (anchors), Geometry (`Point`, `Rect`), and the routing contract through the diagram's router; the
   Routing unit's `RouteCleaner` and `RouteEditor`.
 
 #### Callers
 
-DiagramPage creates, removes and re-routes wires (for example when nodes move or on route recalculation of a whole page);
-Node and Port list their wires; the Scene builder draws wires from `GetPoints()`; hit testing, serialization and the
-Avalonia editor read and edit routes through the public members.
+DiagramPage creates, removes and re-routes wires (for example when nodes move or on route recalculation of a whole
+page); Node and Port list their wires; the Scene builder draws wires from `GetPoints()`; hit testing, serialization and
+the Avalonia editor read and edit routes through the public members.

@@ -30,8 +30,8 @@ digits, so snapshots round-trip colors exactly.
 
 ### Key Methods
 
-- **Point.Offset(dx, dy)** and the operators `+ (Point, Size)`, `- (Point, Point)` and `+ (Point, Point)`: component-wise
-  arithmetic returning a new point. Subtraction yields a displacement stored in a point.
+- **Point.Offset(dx, dy)** and the operators `+ (Point, Size)`, `- (Point, Point)` and `+ (Point, Point)`:
+  component-wise arithmetic returning a new point. Subtraction yields a displacement stored in a point.
 - **Rect.FromPoints(a, b)**: takes the minimum of both X values and both Y values as the corner and the absolute
   differences as the extent, so corners may be passed in any order.
 - **Rect.Contains(Point)** and **Rect.Contains(Rect)**: edge-inclusive comparisons against `Left`, `Right`, `Top` and

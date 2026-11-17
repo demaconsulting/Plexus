@@ -26,14 +26,16 @@ message.
 
 - **CollectionEditorView_AddRemoveMove_ChangeWorkingListUntilApplied**: add, move and remove change the list, not the
   collection, until `Apply`.
-- **CollectionEditorView_Buttons_EnableByCapabilityAndSelection**: the buttons call the operations and enable by selection.
+- **CollectionEditorView_Buttons_EnableByCapabilityAndSelection**: the buttons call the operations and enable by
+  selection.
 - **CollectionEditorView_Add_UsesCollectionItemFactory**: an element without a default constructor fails to add (error
   path) until the grid supplies a factory.
 - **CollectionEditorView_NestedGrid_EditsSelectedMember** / **..._ValueElements_UseValueRowAndFormatter** /
   **..._FormatItem_UsesToStringThenFallbacks** / **..._StructElements_ExpandInValueRow**: object members edit in the
-  nested grid, value members through a Value row, structures expand, and member texts follow the formatter and fallbacks.
-- **CollectionEditorView_FixedArray_RefusesResizeButAllowsReorder** / **..._NotACollection_Throws**: a fixed array refuses
-  Add with a message and still reorders; a non-collection and a null session are rejected (error paths).
+  nested grid, value members through a Value row, structures expand, and member texts follow the formatter and
+  fallbacks.
+- **CollectionEditorView_FixedArray_RefusesResizeButAllowsReorder** / **..._NotACollection_Throws**: a fixed array
+  refuses Add with a message and still reorders; a non-collection and a null session are rejected (error paths).
 - **CollectionEditorDialog_OkAndCancel_Live** / **CollectionEditorDialog_Ok_Staged_RecordsPendingEdit** /
   **PropertyGrid_CollectionButton_OpensDialogThatApplies**: OK applies, Cancel does not, staged OK is a pending edit
   that a commit applies, and the grid's button opens the dialog and completes the awaited task.

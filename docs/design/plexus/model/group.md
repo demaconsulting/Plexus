@@ -51,13 +51,13 @@ API (see DiagramPage Design); this unit owns the group state and the bounds comp
 
 #### Dependencies
 
-- DiagramPage (membership, collapse and layout commands) and the undo history; Node (visual extent through the Scene node
-  geometry), Annotation, the diagram theme for padding, title height and collapsed size, and Geometry (`Rect`).
-  DiagramPage reads `Bounds` of every visible group (through the internal `GroupObstacles`) to offer group frames to routers
-  as obstacles; groups themselves do not route.
+- DiagramPage (membership, collapse and layout commands) and the undo history; Node (visual extent through the Scene
+  node geometry), Annotation, the diagram theme for padding, title height and collapsed size, and Geometry (`Rect`).
+  DiagramPage reads `Bounds` of every visible group (through the internal `GroupObstacles`) to offer group frames to
+  routers as obstacles; groups themselves do not route.
 
 #### Callers
 
-DiagramPage creates, dissolves, moves and removes groups and updates membership; the Scene builder draws frames and hides
-collapsed members; hit testing, serialization, duplicate and clipboard walk members; the Avalonia editor reads and
+DiagramPage creates, dissolves, moves and removes groups and updates membership; the Scene builder draws frames and
+hides collapsed members; hit testing, serialization, duplicate and clipboard walk members; the Avalonia editor reads and
 edits groups through the public members.

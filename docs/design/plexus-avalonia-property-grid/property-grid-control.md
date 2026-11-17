@@ -23,21 +23,21 @@ migrating from it feel at home.
 - **State kept by the grid**: the collapsed categories (case-insensitive set, kept across content changes), the expanded
   property paths (cleared when the content changes), the selected row key (`c:Category` or `p:Path`) and the row views
   by key.
-- **Row model**: `RowSpec` records (key, category or item, depth, expandable, expanded) computed from the source on every
-  refresh, and the internal `CategoryRowView` and `PropertyRowView` controls that render them. A property row is a name
-  cell (indent, expander, label), a one pixel column line and a value cell that hosts the editor and carries the error
-  border and tooltip.
-- **Chrome**: a toolbar (two toggle buttons with vector icons and a search box), the scrolled rows with a column splitter
-  thumb over them, and a description pane under a row splitter. Brushes come from the Fluent theme resources through
-  `GridTheme` (bound, so they follow theme variant changes) with neutral fallbacks.
+- **Row model**: `RowSpec` records (key, category or item, depth, expandable, expanded) computed from the source on
+  every refresh, and the internal `CategoryRowView` and `PropertyRowView` controls that render them. A property row is a
+  name cell (indent, expander, label), a one pixel column line and a value cell that hosts the editor and carries the
+  error border and tooltip.
+- **Chrome**: a toolbar (two toggle buttons with vector icons and a search box), the scrolled rows with a column
+  splitter thumb over them, and a description pane under a row splitter. Brushes come from the Fluent theme resources
+  through `GridTheme` (bound, so they follow theme variant changes) with neutral fallbacks.
 
 ### Key Methods
 
 - **Content change** — `OnContentChanged` keeps `SelectedObject` and `Source` exclusive, then `AttachSource` creates the
   source (disposing sources it created), starts a new session whose commit scope and element factory call the grid's
   current properties, and rebuilds the rows. A source passed through `Source` is never disposed by the grid. While the
-  grid is out of the visual tree it disposes a source it created (so the source stops listening to the object) and creates
-  it again, keeping the expanded rows and the selection, when the grid is attached again.
+  grid is out of the visual tree it disposes a source it created (so the source stops listening to the object) and
+  creates it again, keeping the expanded rows and the selection, when the grid is attached again.
 - **`RefreshRows`** — builds the row specs (`PropertyOrdering.Group`, the filter, the category and nested expansion
   state), reuses the row view of every row whose item is unchanged (so editors keep their text and focus), replaces the
   panel children only when the sequence changed, then updates selection, the description pane and the empty message. It
@@ -50,9 +50,9 @@ migrating from it feel at home.
 - **Keyboard** — a tunnel handler distinguishes the grid itself having the focus (the name side: arrows, Home, End,
   page keys, Left and Right, Enter, F2, Escape, Tab) from an editor having it (Enter commits, Escape cancels, Tab moves
   to the next row's name, Shift+Tab to the name of the same row) and ignores keys from the toolbar and the search box.
-- **`CreateEditor`** — chooses the editor of a row: the registry entry of its editor key, else the collection editor
-  for collections, else read-only text for read-only rows and for expandable values without a text form, else the
-  registry entry for the property type, else the registry fallback. The editors are described in the PropertyEditors unit.
+- **`CreateEditor`** — chooses the editor of a row: the registry entry of its editor key, else the collection editor for
+  collections, else read-only text for read-only rows and for expandable values without a text form, else the registry
+  entry for the property type, else the registry fallback. The editors are described in the PropertyEditors unit.
 - **`EditCollectionAsync`** — raises `CollectionEditorRequested`, then opens a `CollectionEditorDialog` over the grid's
   session, modal to the window that hosts the grid.
 

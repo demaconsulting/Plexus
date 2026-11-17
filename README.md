@@ -34,11 +34,11 @@ ships a UI-free core, a headless PNG renderer built on CanvasNet, and an Avaloni
 
 ## Packages
 
-| Package                                       | Purpose                                                          |
-|-----------------------------------------------|------------------------------------------------------------------|
-| `DemaConsulting.Plexus`                       | UI-free core: model, undo history, routing, scene, clipboard     |
-| `DemaConsulting.Plexus.Rendering`             | Headless PNG renderer (depends on CanvasNet)                     |
-| `DemaConsulting.Plexus.Avalonia`              | Avalonia editor control (depends on Avalonia)                    |
+| Package | Purpose |
+| --- | --- |
+| `DemaConsulting.Plexus` | UI-free core: model, undo history, routing, scene, clipboard |
+| `DemaConsulting.Plexus.Rendering` | Headless PNG renderer (depends on CanvasNet) |
+| `DemaConsulting.Plexus.Avalonia` | Avalonia editor control (depends on Avalonia) |
 | `DemaConsulting.Plexus.Avalonia.PropertyGrid` | Property grid and node dialog (depends on Avalonia and the core) |
 
 The Avalonia package does not depend on the rendering package, and the core depends on no UI or drawing library, so
@@ -108,9 +108,9 @@ To edit the same diagram interactively, add the Avalonia editor control to a win
 Editor.Page = page;
 ```
 
-To let users add nodes, put a `NodePalette` beside the editor and point it at the editor; it shows every node type of the
-editor's diagram as it will look on the canvas, with a search box, and needs no other code (drag an item onto the editor,
-or double-click it, to add the node):
+To let users add nodes, put a `NodePalette` beside the editor and point it at the editor; it shows every node type of
+the editor's diagram as it will look on the canvas, with a search box, and needs no other code (drag an item onto the
+editor, or double-click it, to add the node):
 
 ```xml
 <plexus:NodePalette Editor="{Binding #Editor}" />
@@ -173,7 +173,8 @@ The repository includes applications that are **not shipped** in any package:
 
 ## Building
 
-Plexus requires the .NET 11 SDK (plus the .NET 8, 9 and 10 runtimes to run every test target). To build and test the solution:
+Plexus requires the .NET 11 SDK (plus the .NET 8, 9 and 10 runtimes to run every test target). To build and test the
+solution:
 
 ```bash
 pwsh ./build.ps1

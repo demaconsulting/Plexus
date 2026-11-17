@@ -38,9 +38,9 @@ using (diagram.History.BeginTransaction("Build adder"))
 ```
 
 `Transact` is the safe shape of this pattern. It runs the delegate as one undo entry, and when the delegate throws it
-reverts everything the delegate did and rethrows, so a refused edit never leaves half of its changes in the history. This
-is the pattern for a dialog that applies several edits at once and must leave the model untouched when one of them is
-refused:
+reverts everything the delegate did and rethrows, so a refused edit never leaves half of its changes in the history.
+This is the pattern for a dialog that applies several edits at once and must leave the model untouched when one of them
+is refused:
 
 ```csharp
 diagram.History.Transact("Edit properties", () =>

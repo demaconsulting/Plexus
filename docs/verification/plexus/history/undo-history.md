@@ -50,8 +50,8 @@ prove the load scenario end to end; it is not used as requirement evidence.
 
 ##### Merging (`Plexus-History-UndoHistory-Merging`)
 
-- **UndoHistory_Transaction_MergeableCommands_MergeIntoOne**: repeated mergeable commands in a transaction form one entry
-  that undoes and redoes the combined effect.
+- **UndoHistory_Transaction_MergeableCommands_MergeIntoOne**: repeated mergeable commands in a transaction form one
+  entry that undoes and redoes the combined effect.
 - **UndoHistory_Execute_MergeableOutsideTransaction_DoesNotMerge**: outside a transaction commands stay separate.
 
 ##### Guards (`Plexus-History-UndoHistory-Guards`)
@@ -60,8 +60,8 @@ prove the load scenario end to end; it is not used as requirement evidence.
   before the inner one, and a retry succeeds.
 - **UndoHistory_Transaction_CompletedTwice_RollbackThrowsDisposeIgnored**: a second dispose is ignored, a rollback after
   completion is an error.
-- **UndoHistory_UndoRedoClear_InsideTransaction_ThrowInvalidOperationException**: undo, redo and clear are rejected while
-  a transaction is open.
+- **UndoHistory_UndoRedoClear_InsideTransaction_ThrowInvalidOperationException**: undo, redo and clear are rejected
+  while a transaction is open.
 - **UndoHistory_Execute_DuringUndo_ThrowsInvalidOperationException**: recording from inside an undo is rejected.
 - **UndoHistory_Undo_UndoThrows_EntryStaysOnUndoStack**: a failing undo keeps its entry and the history stays usable.
 
@@ -73,9 +73,10 @@ prove the load scenario end to end; it is not used as requirement evidence.
 - **UndoHistory_Suspend_DirtyHistory_StaysDirtyAndClearsStacks**: a dirty history stays dirty with empty stacks.
 - **UndoHistory_Suspend_Nested_OnlyOutermostScopeClearsHistory**: only the outermost scope drops the entries and
   restores the dirty state.
-- **UndoHistory_Suspend_WhileTransactionOpen_ThrowsAndChangesNothing** (`Plexus-History-UndoHistory-SuspendInTransaction`):
-  `Suspend` throws `InvalidOperationException` while a transaction (also a nested one) is open and nothing changes; the
-  transaction still commits its entry and suspending works again afterwards (error path).
+- **UndoHistory_Suspend_WhileTransactionOpen_ThrowsAndChangesNothing**
+  (`Plexus-History-UndoHistory-SuspendInTransaction`): `Suspend` throws `InvalidOperationException` while a transaction
+  (also a nested one) is open and nothing changes; the transaction still commits its entry and suspending works again
+  afterwards (error path).
 
 ##### Dirty tracking (`Plexus-History-UndoHistory-DirtyTracking`)
 
@@ -121,8 +122,8 @@ prove the load scenario end to end; it is not used as requirement evidence.
 
 ##### Rollback with failing inverses
 
-Requirements: `Plexus-History-UndoHistory-RollbackFailureCompletes`, `Plexus-History-UndoHistory-RollbackFailureReported`
-and `Plexus-History-UndoHistory-RollbackReplayGuard`.
+Requirements: `Plexus-History-UndoHistory-RollbackFailureCompletes`,
+`Plexus-History-UndoHistory-RollbackFailureReported` and `Plexus-History-UndoHistory-RollbackReplayGuard`.
 
 - **UndoHistory_Transaction_RollbackInverseThrows_RevertsEveryCommandAndCompletes**: of three commands the middle
   inverse throws; the rollback still reverts the other two, rethrows the failure itself, the transaction is complete,
@@ -143,12 +144,13 @@ and `Plexus-History-UndoHistory-RollbackReplayGuard`.
 Requirements: `Plexus-History-UndoHistory-ClearDuringReplay`, `Plexus-History-UndoHistory-StateChangeDuringReplay` and
 `Plexus-History-UndoHistory-SuspendEndDuringReplay`.
 
-- **UndoHistory_Clear_FromUndoCallback_ThrowsAndKeepsStacks** and **UndoHistory_Clear_FromRedoCallback_ThrowsAndKeepsStacks**:
-  `Clear` called from an undo (respectively redo) action throws `InvalidOperationException`; the undo or redo still moves
-  its entry normally and the earlier entry stays undoable (error path).
+- **UndoHistory_Clear_FromUndoCallback_ThrowsAndKeepsStacks** and
+  **UndoHistory_Clear_FromRedoCallback_ThrowsAndKeepsStacks**: `Clear` called from an undo (respectively redo) action
+  throws `InvalidOperationException`; the undo or redo still moves its entry normally and the earlier entry stays
+  undoable (error path).
 - **UndoHistory_MarkCleanCapacityAndSuspend_FromUndoCallback_AreRejected**: `MarkClean`, setting `Capacity` and
-  `Suspend` from an undo action each throw `InvalidOperationException`; capacity, suspension and the dirty flag are those
-  of a plain undo (error path).
+  `Suspend` from an undo action each throw `InvalidOperationException`; capacity, suspension and the dirty flag are
+  those of a plain undo (error path).
 - **UndoHistory_SuspendScopeDisposedFromUndoCallback_TakesEffectAfterUndo**: disposing the outermost suspension from an
   undo action does not throw; the stacks are unchanged inside the action and cleared right after the undo.
 

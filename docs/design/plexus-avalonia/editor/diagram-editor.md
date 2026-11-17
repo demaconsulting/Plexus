@@ -15,23 +15,23 @@ its automation peer.
 
 #### Data Model
 
-| Member                          | Type                      | Meaning and invariants                              |
-|---------------------------------|---------------------------|-----------------------------------------------------|
-| `Page`                          | `DiagramPage?`            | Page shown; null shows an empty canvas              |
-| `DiagramTheme`                  | `DiagramTheme?`           | Explicit theme; null uses the diagram's theme       |
-| `Zoom`                          | `double`                  | Clamped to the zoom range; non-finite becomes 1     |
-| `Offset`                        | `Point`                   | Diagram coordinate at the control's top-left corner |
-| `ShowGrid`, `SnapToGrid`        | `bool`                    | Default true                                        |
-| `IsReadOnly`                    | `bool`                    | Default false                                       |
-| `ShowToolTips`                  | `bool`                    | Default true; false hides and never sets a tooltip  |
-| `Clipboard`                     | `IDiagramClipboard?`      | Host clipboard; null uses the window's clipboard    |
-| `Selection`                     | Read-only observable list | Distinct live elements of the shown page            |
-| Scene, stale flag, culling area | Private                   | Cached scene and the area it was built for          |
-| Hover element                   | Private                   | Element drawn highlighted                           |
-| Tooltip target, suppressed      | Private                   | Element and port the tooltip describes; pressed one |
-| Pending view request            | Private `Func<bool>?`     | Latest fit or bring-into-view waiting for layout    |
-| Current gesture                 | Private                   | At most one gesture at a time                       |
-| Inline editors                  | Private                   | At most one of rename or annotation edit open       |
+| Member | Type | Meaning and invariants |
+| --- | --- | --- |
+| `Page` | `DiagramPage?` | Page shown; null shows an empty canvas |
+| `DiagramTheme` | `DiagramTheme?` | Explicit theme; null uses the diagram's theme |
+| `Zoom` | `double` | Clamped to the zoom range; non-finite becomes 1 |
+| `Offset` | `Point` | Diagram coordinate at the control's top-left corner |
+| `ShowGrid`, `SnapToGrid` | `bool` | Default true |
+| `IsReadOnly` | `bool` | Default false |
+| `ShowToolTips` | `bool` | Default true; false hides and never sets a tooltip |
+| `Clipboard` | `IDiagramClipboard?` | Host clipboard; null uses the window's clipboard |
+| `Selection` | Read-only observable list | Distinct live elements of the shown page |
+| Scene, stale flag, culling area | Private | Cached scene and the area it was built for |
+| Hover element | Private | Element drawn highlighted |
+| Tooltip target, suppressed | Private | Element and port the tooltip describes; pressed one |
+| Pending view request | Private `Func<bool>?` | Latest fit or bring-into-view waiting for layout |
+| Current gesture | Private | At most one gesture at a time |
+| Inline editors | Private | At most one of rename or annotation edit open |
 
 View mapping: a diagram point `d` is at screen point `(d - Offset) x Zoom`. The selection never contains an element
 that is not on the shown page and is not recorded in history. Zoom is limited to 0.1 to 8. Pointer-over state and the
@@ -52,33 +52,32 @@ it), so wires stay attached to their ports.
   pending one, so the latest request of any kind wins. Both fits share `FitBox` (zoom never above 1, then `CenterOn`).
 - **Navigation** (`DiagramEditor.Navigation.cs`): `BringIntoView(element)` accepts an element on an attached page of the
   editor's diagram (of any diagram when no page is shown), else `ArgumentException` (null: `ArgumentNullException`)
-  before anything changes, stores the pending request, shows the element's page with
-  `SetCurrentValue` (keeping a binding; the page change clears the selection and cancels gestures) and applies the
-  request: when the editor has a size it centers the element's target box at the current zoom and zooms out only when
-  the box does not fit inside the control minus a 30-unit margin on each side (never in, never below `MinZoom`); a
-  request whose element has left the page is dropped. `ZoomToFit(elements, margin)` first validates the sequence
-  (`ArgumentNullException`) and the margin (finite and not negative, else `ArgumentOutOfRangeException`), then copies the
-  sequence (the live selection is cleared by a page switch), does nothing for an empty sequence (a pending request stays
-  pending), validates every element, shows the first element's page and fits the union of the
-  target boxes of the elements still on that page (elements of other pages are ignored) with the margin per side, zoom
-  at most 1 and then clamped to the zoom limits. The target box of an element is its node layout bounds (name,
-  summary and port labels included) or its bounds; an element hidden in collapsed groups is represented by the
-  outermost collapsed group, and a wire with a hidden end by the target boxes of both end nodes.
+  before anything changes, stores the pending request, shows the element's page with `SetCurrentValue` (keeping a
+  binding; the page change clears the selection and cancels gestures) and applies the request: when the editor has a
+  size it centers the element's target box at the current zoom and zooms out only when the box does not fit inside the
+  control minus a 30-unit margin on each side (never in, never below `MinZoom`); a request whose element has left the
+  page is dropped. `ZoomToFit(elements, margin)` first validates the sequence (`ArgumentNullException`) and the margin
+  (finite and not negative, else `ArgumentOutOfRangeException`), then copies the sequence (the live selection is cleared
+  by a page switch), does nothing for an empty sequence (a pending request stays pending), validates every element,
+  shows the first element's page and fits the union of the target boxes of the elements still on that page (elements of
+  other pages are ignored) with the margin per side, zoom at most 1 and then clamped to the zoom limits. The target box
+  of an element is its node layout bounds (name, summary and port labels included) or its bounds; an element hidden in
+  collapsed groups is represented by the outermost collapsed group, and a wire with a hidden end by the target boxes of
+  both end nodes.
 - **Tooltips** (`DiagramEditor.ToolTips.cs`): `GetToolTipContent(element, port)` builds the default text (a port's
   label, the `PortType.DisplayName` of its type key from the diagram's registry (the key when unregistered) and its
   description on a new line; a node's `NodeType.GetToolTip`, where null or empty means no tooltip; a wire's
-  `source → target`; null for annotations and groups), raises `ToolTipRequested` with it and returns
-  the handlers' content (a handler may supply content for annotations and groups), or null when canceled, null or empty;
-  it ignores `ShowToolTips` and lets exceptions of the tooltip function and of handlers propagate.
-  `UpdateToolTip(hit)`, called at the end of the hover
-  update, computes the target (element and port under the pointer) when tooltips may show (`ShowToolTips`, no gesture,
-  no inline edit, no Space pan, no pending context request, target not suppressed); when the target changed it requests
-  the content once and sets `ToolTip.Tip` on the editor, which lets Avalonia's tooltip service open the tooltip after its
-  show delay at the pointer, or close it when the content is null; when a tooltip was already open it is reopened so it
-  follows the pointer. A press records the hit target as suppressed (no tooltip for it until the pointer moves to
-  something else) and clears the tooltip; starting a gesture, pointer exit, Space pan, page change, detaching, opening an
-  inline editor and turning `ShowToolTips` off clear it too, as does a model change that removed the target element or
-  port.
+  `source → target`; null for annotations and groups), raises `ToolTipRequested` with it and returns the handlers'
+  content (a handler may supply content for annotations and groups), or null when canceled, null or empty; it ignores
+  `ShowToolTips` and lets exceptions of the tooltip function and of handlers propagate. `UpdateToolTip(hit)`, called at
+  the end of the hover update, computes the target (element and port under the pointer) when tooltips may show
+  (`ShowToolTips`, no gesture, no inline edit, no Space pan, no pending context request, target not suppressed); when
+  the target changed it requests the content once and sets `ToolTip.Tip` on the editor, which lets Avalonia's tooltip
+  service open the tooltip after its show delay at the pointer, or close it when the content is null; when a tooltip was
+  already open it is reopened so it follows the pointer. A press records the hit target as suppressed (no tooltip for it
+  until the pointer moves to something else) and clears the tooltip; starting a gesture, pointer exit, Space pan, page
+  change, detaching, opening an inline editor and turning `ShowToolTips` off clear it too, as does a model change that
+  removed the target element or port.
 - **Scene**: the scene is built lazily when painting or hit testing needs it and is rebuilt only when stale or when the
   visible area leaves the area it was built for (visible area inflated by half its larger side). Changes of the model,
   selection, hover, theme and grid mark it stale; bursts cost one rebuild.
@@ -114,10 +113,10 @@ it), so wires stay attached to their ports.
 - **Delete**: `Delete(elements)` ignores elements not on the shown page, removes collapsed groups with their members
   and everything else individually, in one transaction; `DeleteSelection()` deletes the selection and clears it.
 - **Duplicate**: `DuplicateSelection()` copies the selection offset by one grid cell and selects the copies.
-- **Clipboard**: `CopyAsync`, `CutAsync`, `PasteAsync()` and `PasteAsync(at)`. Paste reads the clipboard, checks that the
-  shown page did not change meanwhile, lets the core import the text (one undo step), selects the result or raises
-  `PasteFailed`; without an explicit position the content goes to the snapped pointer position when the pointer is
-  over the control.
+- **Clipboard**: `CopyAsync`, `CutAsync`, `PasteAsync()` and `PasteAsync(at)`. Paste reads the clipboard, checks that
+  the shown page did not change meanwhile, lets the core import the text (one undo step), selects the result or raises
+  `PasteFailed`; without an explicit position the content goes to the snapped pointer position when the pointer is over
+  the control.
 - **Rename**: `BeginRename(node)`, `CommitRename()`, `CancelRename()`; the box holds the name selected, Enter commits
   through the core rename pipeline, a rejected name keeps the box open, shows the reason in a tooltip and in
   `RenameError`, and typing clears the rejection. Losing focus commits an acceptable name and abandons an unacceptable
@@ -169,8 +168,9 @@ selects it and returns it. All of them do nothing when the editor is read-only o
 - Invalid user actions are not errors: a rejected rename stays open with the reason; a rejected connection simply does
   not happen; a drop of an unknown key, onto a read-only editor or with no page, is ignored.
 - Clipboard content is untrusted. A failed paste returns the core's failure result, raises `PasteFailed` and changes
-  nothing. Platform clipboard exceptions (invalid operation, external, input/output, not supported) of a shortcut-started
-  command are caught and raised through `ClipboardFailed`; the public asynchronous methods let them reach the caller.
+  nothing. Platform clipboard exceptions (invalid operation, external, input/output, not supported) of a
+  shortcut-started command are caught and raised through `ClipboardFailed`; the public asynchronous methods let them
+  reach the caller.
 - Losing pointer capture, a page change, leaving the visual tree, becoming read-only and removal of an element under
   edit all cancel the affected gesture or inline editor instead of failing.
 - Everything else, including a history transaction opened by the host, is propagated from the core.
@@ -185,7 +185,7 @@ selects it and returns it. All of them do nothing when the editor is read-only o
 - **NodePalette** (the `NodePrototype` and `NodePrototypeCache` helpers) — the drop ghost draws the same prototype the
   palette shows.
 - **ScenePainter**, **AvaloniaTextMeasurer** — painting and layout; **PlexusIcons** indirectly through the painter.
-- **Avalonia** (OTS) — control, input, drawing, text, drag-and-drop, clipboard, automation; see _Avalonia_ in the OTS
+- **Avalonia** (OTS) — control, input, drawing, text, drag-and-drop, clipboard, automation; see *Avalonia* in the OTS
   design documents.
 
 #### Callers

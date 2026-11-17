@@ -132,14 +132,14 @@ cancels it and rolls back. "Ctrl" means Cmd on macOS.
   notch). Middle-button drag, or Space and drag, pans.
 - **Drop** a node type from a palette creates a node where it is dropped.
 
-| Key                          | What it does                                                         |
-|------------------------------|----------------------------------------------------------------------|
-| Delete                       | Deletes the selection (one undo entry)                               |
-| Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z | Undo, redo                                                           |
-| Ctrl+C, Ctrl+X, Ctrl+V       | Copy, cut, paste through the operating-system clipboard              |
-| Ctrl+A, Ctrl+D               | Select all, duplicate the selection one grid cell away               |
-| F2                           | Renames the selected node or edits the selected annotation           |
-| Escape                       | Cancels the drag or the inline edit in progress                      |
+| Key | What it does |
+| --- | --- |
+| Delete | Deletes the selection (one undo entry) |
+| Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z | Undo, redo |
+| Ctrl+C, Ctrl+X, Ctrl+V | Copy, cut, paste through the operating-system clipboard |
+| Ctrl+A, Ctrl+D | Select all, duplicate the selection one grid cell away |
+| F2 | Renames the selected node or edits the selected annotation |
+| Escape | Cancels the drag or the inline edit in progress |
 
 There is no arrow-key nudging. Shortcuts are ignored while an inline edit box has the keyboard.
 
@@ -275,9 +275,9 @@ edit at once is one more assignment (`panel.SelectedObject = element`; see the n
 
 Plexus does not need the grid for any of this. Everything the dialog uses is core API that a host with its own controls
 can call: `definition.TryParse` turns text into a value of the right kind with the reason when it does not fit,
-`PropertyDefinition.FormatForEdit` gives the text for an edit box, `node.Properties.TrySetAll` validates all entries first
-and applies them as one undo entry (or applies none), `node.CloneData()` makes a deep copy of the host data to edit, and
-`diagram.History.Transact` groups the rename, the properties and the copied data into one entry:
+`PropertyDefinition.FormatForEdit` gives the text for an edit box, `node.Properties.TrySetAll` validates all entries
+first and applies them as one undo entry (or applies none), `node.CloneData()` makes a deep copy of the host data to
+edit, and `diagram.History.Transact` groups the rename, the properties and the copied data into one entry:
 
 ```csharp
 var texts = new Dictionary<string, object?> { ["Value"] = "2.5" };   // what the edit boxes hold

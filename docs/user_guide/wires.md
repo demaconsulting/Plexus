@@ -52,9 +52,9 @@ ignore it in another way. `CanReconnect(wire, null, null)`, or with the wire's c
 always allowed. The rule always receives the ports as (output, input): its first argument is never an input.
 
 `ConnectionRules.SingleInputWire` is the same single-wire rule under a name for explicit compositions. A host that
-assigns a rule built **without** `Default` or `SingleInputWire` (for example `ConnectionRules.SameType` alone, or its own
-delegate) takes over the whole decision, so an input then accepts several wires wherever its rule allows it: that is how
-a host allows fan-in everywhere. `Diagram.ConnectionRules` (the property) and `ConnectionRules` (the static class of
+assigns a rule built **without** `Default` or `SingleInputWire` (for example `ConnectionRules.SameType` alone, or its
+own delegate) takes over the whole decision, so an input then accepts several wires wherever its rule allows it: that is
+how a host allows fan-in everywhere. `Diagram.ConnectionRules` (the property) and `ConnectionRules` (the static class of
 building blocks) share a name on purpose.
 
 Rules are consulted wherever a wire is created or moved: `Connect`, `CanConnect`, `Reconnect`, `CanReconnect`, the
