@@ -364,7 +364,7 @@ jobs:
           dotnet versionmark --capture --job-id "build-docs" \
             --output "artifacts/versionmark-build-docs.json" -- \
             dotnet git pandoc weasyprint sarifmark sonarmark reqstream \
-            buildmark versionmark reviewmark fileassert textlint sysml2tools
+            buildmark versionmark reviewmark fileassert textlint sysml2tools canvasnet
           echo "✓ Tool versions captured"
 
       # === PREPARE DOCUMENT OUTPUT ===
