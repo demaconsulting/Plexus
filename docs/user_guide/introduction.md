@@ -62,22 +62,22 @@ guide explains how the parts fit together.
 
 Plexus is delivered as four NuGet packages:
 
-| Package                                       | Purpose                                                              |
-|-----------------------------------------------|----------------------------------------------------------------------|
-| `DemaConsulting.Plexus`                       | UI-free core: model, undo, routing, scene graph, clipboard format    |
-| `DemaConsulting.Plexus.Rendering`             | Headless PNG renderer (depends on CanvasNet)                         |
-| `DemaConsulting.Plexus.Avalonia`              | Avalonia editor control and node palette (depends on Avalonia)       |
-| `DemaConsulting.Plexus.Avalonia.PropertyGrid` | Property grid, properties dialog and panel (depends on Avalonia)     |
+| Package | Purpose |
+| --- | --- |
+| `DemaConsulting.Plexus` | UI-free core: model, undo, routing, scene graph, clipboard format |
+| `DemaConsulting.Plexus.Rendering` | Headless PNG renderer (depends on CanvasNet) |
+| `DemaConsulting.Plexus.Avalonia` | Avalonia editor control and node palette (depends on Avalonia) |
+| `DemaConsulting.Plexus.Avalonia.PropertyGrid` | Property grid, properties dialog and panel (depends on Avalonia) |
 
-The core targets .NET 8, 9, 10 and 11 and has no third-party runtime dependencies. The other packages target .NET 10 and
-11. The Avalonia package does not depend on the rendering package, and the property grid package is generic: it edits any
-annotated .NET object and adds a small adapter for Plexus nodes.
+The core targets .NET 8, 9, 10 and 11 and has no third-party runtime dependencies. The other packages target .NET 10
+and 11. The Avalonia package does not depend on the rendering package, and the property grid package is generic: it
+edits any annotated .NET object and adds a small adapter for Plexus nodes.
 
 ## Continuous Compliance
 
 Plexus follows the
 [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance) methodology, which ensures
-compliance evidence is generated automatically on every CI run. Requirements are traced to passing tests, markdownlint,
+compliance evidence is generated automatically on every CI run. Requirements are traced to passing tests, LintMark,
 TextLint and yamllint are enforced before any build proceeds, and each release ships with generated requirements, trace
 matrix, design, verification and quality documents.
 
