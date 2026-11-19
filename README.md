@@ -9,6 +9,8 @@
 [![Security][badge-security]][link-security]
 [![NuGet][badge-nuget]][link-nuget]
 
+![Plexus banner: the Plexus name with the tagline 'Block diagrams, built. Every edit, undoable.' and the C# call 'page.Connect("A.out", "B.in");'. Node types with typed ports, diagrams built in code, JSON files, and pasted clipboard content flow on curved arrows into the Plexus .NET library, and arrows lead out to what it produces: the diagram model with pages, nodes, and routed wires, PNG images from its headless renderer, the live Avalonia editor control, and saved JSON snapshots][hero]
+
 Plexus is a general-purpose .NET library for building and editing node-based block diagrams with typed ports, routed
 wires, annotations, nestable collapsible groups, multiple pages, full undo/redo, and cross-application copy/paste. It
 ships a UI-free core, a headless PNG renderer built on CanvasNet, and an Avalonia editor control.
@@ -240,6 +242,7 @@ By contributing to this project, you agree that your contributions will be licen
 [link-releases]: https://github.com/demaconsulting/Plexus/releases/latest
 
 <!-- Image References -->
+[hero]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/images/hero.png
 [img-architecture]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/images/architecture.png
 [img-overview]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/user_guide/images/overview.png
 [img-drop-ghost]: https://raw.githubusercontent.com/demaconsulting/Plexus/main/docs/user_guide/images/drop-ghost.png
