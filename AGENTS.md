@@ -180,10 +180,32 @@ requires it and the modification preserves the documented design intent:
 
 - `.reviewmark.yaml`, `.textlint.yaml`, `.editorconfig`
 - `.lintmark.yaml`, `.yamllint.yaml`
-- `requirements.yaml`, `fix.ps1`, `lint.ps1`
+- `requirements.yaml`
+
+# Project Scripts
+
+`build.ps1`, `lint.ps1`, and `fix.ps1` belong to the project: extend them as it grows. Add project-specific
+steps, update tool versions, and add optional parameters that focus a run (for example one library in a
+multi-library repository, or headless tests without GUI automation). Two rules keep them trustworthy:
+
+- Run with no arguments, each script still does its full job (CI and the agents rely on that); slow or
+  environment-dependent test tiers may be opt-in switches of `build.ps1`.
+- Never remove or weaken a check to make lint or tests pass.
 
 # Continuous Compliance Overview
 
 This repository follows the [Continuous Compliance](https://github.com/demaconsulting/ContinuousCompliance)
 approach. Tools: **ReqStream** (requirements traceability), **ReviewMark** (file review enforcement),
 **BuildMark** (tool versions), **VersionMark** (version tracking).
+
+# Repository-Specific Standards Exceptions
+
+## SysML2 package structure (legacy layout, migration pending)
+
+The model under `docs/sysml2/` predates the `sysml2-modeling.md` Package Structure rules. Package
+`Plexus` is reopened across 32 files, `PlexusAvalonia` across 11, `PlexusAvaloniaPropertyGrid` across 12
+and `PlexusRendering` across 6 (each count includes `views/design-views.sysml`, which reopens them rather
+than declaring `PlexusDesignViews`); the OTS package is `OTS` rather than `OtsDependencies`. The
+`sysml2-modeling.md` Package Structure rules and the `sysml2tools-query` qualified-name examples apply once
+the model is migrated in a dedicated PR. Until then agents use the existing package names and must not
+partially restructure the model.
