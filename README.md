@@ -1,4 +1,4 @@
-# Plexus
+# ![Plexus: A block diagram editor and model for .NET][hero]
 
 [![GitHub forks][badge-forks]][link-forks]
 [![GitHub stars][badge-stars]][link-stars]
@@ -8,8 +8,6 @@
 [![Quality Gate][badge-quality]][link-quality]
 [![Security][badge-security]][link-security]
 [![NuGet][badge-nuget]][link-nuget]
-
-![Plexus banner: the Plexus name with the tagline 'Block diagrams, built. Every edit, undoable.' and the C# call 'page.Connect("A.out", "B.in");'. Node types with typed ports, diagrams built in code, JSON files, and pasted clipboard content flow on curved arrows into the Plexus .NET library, and arrows lead out to what it produces: the diagram model with pages, nodes, and routed wires, PNG images from its headless renderer, the live Avalonia editor control, and saved JSON snapshots][hero]
 
 Plexus is a general-purpose .NET library for building and editing node-based block diagrams with typed ports, routed
 wires, annotations, nestable collapsible groups, multiple pages, full undo/redo, and cross-application copy/paste. It

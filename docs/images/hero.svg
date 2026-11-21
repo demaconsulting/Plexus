@@ -1,15 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1600" height="640" viewBox="0 0 1600 640">
-  <!-- The README hero banner. Node types, diagrams built in code, JSON files, and pasted clipboard content flow
-       into the Plexus .NET library, which produces the diagram model (pages, nodes, typed ports, and routed wires),
-       PNG images from its headless renderer, the live Avalonia editor control, and saved JSON snapshots.
+  <!-- The README hero banner. Node types are dragged from the node palette onto the Avalonia editor canvas, where
+       blocks with typed ports are joined by routed wires, selected, and undone with Ctrl+Z. The Plexus .NET library
+       keeps the result as the diagram model (pages, nodes, typed ports, and routed wires) and produces PNG images
+       from its headless renderer, saved JSON snapshots, and versioned JSON for the clipboard.
        The definitions and the left panel follow the shared DEMA Consulting hero (CanvasNet and BuildMark).
        This file is docs/images/hero.svg, beside its rendered docs/images/hero.png (matching base names, per the
+       diagram documentation standard); the files it embeds are in docs/images/hero/. -->
        diagram documentation standard); the files it embeds are in docs/images/hero/. -->
   <defs>
     <style>
       .word { font: bold 92px sans-serif; fill: #ffffff; }
       .eyebrow { font: bold 25px sans-serif; fill: #a5b4fc; }
-      .tag { font: bold 40px sans-serif; fill: #f8fafc; }
+      .tag { font: bold 36px sans-serif; fill: #f8fafc; }
       .body { font: 25px sans-serif; fill: #cbd5e1; }
       .cmd { font: 25px monospace; fill: #e2e8f0; }
       .prompt { fill: #5eead4; }
@@ -103,6 +105,7 @@
     </style>
   </defs>
 
+
   <!-- Background: deep gradient, soft glows, and a dot grid -->
   <rect width="1600" height="640" fill="url(#bg)"/>
   <ellipse cx="250" cy="170" rx="420" ry="300" fill="url(#glowViolet)"/>
@@ -118,96 +121,80 @@
   <text class="word" x="52" y="176">Plex</text>
   <text class="word brandText" x="241.2" y="176">us</text>
   <rect x="58" y="200" width="132" height="6" rx="3" fill="url(#brand)"/>
-  <text class="tag" x="56" y="266">Block diagrams, built.</text>
-  <text class="tag brandText" x="56" y="316">Every edit, undoable.</text>
-  <text class="body" x="58" y="368">A .NET library for node-based block</text>
-  <text class="body" x="58" y="402">diagrams: typed ports, routed wires,</text>
-  <text class="body" x="58" y="436">PNG rendering, and an Avalonia editor.</text>
-  <!-- The command box: a typical C# call, on two lines -->
+  <text class="tag" x="56" y="266">A block diagram editor</text>
+  <text class="tag" x="56" y="314" style="fill: #a5b4fc">and model for .NET.</text>
+  <text class="body" x="58" y="368">Typed ports, routed wires, groups</text>
+  <text class="body" x="58" y="402">and pages with undo and redo; an</text>
+  <text class="body" x="58" y="436">Avalonia control and PNG renderer.</text>
+  <!-- The command box: two C# calls from the Quick Start, on two lines -->
   <rect x="56" y="468" width="480" height="90" rx="12" fill="#0a1022" fill-opacity="0.8" stroke="#a78bfa" stroke-opacity="0.45" stroke-width="1.5"/>
   <text class="cmd" x="78" y="503">page.Connect(</text>
-  <text class="cmd file" x="108" y="539">"A.out"</text>
-  <text class="cmd" x="213" y="539">,</text>
-  <text class="cmd file" x="243" y="539">"B.in"</text>
-  <text class="cmd" x="333" y="539">);</text>
-  <text class="note" x="58" y="604">Core targets .NET 8 to .NET 11.</text>
+  <text class="cmd file" x="273" y="503">"A.out"</text>
+  <text class="cmd" x="378" y="503">,</text>
+  <text class="cmd file" x="408" y="503">"B.in"</text>
+  <text class="cmd" x="498" y="503">);</text>
+  <text class="cmd" x="78" y="539">diagram.History.Undo();</text>
+  <text class="note" x="58" y="604">Core .NET 8 to 11 &#183; MIT license</text>
 
-  <!-- Input cards -->
+  <!-- Input cards: the node palette and the editor canvas it drops onto -->
   <g>
-    <!-- Input one: a node type with its title and typed ports -->
+    <!-- Input one: the node palette, listing node types with their typed ports -->
     <rect class="card" x="580" y="40" width="236" height="160" rx="16"/>
     <rect x="642" y="40" width="112" height="3" rx="1.5" fill="#fbbf24"/>
     <rect class="panel" x="588" y="48" width="220" height="112" rx="10"/>
-    <g transform="translate(588 48)">
-      <rect x="50" y="12" width="120" height="88" rx="9" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
-      <path d="M50 21 A9 9 0 0 1 59 12 L161 12 A9 9 0 0 1 170 21 L170 40 L50 40 Z" fill="#fbbf24" fill-opacity="0.28"/>
-      <text class="mini" x="110" y="34" fill="#fde68a" text-anchor="middle">PUMP</text>
-      <rect class="bar" x="66" y="56" width="70" height="7" rx="3.5" fill-opacity="0.75"/>
-      <rect class="bar" x="66" y="76" width="50" height="7" rx="3.5" fill-opacity="0.75"/>
-      <circle cx="50" cy="70" r="7" fill="#22d3ee" stroke="#0a1022" stroke-width="2"/>
-      <circle cx="170" cy="58" r="7" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
-      <circle cx="170" cy="82" r="7" fill="#f472b6" stroke="#0a1022" stroke-width="2"/>
-    </g>
-    <text class="label" x="698" y="190">Node types</text>
+    <rect x="602" y="56" width="192" height="28" rx="6" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+    <text class="mini" x="698" y="78" fill="#fde68a" text-anchor="middle">Pump</text>
+    <circle cx="794" cy="70" r="5" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
+    <rect x="602" y="90" width="192" height="28" rx="6" fill="#22d3ee" fill-opacity="0.18" stroke="#22d3ee" stroke-width="2"/>
+    <text class="mini" x="698" y="112" fill="#a5f3fc" text-anchor="middle">Valve</text>
+    <circle cx="602" cy="104" r="5" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
+    <circle cx="794" cy="104" r="5" fill="#22d3ee" stroke="#0a1022" stroke-width="2"/>
+    <rect x="602" y="124" width="192" height="28" rx="6" fill="#1e293b" stroke="#a78bfa" stroke-width="1.5"/>
+    <text class="mini" x="698" y="146" fill="#ddd6fe" text-anchor="middle">Tank</text>
+    <circle cx="602" cy="138" r="5" fill="#22d3ee" stroke="#0a1022" stroke-width="2"/>
+    <text class="label" x="698" y="190">Node palette</text>
 
-    <!-- Input two: a diagram built in code -->
-    <rect class="card" x="828" y="40" width="236" height="160" rx="16"/>
-    <rect x="890" y="40" width="112" height="3" rx="1.5" fill="#22d3ee"/>
-    <rect class="panel" x="836" y="48" width="220" height="112" rx="10"/>
-    <g transform="translate(836 48)">
-      <text class="miniMono" x="16" y="34" fill="#a5f3fc">AddNode</text>
-      <text class="miniMono" x="108" y="34" fill="#f8fafc">(...)</text>
-      <text class="miniMono" x="16" y="66" fill="#a5f3fc">Connect</text>
-      <text class="miniMono" x="108" y="66" fill="#f8fafc">(...)</text>
-      <text class="miniMono" x="16" y="98" fill="#a5f3fc">Undo</text>
-      <text class="miniMono" x="69" y="98" fill="#f8fafc">()</text>
+    <!-- Input two: the Avalonia editor canvas: a dragged node's ghost, routed wires, a selection, and undo -->
+    <rect class="card" x="828" y="40" width="732" height="160" rx="16"/>
+    <rect x="1138" y="40" width="112" height="3" rx="1.5" fill="#22d3ee"/>
+    <rect class="panel" x="836" y="48" width="716" height="112" rx="10"/>
+    <rect x="860" y="96" width="104" height="40" rx="7" fill="#22d3ee" fill-opacity="0.12" stroke="#22d3ee" stroke-width="2" stroke-dasharray="6 5"/>
+    <text class="mini" x="904" y="124" fill="#a5f3fc" fill-opacity="0.8" text-anchor="middle">Valve</text>
+    <path d="M944 120 L944 148 L951 141 L956 153 L961 151 L956 139 L965 139 Z" fill="#ffffff" stroke="#0a1022" stroke-width="1.5"/>
+    <path d="M1104 78 L1128 78 L1128 124 L1152 124" fill="none" stroke="#fbbf24" stroke-width="3"/>
+    <path d="M1256 124 L1284 124 L1284 78 L1314 78" fill="none" stroke="#22d3ee" stroke-width="3"/>
+    <rect x="1000" y="58" width="104" height="40" rx="7" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
+    <text class="mini" x="1052" y="86" fill="#fde68a" text-anchor="middle">Pump</text>
+    <circle cx="1104" cy="78" r="6" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
+    <rect x="1152" y="104" width="104" height="40" rx="7" fill="#1e293b" stroke="#22d3ee" stroke-width="2"/>
+    <text class="mini" x="1204" y="132" fill="#a5f3fc" text-anchor="middle">Valve</text>
+    <circle cx="1152" cy="124" r="6" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
+    <circle cx="1256" cy="124" r="6" fill="#22d3ee" stroke="#0a1022" stroke-width="2"/>
+    <rect x="1314" y="58" width="104" height="40" rx="7" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
+    <text class="mini" x="1366" y="86" fill="#ddd6fe" text-anchor="middle">Tank</text>
+    <circle cx="1314" cy="78" r="6" fill="#22d3ee" stroke="#0a1022" stroke-width="2"/>
+    <rect x="1304" y="53" width="124" height="50" rx="4" fill="none" stroke="#f8fafc" stroke-opacity="0.8" stroke-width="1.5" stroke-dasharray="4 4"/>
+    <g fill="#f8fafc">
+      <rect x="1300" y="49" width="8" height="8"/>
+      <rect x="1424" y="49" width="8" height="8"/>
+      <rect x="1300" y="99" width="8" height="8"/>
+      <rect x="1424" y="99" width="8" height="8"/>
     </g>
-    <text class="label" x="946" y="190">Built in code</text>
-
-    <!-- Input three: a saved diagram file -->
-    <rect class="card" x="1076" y="40" width="236" height="160" rx="16"/>
-    <rect x="1138" y="40" width="112" height="3" rx="1.5" fill="#f472b6"/>
-    <rect class="panel" x="1084" y="48" width="220" height="112" rx="10"/>
-    <g transform="translate(1084 48)">
-      <path class="page" d="M24 12 L68 12 L84 28 L84 100 L24 100 Z"/>
-      <path d="M68 12 L68 28 L84 28 Z" fill="#cbd5e1"/>
-      <rect x="34" y="40" width="40" height="5" rx="2.5" fill="#f472b6"/>
-      <rect class="bar" x="34" y="52" width="40" height="5" rx="2.5"/>
-      <rect class="bar" x="34" y="64" width="30" height="5" rx="2.5"/>
-      <rect class="bar" x="34" y="76" width="36" height="5" rx="2.5"/>
-      <rect x="104" y="18" width="92" height="32" rx="7" fill="#f472b6" fill-opacity="0.16" stroke="#f472b6" stroke-width="1.5"/>
-      <text class="mini" x="150" y="42" fill="#fbcfe8" text-anchor="middle">.json</text>
-      <rect class="bar" x="104" y="66" width="92" height="8" rx="4" fill-opacity="0.75"/>
-      <rect class="bar" x="104" y="84" width="64" height="8" rx="4" fill-opacity="0.75"/>
-    </g>
-    <text class="label" x="1194" y="190">JSON files</text>
-
-    <!-- Input four: nodes pasted from the clipboard -->
-    <rect class="card" x="1324" y="40" width="236" height="160" rx="16"/>
-    <rect x="1386" y="40" width="112" height="3" rx="1.5" fill="#60a5fa"/>
-    <rect class="panel" x="1332" y="48" width="220" height="112" rx="10"/>
-    <g transform="translate(1332 48)">
-      <rect class="page" x="60" y="14" width="100" height="88" rx="8"/>
-      <rect x="88" y="7" width="44" height="16" rx="5" fill="#60a5fa"/>
-      <rect x="74" y="36" width="30" height="22" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
-      <rect x="116" y="68" width="30" height="22" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
-      <path d="M104 47 L111 47 L111 79 L116 79" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
-    </g>
-    <text class="label" x="1442" y="190">Clipboard</text>
+    <rect x="1440" y="114" width="100" height="36" rx="8" fill="#ffffff" fill-opacity="0.08" stroke="#5eead4" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text class="miniMono" x="1490" y="139" fill="#e2e8f0" text-anchor="middle">Ctrl+Z</text>
+    <text class="label" x="1194" y="190">Avalonia editor: drag, wire, select, undo</text>
   </g>
+  <!-- The drag from the palette's Valve entry to its ghost on the canvas -->
+  <path d="M800 104 C828 104 832 116 858 116" fill="none" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="5 5"/>
 
   <!-- Flows into the engine -->
   <g class="flow">
-    <path d="M698,206 C698,236 950,226 950,253" stroke="#fbbf24" marker-end="url(#headAmber)"/>
-    <path d="M946,206 C946,236 1030,226 1030,253" stroke="#22d3ee" marker-end="url(#headCyan)"/>
-    <path d="M1194,206 C1194,236 1110,226 1110,253" stroke="#f472b6" marker-end="url(#headPink)"/>
-    <path d="M1442,206 C1442,236 1190,226 1190,253" stroke="#60a5fa" marker-end="url(#headBlue)"/>
+    <path d="M698,206 C698,236 1000,226 1000,253" stroke="#fbbf24" marker-end="url(#headAmber)"/>
+    <path d="M1194,206 C1194,236 1140,226 1140,253" stroke="#22d3ee" marker-end="url(#headCyan)"/>
   </g>
   <g stroke="#0a1022" stroke-width="2">
     <circle cx="698" cy="206" r="5" fill="#fbbf24"/>
-    <circle cx="946" cy="206" r="5" fill="#22d3ee"/>
-    <circle cx="1194" cy="206" r="5" fill="#f472b6"/>
-    <circle cx="1442" cy="206" r="5" fill="#60a5fa"/>
+    <circle cx="1194" cy="206" r="5" fill="#22d3ee"/>
   </g>
   <!-- The engine: the Plexus library, with a two-node diagram glyph -->
   <rect x="860" y="262" width="420" height="64" rx="32" fill="url(#brand)" opacity="0.55" filter="url(#blur)"/>
@@ -244,10 +231,10 @@
     <rect x="684" y="406" width="54" height="30" rx="7" fill="#ffffff" fill-opacity="0.06"/>
     <text class="mini" x="711" y="428" fill="#94a3b8" text-anchor="middle">P2</text>
     <path d="M706 474 L740 474 L740 512 L762 512" fill="none" stroke="#fbbf24" stroke-width="3"/>
-    <rect x="610" y="448" width="96" height="58" rx="8" fill="#1e293b" stroke="#22d3ee" stroke-width="2"/>
-    <text class="mini" x="658" y="484" fill="#a5f3fc" text-anchor="middle">Pump</text>
-    <rect x="762" y="484" width="96" height="58" rx="8" fill="#1e293b" stroke="#a78bfa" stroke-width="2"/>
-    <text class="mini" x="810" y="520" fill="#ddd6fe" text-anchor="middle">Tank</text>
+    <rect x="610" y="448" width="96" height="58" rx="8" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
+    <text class="mini" x="658" y="484" fill="#fde68a" text-anchor="middle">Pump</text>
+    <rect x="762" y="484" width="96" height="58" rx="8" fill="#1e293b" stroke="#22d3ee" stroke-width="2"/>
+    <text class="mini" x="810" y="520" fill="#a5f3fc" text-anchor="middle">Valve</text>
     <circle cx="706" cy="474" r="6" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
     <circle cx="762" cy="512" r="6" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
     <text class="label" x="728" y="585">Diagram model</text>
@@ -258,33 +245,31 @@
     <path class="page" d="M952 408 L1034 408 L1050 424 L1050 542 L952 542 Z"/>
     <path d="M1034 408 L1034 424 L1050 424 Z" fill="#cbd5e1"/>
     <path d="M998 436 L1012 436 L1012 472 L1004 472" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
-    <rect x="962" y="424" width="36" height="24" rx="4" fill="#cffafe" stroke="#0e7490" stroke-width="1.5"/>
-    <rect x="1004" y="460" width="36" height="24" rx="4" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+    <rect x="962" y="424" width="36" height="24" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+    <rect x="1004" y="460" width="36" height="24" rx="4" fill="#cffafe" stroke="#0e7490" stroke-width="1.5"/>
     <rect x="970" y="500" width="62" height="30" rx="7" fill="#db2777" fill-opacity="0.14" stroke="#db2777" stroke-width="1.5"/>
     <text class="mini" x="1001" y="522" fill="#be185d" text-anchor="middle">png</text>
-    <text class="label" x="999" y="585">PNG images</text>
+    <text class="label" x="999" y="585">PNG render</text>
 
-    <!-- Output three: the live Avalonia editor control, dragging a wire -->
+    <!-- Output three: a saved JSON snapshot of the diagram -->
     <rect class="card" x="1122" y="390" width="220" height="210" rx="16"/>
     <rect class="panel" x="1130" y="398" width="204" height="152" rx="10"/>
-    <rect x="1142" y="408" width="180" height="132" rx="8" fill="#111827" stroke="#64748b" stroke-width="1.5"/>
-    <path d="M1142 416 A8 8 0 0 1 1150 408 L1314 408 A8 8 0 0 1 1322 416 L1322 428 L1142 428 Z" fill="#334155"/>
-    <circle cx="1156" cy="418" r="4" fill="#f472b6"/>
-    <circle cx="1170" cy="418" r="4" fill="#fbbf24"/>
-    <circle cx="1184" cy="418" r="4" fill="#4ade80"/>
-    <rect x="1156" y="446" width="64" height="40" rx="6" fill="#1e293b" stroke="#22d3ee" stroke-width="2"/>
-    <circle cx="1220" cy="466" r="5" fill="#fbbf24" stroke="#0a1022" stroke-width="2"/>
-    <path d="M1220 466 C1250 466 1252 504 1278 504" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="6 5"/>
-    <path d="M1278 496 L1278 524 L1285 517 L1290 529 L1295 527 L1290 515 L1299 515 Z" fill="#ffffff" stroke="#0a1022" stroke-width="1.5"/>
-    <text class="label" x="1232" y="585">Live editor</text>
+    <circle cx="1232" cy="448" r="24" fill="url(#brand)"/>
+    <path d="M1222 434 L1237 434 L1244 441 L1244 462 L1222 462 Z" fill="#ffffff"/>
+    <rect x="1146" y="494" width="172" height="38" rx="8" fill="#ffffff" fill-opacity="0.08" stroke="#5eead4" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text class="miniMono" x="1232" y="520" fill="#e2e8f0" text-anchor="middle">diagram.json</text>
+    <text class="label" x="1232" y="585">Saved JSON</text>
 
-    <!-- Output four: a saved JSON snapshot -->
+    <!-- Output four: copied nodes and wires as versioned JSON on the clipboard -->
     <rect class="card" x="1355" y="390" width="205" height="210" rx="16"/>
     <rect class="panel" x="1363" y="398" width="189" height="152" rx="10"/>
-    <circle cx="1457" cy="448" r="24" fill="url(#brand)"/>
-    <path d="M1447 434 L1462 434 L1469 441 L1469 462 L1447 462 Z" fill="#ffffff"/>
-    <rect x="1371" y="494" width="172" height="38" rx="8" fill="#ffffff" fill-opacity="0.08" stroke="#5eead4" stroke-opacity="0.6" stroke-width="1.5"/>
-    <text class="miniMono" x="1457" y="520" fill="#e2e8f0" text-anchor="middle">diagram.json</text>
-    <text class="label" x="1457" y="585">Saved JSON</text>
+    <g transform="translate(1347 418)">
+      <rect class="page" x="60" y="14" width="100" height="108" rx="8"/>
+      <rect x="88" y="7" width="44" height="16" rx="5" fill="#60a5fa"/>
+      <rect x="74" y="40" width="30" height="22" rx="4" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+      <rect x="116" y="76" width="30" height="22" rx="4" fill="#cffafe" stroke="#0e7490" stroke-width="1.5"/>
+      <path d="M104 51 L111 51 L111 87 L116 87" fill="none" stroke="#f59e0b" stroke-width="2.5"/>
+    </g>
+    <text class="label" x="1457" y="585">Clipboard</text>
   </g>
 </svg>
