@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_PropertyDefinition {
     private import SoftwareItemMetadata::*;
 
     part def PropertyDefinition {

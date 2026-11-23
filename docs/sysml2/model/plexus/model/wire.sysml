@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_Wire {
     private import SoftwareItemMetadata::*;
 
     part def Wire {

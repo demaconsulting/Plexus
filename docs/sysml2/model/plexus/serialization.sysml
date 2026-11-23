@@ -1,4 +1,6 @@
-package Plexus {
+package Plexus_Serialization {
+    public import Plexus_PlexusClipboard::*;
+    public import Plexus_Snapshot::*;
     private import SoftwareItemMetadata::*;
 
     part def Serialization {

@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_NodePalette {
     private import SoftwareItemMetadata::*;
 
     part def NodePalette {

@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_DiagramEditor {
     private import SoftwareItemMetadata::*;
 
     part def DiagramEditor {

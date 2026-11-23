@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_TextMeasurement {
     private import SoftwareItemMetadata::*;
 
     part def TextMeasurement {

@@ -1,4 +1,6 @@
-package Plexus {
+package Plexus_Routing {
+    public import Plexus_OrthogonalRouter::*;
+    public import Plexus_SimpleRouter::*;
     private import SoftwareItemMetadata::*;
 
     part def Routing {

@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_SceneBuilder {
     private import SoftwareItemMetadata::*;
 
     part def SceneBuilder {

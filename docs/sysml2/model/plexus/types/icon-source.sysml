@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_IconSource {
     private import SoftwareItemMetadata::*;
 
     part def IconSource {

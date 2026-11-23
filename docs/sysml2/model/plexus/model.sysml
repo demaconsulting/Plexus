@@ -1,4 +1,11 @@
-package Plexus {
+package Plexus_Model {
+    public import Plexus_Annotation::*;
+    public import Plexus_DiagramPage::*;
+    public import Plexus_Diagram::*;
+    public import Plexus_Group::*;
+    public import Plexus_Node::*;
+    public import Plexus_PageCollection::*;
+    public import Plexus_Wire::*;
     private import SoftwareItemMetadata::*;
 
     part def Model {

@@ -1,4 +1,9 @@
 package PlexusAvalonia {
+    public import PlexusAvalonia_AvaloniaTextMeasurer::*;
+    public import PlexusAvalonia_Editor::*;
+    public import PlexusAvalonia_PlexusIcons::*;
+    public import PlexusAvalonia_ScenePainter::*;
+    private import OtsDependencies::*;
     private import SoftwareItemMetadata::*;
 
     doc
@@ -22,7 +27,7 @@ package PlexusAvalonia {
         part scenePainter : ScenePainter;
         part avaloniaTextMeasurer : AvaloniaTextMeasurer;
         part plexusIcons : PlexusIcons;
-        ref part avalonia : OTS::Avalonia;
-        ref part svgSkia : OTS::SvgSkia;
+        ref part avalonia : Avalonia;
+        ref part svgSkia : SvgSkia;
     }
 }

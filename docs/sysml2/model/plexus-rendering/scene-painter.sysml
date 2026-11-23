@@ -1,4 +1,4 @@
-package PlexusRendering {
+package PlexusRendering_ScenePainter {
     private import SoftwareItemMetadata::*;
 
     part def ScenePainter {

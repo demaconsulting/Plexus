@@ -1,4 +1,4 @@
-package OTS {
+package OtsDependencies {
     private import SoftwareItemMetadata::*;
 
     doc

@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_UndoHistory {
     private import SoftwareItemMetadata::*;
 
     part def UndoHistory {

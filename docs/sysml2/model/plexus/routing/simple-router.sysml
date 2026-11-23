@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_SimpleRouter {
     private import SoftwareItemMetadata::*;
 
     part def SimpleRouter {

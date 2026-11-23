@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_Geometry {
     private import SoftwareItemMetadata::*;
 
     part def Geometry {

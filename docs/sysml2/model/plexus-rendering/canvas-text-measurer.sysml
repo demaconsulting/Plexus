@@ -1,4 +1,4 @@
-package PlexusRendering {
+package PlexusRendering_CanvasTextMeasurer {
     private import SoftwareItemMetadata::*;
 
     part def CanvasTextMeasurer {

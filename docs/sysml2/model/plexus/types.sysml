@@ -1,4 +1,6 @@
-package Plexus {
+package Plexus_Types {
+    public import Plexus_IconSource::*;
+    public import Plexus_NodeTypeRegistry::*;
     private import SoftwareItemMetadata::*;
 
     part def Types {

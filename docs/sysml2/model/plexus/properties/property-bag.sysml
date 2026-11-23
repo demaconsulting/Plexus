@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_PropertyBag {
     private import SoftwareItemMetadata::*;
 
     part def PropertyBag {

@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_PlexusClipboard {
     private import SoftwareItemMetadata::*;
 
     part def PlexusClipboard {

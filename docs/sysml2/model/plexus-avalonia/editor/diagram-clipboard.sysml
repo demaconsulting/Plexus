@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_DiagramClipboard {
     private import SoftwareItemMetadata::*;
 
     part def DiagramClipboard {

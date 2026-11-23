@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_ConnectionRules {
     private import SoftwareItemMetadata::*;
 
     part def ConnectionRules {

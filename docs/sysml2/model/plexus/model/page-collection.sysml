@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_PageCollection {
     private import SoftwareItemMetadata::*;
 
     part def PageCollection {

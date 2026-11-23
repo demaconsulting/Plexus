@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_Snapshot {
     private import SoftwareItemMetadata::*;
 
     part def Snapshot {

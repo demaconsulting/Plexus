@@ -1,4 +1,9 @@
 package PlexusRendering {
+    public import PlexusRendering_CanvasTextMeasurer::*;
+    public import PlexusRendering_IconCache::*;
+    public import PlexusRendering_PlexusRenderer::*;
+    public import PlexusRendering_ScenePainter::*;
+    private import OtsDependencies::*;
     private import SoftwareItemMetadata::*;
 
     doc
@@ -22,6 +27,6 @@ package PlexusRendering {
         part scenePainter : ScenePainter;
         part canvasTextMeasurer : CanvasTextMeasurer;
         part iconCache : IconCache;
-        ref part canvasNet : OTS::CanvasNet;
+        ref part canvasNet : CanvasNet;
     }
 }

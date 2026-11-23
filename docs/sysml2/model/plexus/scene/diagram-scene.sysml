@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_DiagramScene {
     private import SoftwareItemMetadata::*;
 
     part def DiagramScene {

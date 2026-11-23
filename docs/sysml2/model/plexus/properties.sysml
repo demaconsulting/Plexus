@@ -1,4 +1,6 @@
-package Plexus {
+package Plexus_Properties {
+    public import Plexus_PropertyBag::*;
+    public import Plexus_PropertyDefinition::*;
     private import SoftwareItemMetadata::*;
 
     part def Properties {

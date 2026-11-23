@@ -1,4 +1,4 @@
-package PlexusAvaloniaPropertyGrid {
+package PlexusAvaloniaPropertyGrid_PlexusNodeSource {
     private import SoftwareItemMetadata::*;
 
     part def PlexusNodeSource {
