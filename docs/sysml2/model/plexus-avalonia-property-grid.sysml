@@ -1,4 +1,15 @@
 package PlexusAvaloniaPropertyGrid {
+    public import PlexusAvaloniaPropertyGrid_CollectionEditorUi::*;
+    public import PlexusAvaloniaPropertyGrid_EditSession::*;
+    public import PlexusAvaloniaPropertyGrid_EditorRegistry::*;
+    public import PlexusAvaloniaPropertyGrid_NodePropertiesDialog::*;
+    public import PlexusAvaloniaPropertyGrid_PlexusNodeSource::*;
+    public import PlexusAvaloniaPropertyGrid_PropertyEditors::*;
+    public import PlexusAvaloniaPropertyGrid_PropertyGridControl::*;
+    public import PlexusAvaloniaPropertyGrid_PropertyGridDialog::*;
+    public import PlexusAvaloniaPropertyGrid_PropertyModel::*;
+    public import PlexusAvaloniaPropertyGrid_PropertySources::*;
+    private import OtsDependencies::*;
     private import SoftwareItemMetadata::*;
 
     doc
@@ -27,7 +38,7 @@ package PlexusAvaloniaPropertyGrid {
         part propertyGridDialog : PropertyGridDialog;
         part plexusNodeSource : PlexusNodeSource;
         part nodePropertiesDialog : NodePropertiesDialog;
-        ref part avalonia : OTS::Avalonia;
+        ref part avalonia : Avalonia;
         ref part core : Plexus::PlexusSystem;
     }
 }

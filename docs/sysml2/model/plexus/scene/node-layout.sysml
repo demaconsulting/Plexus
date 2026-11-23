@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_NodeLayout {
     private import SoftwareItemMetadata::*;
 
     part def NodeLayout {

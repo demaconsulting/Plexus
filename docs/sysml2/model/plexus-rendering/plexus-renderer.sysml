@@ -1,4 +1,4 @@
-package PlexusRendering {
+package PlexusRendering_PlexusRenderer {
     private import SoftwareItemMetadata::*;
 
     part def PlexusRenderer {

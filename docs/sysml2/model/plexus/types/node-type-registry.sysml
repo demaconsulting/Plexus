@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_NodeTypeRegistry {
     private import SoftwareItemMetadata::*;
 
     part def NodeTypeRegistry {

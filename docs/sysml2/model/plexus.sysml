@@ -1,4 +1,13 @@
 package Plexus {
+    public import Plexus_ConnectionRules::*;
+    public import Plexus_Geometry::*;
+    public import Plexus_History::*;
+    public import Plexus_Model::*;
+    public import Plexus_Properties::*;
+    public import Plexus_Routing::*;
+    public import Plexus_Scene::*;
+    public import Plexus_Serialization::*;
+    public import Plexus_Types::*;
     private import SoftwareItemMetadata::*;
 
     doc

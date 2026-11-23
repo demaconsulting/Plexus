@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_Gestures {
     private import SoftwareItemMetadata::*;
 
     part def Gestures {

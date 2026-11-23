@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_PlexusIcons {
     private import SoftwareItemMetadata::*;
 
     part def PlexusIcons {

@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_Group {
     private import SoftwareItemMetadata::*;
 
     part def Group {

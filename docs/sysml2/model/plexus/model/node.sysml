@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_Node {
     private import SoftwareItemMetadata::*;
 
     part def Node {

@@ -1,4 +1,9 @@
-package Plexus {
+package Plexus_Scene {
+    public import Plexus_DiagramScene::*;
+    public import Plexus_DiagramTheme::*;
+    public import Plexus_NodeLayout::*;
+    public import Plexus_SceneBuilder::*;
+    public import Plexus_TextMeasurement::*;
     private import SoftwareItemMetadata::*;
 
     part def Scene {

@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_Annotation {
     private import SoftwareItemMetadata::*;
 
     part def Annotation {

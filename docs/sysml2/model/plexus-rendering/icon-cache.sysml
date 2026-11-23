@@ -1,4 +1,4 @@
-package PlexusRendering {
+package PlexusRendering_IconCache {
     private import SoftwareItemMetadata::*;
 
     part def IconCache {

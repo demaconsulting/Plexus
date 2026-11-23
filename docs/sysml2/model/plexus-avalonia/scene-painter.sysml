@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_ScenePainter {
     private import SoftwareItemMetadata::*;
 
     part def ScenePainter {

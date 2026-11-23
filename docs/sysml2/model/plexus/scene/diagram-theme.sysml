@@ -1,4 +1,4 @@
-package Plexus {
+package Plexus_DiagramTheme {
     private import SoftwareItemMetadata::*;
 
     part def DiagramTheme {

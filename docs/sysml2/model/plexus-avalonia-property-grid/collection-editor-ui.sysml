@@ -1,4 +1,4 @@
-package PlexusAvaloniaPropertyGrid {
+package PlexusAvaloniaPropertyGrid_CollectionEditorUi {
     private import SoftwareItemMetadata::*;
 
     part def CollectionEditorUi {

@@ -1,4 +1,9 @@
-package PlexusAvalonia {
+package PlexusAvalonia_Editor {
+    public import PlexusAvalonia_DiagramClipboard::*;
+    public import PlexusAvalonia_DiagramEditor::*;
+    public import PlexusAvalonia_Gestures::*;
+    public import PlexusAvalonia_NodePalette::*;
+    public import PlexusAvalonia_NodeTypeDragSource::*;
     private import SoftwareItemMetadata::*;
 
     part def Editor {

@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_NodeTypeDragSource {
     private import SoftwareItemMetadata::*;
 
     part def NodeTypeDragSource {

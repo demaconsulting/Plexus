@@ -1,4 +1,4 @@
-package PlexusAvalonia {
+package PlexusAvalonia_AvaloniaTextMeasurer {
     private import SoftwareItemMetadata::*;
 
     part def AvaloniaTextMeasurer {

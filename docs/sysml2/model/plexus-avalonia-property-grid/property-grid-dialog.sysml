@@ -1,4 +1,4 @@
-package PlexusAvaloniaPropertyGrid {
+package PlexusAvaloniaPropertyGrid_PropertyGridDialog {
     private import SoftwareItemMetadata::*;
 
     part def PropertyGridDialog {
