@@ -72,6 +72,10 @@ $ProjectAliases = @{
     'PropertyGrid' = 'DemaConsulting.Plexus.Avalonia.PropertyGrid'
 }
 
+# [PROJECT-SPECIFIC] Folders scanned for projects. The shared default is src, test and tools; the demo/ projects are
+# referenced by DemaConsulting.Plexus.Demo.Tests, so they must be in the graph for -Changed to see them.
+$ProjectRoots = @('src', 'test', 'tools', 'demo')
+
 # ==============================================================================
 # USAGE AND SCOPE VALIDATION
 # ==============================================================================
@@ -88,7 +92,7 @@ function Show-Usage {
             '-Help'            = 'Print this text and exit 0.'
         }) `
         -ChecksLabel 'Projects (-Project names; Core is the core library)' `
-        -Checks @(try { (Get-ProjectGraph).Keys } catch { }) `
+        -Checks @(try { (Get-ProjectGraph -Root $ProjectRoots).Keys + ($ProjectAliases.Keys | ForEach-Object { "$_ (alias)" }) } catch { }) `
         -Examples @('-Changed', '-Project Rendering,PropertyGrid', '-Changed -DryRun', '-All')
 }
 
@@ -115,7 +119,7 @@ $buildError = $false
 
 $scoped = $false
 if (-not $All) {
-    $graph = Get-ProjectGraph
+    $graph = Get-ProjectGraph -Root $ProjectRoots
     $selected = [System.Collections.Generic.HashSet[string]]::new()
     $fullReason = $null
 
@@ -153,7 +157,7 @@ if (-not $All) {
         # [PROJECT-SPECIFIC] tools/DemaConsulting.Plexus.Puppet.Tests is a test project that lives under tools/.
         $isTest = { $_.Directory -like 'test/*' -or $_.Name -like '*.Tests' }
         $tests = @($graph.Values | Where-Object { $selected.Contains($_.Name) -and (& $isTest) })
-        $tools = @($graph.Values | Where-Object { $selected.Contains($_.Name) -and $_.Directory -like 'tools/*' -and -not (& $isTest) })
+        $tools = @($graph.Values | Where-Object { $selected.Contains($_.Name) -and ($_.Directory -like 'tools/*' -or $_.Directory -like 'demo/*') -and -not (& $isTest) })
         $skipped = @($graph.Values | Where-Object { (& $isTest) -and -not $selected.Contains($_.Name) })
         if ($tests.Count -eq 0 -and $tools.Count -eq 0) {
             Write-Host "Nothing to build: no changed file is read by the build."
