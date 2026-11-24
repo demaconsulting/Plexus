@@ -177,14 +177,15 @@ Plexus requires the .NET 11 SDK (plus the .NET 8, 9 and 10 runtimes to run every
 solution:
 
 ```bash
-pwsh ./build.ps1
+pwsh ./build.ps1 -All
 ```
 
-Before submitting changes, apply automatic formatting and run the lint checks:
+Before submitting changes, apply automatic formatting and run the lint checks. `-Changed` runs only what your changes
+affect, `-DryRun` shows the selection, and `pwsh ./build.ps1 -Help` lists every switch:
 
 ```bash
-pwsh ./fix.ps1
-pwsh ./lint.ps1
+pwsh ./fix.ps1 -All
+pwsh ./lint.ps1 -All
 ```
 
 ## Documentation
